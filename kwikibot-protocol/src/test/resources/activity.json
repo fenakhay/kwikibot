@@ -1,0 +1,1700 @@
+{
+  "source": "https://en.wiktionary.org/w/api.php",
+  "queries": {
+    "logevents_move": {
+      "logevents": [
+        {
+          "logid": 55491673,
+          "ns": 0,
+          "title": "mostayo",
+          "pageid": 12033754,
+          "logpage": 7203849,
+          "revid": 92423565,
+          "params": {
+            "target_ns": 0,
+            "target_title": "mostayu",
+            "suppressredirect": false
+          },
+          "type": "move",
+          "action": "move",
+          "user": "Hindsight10",
+          "timestamp": "2026-08-31T18:14:34Z",
+          "comment": "Misspelled title",
+          "tags": []
+        },
+        {
+          "logid": 55491197,
+          "ns": 4,
+          "title": "Wiktionary:The Headword/Draft/Traffic report",
+          "pageid": 0,
+          "logpage": 12031067,
+          "revid": 92422294,
+          "params": {
+            "target_ns": 4,
+            "target_title": "Wiktionary:The Headword/Issue 1/Traffic report",
+            "suppressredirect": true
+          },
+          "type": "move",
+          "action": "move",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T15:23:30Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55491196,
+          "ns": 4,
+          "title": "Wiktionary:The Headword/Draft/The vandal",
+          "pageid": 0,
+          "logpage": 12031068,
+          "revid": 92422293,
+          "params": {
+            "target_ns": 4,
+            "target_title": "Wiktionary:The Headword/Issue 1/The vandal",
+            "suppressredirect": true
+          },
+          "type": "move",
+          "action": "move",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T15:23:30Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55491195,
+          "ns": 4,
+          "title": "Wiktionary:The Headword/Draft/The lexicographer",
+          "pageid": 0,
+          "logpage": 12031070,
+          "revid": 92422292,
+          "params": {
+            "target_ns": 4,
+            "target_title": "Wiktionary:The Headword/Issue 1/The lexicographer",
+            "suppressredirect": true
+          },
+          "type": "move",
+          "action": "move",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T15:23:29Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55491194,
+          "ns": 4,
+          "title": "Wiktionary:The Headword/Draft/The future of Foreign Word of the Day",
+          "pageid": 0,
+          "logpage": 12031069,
+          "revid": 92422291,
+          "params": {
+            "target_ns": 4,
+            "target_title": "Wiktionary:The Headword/Issue 1/The future of Foreign Word of the Day",
+            "suppressredirect": true
+          },
+          "type": "move",
+          "action": "move",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T15:23:29Z",
+          "comment": "",
+          "tags": []
+        }
+      ]
+    },
+    "logevents_block": {
+      "logevents": [
+        {
+          "logid": 55492198,
+          "ns": 2,
+          "title": "User:~2026-00000-00",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "duration": "1 week",
+            "flags": [
+              "nocreate"
+            ],
+            "blockId": 253633,
+            "sitewide": true,
+            "expiry": "2026-09-07T22:50:55Z",
+            "duration-l10n": "7 days"
+          },
+          "type": "block",
+          "action": "block",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T22:50:55Z",
+          "comment": "Vandalism",
+          "tags": []
+        },
+        {
+          "logid": 55491999,
+          "ns": 2,
+          "title": "User:~2026-00000-00",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "duration": "31 hours",
+            "flags": [
+              "nocreate"
+            ],
+            "blockId": 253630,
+            "sitewide": true,
+            "expiry": "2026-09-02T04:07:32Z",
+            "duration-l10n": "1 day and 7 hours"
+          },
+          "type": "block",
+          "action": "block",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T21:07:32Z",
+          "comment": "Adding inappropriate personal or topical references",
+          "tags": []
+        },
+        {
+          "logid": 55491734,
+          "ns": 2,
+          "title": "User:211.55.111.163",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "duration": "1 year",
+            "flags": [
+              "anononly",
+              "nocreate",
+              "nousertalk"
+            ],
+            "blockId": 253629,
+            "sitewide": true,
+            "expiry": "2027-08-31T18:54:17Z",
+            "duration-l10n": "1 year"
+          },
+          "type": "block",
+          "action": "block",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T18:54:17Z",
+          "comment": "Suspected [[meta:WikiProject_on_open_proxies/Help:blocked|open proxy]]",
+          "tags": []
+        },
+        {
+          "logid": 55491731,
+          "ns": 2,
+          "title": "User:Pingpeu",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "duration": "infinity",
+            "flags": [
+              "nocreate",
+              "noemail",
+              "nousertalk"
+            ],
+            "blockId": 253627,
+            "sitewide": true,
+            "duration-l10n": "infinite"
+          },
+          "type": "block",
+          "action": "block",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T18:53:52Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55491590,
+          "ns": 2,
+          "title": "User:209.87.167.0/24",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "duration": "1 year",
+            "flags": [
+              "anononly",
+              "nocreate",
+              "nousertalk"
+            ],
+            "blockId": 253625,
+            "sitewide": true,
+            "expiry": "2027-08-31T17:52:28Z",
+            "duration-l10n": "1 year"
+          },
+          "type": "block",
+          "action": "block",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T17:52:28Z",
+          "comment": "Suspected [[meta:WikiProject_on_open_proxies/Help:blocked|open proxy]]",
+          "tags": []
+        }
+      ]
+    },
+    "logevents_delete": {
+      "logevents": [
+        {
+          "logid": 55492195,
+          "ns": 0,
+          "title": "pourrez",
+          "pageid": 1027146,
+          "logpage": 1027146,
+          "params": {
+            "type": "revision",
+            "ids": [
+              92425293
+            ],
+            "old": {
+              "bitmask": 0,
+              "content": false,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            },
+            "new": {
+              "bitmask": 1,
+              "content": true,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            }
+          },
+          "type": "delete",
+          "action": "revision",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T22:50:20Z",
+          "comment": "Promotional material/spamming",
+          "tags": []
+        },
+        {
+          "logid": 55492194,
+          "ns": 0,
+          "title": "pourrez",
+          "pageid": 1027146,
+          "logpage": 1027146,
+          "params": {
+            "type": "revision",
+            "ids": [
+              92425293
+            ],
+            "old": {
+              "bitmask": 0,
+              "content": false,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            },
+            "new": {
+              "bitmask": 2,
+              "content": false,
+              "comment": true,
+              "user": false,
+              "restricted": false
+            }
+          },
+          "type": "delete",
+          "action": "revision",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T22:50:16Z",
+          "comment": "Promotional material/spamming",
+          "tags": []
+        },
+        {
+          "logid": 55491733,
+          "ns": 0,
+          "title": "hong",
+          "pageid": 91479,
+          "logpage": 91479,
+          "params": {
+            "type": "revision",
+            "ids": [
+              92423564
+            ],
+            "old": {
+              "bitmask": 0,
+              "content": false,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            },
+            "new": {
+              "bitmask": 2,
+              "content": false,
+              "comment": true,
+              "user": false,
+              "restricted": false
+            }
+          },
+          "type": "delete",
+          "action": "revision",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T18:54:01Z",
+          "comment": "",
+          "tags": []
+        }
+      ]
+    },
+    "logevents_upload": {
+      "logevents": [
+        {
+          "logid": 54882756,
+          "ns": 6,
+          "title": "File:Vampetaço.jpg",
+          "pageid": 11592023,
+          "logpage": 11592023,
+          "revid": 90098269,
+          "params": {
+            "img_sha1": "299u2ts1n97s1c9ff3lzz7ssmj9c8o3",
+            "img_timestamp": "2026-04-10T03:49:49Z"
+          },
+          "type": "upload",
+          "action": "overwrite",
+          "user": "Polomo",
+          "timestamp": "2026-04-10T03:49:49Z",
+          "comment": "Reducing resolution.",
+          "tags": [
+            "mobile edit",
+            "mobile web edit",
+            "advanced mobile edit"
+          ]
+        },
+        {
+          "logid": 54882739,
+          "ns": 6,
+          "title": "File:Vampetaço.jpg",
+          "pageid": 11592023,
+          "logpage": 11592023,
+          "revid": 90098231,
+          "params": {
+            "img_sha1": "cno4iv0c4pxrjv72q10p5frxi48yjqs",
+            "img_timestamp": "2026-04-10T03:37:12Z"
+          },
+          "type": "upload",
+          "action": "overwrite",
+          "user": "Polomo",
+          "timestamp": "2026-04-10T03:37:12Z",
+          "comment": "Alternative image, more fitting in my opinion.",
+          "tags": [
+            "mobile edit",
+            "mobile web edit",
+            "advanced mobile edit"
+          ]
+        },
+        {
+          "logid": 54882723,
+          "ns": 6,
+          "title": "File:Vampetaço.jpg",
+          "pageid": 11592023,
+          "logpage": 11592023,
+          "revid": 90098199,
+          "params": {
+            "img_sha1": "99wlrmaljydmipb7hg8hexngxts5apv",
+            "img_timestamp": "2026-04-10T03:29:20Z"
+          },
+          "type": "upload",
+          "action": "upload",
+          "user": "Polomo",
+          "timestamp": "2026-04-10T03:29:20Z",
+          "comment": "",
+          "tags": [
+            "mobile edit",
+            "mobile web edit",
+            "advanced mobile edit"
+          ]
+        }
+      ]
+    },
+    "logevents_protect": {
+      "logevents": [
+        {
+          "logid": 55491795,
+          "ns": 0,
+          "title": "Armageddon",
+          "pageid": 182394,
+          "logpage": 182394,
+          "revid": 92423908,
+          "params": {
+            "description": "‎[edit=autoconfirmed] (expires 23:59, 1 September 2026 (UTC))‎[move=autoconfirmed] (expires 23:59, 1 September 2026 (UTC))",
+            "cascade": false,
+            "details": [
+              {
+                "type": "edit",
+                "level": "autoconfirmed",
+                "expiry": "2026-09-01T23:59:00Z",
+                "cascade": false
+              },
+              {
+                "type": "move",
+                "level": "autoconfirmed",
+                "expiry": "2026-09-01T23:59:00Z",
+                "cascade": false
+              }
+            ]
+          },
+          "type": "protect",
+          "action": "protect",
+          "user": "Sgconlaw",
+          "timestamp": "2026-08-31T19:13:02Z",
+          "comment": "Vandalism target as appearing as [[Wiktionary:Word of the day|WOTD]]/[[Wiktionary:Foreign Word of the Day|FWOTD]]",
+          "tags": []
+        },
+        {
+          "logid": 55491743,
+          "ns": 4,
+          "title": "Wiktionary:The Headword/Issue 1",
+          "pageid": 11877369,
+          "logpage": 11877369,
+          "revid": 92423799,
+          "params": {
+            "description": "‎[edit=editautopatrolprotected] (indefinite)‎[move=editautopatrolprotected] (indefinite)",
+            "cascade": false,
+            "details": [
+              {
+                "type": "edit",
+                "level": "editautopatrolprotected",
+                "expiry": "infinite",
+                "cascade": false
+              },
+              {
+                "type": "move",
+                "level": "editautopatrolprotected",
+                "expiry": "infinite",
+                "cascade": false
+              }
+            ]
+          },
+          "type": "protect",
+          "action": "protect",
+          "user": "Fenakhay",
+          "timestamp": "2026-08-31T18:58:45Z",
+          "comment": "Highly visible template/module",
+          "tags": []
+        },
+        {
+          "logid": 55491735,
+          "ns": 0,
+          "title": "hong",
+          "pageid": 91479,
+          "logpage": 91479,
+          "revid": 92423780,
+          "params": {
+            "description": "‎[edit=autoconfirmed] (expires 18:54, 14 September 2026 (UTC))‎[move=autoconfirmed] (expires 18:54, 14 September 2026 (UTC))",
+            "cascade": false,
+            "details": [
+              {
+                "type": "edit",
+                "level": "autoconfirmed",
+                "expiry": "2026-09-14T18:54:29Z",
+                "cascade": false
+              },
+              {
+                "type": "move",
+                "level": "autoconfirmed",
+                "expiry": "2026-09-14T18:54:29Z",
+                "cascade": false
+              }
+            ]
+          },
+          "type": "protect",
+          "action": "protect",
+          "user": "Surjection",
+          "timestamp": "2026-08-31T18:54:31Z",
+          "comment": "Excessive vandalism",
+          "tags": []
+        }
+      ]
+    },
+    "logevents_all": {
+      "logevents": [
+        {
+          "logid": 55492353,
+          "ns": 2,
+          "title": "User:~2026-00000-00",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "userid": 4494612
+          },
+          "type": "newusers",
+          "action": "autocreate",
+          "user": "~2026-00000-00",
+          "temp": true,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55492352,
+          "ns": 2,
+          "title": "User:Coolboy0011",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "userid": 4494611
+          },
+          "type": "newusers",
+          "action": "autocreate",
+          "user": "Coolboy0011",
+          "timestamp": "2026-09-01T00:33:41Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55492351,
+          "ns": 2,
+          "title": "User:HAZHAA7",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {},
+          "type": "thanks",
+          "action": "thank",
+          "user": "Kamy1r",
+          "timestamp": "2026-09-01T00:33:00Z",
+          "comment": "",
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        },
+        {
+          "logid": 55492350,
+          "ns": 0,
+          "title": "verkonsumier",
+          "pageid": 12034278,
+          "logpage": 12034278,
+          "revid": 92426056,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:51Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        },
+        {
+          "logid": 55492349,
+          "ns": 0,
+          "title": "verkonsumiertet",
+          "pageid": 12034277,
+          "logpage": 12034277,
+          "revid": 92426055,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:49Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        },
+        {
+          "logid": 55492348,
+          "ns": 0,
+          "title": "verkonsumierten",
+          "pageid": 12034276,
+          "logpage": 12034276,
+          "revid": 92426054,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:47Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        },
+        {
+          "logid": 55492347,
+          "ns": 0,
+          "title": "verkonsumiertest",
+          "pageid": 12034275,
+          "logpage": 12034275,
+          "revid": 92426053,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:45Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        },
+        {
+          "logid": 55492346,
+          "ns": 0,
+          "title": "verkonsumierte",
+          "pageid": 12034274,
+          "logpage": 12034274,
+          "revid": 92426052,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:43Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        },
+        {
+          "logid": 55492345,
+          "ns": 2,
+          "title": "User:Kamy1r",
+          "pageid": 0,
+          "logpage": 0,
+          "params": {
+            "userid": 4494610
+          },
+          "type": "newusers",
+          "action": "autocreate",
+          "user": "Kamy1r",
+          "timestamp": "2026-09-01T00:32:36Z",
+          "comment": "",
+          "tags": []
+        },
+        {
+          "logid": 55492344,
+          "ns": 0,
+          "title": "verkonsumieret",
+          "pageid": 12034273,
+          "logpage": 12034273,
+          "revid": 92426050,
+          "params": {},
+          "type": "create",
+          "action": "create",
+          "user": "Netizen3102",
+          "timestamp": "2026-09-01T00:32:33Z",
+          "comment": "Creating forms of German [[verkonsumieren]] ([[WT:ACCEL|Accelerated]])",
+          "tags": [
+            "visualeditor-switched",
+            "wikieditor"
+          ]
+        }
+      ]
+    },
+    "recentchanges": {
+      "recentchanges": [
+        {
+          "type": "edit",
+          "ns": 2,
+          "title": "User:Trooper57/cheat shit sheet",
+          "pageid": 11219720,
+          "revid": 92426070,
+          "old_revid": 92425567,
+          "rcid": 154172597,
+          "user": "Trooper57",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 8299,
+          "newlen": 8305,
+          "timestamp": "2026-09-01T00:35:33Z",
+          "comment": "/* Old Tupi */",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:South Picene terms with quotations",
+          "pageid": 10590876,
+          "revid": 92426069,
+          "old_revid": 91216310,
+          "rcid": 154172586,
+          "user": "Graearms",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:28Z",
+          "comment": "[[:𐌀𐌋𐌉𐌄𐌔]] added to category, [[Special:WhatLinksHere/𐌀𐌋𐌉𐌄𐌔|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "edit",
+          "ns": 0,
+          "title": "𐌀𐌋𐌉𐌄𐌔",
+          "pageid": 10590876,
+          "revid": 92426069,
+          "old_revid": 91216310,
+          "rcid": 154172585,
+          "user": "Graearms",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 373,
+          "newlen": 359,
+          "timestamp": "2026-09-01T00:35:28Z",
+          "comment": "Added a quote template.",
+          "tags": [
+            "wikieditor"
+          ]
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with module errors",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172591,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "[[:Londoun]] removed from category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages using etymon with no ID",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172590,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "[[:Londoun]] added to category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with inline etymon for redlinks",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172589,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "[[:Londoun]] added to category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Middle English entries with etymon",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172588,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "[[:Londoun]] added to category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with etymon",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172587,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "[[:Londoun]] added to category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "edit",
+          "ns": 0,
+          "title": "Londoun",
+          "pageid": 11265116,
+          "revid": 92426068,
+          "old_revid": 92426066,
+          "rcid": 154172584,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 1314,
+          "newlen": 1314,
+          "timestamp": "2026-09-01T00:35:26Z",
+          "comment": "",
+          "tags": [
+            "wikieditor"
+          ]
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages using etymon with no ID",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172596,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "[[:London]] added to category, [[Special:WhatLinksHere/London|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:English entries with etymology trees",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172595,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "[[:London]] added to category, [[Special:WhatLinksHere/London|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with etymology trees",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172594,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "[[:London]] added to category, [[Special:WhatLinksHere/London|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:English entries with etymon",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172593,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "[[:London]] added to category, [[Special:WhatLinksHere/London|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with etymon",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172592,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "[[:London]] added to category, [[Special:WhatLinksHere/London|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "edit",
+          "ns": 0,
+          "title": "London",
+          "pageid": 28210,
+          "revid": 92426067,
+          "old_revid": 92334855,
+          "rcid": 154172583,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 11786,
+          "newlen": 11821,
+          "timestamp": "2026-09-01T00:35:18Z",
+          "comment": "",
+          "tags": [
+            "wikieditor"
+          ]
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages using etymon with no ID",
+          "pageid": 11265116,
+          "revid": 92426066,
+          "old_revid": 92426061,
+          "rcid": 154172582,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "[[:Londoun]] removed from category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Middle English entries with etymon",
+          "pageid": 11265116,
+          "revid": 92426066,
+          "old_revid": 92426061,
+          "rcid": 154172581,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "[[:Londoun]] removed from category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with etymon",
+          "pageid": 11265116,
+          "revid": 92426066,
+          "old_revid": 92426061,
+          "rcid": 154172580,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "[[:Londoun]] removed from category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Middle English entries referencing missing etymons",
+          "pageid": 11265116,
+          "revid": 92426066,
+          "old_revid": 92426061,
+          "rcid": 154172579,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "[[:Londoun]] removed from category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        },
+        {
+          "type": "categorize",
+          "ns": 14,
+          "title": "Category:Pages with module errors",
+          "pageid": 11265116,
+          "revid": 92426066,
+          "old_revid": 92426061,
+          "rcid": 154172578,
+          "user": "Vaniliyana von Halw",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:35:15Z",
+          "comment": "[[:Londoun]] added to category, [[Special:WhatLinksHere/Londoun|this page is included within other pages]]",
+          "tags": []
+        }
+      ]
+    },
+    "recentchanges_log": {
+      "recentchanges": [
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:Maimuna ceesay",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154172326,
+          "user": "Maimuna ceesay",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:23:42Z",
+          "comment": "",
+          "logid": 55492329,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494608
+          },
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:HAZHAA7",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154172283,
+          "user": "HAZHAA7",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-09-01T00:20:49Z",
+          "comment": "",
+          "logid": 55492326,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494607
+          },
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:Iamnage",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154171121,
+          "user": "Iamnage",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T23:21:27Z",
+          "comment": "",
+          "logid": 55492229,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494599
+          },
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:~2026-00000-00",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170743,
+          "user": "Fenakhay",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T22:50:55Z",
+          "comment": "Vandalism",
+          "logid": 55492198,
+          "logtype": "block",
+          "logaction": "block",
+          "logparams": {
+            "duration": "1 week",
+            "flags": [
+              "nocreate"
+            ],
+            "blockId": 253633,
+            "sitewide": true,
+            "expiry": "2026-09-07T22:50:55Z",
+            "duration-l10n": "7 days"
+          },
+          "tags": []
+        },
+        {
+          "type": "log",
+          "ns": 0,
+          "title": "pourrez",
+          "pageid": 1027146,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170740,
+          "user": "Fenakhay",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T22:50:20Z",
+          "comment": "Promotional material/spamming",
+          "logid": 55492195,
+          "logtype": "delete",
+          "logaction": "revision",
+          "logparams": {
+            "type": "revision",
+            "ids": [
+              92425293
+            ],
+            "old": {
+              "bitmask": 0,
+              "content": false,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            },
+            "new": {
+              "bitmask": 1,
+              "content": true,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            }
+          },
+          "tags": []
+        },
+        {
+          "type": "log",
+          "ns": 0,
+          "title": "pourrez",
+          "pageid": 1027146,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170739,
+          "user": "Fenakhay",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T22:50:16Z",
+          "comment": "Promotional material/spamming",
+          "logid": 55492194,
+          "logtype": "delete",
+          "logaction": "revision",
+          "logparams": {
+            "type": "revision",
+            "ids": [
+              92425293
+            ],
+            "old": {
+              "bitmask": 0,
+              "content": false,
+              "comment": false,
+              "user": false,
+              "restricted": false
+            },
+            "new": {
+              "bitmask": 2,
+              "content": false,
+              "comment": true,
+              "user": false,
+              "restricted": false
+            }
+          },
+          "tags": []
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:ScanTiciy",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170736,
+          "user": "ScanTiciy",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T22:49:48Z",
+          "comment": "",
+          "logid": 55492193,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494591
+          },
+          "tags": []
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:GarpuTala",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170666,
+          "user": "Rachmat04",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T22:44:10Z",
+          "comment": "per [[m:Special:GlobalRenameQueue/request/182803|request]]",
+          "logid": 55492190,
+          "logtype": "renameuser",
+          "logaction": "renameuser",
+          "logparams": {
+            "olduser": "GarpuTala",
+            "newuser": "Renamed user 63663ee3a4fe18334293351615efaaab",
+            "edits": 0,
+            "derived": false
+          },
+          "tags": []
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:Melocoto",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154170002,
+          "user": "Melocoto",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T21:57:13Z",
+          "comment": "",
+          "logid": 55492144,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494581
+          },
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        },
+        {
+          "type": "log",
+          "ns": 2,
+          "title": "User:Ibrahim0886",
+          "pageid": 0,
+          "revid": 0,
+          "old_revid": 0,
+          "rcid": 154169292,
+          "user": "Ibrahim0886",
+          "bot": false,
+          "new": false,
+          "minor": false,
+          "oldlen": 0,
+          "newlen": 0,
+          "timestamp": "2026-08-31T21:36:08Z",
+          "comment": "",
+          "logid": 55492108,
+          "logtype": "newusers",
+          "logaction": "create",
+          "logparams": {
+            "userid": 4494575
+          },
+          "tags": [
+            "mobile edit",
+            "mobile web edit"
+          ]
+        }
+      ]
+    },
+    "usercontribs": {
+      "usercontribs": [
+        {
+          "userid": 37012,
+          "user": "SemperBlottoBot",
+          "pageid": 6528909,
+          "revid": 48447477,
+          "parentid": 0,
+          "ns": 0,
+          "title": "VHRs",
+          "timestamp": "2018-01-21T06:30:12Z",
+          "new": true,
+          "minor": false,
+          "top": false,
+          "comment": "Auto-generated French plurals",
+          "size": 86,
+          "sizediff": 86,
+          "tags": []
+        },
+        {
+          "userid": 37012,
+          "user": "SemperBlottoBot",
+          "pageid": 6528908,
+          "revid": 48447476,
+          "parentid": 0,
+          "ns": 0,
+          "title": "princes charmants",
+          "timestamp": "2018-01-21T06:30:10Z",
+          "new": true,
+          "minor": false,
+          "top": false,
+          "comment": "Auto-generated French plurals",
+          "size": 96,
+          "sizediff": 96,
+          "tags": []
+        },
+        {
+          "userid": 37012,
+          "user": "SemperBlottoBot",
+          "pageid": 6528907,
+          "revid": 48447475,
+          "parentid": 0,
+          "ns": 0,
+          "title": "hommes de parole",
+          "timestamp": "2018-01-21T06:30:08Z",
+          "new": true,
+          "minor": false,
+          "top": false,
+          "comment": "Auto-generated French plurals",
+          "size": 96,
+          "sizediff": 96,
+          "tags": []
+        },
+        {
+          "userid": 37012,
+          "user": "SemperBlottoBot",
+          "pageid": 6528906,
+          "revid": 48447474,
+          "parentid": 0,
+          "ns": 0,
+          "title": "Camboriciennes",
+          "timestamp": "2018-01-21T06:30:05Z",
+          "new": true,
+          "minor": false,
+          "top": false,
+          "comment": "Auto-generated French plurals",
+          "size": 94,
+          "sizediff": 94,
+          "tags": []
+        },
+        {
+          "userid": 37012,
+          "user": "SemperBlottoBot",
+          "pageid": 6528905,
+          "revid": 48447473,
+          "parentid": 0,
+          "ns": 0,
+          "title": "Bristoliennes",
+          "timestamp": "2018-01-21T06:30:03Z",
+          "new": true,
+          "minor": false,
+          "top": false,
+          "comment": "Auto-generated French plurals",
+          "size": 93,
+          "sizediff": 93,
+          "tags": []
+        }
+      ]
+    },
+    "users": {
+      "users": [
+        {
+          "name": "203.0.113.5",
+          "invalid": true
+        },
+        {
+          "userid": 37012,
+          "name": "SemperBlottoBot",
+          "editcount": 1795956,
+          "registration": "2007-05-10T16:50:51Z",
+          "groups": [
+            "bot",
+            "*",
+            "user",
+            "autoconfirmed"
+          ],
+          "rights": [
+            "read",
+            "noratelimit",
+            "bot",
+            "autoconfirmed",
+            "editsemiprotected",
+            "nominornewtalk",
+            "autopatrol",
+            "suppressredirect",
+            "apihighlimits",
+            "editautopatrolprotected",
+            "sboverride",
+            "skipcaptcha",
+            "abusefilter-bypass-blocked-external-domains",
+            "createaccount",
+            "autocreateaccount",
+            "edit",
+            "createpage",
+            "createtalk",
+            "viewmyprivateinfo",
+            "editmyprivateinfo",
+            "editmyoptions",
+            "urlshortener-create-url",
+            "abusefilter-view",
+            "abusefilter-log",
+            "echo-read-notifications",
+            "flow-hide",
+            "flow-edit-title",
+            "move-rootuserpages",
+            "move-categorypages",
+            "minoredit",
+            "editmyusercss",
+            "editmyuserjson",
+            "editmyuserjs",
+            "sendemail",
+            "applychangetags",
+            "changetags",
+            "viewmywatchlist",
+            "editmywatchlist",
+            "logout",
+            "spamblacklistlog",
+            "abusefilter-blocked-external-domains-log",
+            "lqt-split",
+            "lqt-merge",
+            "lqt-react",
+            "flow-lock",
+            "mwoauthmanagemygrants",
+            "oathauth-enable",
+            "move",
+            "collectionsaveasuserpage",
+            "collectionsaveascommunitypage",
+            "createwithcontentmodel",
+            "abusefilter-log-detail",
+            "flow-edit-post",
+            "transcode-reset",
+            "transcode-status"
+          ],
+          "emailable": true,
+          "gender": "unknown"
+        },
+        {
+          "userid": 84390,
+          "name": "Equinox",
+          "editcount": 893876,
+          "registration": "2008-09-22T11:52:14Z",
+          "groups": [
+            "autopatrolled",
+            "*",
+            "user",
+            "autoconfirmed"
+          ],
+          "rights": [
+            "autopatrol",
+            "editautopatrolprotected",
+            "createaccount",
+            "autocreateaccount",
+            "read",
+            "edit",
+            "createpage",
+            "createtalk",
+            "viewmyprivateinfo",
+            "editmyprivateinfo",
+            "editmyoptions",
+            "urlshortener-create-url",
+            "abusefilter-view",
+            "abusefilter-log",
+            "echo-read-notifications",
+            "flow-hide",
+            "flow-edit-title",
+            "move-rootuserpages",
+            "move-categorypages",
+            "minoredit",
+            "editmyusercss",
+            "editmyuserjson",
+            "editmyuserjs",
+            "sendemail",
+            "applychangetags",
+            "changetags",
+            "viewmywatchlist",
+            "editmywatchlist",
+            "logout",
+            "spamblacklistlog",
+            "abusefilter-blocked-external-domains-log",
+            "lqt-split",
+            "lqt-merge",
+            "lqt-react",
+            "flow-lock",
+            "mwoauthmanagemygrants",
+            "oathauth-enable",
+            "move",
+            "collectionsaveasuserpage",
+            "collectionsaveascommunitypage",
+            "createwithcontentmodel",
+            "autoconfirmed",
+            "editsemiprotected",
+            "skipcaptcha",
+            "abusefilter-log-detail",
+            "flow-edit-post",
+            "transcode-reset",
+            "transcode-status"
+          ],
+          "emailable": true,
+          "gender": "male"
+        },
+        {
+          "name": "Nosuchuseratallhere",
+          "missing": true
+        }
+      ]
+    },
+    "userinfo_anon": {
+      "userinfo": {
+        "id": 0,
+        "name": "203.0.113.5",
+        "anon": true,
+        "groups": [
+          "*"
+        ],
+        "rights": [
+          "createaccount",
+          "autocreateaccount",
+          "read",
+          "edit",
+          "createpage",
+          "createtalk",
+          "viewmyprivateinfo",
+          "editmyprivateinfo",
+          "editmyoptions",
+          "urlshortener-create-url",
+          "abusefilter-view",
+          "abusefilter-log",
+          "echo-read-notifications",
+          "flow-hide",
+          "flow-edit-title"
+        ],
+        "editcount": 0
+      }
+    },
+    "protections": {
+      "pages": [
+        {
+          "pageid": 313866,
+          "ns": 0,
+          "title": "Main Page",
+          "contentmodel": "wikitext",
+          "pagelanguage": "en",
+          "pagelanguagehtmlcode": "en",
+          "pagelanguagedir": "ltr",
+          "touched": "2026-08-31T15:56:01Z",
+          "lastrevid": 42052941,
+          "length": 2374,
+          "redirect": true,
+          "protection": [
+            {
+              "type": "edit",
+              "level": "sysop",
+              "expiry": "infinity"
+            },
+            {
+              "type": "move",
+              "level": "sysop",
+              "expiry": "infinity"
+            }
+          ],
+          "restrictiontypes": [
+            "edit",
+            "move"
+          ]
+        },
+        {
+          "pageid": 3644019,
+          "ns": 4,
+          "title": "Wiktionary:Main Page",
+          "contentmodel": "wikitext",
+          "pagelanguage": "en",
+          "pagelanguagehtmlcode": "en",
+          "pagelanguagedir": "ltr",
+          "touched": "2026-09-01T00:00:19Z",
+          "lastrevid": 92422440,
+          "length": 15799,
+          "protection": [
+            {
+              "type": "edit",
+              "level": "sysop",
+              "expiry": "infinity"
+            },
+            {
+              "type": "move",
+              "level": "sysop",
+              "expiry": "infinity"
+            }
+          ],
+          "restrictiontypes": [
+            "edit",
+            "move"
+          ]
+        },
+        {
+          "pageid": 3749998,
+          "ns": 0,
+          "title": "water",
+          "contentmodel": "wikitext",
+          "pagelanguage": "en",
+          "pagelanguagehtmlcode": "en",
+          "pagelanguagedir": "ltr",
+          "touched": "2026-08-31T15:09:58Z",
+          "lastrevid": 92377047,
+          "length": 57758,
+          "protection": [
+            {
+              "type": "move",
+              "level": "sysop",
+              "expiry": "infinity"
+            }
+          ],
+          "restrictiontypes": [
+            "edit",
+            "move"
+          ]
+        }
+      ]
+    }
+  }
+}

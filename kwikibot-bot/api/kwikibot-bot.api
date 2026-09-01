@@ -1,0 +1,620 @@
+public final class com/fenakhay/kwikibot/bot/BotConfig {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$Companion;
+	public static final field DEFAULT_MAXLAG I
+	public static final field FILE_NAME Ljava/lang/String;
+	public fun <init> (Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;I)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;
+	public final fun component3 ()Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;
+	public final fun component4 ()Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;
+	public final fun component5 ()Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;
+	public final fun component6 ()I
+	public final fun copy (Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;I)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig;Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;IILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public final fun credentials (Lkotlin/jvm/functions/Function1;)Lcom/fenakhay/kwikibot/net/Credentials;
+	public static synthetic fun credentials$default (Lcom/fenakhay/kwikibot/bot/BotConfig;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/Credentials;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun family ()Lcom/fenakhay/kwikibot/client/Family;
+	public final fun getBot ()Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;
+	public final fun getCache ()Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;
+	public final fun getLogin ()Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;
+	public final fun getMaxlag ()I
+	public final fun getThrottle ()Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;
+	public final fun getWiki ()Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;
+	public fun hashCode ()I
+	public final fun language-vlGtwRM ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun toWikiConfig ()Lcom/fenakhay/kwikibot/client/WikiConfig;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$BotIdentity {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContact ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$BotIdentity$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig$BotIdentity;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$BotIdentity$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$CacheSettings {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getTtl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$CacheSettings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig$CacheSettings;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$CacheSettings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$Companion {
+	public final fun find (Ljava/nio/file/Path;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public static synthetic fun find$default (Lcom/fenakhay/kwikibot/bot/BotConfig$Companion;Ljava/nio/file/Path;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public final fun parse (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public final fun read (Ljava/nio/file/Path;)Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public final fun searchPath ()Ljava/util/List;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public final fun template ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$LoginSettings {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccount ()Ljava/lang/String;
+	public final fun getBotName ()Ljava/lang/String;
+	public final fun getPasswordEnv ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$LoginSettings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig$LoginSettings;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$LoginSettings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRead ()Ljava/lang/String;
+	public final fun getWrite ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$ThrottleSettings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$WikiSelection {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFamily ()Ljava/lang/String;
+	public final fun getLang ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/fenakhay/kwikibot/bot/BotConfig$WikiSelection$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/fenakhay/kwikibot/bot/BotConfig$WikiSelection;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotConfig$WikiSelection$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotPolicy {
+	public static final field ALL Ljava/lang/String;
+	public static final field NOBOTS Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun check (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/bot/EditPermission;
+	public final fun check (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/EditPermission;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotReport {
+	public fun <init> (Ljava/util/List;Z)V
+	public synthetic fun <init> (Ljava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/util/List;Z)Lcom/fenakhay/kwikibot/bot/BotReport;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/BotReport;Ljava/util/List;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/BotReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClean ()Z
+	public final fun getFailed ()I
+	public final fun getOutcomes ()Ljava/util/List;
+	public final fun getPending ()I
+	public final fun getProcessed ()I
+	public final fun getRefused ()I
+	public final fun getSaved ()I
+	public final fun getSkipped ()I
+	public final fun getStopped ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotRunBuilder {
+	public static final field DEFAULT_READ_CONCURRENCY I
+	public final fun getDryRun ()Z
+	public final fun getExclusionPolicy ()Lcom/fenakhay/kwikibot/bot/BotPolicy;
+	public final fun getLimit ()Ljava/lang/Integer;
+	public final fun getOnOutcome ()Lkotlin/jvm/functions/Function1;
+	public final fun getReadConcurrency ()I
+	public final fun getStopPolicy ()Lcom/fenakhay/kwikibot/bot/StopPolicy;
+	public final fun getWriteConcurrency ()I
+	public final fun setDryRun (Z)V
+	public final fun setExclusionPolicy (Lcom/fenakhay/kwikibot/bot/BotPolicy;)V
+	public final fun setLimit (Ljava/lang/Integer;)V
+	public final fun setOnOutcome (Lkotlin/jvm/functions/Function1;)V
+	public final fun setReadConcurrency (I)V
+	public final fun setStopPolicy (Lcom/fenakhay/kwikibot/bot/StopPolicy;)V
+	public final fun setWriteConcurrency (I)V
+	public final fun skip (Ljava/lang/String;)Ljava/lang/Void;
+	public final fun source (Lkotlinx/coroutines/flow/Flow;)V
+	public final fun transform (Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class com/fenakhay/kwikibot/bot/BotRunKt {
+	public static final fun botRun (Lcom/fenakhay/kwikibot/client/PageService;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun botRun (Lcom/fenakhay/kwikibot/client/Wiki;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/Choice {
+	public fun <init> (CLjava/lang/String;Ljava/lang/Object;)V
+	public final fun component1 ()C
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (CLjava/lang/String;Ljava/lang/Object;)Lcom/fenakhay/kwikibot/bot/Choice;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/Choice;CLjava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/Choice;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()C
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/Diffs {
+	public static final field DEFAULT_CONTEXT I
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/Diffs;
+	public final fun unified (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;
+	public static synthetic fun unified$default (Lcom/fenakhay/kwikibot/bot/Diffs;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/Edit {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/bot/Edit;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/Edit;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/Edit;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMinor ()Z
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fenakhay/kwikibot/bot/EditPermission {
+	public fun isAllowed ()Z
+}
+
+public final class com/fenakhay/kwikibot/bot/EditPermission$Allowed : com/fenakhay/kwikibot/bot/EditPermission {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/EditPermission$Allowed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun isAllowed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/EditPermission$DefaultImpls {
+	public static fun isAllowed (Lcom/fenakhay/kwikibot/bot/EditPermission;)Z
+}
+
+public final class com/fenakhay/kwikibot/bot/EditPermission$Denied : com/fenakhay/kwikibot/bot/EditPermission {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/EditPermission$Denied;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/EditPermission$Denied;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/EditPermission$Denied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun isAllowed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/ExternalSources {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/ExternalSources;
+	public final fun pagePile (Ljava/lang/String;Lio/ktor/client/HttpClient;)Lcom/fenakhay/kwikibot/bot/PageSource;
+	public final fun petScan (Ljava/lang/String;Lio/ktor/client/HttpClient;)Lcom/fenakhay/kwikibot/bot/PageSource;
+}
+
+public final class com/fenakhay/kwikibot/bot/ExternalSourcesKt {
+	public static final fun repeating-8Mi8wO0 (Lcom/fenakhay/kwikibot/bot/PageSource;JI)Lcom/fenakhay/kwikibot/bot/PageSource;
+	public static synthetic fun repeating-8Mi8wO0$default (Lcom/fenakhay/kwikibot/bot/PageSource;JIILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageSource;
+}
+
+public final class com/fenakhay/kwikibot/bot/FiltersKt {
+	public static final fun distinctPages (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun excluding (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun inNamespaces (Lkotlinx/coroutines/flow/Flow;Ljava/util/Set;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun intersect (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun subpageDepthAtMost (Lkotlinx/coroutines/flow/Flow;I)Lkotlinx/coroutines/flow/Flow;
+	public static final fun titleMatching (Lkotlinx/coroutines/flow/Flow;Lkotlin/text/Regex;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun titleNotMatching (Lkotlinx/coroutines/flow/Flow;Lkotlin/text/Regex;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class com/fenakhay/kwikibot/bot/Fix {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/wikitext/TextScope;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/wikitext/TextScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun apply (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun apply (Ljava/lang/String;)Ljava/lang/String;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lcom/fenakhay/kwikibot/wikitext/TextScope;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/wikitext/TextScope;)Lcom/fenakhay/kwikibot/bot/Fix;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/Fix;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/wikitext/TextScope;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/Fix;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getReplacements ()Ljava/util/List;
+	public final fun getScope ()Lcom/fenakhay/kwikibot/wikitext/TextScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun wouldChange (Ljava/lang/String;)Z
+}
+
+public final class com/fenakhay/kwikibot/bot/Fixes {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/Fixes;
+	public final fun get (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/Fix;
+	public final fun getAll ()Ljava/util/Map;
+	public final fun getDATE_RANGES ()Lcom/fenakhay/kwikibot/bot/Fix;
+	public final fun getELLIPSIS ()Lcom/fenakhay/kwikibot/bot/Fix;
+	public final fun getEXTRA_SPACES ()Lcom/fenakhay/kwikibot/bot/Fix;
+	public final fun named (Ljava/util/List;)Ljava/util/List;
+	public final fun register (Lcom/fenakhay/kwikibot/bot/Fix;)V
+}
+
+public final class com/fenakhay/kwikibot/bot/Messages {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/Messages$Companion;
+	public static final field DEFAULT Ljava/lang/String;
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun chain (Ljava/lang/String;)Ljava/util/List;
+	public final fun get (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+	public final fun getLanguages ()Ljava/util/Set;
+	public final fun has (Ljava/lang/String;Ljava/lang/String;)Z
+}
+
+public final class com/fenakhay/kwikibot/bot/Messages$Companion {
+	public final fun fromJson (Ljava/util/Map;)Lcom/fenakhay/kwikibot/bot/Messages;
+	public final fun getFALLBACKS ()Ljava/util/Map;
+	public final fun of (Ljava/util/Map;)Lcom/fenakhay/kwikibot/bot/Messages;
+}
+
+public final class com/fenakhay/kwikibot/bot/NonInteractive : com/fenakhay/kwikibot/bot/Prompt {
+	public fun <init> ()V
+	public fun <init> (ZLjava/lang/String;)V
+	public synthetic fun <init> (ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun choose (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun confirm (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAsked ()I
+	public fun isInteractive ()Z
+	public fun text (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/fenakhay/kwikibot/bot/PageOutcome {
+	public abstract fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Failed : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/Throwable;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/Throwable;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Failed;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Failed;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Throwable;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Missing : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Missing;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Missing;Lcom/fenakhay/kwikibot/model/PageRef;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Missing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Pending : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/bot/Edit;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/bot/Edit;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/bot/Edit;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Pending;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Pending;Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/bot/Edit;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Pending;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBefore ()Ljava/lang/String;
+	public final fun getEdit ()Lcom/fenakhay/kwikibot/bot/Edit;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Refused : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Refused;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Refused;Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Refused;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOutcome ()Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Saved : com/fenakhay/kwikibot/bot/PageOutcome {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2-C1T4Xbs ()J
+	public final fun copy-lph2ffI (Lcom/fenakhay/kwikibot/model/PageRef;J)Lcom/fenakhay/kwikibot/bot/PageOutcome$Saved;
+	public static synthetic fun copy-lph2ffI$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Saved;Lcom/fenakhay/kwikibot/model/PageRef;JILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Saved;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRevision-C1T4Xbs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Skipped : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Skipped;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Skipped;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Skipped;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageOutcome$Unchanged : com/fenakhay/kwikibot/bot/PageOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Unchanged;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/PageOutcome$Unchanged;Lcom/fenakhay/kwikibot/model/PageRef;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/PageOutcome$Unchanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fenakhay/kwikibot/bot/PageSource {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/PageSource$Companion;
+	public abstract fun pages (Lcom/fenakhay/kwikibot/client/Wiki;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageSource$Companion {
+	public final fun concat (Ljava/util/List;)Lcom/fenakhay/kwikibot/bot/PageSource;
+	public final fun getEMPTY ()Lcom/fenakhay/kwikibot/bot/PageSource;
+	public final fun titles (Ljava/util/List;)Lcom/fenakhay/kwikibot/bot/PageSource;
+}
+
+public final class com/fenakhay/kwikibot/bot/PageSourceSpec {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/bot/PageSourceSpec;
+	public final fun getKinds ()Ljava/util/List;
+	public final fun parse (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/PageSource;
+	public final fun parseAll (Ljava/util/List;)Lcom/fenakhay/kwikibot/bot/PageSource;
+}
+
+public final class com/fenakhay/kwikibot/bot/PreloadingKt {
+	public static final fun redirects (Lkotlinx/coroutines/flow/Flow;Z)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun redirects$default (Lkotlinx/coroutines/flow/Flow;ZILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun textMatching (Lkotlinx/coroutines/flow/Flow;Lkotlin/text/Regex;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun textNotMatching (Lkotlinx/coroutines/flow/Flow;Lkotlin/text/Regex;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun withContent (Lkotlinx/coroutines/flow/Flow;Lcom/fenakhay/kwikibot/client/PageService;I)Lkotlinx/coroutines/flow/Flow;
+	public static final fun withContent (Lkotlinx/coroutines/flow/Flow;Lcom/fenakhay/kwikibot/client/Wiki;I)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun withContent$default (Lkotlinx/coroutines/flow/Flow;Lcom/fenakhay/kwikibot/client/PageService;IILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun withContent$default (Lkotlinx/coroutines/flow/Flow;Lcom/fenakhay/kwikibot/client/Wiki;IILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class com/fenakhay/kwikibot/bot/Progress : kotlin/jvm/functions/Function1 {
+	public static final field BAR_WIDTH I
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Appendable;Z)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/Appendable;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun finish ()V
+	public fun invoke (Lcom/fenakhay/kwikibot/bot/PageOutcome;)V
+	public synthetic fun invoke (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class com/fenakhay/kwikibot/bot/Prompt {
+	public abstract fun choose (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun confirm (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun confirm$default (Lcom/fenakhay/kwikibot/bot/Prompt;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun isInteractive ()Z
+	public abstract fun text (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun text$default (Lcom/fenakhay/kwikibot/bot/Prompt;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/Prompt$DefaultImpls {
+	public static synthetic fun confirm$default (Lcom/fenakhay/kwikibot/bot/Prompt;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun text$default (Lcom/fenakhay/kwikibot/bot/Prompt;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/Replacement {
+	public fun <init> (Lkotlin/text/Regex;Ljava/lang/String;)V
+	public final fun component1 ()Lkotlin/text/Regex;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/text/Regex;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/Replacement;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/Replacement;Lkotlin/text/Regex;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/Replacement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPattern ()Lkotlin/text/Regex;
+	public final fun getReplacement ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/RunLog : kotlin/jvm/functions/Function1 {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Appendable;Ljava/lang/Appendable;I)V
+	public synthetic fun <init> (Ljava/lang/Appendable;Ljava/lang/Appendable;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun invoke (Lcom/fenakhay/kwikibot/bot/PageOutcome;)V
+	public synthetic fun invoke (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/RunLogKt {
+	public static final fun reportTo ([Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function1;
+}
+
+public final class com/fenakhay/kwikibot/bot/ScriptedPrompt : com/fenakhay/kwikibot/bot/Prompt {
+	public fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/bot/Prompt;)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/bot/Prompt;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun choose (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun confirm (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun isInteractive ()Z
+	public fun text (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/fenakhay/kwikibot/bot/StopPolicy {
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/StopPolicy$Companion;
+	public abstract fun mayContinue (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/StopPolicy$Companion {
+	public final fun getNONE ()Lcom/fenakhay/kwikibot/bot/StopPolicy;
+	public final fun page (Lcom/fenakhay/kwikibot/client/PageService;Lcom/fenakhay/kwikibot/model/PageRef;)Lcom/fenakhay/kwikibot/bot/StopPolicy;
+}
+
+public final class com/fenakhay/kwikibot/bot/TerminalPrompt : com/fenakhay/kwikibot/bot/Prompt {
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun choose (Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun confirm (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun isInteractive ()Z
+	public fun text (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/bot/Unlinker {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun linksTo (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/model/Title$Local;)Z
+	public final fun linksTo (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;)Z
+	public final fun unlink (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/model/Title$Local;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun unlink (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;)Ljava/lang/String;
+}
+

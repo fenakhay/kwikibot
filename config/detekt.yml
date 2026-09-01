@@ -1,0 +1,25 @@
+complexity:
+  LongParameterList:
+    allowedFunctionParameters: 9
+    allowedConstructorParameters: 11
+  TooManyFunctions:
+    allowedFunctionsPerInterface: 29
+    allowedFunctionsPerClass: 59
+    allowedFunctionsPerObject: 29
+
+style:
+  MaxLineLength:
+    maxLineLength: 110
+  ReturnCount:
+    max: 4
+
+comments:
+  UndocumentedPublicClass:
+    active: true
+  UndocumentedPublicFunction:
+    active: true
+  UndocumentedPublicProperty:
+    active: true
+  OutdatedDocumentation:
+    active: true
+    allowParamOnConstructorProperties: true

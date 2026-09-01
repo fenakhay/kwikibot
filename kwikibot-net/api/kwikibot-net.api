@@ -1,0 +1,270 @@
+public final class com/fenakhay/kwikibot/net/ApiEndpoint {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/ApiEndpoint$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun articleUrl (Ljava/lang/String;)Ljava/lang/String;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/net/ApiEndpoint;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/ApiEndpoint;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/ApiEndpoint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiUrl ()Ljava/lang/String;
+	public final fun getIndexUrl ()Ljava/lang/String;
+	public final fun getScriptPath ()Ljava/lang/String;
+	public final fun getSecure ()Z
+	public final fun getServer ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/ApiEndpoint$Companion {
+	public final fun wikimedia (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/ApiEndpoint;
+}
+
+public final class com/fenakhay/kwikibot/net/ApiRequest {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/ApiRequest$Companion;
+	public fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)V
+	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/net/RequestKind;
+	public final fun copy (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)Lcom/fenakhay/kwikibot/net/ApiRequest;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/ApiRequest;Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/ApiRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getKind ()Lcom/fenakhay/kwikibot/net/RequestKind;
+	public final fun getParams ()Ljava/util/Map;
+	public final fun getRequiresPost ()Z
+	public fun hashCode ()I
+	public final fun isWrite ()Z
+	public final fun ordered ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/ApiRequest$Companion {
+	public final fun of (Ljava/lang/String;[Lkotlin/Pair;Lcom/fenakhay/kwikibot/net/RequestKind;)Lcom/fenakhay/kwikibot/net/ApiRequest;
+	public static synthetic fun of$default (Lcom/fenakhay/kwikibot/net/ApiRequest$Companion;Ljava/lang/String;[Lkotlin/Pair;Lcom/fenakhay/kwikibot/net/RequestKind;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/ApiRequest;
+}
+
+public abstract interface class com/fenakhay/kwikibot/net/Credentials {
+	public abstract fun getUsername ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/Credentials$Anonymous : com/fenakhay/kwikibot/net/Credentials {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/net/Credentials$Anonymous;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/Credentials$BotPassword : com/fenakhay/kwikibot/net/Credentials {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/Credentials$BotPassword;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/Credentials$BotPassword;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/Credentials$BotPassword;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccount ()Ljava/lang/String;
+	public final fun getBotName ()Ljava/lang/String;
+	public final fun getLoginName ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/Credentials$OAuth2 : com/fenakhay/kwikibot/net/Credentials {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/Credentials$OAuth2;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/Credentials$OAuth2;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/Credentials$OAuth2;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccessToken ()Ljava/lang/String;
+	public fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/DiskCache : com/fenakhay/kwikibot/net/ResponseCache {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/DiskCache$Companion;
+	public synthetic fun <init> (Ljava/nio/file/Path;JLkotlin/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/nio/file/Path;JLkotlin/time/Clock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public fun get (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/net/DiskCache$Companion {
+	public final fun getDEFAULT_TTL-UwyO8pc ()J
+}
+
+public final class com/fenakhay/kwikibot/net/Identity {
+	public fun <init> (Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/util/Set;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun contains (Ljava/lang/String;)Z
+	public final fun copy (Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;)Lcom/fenakhay/kwikibot/net/Identity;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/Identity;Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/Identity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGroups ()Ljava/util/Set;
+	public final fun getId ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRights ()Ljava/util/Set;
+	public fun hashCode ()I
+	public final fun isAnonymous ()Z
+	public final fun isBot ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/KtorTransport : com/fenakhay/kwikibot/net/MediaWikiTransport {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/KtorTransport$Companion;
+	public static final field DEFAULT_MAXLAG I
+	public static final field MAX_GET_LENGTH I
+	public fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/ResponseCache;)V
+	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/ResponseCache;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun call (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getEndpoint ()Lcom/fenakhay/kwikibot/net/ApiEndpoint;
+}
+
+public final class com/fenakhay/kwikibot/net/KtorTransport$Companion {
+}
+
+public final class com/fenakhay/kwikibot/net/Kwikibot {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/net/Kwikibot;
+	public static final field NAME Ljava/lang/String;
+	public static final field URL Ljava/lang/String;
+	public final fun getPlatform ()Ljava/lang/String;
+	public final fun getRuntime ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public final fun report ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/LoginManager {
+	public fun <init> (Lcom/fenakhay/kwikibot/net/MediaWikiTransport;Lcom/fenakhay/kwikibot/net/Credentials;Lcom/fenakhay/kwikibot/net/TokenStore;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/net/MediaWikiTransport;Lcom/fenakhay/kwikibot/net/Credentials;Lcom/fenakhay/kwikibot/net/TokenStore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCurrentIdentity ()Lcom/fenakhay/kwikibot/net/Identity;
+	public final fun login (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun logout (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun whoAmI (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/fenakhay/kwikibot/net/MediaWikiTransport {
+	public abstract fun call (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEndpoint ()Lcom/fenakhay/kwikibot/net/ApiEndpoint;
+}
+
+public final class com/fenakhay/kwikibot/net/RequestKind : java/lang/Enum {
+	public static final field READ Lcom/fenakhay/kwikibot/net/RequestKind;
+	public static final field WRITE Lcom/fenakhay/kwikibot/net/RequestKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/RequestKind;
+	public static fun values ()[Lcom/fenakhay/kwikibot/net/RequestKind;
+}
+
+public abstract interface class com/fenakhay/kwikibot/net/ResponseCache {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/ResponseCache$Companion;
+	public abstract fun get (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun put (Lcom/fenakhay/kwikibot/net/ApiRequest;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/net/ResponseCache$Companion {
+	public final fun getNONE ()Lcom/fenakhay/kwikibot/net/ResponseCache;
+	public final fun isCacheable (Lcom/fenakhay/kwikibot/net/ApiRequest;)Z
+}
+
+public final class com/fenakhay/kwikibot/net/RetryPolicy {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/RetryPolicy$Companion;
+	public synthetic fun <init> (IJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2-UwyO8pc ()J
+	public final fun component3-UwyO8pc ()J
+	public final fun copy-5qebJ5I (IJJ)Lcom/fenakhay/kwikibot/net/RetryPolicy;
+	public static synthetic fun copy-5qebJ5I$default (Lcom/fenakhay/kwikibot/net/RetryPolicy;IJJILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/RetryPolicy;
+	public final fun delayFor-1O43Jpo (ILkotlin/time/Duration;)J
+	public final fun delayFor-5sfh64U (I)J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInitialDelay-UwyO8pc ()J
+	public final fun getMaxDelay-UwyO8pc ()J
+	public final fun getMaxRetries ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/RetryPolicy$Companion {
+	public final fun getNONE ()Lcom/fenakhay/kwikibot/net/RetryPolicy;
+}
+
+public final class com/fenakhay/kwikibot/net/Throttle {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/Throttle$Companion;
+	public synthetic fun <init> (JJLkotlin/time/TimeSource;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JJLkotlin/time/TimeSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun acquire (Lcom/fenakhay/kwikibot/net/RequestKind;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getRead-UwyO8pc ()J
+	public final fun getWrite-UwyO8pc ()J
+	public final fun peek-5sfh64U (Lcom/fenakhay/kwikibot/net/RequestKind;)J
+	public final fun penalize-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/net/Throttle$Companion {
+	public final fun getDEFAULT_READ-UwyO8pc ()J
+	public final fun getDEFAULT_WRITE-UwyO8pc ()J
+	public final fun unpaced ()Lcom/fenakhay/kwikibot/net/Throttle;
+}
+
+public final class com/fenakhay/kwikibot/net/TokenStore {
+	public static final field CSRF Ljava/lang/String;
+	public static final field Companion Lcom/fenakhay/kwikibot/net/TokenStore$Companion;
+	public static final field LOGIN Ljava/lang/String;
+	public static final field PATROL Ljava/lang/String;
+	public static final field ROLLBACK Ljava/lang/String;
+	public static final field USER_RIGHTS Ljava/lang/String;
+	public static final field WATCH Ljava/lang/String;
+	public fun <init> (Lcom/fenakhay/kwikibot/net/MediaWikiTransport;)V
+	public final fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun invalidate (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun invalidate$default (Lcom/fenakhay/kwikibot/net/TokenStore;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun token (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun token$default (Lcom/fenakhay/kwikibot/net/TokenStore;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun withFreshToken (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withFreshToken$default (Lcom/fenakhay/kwikibot/net/TokenStore;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/net/TokenStore$Companion {
+}
+
+public final class com/fenakhay/kwikibot/net/UserAgent {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/UserAgent$Companion;
+	public static final field LIBRARY_VERSION Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/UserAgent;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/UserAgent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/UserAgent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContact ()Ljava/lang/String;
+	public final fun getHeaderValue ()Ljava/lang/String;
+	public final fun getTool ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/UserAgent$Companion {
+}
+
+public final class com/fenakhay/kwikibot/net/WikiHttpClient {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/net/WikiHttpClient;
+	public final fun create-SxA4cEA (Lcom/fenakhay/kwikibot/net/Credentials;Lio/ktor/client/engine/HttpClientEngine;J)Lio/ktor/client/HttpClient;
+	public static synthetic fun create-SxA4cEA$default (Lcom/fenakhay/kwikibot/net/WikiHttpClient;Lcom/fenakhay/kwikibot/net/Credentials;Lio/ktor/client/engine/HttpClientEngine;JILjava/lang/Object;)Lio/ktor/client/HttpClient;
+	public final fun getDEFAULT_TIMEOUT-UwyO8pc ()J
+}
+

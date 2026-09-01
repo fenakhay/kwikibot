@@ -1,0 +1,1104 @@
+{
+  "wiki": "en.wiktionary.org",
+  "about": "What MediaWiki makes of each fragment, recorded from action=parse and replayed offline. Every title in the inputs is one no wiki has, so the structure describes what was written rather than what a template expanded to.",
+  "cases": [
+    {
+      "name": "text/plain",
+      "input": "just some words",
+      "mediawiki": {
+        "html": "<p>just some words </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/empty",
+      "input": "",
+      "mediawiki": {
+        "html": "",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/unicode",
+      "input": "café, Ωmega, 日本語, 🌋",
+      "mediawiki": {
+        "html": "<p>café, Ωmega, 日本語, 🌋 </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/newlines",
+      "input": "one\n\ntwo\nthree",
+      "mediawiki": {
+        "html": "<p>one </p><p>two three </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/lone-open-brace",
+      "input": "a { b",
+      "mediawiki": {
+        "html": "<p>a { b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/lone-open-bracket",
+      "input": "a [ b",
+      "mediawiki": {
+        "html": "<p>a [ b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "text/ampersand",
+      "input": "a & b",
+      "mediawiki": {
+        "html": "<p>a &amp; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "comment/simple",
+      "input": "before <!-- hidden --> after",
+      "mediawiki": {
+        "html": "<p>before after </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "comment/empty",
+      "input": "a <!----> b",
+      "mediawiki": {
+        "html": "<p>a b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "comment/multiline",
+      "input": "a <!-- one\ntwo\nthree --> b",
+      "mediawiki": {
+        "html": "<p>a b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "comment/unclosed",
+      "input": "a <!-- never ends",
+      "mediawiki": {
+        "html": "<p>a </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "comment/around-markup",
+      "input": "a <!-- [[Zqx page]] --> b",
+      "mediawiki": {
+        "html": "<p>a b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/level2",
+      "input": "== Heading ==",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"Heading\">Heading</h2></div>",
+        "templates": [],
+        "links": [],
+        "sections": [
+          "2:Heading"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/level3",
+      "input": "=== Deeper ===",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading3\"><h3 id=\"Deeper\">Deeper</h3></div>",
+        "templates": [],
+        "links": [],
+        "sections": [
+          "3:Deeper"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/level6",
+      "input": "====== Deepest ======",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading6\"><h6 id=\"Deepest\">Deepest</h6></div>",
+        "templates": [],
+        "links": [],
+        "sections": [
+          "6:Deepest"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/unbalanced",
+      "input": "== Lopsided ===",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"Lopsided_=\"><span id=\"Lopsided_.3D\"></span>Lopsided =</h2></div>",
+        "templates": [],
+        "links": [],
+        "sections": [
+          "2:Lopsided ="
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/not-at-line-start",
+      "input": "text == not a heading ==",
+      "mediawiki": {
+        "html": "<p>text == not a heading == </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/with-markup",
+      "input": "== A [[Zqx page]] in a heading ==",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"A_Zqx_page_in_a_heading\">A <a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx page</a> in a heading</h2></div>",
+        "templates": [],
+        "links": [
+          "Zqx page"
+        ],
+        "sections": [
+          "2:A Zqx page in a heading"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "heading/empty",
+      "input": "==  ==",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"\"></h2></div>",
+        "templates": [],
+        "links": [],
+        "sections": [
+          "2:"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/simple",
+      "input": "[[Zqx page]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx page</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx page"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/piped",
+      "input": "[[Zqx page|shown text]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">shown text</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx page"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/fragment",
+      "input": "[[Zqx page#Section]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx page#Section</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx page"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/namespaced",
+      "input": "[[Zqx namespace:Zqx page]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_namespace:Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx namespace:Zqx page (page does not exist)\">Zqx namespace:Zqx page</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx namespace:Zqx page"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/colon-prefixed",
+      "input": "[[:Category:Zqx category]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Category:Zqx_category&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Category:Zqx category (page does not exist)\">Category:Zqx category</a> </p>",
+        "templates": [],
+        "links": [
+          "Category:Zqx category"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/empty",
+      "input": "[[]]",
+      "mediawiki": {
+        "html": "<p>[[]] </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/unclosed",
+      "input": "[[Zqx page",
+      "mediawiki": {
+        "html": "<p>[[Zqx page </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/two-adjacent",
+      "input": "[[Zqx one]][[Zqx two]]",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_one&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx one (page does not exist)\">Zqx one</a><a href=\"/w/index.php?title=Zqx_two&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx two (page does not exist)\">Zqx two</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx one",
+          "Zqx two"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "wikilink/trailing-letters",
+      "input": "[[Zqx page]]s",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx pages</a> </p>",
+        "templates": [],
+        "links": [
+          "Zqx page"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/bare",
+      "input": "{{Zqx template}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/positional",
+      "input": "{{Zqx template|first|second}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/named",
+      "input": "{{Zqx template|key=value}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/mixed-params",
+      "input": "{{Zqx template|first|key=value|second}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/nested",
+      "input": "{{Zqx outer|{{Zqx inner}}}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_outer&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx outer (page does not exist)\">Template:Zqx outer</a> </p>",
+        "templates": [
+          "Template:Zqx outer"
+        ],
+        "links": [
+          "Template:Zqx outer"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/whitespace",
+      "input": "{{ Zqx template | key = value }}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/empty-param",
+      "input": "{{Zqx template||third}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/equals-in-value",
+      "input": "{{Zqx template|key=a=b}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/newlines",
+      "input": "{{Zqx template|\n first |\n second\n}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/link-inside",
+      "input": "{{Zqx template|[[Zqx page]]}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/unclosed",
+      "input": "{{Zqx template",
+      "mediawiki": {
+        "html": "<p>{{Zqx template </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/adjacent",
+      "input": "{{Zqx one}}{{Zqx two}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_one&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx one (page does not exist)\">Template:Zqx one</a><a href=\"/w/index.php?title=Template:Zqx_two&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx two (page does not exist)\">Template:Zqx two</a> </p>",
+        "templates": [
+          "Template:Zqx one",
+          "Template:Zqx two"
+        ],
+        "links": [
+          "Template:Zqx one",
+          "Template:Zqx two"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/unclosed-style",
+      "input": "{{Zqx template|'''}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "template/five-braces",
+      "input": "{{{{{|safesubst:}}}Zqx template}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/four",
+      "input": "{{{{Zqx template}}}}",
+      "mediawiki": {
+        "html": "<p>{{{{Zqx template}}}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/five-balanced",
+      "input": "{{{{{Zqx template}}}}}",
+      "mediawiki": {
+        "html": "<p>{{{{{Zqx template}}}}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/six",
+      "input": "{{{{{{Zqx template}}}}}}",
+      "mediawiki": {
+        "html": "<p>{{{{{{Zqx template}}}}}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/five-open-three-close",
+      "input": "{{{{{Zqx template}}}",
+      "mediawiki": {
+        "html": "<p>{{{{{Zqx template}}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/argument-in-template",
+      "input": "{{Zqx template|{{{1|fallback}}}}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "braces/template-in-argument",
+      "input": "{{{1|{{Zqx template}}}}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "argument/simple",
+      "input": "{{{1}}}",
+      "mediawiki": {
+        "html": "<p>{{{1}}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "argument/default",
+      "input": "{{{1|fallback}}}",
+      "mediawiki": {
+        "html": "<p>fallback </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "argument/named",
+      "input": "{{{param|}}}",
+      "mediawiki": {
+        "html": "",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "argument/in-template",
+      "input": "{{Zqx template|{{{1|}}}}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "argument/unclosed",
+      "input": "{{{1",
+      "mediawiki": {
+        "html": "<p>{{{1 </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/named",
+      "input": "a &amp; b",
+      "mediawiki": {
+        "html": "<p>a &amp; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/numeric",
+      "input": "a &#233; b",
+      "mediawiki": {
+        "html": "<p>a &#233; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/hex",
+      "input": "a &#xE9; b",
+      "mediawiki": {
+        "html": "<p>a &#xe9; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/hex-uppercase",
+      "input": "a &#XE9; b",
+      "mediawiki": {
+        "html": "<p>a &#xe9; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/unknown",
+      "input": "a &notanentity; b",
+      "mediawiki": {
+        "html": "<p>a &amp;notanentity; b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "entity/bare-ampersand",
+      "input": "a & b &",
+      "mediawiki": {
+        "html": "<p>a &amp; b &amp; </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "extlink/bare",
+      "input": "see https://example.org/x here",
+      "mediawiki": {
+        "html": "<p>see <a rel=\"nofollow\" class=\"external free\" href=\"https://example.org/x\">https://example.org/x</a> here </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": [
+          "https://example.org/x"
+        ]
+      }
+    },
+    {
+      "name": "extlink/bracketed",
+      "input": "[https://example.org/x]",
+      "mediawiki": {
+        "html": "<p><a rel=\"nofollow\" class=\"external autonumber\" href=\"https://example.org/x\">[1]</a> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": [
+          "https://example.org/x"
+        ]
+      }
+    },
+    {
+      "name": "extlink/labelled",
+      "input": "[https://example.org/x a label]",
+      "mediawiki": {
+        "html": "<p><a rel=\"nofollow\" class=\"external text\" href=\"https://example.org/x\">a label</a> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": [
+          "https://example.org/x"
+        ]
+      }
+    },
+    {
+      "name": "extlink/in-template",
+      "input": "{{Zqx template|[https://example.org/x l]}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "extlink/unclosed",
+      "input": "[https://example.org/x a label",
+      "mediawiki": {
+        "html": "<p>[<a rel=\"nofollow\" class=\"external free\" href=\"https://example.org/x\">https://example.org/x</a> a label </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": [
+          "https://example.org/x"
+        ]
+      }
+    },
+    {
+      "name": "extlink/protocol-relative",
+      "input": "[//example.org/x l]",
+      "mediawiki": {
+        "html": "<p><a rel=\"nofollow\" class=\"external text\" href=\"//example.org/x\">l</a> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": [
+          "//example.org/x"
+        ]
+      }
+    },
+    {
+      "name": "tag/nowiki",
+      "input": "<nowiki>{{Zqx template}}</nowiki>",
+      "mediawiki": {
+        "html": "<p>{{Zqx template}} </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/ref",
+      "input": "text<ref>a note</ref>",
+      "mediawiki": {
+        "html": "<p>text<sup id=\"cite&#95;ref-1\" class=\"reference\"><a href=\"#cite_note-1\"><span class=\"cite-bracket\">&#91;</span>1<span class=\"cite-bracket\">&#93;</span></a></sup> </p> <div class=\"mw-references-wrap\"><ol class=\"references\"> <li id=\"cite&#95;note-1\"><a href=\"#cite_ref-1\"> ^ </a> <span class=\"reference-text\">a note</span> </li> </ol></div>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/ref-attribute",
+      "input": "text<ref name=\"a\">a note</ref>",
+      "mediawiki": {
+        "html": "<p>text<sup id=\"cite&#95;ref-a&#95;1-0\" class=\"reference\"><a href=\"#cite_note-a-1\"><span class=\"cite-bracket\">&#91;</span>1<span class=\"cite-bracket\">&#93;</span></a></sup> </p> <div class=\"mw-references-wrap\"><ol class=\"references\"> <li id=\"cite&#95;note-a-1\"><a href=\"#cite_ref-a_1-0\"> ^ </a> <span class=\"reference-text\">a note</span> </li> </ol></div>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/ref-attribute-unquoted",
+      "input": "text<ref name=a>a note</ref>",
+      "mediawiki": {
+        "html": "<p>text<sup id=\"cite&#95;ref-a&#95;1-0\" class=\"reference\"><a href=\"#cite_note-a-1\"><span class=\"cite-bracket\">&#91;</span>1<span class=\"cite-bracket\">&#93;</span></a></sup> </p> <div class=\"mw-references-wrap\"><ol class=\"references\"> <li id=\"cite&#95;note-a-1\"><a href=\"#cite_ref-a_1-0\"> ^ </a> <span class=\"reference-text\">a note</span> </li> </ol></div>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/self-closing",
+      "input": "a<br />b",
+      "mediawiki": {
+        "html": "<p>a<br />b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/self-closing-bare",
+      "input": "a<br>b",
+      "mediawiki": {
+        "html": "<p>a<br />b </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/pre",
+      "input": "<pre>{{Zqx template}}</pre>",
+      "mediawiki": {
+        "html": "<pre>{{Zqx template}}</pre>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/unclosed",
+      "input": "a <ref>never ends",
+      "mediawiki": {
+        "html": "<p>a &lt;ref&gt;never ends </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "tag/nested",
+      "input": "<div><span>a</span></div>",
+      "mediawiki": {
+        "html": "<div><span>a</span></div>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "format/bold",
+      "input": "''' bold '''",
+      "mediawiki": {
+        "html": "<p><b> bold </b> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "format/italic",
+      "input": "'' italic ''",
+      "mediawiki": {
+        "html": "<p><i> italic </i> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "format/bold-italic",
+      "input": "''''' both '''''",
+      "mediawiki": {
+        "html": "<p><i><b> both </b></i> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "format/unclosed-bold",
+      "input": "''' never closed",
+      "mediawiki": {
+        "html": "<p><b> never closed</b> </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "format/apostrophe",
+      "input": "it's a thing",
+      "mediawiki": {
+        "html": "<p>it's a thing </p>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "list/bullets",
+      "input": "* one\n* two",
+      "mediawiki": {
+        "html": "<ul><li>one</li> <li>two</li></ul>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "list/numbered",
+      "input": "# one\n# two",
+      "mediawiki": {
+        "html": "<ol><li>one</li> <li>two</li></ol>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "list/nested",
+      "input": "* one\n** deeper",
+      "mediawiki": {
+        "html": "<ul><li>one <ul><li>deeper</li></ul></li></ul>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "list/definition",
+      "input": "; term\n: definition",
+      "mediawiki": {
+        "html": "<dl><dt>term</dt> <dd>definition</dd></dl>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "list/indent",
+      "input": ": indented",
+      "mediawiki": {
+        "html": "<dl><dd>indented</dd></dl>",
+        "templates": [],
+        "links": [],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "mixed/link-in-list",
+      "input": "* [[Zqx page]] and [[Zqx other|text]]",
+      "mediawiki": {
+        "html": "<ul><li><a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx page</a> and <a href=\"/w/index.php?title=Zqx_other&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx other (page does not exist)\">text</a></li></ul>",
+        "templates": [],
+        "links": [
+          "Zqx page",
+          "Zqx other"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "mixed/template-in-heading",
+      "input": "== {{Zqx template}} ==",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"Template:Zqx_template\"><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a></h2></div>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [
+          "2:Template:Zqx template"
+        ],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "mixed/comment-in-template",
+      "input": "{{Zqx template|<!-- note -->value}}",
+      "mediawiki": {
+        "html": "<p><a href=\"/w/index.php?title=Template:Zqx_template&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx template (page does not exist)\">Template:Zqx template</a> </p>",
+        "templates": [
+          "Template:Zqx template"
+        ],
+        "links": [
+          "Template:Zqx template"
+        ],
+        "sections": [],
+        "externallinks": []
+      }
+    },
+    {
+      "name": "mixed/entry-shape",
+      "input": "==English==\n\n===Noun===\n{{Zqx head}}\n\n# A [[Zqx page]].\n",
+      "mediawiki": {
+        "html": "<div class=\"mw-heading mw-heading2\"><h2 id=\"English\">English</h2></div> <div class=\"mw-heading mw-heading3\"><h3 id=\"Noun\">Noun</h3></div> <p><a href=\"/w/index.php?title=Template:Zqx_head&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Template:Zqx head (page does not exist)\">Template:Zqx head</a> </p> <ol><li>A <a href=\"/w/index.php?title=Zqx_page&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"Zqx page (page does not exist)\">Zqx page</a>.</li></ol>",
+        "templates": [
+          "Template:Zqx head"
+        ],
+        "links": [
+          "Zqx page",
+          "Template:Zqx head"
+        ],
+        "sections": [
+          "2:English",
+          "3:Noun"
+        ],
+        "externallinks": []
+      }
+    }
+  ]
+}

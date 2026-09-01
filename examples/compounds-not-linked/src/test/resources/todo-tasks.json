@@ -1,0 +1,146 @@
+{
+  "cases": [
+    {
+      "name": "todo_a_i_excerpt",
+      "input": "* '''[[Special:Edit/Amerind|Amerind]]''': [[Amerindish]]\n* '''[[Special:Edit/Amerindian|Amerindian]]''': [[Amerindianism]]|[[Amerindianist]]|[[Amerindianization]]|[[Amerindianize]]\n* '''[[Special:Edit/amfetamine|amfetamine]]''': [[dexamfetamine]]|[[dextroamfetamine]]\n* '''[[Special:Edit/Amharic|Amharic]]''': [[Iyaric]]\n* '''[[Special:Edit/blah|blah]]''': [[blah]]\n",
+      "skippedLines": 1,
+      "tasks": [
+        {
+          "title": "Amerind",
+          "lang": "en",
+          "terms": [
+            "Amerindish"
+          ]
+        },
+        {
+          "title": "Amerindian",
+          "lang": "en",
+          "terms": [
+            "Amerindianism",
+            "Amerindianist",
+            "Amerindianization",
+            "Amerindianize"
+          ]
+        },
+        {
+          "title": "amfetamine",
+          "lang": "en",
+          "terms": [
+            "dexamfetamine",
+            "dextroamfetamine"
+          ]
+        },
+        {
+          "title": "Amharic",
+          "lang": "en",
+          "terms": [
+            "Iyaric"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "todo_ti_z_excerpt",
+      "input": "* '''[[Special:Edit/volatilizable|volatilizable]]''' <br><br>====Derived terms====<br>{{col|en|[[nonvolatilizable]]\n* '''[[Special:Edit/volatilization|volatilization]]''' <br><br>====Derived terms====<br>{{col|en|[[biovolatilization]]|[[phytovolatilization]]\n* '''[[Special:Edit/volatilize|volatilize]]''' <br><br>====Derived terms====<br>{{col|en|[[devolatilize]]|[[revolatilize]]\n* '''[[Special:Edit/volatilized|volatilized]]''' <br><br>====Derived terms====<br>{{col|en|[[nonvolatilized]]|[[unvolatilized]]\n* '''[[Special:Edit/volborthite|volborthite]]''' <br><br>====Derived terms====<br>{{col|en|[[calciovolborthite]]\n* '''[[Special:Edit/Volcan|Volcan]]''' <br><br>====Derived terms====<br>{{col|en|[[volcanian]]\n* '''[[Special:Edit/volcanic|volcanic]]''' <br><br>====Derived terms====<br>{{col|en|[[glaciovolcanic]]|[[hypervolcanic]]|[[paleovolcanic]]|[[tectovolcanic]]|[[volcanical]]\n* '''[[Special:Edit/volcanically|volcanically]]''' <br><br>====Derived terms====<br>{{col|en|[[cryovolcanically]]\n* '''[[Special:Edit/volcano|volcano]]''' <br><br>====Derived terms====<br>{{col|en|[[hypervolcano]]|[[paleovolcano]]|[[pneumonoultramicroscopicsilicovolcanoconiosis]]|[[vog]]|[[volcanist]]|[[volcanistic]]|[[volcanite]]|[[volcanization]]|[[volcanogenic]]|[[volcanolike]]|[[Volcanoville]]\n* '''[[Special:Edit/volition|volition]]''' <br><br>====Derived terms====<br>{{col|en|[[antivolition]]|[[avolition]]|[[countervolition]]|[[nonvolition]]|[[unvolitioned]]|[[volitionary]]|[[volitionate]]|[[volitionism]]|[[volitionist]]|[[volitionless]]\n",
+      "skippedLines": 0,
+      "tasks": [
+        {
+          "title": "volatilizable",
+          "lang": "en",
+          "terms": [
+            "nonvolatilizable"
+          ]
+        },
+        {
+          "title": "volatilization",
+          "lang": "en",
+          "terms": [
+            "biovolatilization",
+            "phytovolatilization"
+          ]
+        },
+        {
+          "title": "volatilize",
+          "lang": "en",
+          "terms": [
+            "devolatilize",
+            "revolatilize"
+          ]
+        },
+        {
+          "title": "volatilized",
+          "lang": "en",
+          "terms": [
+            "nonvolatilized",
+            "unvolatilized"
+          ]
+        },
+        {
+          "title": "volborthite",
+          "lang": "en",
+          "terms": [
+            "calciovolborthite"
+          ]
+        },
+        {
+          "title": "Volcan",
+          "lang": "en",
+          "terms": [
+            "volcanian"
+          ]
+        },
+        {
+          "title": "volcanic",
+          "lang": "en",
+          "terms": [
+            "glaciovolcanic",
+            "hypervolcanic",
+            "paleovolcanic",
+            "tectovolcanic",
+            "volcanical"
+          ]
+        },
+        {
+          "title": "volcanically",
+          "lang": "en",
+          "terms": [
+            "cryovolcanically"
+          ]
+        },
+        {
+          "title": "volcano",
+          "lang": "en",
+          "terms": [
+            "hypervolcano",
+            "paleovolcano",
+            "pneumonoultramicroscopicsilicovolcanoconiosis",
+            "vog",
+            "volcanist",
+            "volcanistic",
+            "volcanite",
+            "volcanization",
+            "volcanogenic",
+            "volcanolike",
+            "Volcanoville"
+          ]
+        },
+        {
+          "title": "volition",
+          "lang": "en",
+          "terms": [
+            "antivolition",
+            "avolition",
+            "countervolition",
+            "nonvolition",
+            "unvolitioned",
+            "volitionary",
+            "volitionate",
+            "volitionism",
+            "volitionist",
+            "volitionless"
+          ]
+        }
+      ]
+    }
+  ]
+}

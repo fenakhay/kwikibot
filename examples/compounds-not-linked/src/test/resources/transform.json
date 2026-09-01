@@ -1,0 +1,743 @@
+{
+  "cases": [
+    {
+      "name": "create/plain",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "create/before_translations",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Translations====\n{{trans-top}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n====Translations====\n{{trans-top}}\n"
+    },
+    {
+      "name": "create/after_synonyms",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Synonyms====\n* [[x]]\n\n====Translations====\nt\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Synonyms====\n* [[x]]\n\n====Derived terms====\n{{col|en|vog}}\n\n====Translations====\nt\n"
+    },
+    {
+      "name": "create/above_anagrams",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Anagrams====\n* [[x]]\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n====Anagrams====\n* [[x]]\n"
+    },
+    {
+      "name": "create/below_unknown_heading",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Mystery====\nm\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Mystery====\nm\n\n====Derived terms====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "create/above_categories",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n[[Category:English lemmas]]\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n[[Category:English lemmas]]\n"
+    },
+    {
+      "name": "create/above_topic_template",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n{{cln|en|nouns}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n{{cln|en|nouns}}\n"
+    },
+    {
+      "name": "create/sorted_terms",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog",
+        "hypervolcano",
+        "élan",
+        "Zebra",
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog",
+        "hypervolcano",
+        "élan",
+        "Zebra",
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|élan|hypervolcano|vog|Zebra}}\n"
+    },
+    {
+      "name": "extend/col",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "hypervolcano"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "hypervolcano"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|hypervolcano|vog}}\n"
+    },
+    {
+      "name": "extend/col_sorted",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple",
+        "zebra",
+        "élan"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple",
+        "zebra",
+        "élan"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|élan|vog|zebra}}\n"
+    },
+    {
+      "name": "extend/bullets_normalized",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n* [[vog]]\n* {{l|en|volcanology}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|vog|volcanology}}\n"
+    },
+    {
+      "name": "extend/sort_disabled",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|banana|sort=0}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|banana|apple|sort=0}}\n"
+    },
+    {
+      "name": "extend/named_params_preserved",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|title=Terms}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|vog|title=Terms}}\n"
+    },
+    {
+      "name": "extend/indented_sublist",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|* vogging|apple}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "banana"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "banana"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|banana|vog|* vogging}}\n"
+    },
+    {
+      "name": "extend/reconstructed_term",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|*duxota}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|*duxota|apple|vog}}\n"
+    },
+    {
+      "name": "extend/inline_modifier",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog<t:smog>}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|vog<t:smog>}}\n"
+    },
+    {
+      "name": "extend/empty_section",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n"
+    },
+    {
+      "name": "unchanged/already_listed",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "unchanged",
+      "reason": "",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "unchanged/listed_in_related",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Related terms====\n{{col|en|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "unchanged",
+      "reason": "",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Related terms====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "unchanged/self_reference",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "volcano"
+      ],
+      "status": "unchanged",
+      "reason": "",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n"
+    },
+    {
+      "name": "skip/no_language",
+      "text": "==Swedish==\n\n===Noun===\nn\n",
+      "title": "x",
+      "lang": "en",
+      "terms": [
+        "y"
+      ],
+      "status": "skipped",
+      "reason": "no_lang_section",
+      "added": [],
+      "rules": [],
+      "output": "==Swedish==\n\n===Noun===\nn\n"
+    },
+    {
+      "name": "skip/no_pos",
+      "text": "==English==\n\n===Etymology===\ne\n",
+      "title": "x",
+      "lang": "en",
+      "terms": [
+        "y"
+      ],
+      "status": "skipped",
+      "reason": "no_pos_section",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology===\ne\n"
+    },
+    {
+      "name": "skip/ambiguous_pos",
+      "text": "==English==\n\n===Noun===\nn\n\n===Verb===\nv\n",
+      "title": "x",
+      "lang": "en",
+      "terms": [
+        "y"
+      ],
+      "status": "skipped",
+      "reason": "ambiguous_pos:Noun,Verb",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\nn\n\n===Verb===\nv\n"
+    },
+    {
+      "name": "skip/repeated_pos_is_annotated",
+      "text": "==English==\n\n===Etymology 1===\n\n====Noun====\nn\n\n===Etymology 2===\n\n====Noun====\nn\n",
+      "title": "x",
+      "lang": "en",
+      "terms": [
+        "y"
+      ],
+      "status": "skipped",
+      "reason": "ambiguous_pos:Noun x2",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology 1===\n\n====Noun====\nn\n\n===Etymology 2===\n\n====Noun====\nn\n"
+    },
+    {
+      "name": "skip/keepfirst",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|keepfirst=1}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "skipped",
+      "reason": "unrecognized_container",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog|keepfirst=1}}\n"
+    },
+    {
+      "name": "skip/lang_mismatch",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|fr|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "skipped",
+      "reason": "container_lang_mismatch:fr",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|fr|vog}}\n"
+    },
+    {
+      "name": "skip/unrecognized_container",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\nSome prose about the terms.\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "skipped",
+      "reason": "unrecognized_container",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\nSome prose about the terms.\n"
+    },
+    {
+      "name": "skip/two_derived_sections",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n====Derived terms====\n{{col|en|x}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "skipped",
+      "reason": "multiple_derived_sections",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n====Derived terms====\n{{col|en|x}}\n"
+    },
+    {
+      "name": "skip/unknown_language",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n",
+      "title": "x",
+      "lang": "zz",
+      "terms": [
+        "y"
+      ],
+      "status": "skipped",
+      "reason": "unknown_lang_code:zz",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n"
+    },
+    {
+      "name": "create/numbered_etymologies",
+      "text": "==English==\n\n===Etymology 1===\n\n====Noun====\nn\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology 1===\n\n====Noun====\nn\n\n=====Derived terms=====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "create/other_language_below",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n==Swedish==\n\n===Noun===\n{{sv-noun}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n==Swedish==\n\n===Noun===\n{{sv-noun}}\n"
+    },
+    {
+      "name": "create/no_trailing_newline",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n"
+    },
+    {
+      "name": "create/horizontal_rule_below",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n----\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "vog"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n----\n"
+    },
+    {
+      "name": "extend/unsorted_existing",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|zebra|apple|Mango}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "banana"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "banana"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|banana|Mango|zebra}}\n"
+    },
+    {
+      "name": "extend/diacritics_sort",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|zebra}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "élan",
+        "eagle",
+        "Emu"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "élan",
+        "eagle",
+        "Emu"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|eagle|élan|Emu|zebra}}\n"
+    },
+    {
+      "name": "extend/deep_sublist",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|* apples|** apple pie|zebra}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "banana"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "banana"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|* apples|** apple pie|banana|zebra}}\n"
+    },
+    {
+      "name": "extend/piped_link_in_list",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|[[vog|the smog]]}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "skipped",
+      "reason": "unrecognized_container",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|[[vog|the smog]]}}\n"
+    },
+    {
+      "name": "extend/blank_lines_after_list",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|vog}}\n\n\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|vog}}\n\n\n"
+    },
+    {
+      "name": "unchanged/listed_with_link_template",
+      "text": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n* {{l|en|vog}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "vog"
+      ],
+      "status": "unchanged",
+      "reason": "",
+      "added": [],
+      "rules": [],
+      "output": "==English==\n\n===Etymology===\nFrom somewhere.\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n* {{l|en|vog}}\n"
+    },
+    {
+      "name": "extend/plain_link_entry",
+      "text": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|[[vog]]}}\n",
+      "title": "volcano",
+      "lang": "en",
+      "terms": [
+        "apple"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "apple"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Noun===\n{{en-noun}}\n\n# A definition.\n\n====Derived terms====\n{{col|en|apple|vog}}\n"
+    },
+    {
+      "name": "page/volborthite",
+      "text": "==English==\n\n===Etymology===\nAlexander von Volborth (1800-1876), a Russian paleontologist, and ''[[-ite]]''.\n\n===Noun===\n{{en-noun}}\n\n# {{lb|en|mineral}} A [[mineral]] containing [[copper]] and [[vanadium]].\n\n===Further reading===\n* {{R:WebMineral}}\n* {{R:mindat}}\n\n{{cln|en|eponyms}}\n",
+      "title": "volborthite",
+      "lang": "en",
+      "terms": [
+        "kwikibotia",
+        "aardvarkia"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "kwikibotia",
+        "aardvarkia"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "create_section"
+      ],
+      "output": "==English==\n\n===Etymology===\nAlexander von Volborth (1800-1876), a Russian paleontologist, and ''[[-ite]]''.\n\n===Noun===\n{{en-noun}}\n\n# {{lb|en|mineral}} A [[mineral]] containing [[copper]] and [[vanadium]].\n\n====Derived terms====\n{{col|en|aardvarkia|kwikibotia}}\n\n===Further reading===\n* {{R:WebMineral}}\n* {{R:mindat}}\n\n{{cln|en|eponyms}}\n"
+    },
+    {
+      "name": "page/volition",
+      "text": "==English==\n\n===Etymology===\nFrom {{der|en|fr|volition}}, from {{der|en|ML.|volitio}}.\n\n===Pronunciation===\n* {{IPA|en|/vəˈlɪʃən/}}\n\n===Noun===\n{{en-noun|~}}\n\n# A conscious [[choice]] or [[decision]].\n# The act of willing.\n\n====Derived terms====\n* {{l|en|volitional}}\n* {{l|en|volitionally}}\n\n====Related terms====\n* {{l|en|voluntarism}}\n* {{l|en|voluntarist}}\n* {{l|en|volunteer}}\n{{rootsee|en|ine|welh₁}}\n\n====Translations====\n{{trans-top|the act of willing}}\n* French: {{t+|fr|volition|f}}\n{{trans-bottom}}\n\n===Further reading===\n* {{R:Century}}\n\n==French==\n\n===Etymology===\nFrom {{der|fr|ML.|volitio}}.\n\n===Pronunciation===\n* {{IPA|fr|/vɔ.li.sjɔ̃/}}\n\n===Noun===\n{{fr-noun|f}}\n\n# {{lb|fr|philosophy}} [[volition]]\n\n====See also====\n* {{l|fr|volonté}}\n\n===Further reading===\n* {{R:TLFi}}\n",
+      "title": "volition",
+      "lang": "en",
+      "terms": [
+        "kwikibotia",
+        "aardvarkia"
+      ],
+      "status": "changed",
+      "reason": "",
+      "added": [
+        "kwikibotia",
+        "aardvarkia"
+      ],
+      "rules": [
+        "add_derived_terms",
+        "normalize_container"
+      ],
+      "output": "==English==\n\n===Etymology===\nFrom {{der|en|fr|volition}}, from {{der|en|ML.|volitio}}.\n\n===Pronunciation===\n* {{IPA|en|/vəˈlɪʃən/}}\n\n===Noun===\n{{en-noun|~}}\n\n# A conscious [[choice]] or [[decision]].\n# The act of willing.\n\n====Derived terms====\n{{col|en|aardvarkia|kwikibotia|volitional|volitionally}}\n\n====Related terms====\n* {{l|en|voluntarism}}\n* {{l|en|voluntarist}}\n* {{l|en|volunteer}}\n{{rootsee|en|ine|welh₁}}\n\n====Translations====\n{{trans-top|the act of willing}}\n* French: {{t+|fr|volition|f}}\n{{trans-bottom}}\n\n===Further reading===\n* {{R:Century}}\n\n==French==\n\n===Etymology===\nFrom {{der|fr|ML.|volitio}}.\n\n===Pronunciation===\n* {{IPA|fr|/vɔ.li.sjɔ̃/}}\n\n===Noun===\n{{fr-noun|f}}\n\n# {{lb|fr|philosophy}} [[volition]]\n\n====See also====\n* {{l|fr|volonté}}\n\n===Further reading===\n* {{R:TLFi}}\n"
+    }
+  ]
+}

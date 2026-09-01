@@ -1,0 +1,1423 @@
+public final class com/fenakhay/kwikibot/model/ActionChecks {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun allows (Ljava/lang/String;)Z
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/fenakhay/kwikibot/model/ActionChecks;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/ActionChecks;Ljava/util/Map;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/ActionChecks;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRefusals ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun reasons (Ljava/lang/String;)Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/BlockInfo {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lkotlin/time/Instant;Z)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lkotlin/time/Instant;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lkotlin/time/Instant;
+	public final fun component5 ()Lkotlin/time/Instant;
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lkotlin/time/Instant;Z)Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/BlockInfo;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lkotlin/time/Instant;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBy ()Ljava/lang/String;
+	public final fun getExpiry ()Lkotlin/time/Instant;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getSince ()Lkotlin/time/Instant;
+	public fun hashCode ()I
+	public final fun isInfinite ()Z
+	public final fun isPartial ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/BlockRecord {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/BlockInfo;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/BlockInfo;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Lcom/fenakhay/kwikibot/model/BlockInfo;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/model/BlockRecord;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/BlockRecord;Lcom/fenakhay/kwikibot/model/BlockInfo;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/BlockRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInfo ()Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public final fun getTarget ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isAutomatic ()Z
+	public final fun isRange ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/CategoryInfo {
+	public fun <init> (IIIIZ)V
+	public synthetic fun <init> (IIIIZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun copy (IIIIZ)Lcom/fenakhay/kwikibot/model/CategoryInfo;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/CategoryInfo;IIIIZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/CategoryInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFiles ()I
+	public final fun getHidden ()Z
+	public final fun getPages ()I
+	public final fun getSize ()I
+	public final fun getSubcategories ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/ContentModel {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/ContentModel$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/ContentModel;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static final fun isWikitext-impl (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/ContentModel$Companion {
+	public final fun getCSS-4cE4hhQ ()Ljava/lang/String;
+	public final fun getJAVASCRIPT-4cE4hhQ ()Ljava/lang/String;
+	public final fun getJSON-4cE4hhQ ()Ljava/lang/String;
+	public final fun getSANITIZED_CSS-4cE4hhQ ()Ljava/lang/String;
+	public final fun getSCRIBUNTO-4cE4hhQ ()Ljava/lang/String;
+	public final fun getTEXT-4cE4hhQ ()Ljava/lang/String;
+	public final fun getWIKITEXT-4cE4hhQ ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Contribution {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/Revision;ZZI)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/Revision;ZZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/model/Revision;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()I
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/Revision;ZZI)Lcom/fenakhay/kwikibot/model/Contribution;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Contribution;Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/Revision;ZZIILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Contribution;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPage ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRevision ()Lcom/fenakhay/kwikibot/model/Revision;
+	public final fun getSizeChange ()I
+	public fun hashCode ()I
+	public final fun isNew ()Z
+	public final fun isTop ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Contributor {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Lcom/fenakhay/kwikibot/model/Contributor;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Contributor;Ljava/lang/String;JILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Contributor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()J
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Contributors {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;I)V
+	public synthetic fun <init> (Ljava/util/List;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun copy (Ljava/util/List;I)Lcom/fenakhay/kwikibot/model/Contributors;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Contributors;Ljava/util/List;IILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Contributors;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnonymous ()I
+	public final fun getUsers ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/DatePages {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/model/DatePages;
+	public final fun dayTitle (IILjava/lang/String;)Ljava/lang/String;
+	public static synthetic fun dayTitle$default (Lcom/fenakhay/kwikibot/model/DatePages;IILjava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun daysIn (I)I
+	public final fun format (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/DatePages$DayFormat;
+	public final fun getLanguages ()Ljava/util/Set;
+	public final fun parseDayTitle (Ljava/lang/String;Ljava/lang/String;)Lkotlin/Pair;
+	public static synthetic fun parseDayTitle$default (Lcom/fenakhay/kwikibot/model/DatePages;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lkotlin/Pair;
+	public final fun register (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/DatePages$DayFormat;)V
+}
+
+public final class com/fenakhay/kwikibot/model/DatePages$DayFormat {
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/DatePages$DayFormat;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/DatePages$DayFormat;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/DatePages$DayFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFirstOrdinal ()Ljava/lang/String;
+	public final fun getMonths ()Ljava/util/List;
+	public final fun getPattern ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/EditOutcome {
+	public abstract fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$CaptchaRequired : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/EditOutcome$CaptchaRequired;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$CaptchaRequired;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$CaptchaRequired;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCaptchaId ()Ljava/lang/String;
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Conflict : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun copy-TWxYS4Q (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;)Lcom/fenakhay/kwikibot/model/EditOutcome$Conflict;
+	public static synthetic fun copy-TWxYS4Q$default (Lcom/fenakhay/kwikibot/model/EditOutcome$Conflict;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Filtered : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/EditOutcome$Filtered;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$Filtered;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$Filtered;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDetail ()Ljava/lang/String;
+	public final fun getFilter ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$NoChange : com/fenakhay/kwikibot/model/EditOutcome {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun copy-YuWzXFU (Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/RevisionId;)Lcom/fenakhay/kwikibot/model/EditOutcome$NoChange;
+	public static synthetic fun copy-YuWzXFU$default (Lcom/fenakhay/kwikibot/model/EditOutcome$NoChange;Lcom/fenakhay/kwikibot/model/PageRef;Lcom/fenakhay/kwikibot/model/RevisionId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$NoChange;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$PageStateChanged : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Z)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/model/EditOutcome$PageStateChanged;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$PageStateChanged;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$PageStateChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getWasDeleted ()Z
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$PermissionDenied : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/EditOutcome$PermissionDenied;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$PermissionDenied;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$PermissionDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Protected : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/model/EditOutcome$Protected;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$Protected;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$Protected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCascading ()Z
+	public fun getDetail ()Ljava/lang/String;
+	public final fun getLevel ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$RateLimited : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Duration;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3-FghU774 ()Lkotlin/time/Duration;
+	public final fun copy-moChb0s (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Duration;)Lcom/fenakhay/kwikibot/model/EditOutcome$RateLimited;
+	public static synthetic fun copy-moChb0s$default (Lcom/fenakhay/kwikibot/model/EditOutcome$RateLimited;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Duration;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$RateLimited;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRetryAfter-FghU774 ()Lkotlin/time/Duration;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/EditOutcome$Refused : com/fenakhay/kwikibot/model/EditOutcome {
+	public abstract fun getDetail ()Ljava/lang/String;
+	public fun isRetryable ()Z
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Refused$DefaultImpls {
+	public static fun isRetryable (Lcom/fenakhay/kwikibot/model/EditOutcome$Refused;)Z
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Rejected : com/fenakhay/kwikibot/model/EditOutcome$Refused {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/EditOutcome$Rejected;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/EditOutcome$Rejected;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public fun getDetail ()Ljava/lang/String;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun isRetryable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcome$Saved : com/fenakhay/kwikibot/model/EditOutcome {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;JLcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2-C1T4Xbs ()J
+	public final fun component3-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun copy-n_WokYg (Lcom/fenakhay/kwikibot/model/PageRef;JLcom/fenakhay/kwikibot/model/RevisionId;)Lcom/fenakhay/kwikibot/model/EditOutcome$Saved;
+	public static synthetic fun copy-n_WokYg$default (Lcom/fenakhay/kwikibot/model/EditOutcome$Saved;Lcom/fenakhay/kwikibot/model/PageRef;JLcom/fenakhay/kwikibot/model/RevisionId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/EditOutcome$Saved;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPreviousRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRevision-C1T4Xbs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/EditOutcomeKt {
+	public static final fun getDidChange (Lcom/fenakhay/kwikibot/model/EditOutcome;)Z
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/Expiry {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/Expiry$Companion;
+}
+
+public final class com/fenakhay/kwikibot/model/Expiry$At : com/fenakhay/kwikibot/model/Expiry {
+	public fun <init> (Lkotlin/time/Instant;)V
+	public final fun component1 ()Lkotlin/time/Instant;
+	public final fun copy (Lkotlin/time/Instant;)Lcom/fenakhay/kwikibot/model/Expiry$At;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Expiry$At;Lkotlin/time/Instant;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Expiry$At;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstant ()Lkotlin/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Expiry$Companion {
+	public final fun parse (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/Expiry;
+}
+
+public final class com/fenakhay/kwikibot/model/Expiry$Never : com/fenakhay/kwikibot/model/Expiry {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/model/Expiry$Never;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/FileInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;JIILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JIILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Lkotlin/time/Instant;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JIILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/FileInfo;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/FileInfo;Ljava/lang/String;Ljava/lang/String;JIILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/FileInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComment ()Ljava/lang/String;
+	public final fun getDescriptionUrl ()Ljava/lang/String;
+	public final fun getHasDimensions ()Z
+	public final fun getHeight ()I
+	public final fun getMediaType ()Ljava/lang/String;
+	public final fun getMimeType ()Ljava/lang/String;
+	public final fun getSha1 ()Ljava/lang/String;
+	public final fun getSize ()J
+	public final fun getTimestamp ()Lkotlin/time/Instant;
+	public final fun getUrl ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/FileRepository {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/model/FileRepository;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/FileRepository;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/FileRepository;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanUpload ()Z
+	public final fun getDisplayName ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRootUrl ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isLocal ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/GlobalUsage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/GlobalUsage;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/GlobalUsage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/GlobalUsage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public final fun getWiki ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/InterwikiLink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/InterwikiLink;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/InterwikiLink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/InterwikiLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrefix ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/InterwikiMap {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/InterwikiMap$Companion;
+	public fun <init> (Ljava/util/Collection;Ljava/util/Collection;)V
+	public synthetic fun <init> (Ljava/util/Collection;Ljava/util/Collection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun contains (Ljava/lang/String;)Z
+	public final fun isSelf (Ljava/lang/String;)Z
+}
+
+public final class com/fenakhay/kwikibot/model/InterwikiMap$Companion {
+	public final fun getEMPTY ()Lcom/fenakhay/kwikibot/model/InterwikiMap;
+}
+
+public final class com/fenakhay/kwikibot/model/LangCode {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/LangCode;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LanguageInfo {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/TextDirection;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/TextDirection;Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-vlGtwRM ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/fenakhay/kwikibot/model/TextDirection;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy-HYEwRmM (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/TextDirection;Ljava/util/List;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/LanguageInfo;
+	public static synthetic fun copy-HYEwRmM$default (Lcom/fenakhay/kwikibot/model/LanguageInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/TextDirection;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LanguageInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutonym ()Ljava/lang/String;
+	public final fun getBcp47 ()Ljava/lang/String;
+	public final fun getCode-vlGtwRM ()Ljava/lang/String;
+	public final fun getDirection ()Lcom/fenakhay/kwikibot/model/TextDirection;
+	public final fun getFallbacks ()Ljava/util/List;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LanguageLink {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-vlGtwRM ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy-UmOlw4Y (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/LanguageLink;
+	public static synthetic fun copy-UmOlw4Y$default (Lcom/fenakhay/kwikibot/model/LanguageLink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LanguageLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutonym ()Ljava/lang/String;
+	public final fun getCode-vlGtwRM ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/LogDetails {
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Block : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Lkotlin/time/Instant;Ljava/util/List;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/time/Instant;Ljava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/time/Instant;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Lkotlin/time/Instant;Ljava/util/List;Z)Lcom/fenakhay/kwikibot/model/LogDetails$Block;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Block;Ljava/lang/String;Lkotlin/time/Instant;Ljava/util/List;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Block;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDuration ()Ljava/lang/String;
+	public final fun getExpiry ()Lkotlin/time/Instant;
+	public final fun getFlags ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isInfinite ()Z
+	public final fun isPartial ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Move : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title$Local;Z)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/Title$Local;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public final fun component2 ()Z
+	public final fun copy (Lcom/fenakhay/kwikibot/model/Title$Local;Z)Lcom/fenakhay/kwikibot/model/LogDetails$Move;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Move;Lcom/fenakhay/kwikibot/model/Title$Local;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Move;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSuppressedRedirect ()Z
+	public final fun getTarget ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$None : com/fenakhay/kwikibot/model/LogDetails {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/model/LogDetails$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Patrol : com/fenakhay/kwikibot/model/LogDetails {
+	public synthetic fun <init> (JLcom/fenakhay/kwikibot/model/RevisionId;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLcom/fenakhay/kwikibot/model/RevisionId;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component2-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun component3 ()Z
+	public final fun copy-gjiB7YA (JLcom/fenakhay/kwikibot/model/RevisionId;Z)Lcom/fenakhay/kwikibot/model/LogDetails$Patrol;
+	public static synthetic fun copy-gjiB7YA$default (Lcom/fenakhay/kwikibot/model/LogDetails$Patrol;JLcom/fenakhay/kwikibot/model/RevisionId;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Patrol;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutomatic ()Z
+	public final fun getPrevious-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun getRevision-C1T4Xbs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Protect : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/util/List;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/LogDetails$Protect;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Protect;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Protect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getProtections ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Rights : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lcom/fenakhay/kwikibot/model/LogDetails$Rights;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Rights;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Rights;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdded ()Ljava/util/List;
+	public final fun getRemoved ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Unknown : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/fenakhay/kwikibot/model/LogDetails$Unknown;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Unknown;Ljava/util/Map;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFields ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogDetails$Upload : com/fenakhay/kwikibot/model/LogDetails {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/LogDetails$Upload;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogDetails$Upload;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogDetails$Upload;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSha1 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/LogEvent {
+	public fun <init> (JLjava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/LogDetails;)V
+	public synthetic fun <init> (JLjava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/LogDetails;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lkotlin/time/Instant;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Lcom/fenakhay/kwikibot/model/LogDetails;
+	public final fun copy (JLjava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/LogDetails;)Lcom/fenakhay/kwikibot/model/LogEvent;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/LogEvent;JLjava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/LogDetails;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/LogEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getComment ()Ljava/lang/String;
+	public final fun getDetails ()Lcom/fenakhay/kwikibot/model/LogDetails;
+	public final fun getId ()J
+	public final fun getPage ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTimestamp ()Lkotlin/time/Instant;
+	public final fun getType ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isSuppressed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/MwTimestamp {
+	public static final field INSTANCE Lcom/fenakhay/kwikibot/model/MwTimestamp;
+	public final fun format (Lkotlin/time/Instant;)Ljava/lang/String;
+	public final fun formatCompact (Lkotlin/time/Instant;)Ljava/lang/String;
+	public final fun isNever (Ljava/lang/String;)Z
+	public final fun parse (Ljava/lang/String;)Lkotlin/time/Instant;
+	public final fun parseOrNull (Ljava/lang/String;)Lkotlin/time/Instant;
+}
+
+public final class com/fenakhay/kwikibot/model/Namespace : java/lang/Comparable {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/Namespace$Companion;
+	public static final synthetic fun box-impl (I)Lcom/fenakhay/kwikibot/model/Namespace;
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun compareTo-_3-bk4o (I)I
+	public static fun compareTo-_3-bk4o (II)I
+	public static fun constructor-impl (I)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public final fun getId ()I
+	public static final fun getSubjectSpace-5BRyvY8 (I)Lcom/fenakhay/kwikibot/model/Namespace;
+	public static final fun getTalkSpace-5BRyvY8 (I)Lcom/fenakhay/kwikibot/model/Namespace;
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun isTalk-impl (I)Z
+	public static final fun isVirtual-impl (I)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/fenakhay/kwikibot/model/Namespace$Companion {
+	public final fun getCATEGORY-IfULd1E ()I
+	public final fun getCATEGORY_TALK-IfULd1E ()I
+	public final fun getFILE-IfULd1E ()I
+	public final fun getFILE_TALK-IfULd1E ()I
+	public final fun getHELP-IfULd1E ()I
+	public final fun getHELP_TALK-IfULd1E ()I
+	public final fun getMAIN-IfULd1E ()I
+	public final fun getMEDIA-IfULd1E ()I
+	public final fun getMEDIAWIKI-IfULd1E ()I
+	public final fun getMEDIAWIKI_TALK-IfULd1E ()I
+	public final fun getPROJECT-IfULd1E ()I
+	public final fun getPROJECT_TALK-IfULd1E ()I
+	public final fun getSPECIAL-IfULd1E ()I
+	public final fun getTALK-IfULd1E ()I
+	public final fun getTEMPLATE-IfULd1E ()I
+	public final fun getTEMPLATE_TALK-IfULd1E ()I
+	public final fun getUSER-IfULd1E ()I
+	public final fun getUSER_TALK-IfULd1E ()I
+}
+
+public final class com/fenakhay/kwikibot/model/NamespaceInfo {
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/TitleCase;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/TitleCase;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-IfULd1E ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Lcom/fenakhay/kwikibot/model/TitleCase;
+	public final fun component6 ()Z
+	public final fun copy-Sv8GAVU (ILjava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/TitleCase;Z)Lcom/fenakhay/kwikibot/model/NamespaceInfo;
+	public static synthetic fun copy-Sv8GAVU$default (Lcom/fenakhay/kwikibot/model/NamespaceInfo;ILjava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/fenakhay/kwikibot/model/TitleCase;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/NamespaceInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAliases ()Ljava/util/List;
+	public final fun getCanonicalName ()Ljava/lang/String;
+	public final fun getCase ()Lcom/fenakhay/kwikibot/model/TitleCase;
+	public final fun getId-IfULd1E ()I
+	public final fun getLocalName ()Ljava/lang/String;
+	public final fun getPrefixes ()Ljava/util/List;
+	public final fun getSubpages ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/NamespaceMap {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/NamespaceMap$Companion;
+	public fun <init> (Ljava/util/Collection;)V
+	public final fun byPrefix (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/NamespaceInfo;
+	public final fun format (Lcom/fenakhay/kwikibot/model/Title$Local;)Ljava/lang/String;
+	public final fun get-_3-bk4o (I)Lcom/fenakhay/kwikibot/model/NamespaceInfo;
+	public final fun getAll ()Ljava/util/List;
+}
+
+public final class com/fenakhay/kwikibot/model/NamespaceMap$Companion {
+	public final fun getCANONICAL ()Lcom/fenakhay/kwikibot/model/NamespaceMap;
+}
+
+public final class com/fenakhay/kwikibot/model/PageContent {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;JLjava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/Title;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;JLjava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/Title;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2-C1T4Xbs ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4-4cE4hhQ ()Ljava/lang/String;
+	public final fun component5 ()Lkotlin/time/Instant;
+	public final fun component6 ()Lcom/fenakhay/kwikibot/model/Title;
+	public final fun copy-siTDwR0 (Lcom/fenakhay/kwikibot/model/PageRef;JLjava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/Title;)Lcom/fenakhay/kwikibot/model/PageContent;
+	public static synthetic fun copy-siTDwR0$default (Lcom/fenakhay/kwikibot/model/PageContent;Lcom/fenakhay/kwikibot/model/PageRef;JLjava/lang/String;Ljava/lang/String;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/Title;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/PageContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContentModel-4cE4hhQ ()Ljava/lang/String;
+	public final fun getRedirectTarget ()Lcom/fenakhay/kwikibot/model/Title;
+	public final fun getRef ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getRevisionId-C1T4Xbs ()J
+	public final fun getText ()Ljava/lang/String;
+	public final fun getTimestamp ()Lkotlin/time/Instant;
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public fun hashCode ()I
+	public final fun isRedirect ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/PageId {
+	public static final synthetic fun box-impl (J)Lcom/fenakhay/kwikibot/model/PageId;
+	public static fun constructor-impl (J)J
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getValue ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public final class com/fenakhay/kwikibot/model/PageRef {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/PageId;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/PageId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-cNOGfnM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public final fun component3-nBAZlm0 ()Lcom/fenakhay/kwikibot/model/PageId;
+	public final fun copy-dyHVtz0 (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/PageId;)Lcom/fenakhay/kwikibot/model/PageRef;
+	public static synthetic fun copy-dyHVtz0$default (Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/PageId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNamespace-IfULd1E ()I
+	public final fun getPageId-nBAZlm0 ()Lcom/fenakhay/kwikibot/model/PageId;
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public final fun getWiki-cNOGfnM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/ParsedPage {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Ljava/util/List;
+	public final fun component8-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun copy-uQjYtkc (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;)Lcom/fenakhay/kwikibot/model/ParsedPage;
+	public static synthetic fun copy-uQjYtkc$default (Lcom/fenakhay/kwikibot/model/ParsedPage;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/ParsedPage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategories ()Ljava/util/List;
+	public final fun getExternalLinks ()Ljava/util/List;
+	public final fun getHtml ()Ljava/lang/String;
+	public final fun getImages ()Ljava/util/List;
+	public final fun getLinks ()Ljava/util/List;
+	public final fun getRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun getSections ()Ljava/util/List;
+	public final fun getTemplates ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Protection {
+	public static final field AUTOCONFIRMED Ljava/lang/String;
+	public static final field Companion Lcom/fenakhay/kwikibot/model/Protection$Companion;
+	public static final field SYSOP Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Expiry;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Expiry;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/fenakhay/kwikibot/model/Expiry;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Expiry;Z)Lcom/fenakhay/kwikibot/model/Protection;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Protection;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Expiry;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Protection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Ljava/lang/String;
+	public final fun getCascading ()Z
+	public final fun getExpiry ()Lcom/fenakhay/kwikibot/model/Expiry;
+	public final fun getLevel ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isActiveAt (Lkotlin/time/Instant;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Protection$Companion {
+}
+
+public final class com/fenakhay/kwikibot/model/RecentChange {
+	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/LogEvent;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/LogEvent;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component10 ()Z
+	public final fun component11 ()Z
+	public final fun component12 ()Z
+	public final fun component13 ()Z
+	public final fun component14 ()Lcom/fenakhay/kwikibot/model/LogEvent;
+	public final fun component15 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lkotlin/time/Instant;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun component8-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun component9 ()I
+	public final fun copy-4FUu_8o (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/LogEvent;Ljava/util/List;)Lcom/fenakhay/kwikibot/model/RecentChange;
+	public static synthetic fun copy-4FUu_8o$default (Lcom/fenakhay/kwikibot/model/RecentChange;JLjava/lang/String;Lcom/fenakhay/kwikibot/model/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/LogEvent;Ljava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/RecentChange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComment ()Ljava/lang/String;
+	public final fun getId ()J
+	public final fun getLogEvent ()Lcom/fenakhay/kwikibot/model/LogEvent;
+	public final fun getPage ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun getPreviousRevisionId-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun getRevisionId-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun getSizeChange ()I
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTimestamp ()Lkotlin/time/Instant;
+	public final fun getType ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isBot ()Z
+	public final fun isLogEntry ()Z
+	public final fun isMinor ()Z
+	public final fun isNew ()Z
+	public final fun isPatrolled ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/RenderedSection {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lcom/fenakhay/kwikibot/model/RenderedSection;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/RenderedSection;Ljava/lang/String;Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/RenderedSection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnchor ()Ljava/lang/String;
+	public final fun getByteOffset ()Ljava/lang/Integer;
+	public final fun getHeading ()Ljava/lang/String;
+	public final fun getIndex ()Ljava/lang/String;
+	public final fun getLevel ()I
+	public final fun getNumber ()Ljava/lang/String;
+	public final fun getTocLevel ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/ResolvedLink {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/PageRef;Z)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public final fun component2 ()Z
+	public final fun copy (Lcom/fenakhay/kwikibot/model/PageRef;Z)Lcom/fenakhay/kwikibot/model/ResolvedLink;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/ResolvedLink;Lcom/fenakhay/kwikibot/model/PageRef;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/ResolvedLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExists ()Z
+	public final fun getPage ()Lcom/fenakhay/kwikibot/model/PageRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Revision {
+	public synthetic fun <init> (JLcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component10 ()Ljava/util/List;
+	public final fun component2-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun component3 ()Lkotlin/time/Instant;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()I
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy-M56d3xU (JLcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/String;Ljava/util/List;)Lcom/fenakhay/kwikibot/model/Revision;
+	public static synthetic fun copy-M56d3xU$default (Lcom/fenakhay/kwikibot/model/Revision;JLcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Revision;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComment ()Ljava/lang/String;
+	public final fun getId-C1T4Xbs ()J
+	public final fun getParentId-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun getSha1 ()Ljava/lang/String;
+	public final fun getSize ()I
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTimestamp ()Lkotlin/time/Instant;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isBot ()Z
+	public final fun isCommentHidden ()Z
+	public final fun isMinor ()Z
+	public final fun isUserHidden ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/RevisionId {
+	public static final synthetic fun box-impl (J)Lcom/fenakhay/kwikibot/model/RevisionId;
+	public static fun constructor-impl (J)J
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getValue ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public final class com/fenakhay/kwikibot/model/SignatureFormat {
+	public fun <init> (Ljava/lang/String;Lkotlin/text/Regex;Ljava/util/Map;Lkotlinx/datetime/TimeZone;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/text/Regex;Ljava/util/Map;Lkotlinx/datetime/TimeZone;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun findAll (Ljava/lang/String;)Ljava/util/List;
+	public final fun getPattern ()Lkotlin/text/Regex;
+}
+
+public final class com/fenakhay/kwikibot/model/SignatureTime {
+	public fun <init> (Lkotlin/time/Instant;Ljava/lang/String;Lkotlin/ranges/IntRange;Ljava/lang/String;)V
+	public final fun component1 ()Lkotlin/time/Instant;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lkotlin/ranges/IntRange;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lkotlin/time/Instant;Ljava/lang/String;Lkotlin/ranges/IntRange;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/SignatureTime;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/SignatureTime;Lkotlin/time/Instant;Ljava/lang/String;Lkotlin/ranges/IntRange;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/SignatureTime;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstant ()Lkotlin/time/Instant;
+	public final fun getLanguage ()Ljava/lang/String;
+	public final fun getRange ()Lkotlin/ranges/IntRange;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Signatures {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/Signatures$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public final fun earliest (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/SignatureTime;
+	public final fun findAll (Ljava/lang/String;)Ljava/util/List;
+	public final fun getFormats ()Ljava/util/List;
+	public final fun latest (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/SignatureTime;
+	public final fun patterns ()Ljava/util/List;
+	public final fun plus (Lcom/fenakhay/kwikibot/model/Signatures;)Lcom/fenakhay/kwikibot/model/Signatures;
+}
+
+public final class com/fenakhay/kwikibot/model/Signatures$Companion {
+	public final fun forLanguage (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/Signatures;
+	public final fun getALL ()Lcom/fenakhay/kwikibot/model/Signatures;
+	public final fun getENGLISH ()Lcom/fenakhay/kwikibot/model/Signatures;
+	public final fun getFRENCH ()Lcom/fenakhay/kwikibot/model/Signatures;
+	public final fun getGERMAN ()Lcom/fenakhay/kwikibot/model/Signatures;
+	public final fun getSPANISH ()Lcom/fenakhay/kwikibot/model/Signatures;
+}
+
+public final class com/fenakhay/kwikibot/model/SiteLink {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/SiteLink;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/SiteLink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/SiteLink;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrefix ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun render (Z)Ljava/lang/String;
+	public static synthetic fun render$default (Lcom/fenakhay/kwikibot/model/SiteLink;ZILjava/lang/Object;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/SiteLinkKt {
+	public static final fun render (Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/NamespaceMap;Ljava/lang/String;Z)Ljava/lang/String;
+	public static synthetic fun render$default (Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/NamespaceMap;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/String;
+	public static final fun renderPiped (Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/NamespaceMap;)Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/TempAccountConfig {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/TempAccountConfig$Companion;
+	public fun <init> ()V
+	public fun <init> (ZLjava/util/List;)V
+	public synthetic fun <init> (ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ZLjava/util/List;)Lcom/fenakhay/kwikibot/model/TempAccountConfig;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/TempAccountConfig;ZLjava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/TempAccountConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getMatchPatterns ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun matches (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/TempAccountConfig$Companion {
+	public final fun getDISABLED ()Lcom/fenakhay/kwikibot/model/TempAccountConfig;
+}
+
+public final class com/fenakhay/kwikibot/model/TextDirection : java/lang/Enum {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/TextDirection$Companion;
+	public static final field LEFT_TO_RIGHT Lcom/fenakhay/kwikibot/model/TextDirection;
+	public static final field RIGHT_TO_LEFT Lcom/fenakhay/kwikibot/model/TextDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/TextDirection;
+	public static fun values ()[Lcom/fenakhay/kwikibot/model/TextDirection;
+}
+
+public final class com/fenakhay/kwikibot/model/TextDirection$Companion {
+	public final fun of (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/TextDirection;
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/Title {
+	public static final field Companion Lcom/fenakhay/kwikibot/model/Title$Companion;
+	public static final field MAX_BYTES I
+	public abstract fun getFragment ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Title$Companion {
+	public static final field MAX_BYTES I
+	public final fun parse-nmCgiuw (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/NamespaceMap;Lcom/fenakhay/kwikibot/model/InterwikiMap;I)Lcom/fenakhay/kwikibot/model/Title;
+	public static synthetic fun parse-nmCgiuw$default (Lcom/fenakhay/kwikibot/model/Title$Companion;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/NamespaceMap;Lcom/fenakhay/kwikibot/model/InterwikiMap;IILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Title;
+}
+
+public final class com/fenakhay/kwikibot/model/Title$Interwiki : com/fenakhay/kwikibot/model/Title {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/Title$Interwiki;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Title$Interwiki;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Title$Interwiki;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFragment ()Ljava/lang/String;
+	public final fun getPrefix ()Ljava/lang/String;
+	public final fun getRest ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Title$Invalid : com/fenakhay/kwikibot/model/Title {
+	public fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public final fun copy (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;)Lcom/fenakhay/kwikibot/model/Title$Invalid;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/Title$Invalid;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Title$Invalid;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFragment ()Ljava/lang/String;
+	public final fun getRaw ()Ljava/lang/String;
+	public final fun getReason ()Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/Title$Invalid$Reason : java/lang/Enum {
+	public static final field EMPTY Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field ILLEGAL_CHARACTER Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field PERCENT_ESCAPE Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field RELATIVE_PATH Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field SIGNATURE Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field TALK_OF_NON_MAIN Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static final field TOO_LONG Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+	public static fun values ()[Lcom/fenakhay/kwikibot/model/Title$Invalid$Reason;
+}
+
+public final class com/fenakhay/kwikibot/model/Title$Local : com/fenakhay/kwikibot/model/Title {
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-IfULd1E ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy-ONGr4WM (ILjava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/Title$Local;
+	public static synthetic fun copy-ONGr4WM$default (Lcom/fenakhay/kwikibot/model/Title$Local;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/Title$Local;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFragment ()Ljava/lang/String;
+	public final fun getNamespace-IfULd1E ()I
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/TitleCase : java/lang/Enum {
+	public static final field CASE_SENSITIVE Lcom/fenakhay/kwikibot/model/TitleCase;
+	public static final field FIRST_LETTER Lcom/fenakhay/kwikibot/model/TitleCase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/TitleCase;
+	public static fun values ()[Lcom/fenakhay/kwikibot/model/TitleCase;
+}
+
+public abstract interface class com/fenakhay/kwikibot/model/UploadOutcome {
+}
+
+public final class com/fenakhay/kwikibot/model/UploadOutcome$Refused : com/fenakhay/kwikibot/model/UploadOutcome {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Refused;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/UploadOutcome$Refused;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Refused;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getDetail ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/UploadOutcome$Uploaded : com/fenakhay/kwikibot/model/UploadOutcome {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/FileInfo;)V
+	public final fun component1 ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public final fun component2 ()Lcom/fenakhay/kwikibot/model/FileInfo;
+	public final fun copy (Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/FileInfo;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Uploaded;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/UploadOutcome$Uploaded;Lcom/fenakhay/kwikibot/model/Title$Local;Lcom/fenakhay/kwikibot/model/FileInfo;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Uploaded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInfo ()Lcom/fenakhay/kwikibot/model/FileInfo;
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title$Local;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/UploadOutcome$Warned : com/fenakhay/kwikibot/model/UploadOutcome {
+	public fun <init> (Ljava/util/Map;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/util/Map;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Warned;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/UploadOutcome$Warned;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/UploadOutcome$Warned;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFileKey ()Ljava/lang/String;
+	public final fun getWarnings ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun isDuplicateOnly ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/UserInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/util/List;JLkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/BlockInfo;ZZZLjava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/util/List;JLkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/BlockInfo;ZZZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Z
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Z
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()J
+	public final fun component6 ()Lkotlin/time/Instant;
+	public final fun component7 ()Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/util/List;JLkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/BlockInfo;ZZZLjava/lang/String;Z)Lcom/fenakhay/kwikibot/model/UserInfo;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/UserInfo;Ljava/lang/String;Ljava/lang/Long;Ljava/util/List;Ljava/util/List;JLkotlin/time/Instant;Lcom/fenakhay/kwikibot/model/BlockInfo;ZZZLjava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/UserInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlock ()Lcom/fenakhay/kwikibot/model/BlockInfo;
+	public final fun getEditCount ()J
+	public final fun getEmailable ()Z
+	public final fun getGender ()Ljava/lang/String;
+	public final fun getGroups ()Ljava/util/List;
+	public final fun getId ()Ljava/lang/Long;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRegistration ()Lkotlin/time/Instant;
+	public final fun getRights ()Ljava/util/List;
+	public final fun hasRight (Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public final fun inGroup (Ljava/lang/String;)Z
+	public final fun isAnonymous ()Z
+	public final fun isBlocked ()Z
+	public final fun isMissing ()Z
+	public final fun isRegistered ()Z
+	public final fun isTemporary ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/fenakhay/kwikibot/model/WikiError : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isTransient ()Z
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Api : com/fenakhay/kwikibot/model/WikiError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getInfo ()Ljava/lang/String;
+	public final fun getModule ()Ljava/lang/String;
+}
+
+public abstract class com/fenakhay/kwikibot/model/WikiError$Auth : com/fenakhay/kwikibot/model/WikiError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$AccountBlocked : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getDetail ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$BadToken : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getTokenType ()Ljava/lang/String;
+	public fun isTransient ()Z
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$LoginFailed : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$MissingRight : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getRight ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$NoCredentials : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getWiki-cNOGfnM ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$NotLoggedIn : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getAction ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Auth$PermissionDenied : com/fenakhay/kwikibot/model/WikiError$Auth {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getDetail ()Ljava/lang/String;
+}
+
+public abstract class com/fenakhay/kwikibot/model/WikiError$Configuration : com/fenakhay/kwikibot/model/WikiError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Configuration$MissingExtension : com/fenakhay/kwikibot/model/WikiError$Configuration {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getExtension ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Configuration$UnknownSite : com/fenakhay/kwikibot/model/WikiError$Configuration {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCode-vlGtwRM ()Ljava/lang/String;
+	public final fun getFamily ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Configuration$VersionTooOld : com/fenakhay/kwikibot/model/WikiError$Configuration {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getActual ()Ljava/lang/String;
+	public final fun getRequired ()Ljava/lang/String;
+}
+
+public abstract class com/fenakhay/kwikibot/model/WikiError$Page : com/fenakhay/kwikibot/model/WikiError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$BadTitle : com/fenakhay/kwikibot/model/WikiError$Page {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title$Invalid;)V
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title$Invalid;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$Missing : com/fenakhay/kwikibot/model/WikiError$Page {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title;)V
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$NotRedirect : com/fenakhay/kwikibot/model/WikiError$Page {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title;)V
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$OffWiki : com/fenakhay/kwikibot/model/WikiError$Page {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title$Interwiki;)V
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title$Interwiki;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$UnresolvableRedirect : com/fenakhay/kwikibot/model/WikiError$Page {
+	public fun <init> (Lcom/fenakhay/kwikibot/model/Title;Ljava/lang/String;)V
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Page$UnsupportedContentModel : com/fenakhay/kwikibot/model/WikiError$Page {
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/Title;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getContentModel-4cE4hhQ ()Ljava/lang/String;
+	public final fun getTitle ()Lcom/fenakhay/kwikibot/model/Title;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$ReadOnly : com/fenakhay/kwikibot/model/WikiError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getReason ()Ljava/lang/String;
+	public fun isTransient ()Z
+}
+
+public abstract class com/fenakhay/kwikibot/model/WikiError$Transport : com/fenakhay/kwikibot/model/WikiError {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isTransient ()Z
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$Maxlag : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public synthetic fun <init> (JLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getLag-UwyO8pc ()J
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$RateLimited : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public synthetic fun <init> (Lkotlin/time/Duration;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getRetryAfter-FghU774 ()Lkotlin/time/Duration;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$ServerError : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public fun <init> (ILjava/lang/String;)V
+	public final fun getStatus ()I
+	public final fun getUrl ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$Timeout : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getUrl ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$Unreachable : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getUrl ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/model/WikiId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/WikiId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getDbName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+

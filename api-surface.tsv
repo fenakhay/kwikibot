@@ -1,0 +1,2613 @@
+# What the reference wikis say their API accepts, as `action=paraminfo` reports it.
+#
+# Regenerate with ./gradlew wikiApiDump. The diff is the point: a row that appears is surface
+# kwikibot does not cover yet, and a row that gains a `deprecated` flag is notice that
+# something is going away. This records what the wikis offer, not what kwikibot implements -
+# FEATURES.md is the statement of what is covered.
+#
+# Limits are the ones an anonymous client is given, since that is what this runs as. An
+# account with apihighlimits is granted the `highlimit` instead.
+#
+# Wikis: en.wikipedia.org, en.wiktionary.org, commons.wikimedia.org, www.wikidata.org
+module	parameter	group	source	flags	detail
+abusefiltercheckmatch	-	action	Abuse Filter		
+abusefiltercheckmatch	filter	action	Abuse Filter	required	type=string
+abusefiltercheckmatch	logid	action	Abuse Filter		type=integer
+abusefiltercheckmatch	rcid	action	Abuse Filter		type=integer
+abusefiltercheckmatch	vars	action	Abuse Filter		type=string
+abusefilterchecksyntax	-	action	Abuse Filter		
+abusefilterchecksyntax	filter	action	Abuse Filter	required	type=string
+abusefilterevalexpression	-	action	Abuse Filter		
+abusefilterevalexpression	expression	action	Abuse Filter	required	type=string
+abusefilterevalexpression	prettyprint	action	Abuse Filter		type=boolean
+abusefilterunblockautopromote	-	action	Abuse Filter		write post
+abusefilterunblockautopromote	token	action	Abuse Filter	required,sensitive	type=string
+abusefilterunblockautopromote	user	action	Abuse Filter	required	type=user
+abuselogprivatedetails	-	action	Abuse Filter		write post
+abuselogprivatedetails	logid	action	Abuse Filter		type=integer
+abuselogprivatedetails	reason	action	Abuse Filter		type=string
+abuselogprivatedetails	token	action	Abuse Filter	required,sensitive	type=string
+acquiretempusername	-	action	MediaWiki		write post
+aggregategroups	-	action	Translate		write post
+aggregategroups	aggregategroup	action	Translate		type=string
+aggregategroups	do	action	Translate	required	enum=add|associate|dissociate|remove|update
+aggregategroups	group	action	Translate	deprecated	type=string
+aggregategroups	groupdescription	action	Translate		type=string
+aggregategroups	groupname	action	Translate		type=string
+aggregategroups	groups	action	Translate	multi	type=string limit=50 highlimit=500
+aggregategroups	groupsourcelanguagecode	action	Translate		type=string default=und
+aggregategroups	token	action	Translate	required,sensitive	type=string
+antispoof	-	action	AntiSpoof		
+antispoof	username	action	AntiSpoof	required	type=string
+block	-	action	MediaWiki		write post
+block	actionrestrictions	action	MediaWiki	multi	enum=create|move|thanks|upload limit=50 highlimit=500
+block	allowusertalk	action	MediaWiki		type=boolean
+block	anononly	action	MediaWiki		type=boolean
+block	autoblock	action	MediaWiki		type=boolean
+block	expiry	action	MediaWiki		type=string default=never
+block	hidename	action	MediaWiki		type=boolean
+block	id	action	MediaWiki		type=integer
+block	namespacerestrictions	action	MediaWiki	multi	type=namespace limit=50 highlimit=500
+block	newblock	action	MediaWiki		type=boolean
+block	nocreate	action	MediaWiki		type=boolean
+block	noemail	action	MediaWiki		type=boolean
+block	pagerestrictions	action	MediaWiki	multi	type=title limit=50 highlimit=50
+block	partial	action	MediaWiki		type=boolean
+block	reason	action	MediaWiki		type=string
+block	reblock	action	MediaWiki		type=boolean
+block	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+block	token	action	MediaWiki	required,sensitive	type=string
+block	user	action	MediaWiki		type=user
+block	userid	action	MediaWiki	deprecated	type=integer
+block	watchlistexpiry	action	MediaWiki		type=expiry
+block	watchuser	action	MediaWiki		type=boolean
+bouncehandler	-	action	BounceHandler	internal	write post
+bouncehandler	email	action	BounceHandler	required	type=string
+categorytree	-	action	CategoryTree	internal	
+categorytree	category	action	CategoryTree	required	type=string
+categorytree	options	action	CategoryTree		type=string
+centralauthtoken	-	action	CentralAuth		
+centralnoticecdncacheupdatebanner	-	action	CentralNotice		write post
+centralnoticecdncacheupdatebanner	banner	action	CentralNotice	required	type=string
+centralnoticecdncacheupdatebanner	language	action	CentralNotice	required	type=string
+centralnoticecdncacheupdatebanner	token	action	CentralNotice	required,sensitive	type=string
+centralnoticechoicedata	-	action	CentralNotice		
+centralnoticechoicedata	language	action	CentralNotice	required	type=string
+centralnoticechoicedata	project	action	CentralNotice	required	type=string
+centralnoticequerycampaign	-	action	CentralNotice		
+centralnoticequerycampaign	campaign	action	CentralNotice	required	type=string
+changeauthenticationdata	-	action	MediaWiki		prefix=changeauth write post
+changeauthenticationdata	changeauthrequest	action	MediaWiki	required	type=string
+changeauthenticationdata	changeauthtoken	action	MediaWiki	required,sensitive	type=string
+changecontentmodel	-	action	MediaWiki		write post
+changecontentmodel	bot	action	MediaWiki		type=boolean
+changecontentmodel	model	action	MediaWiki	required	enum=GadgetDefinition|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|vue|wikitext|worklist
+changecontentmodel	pageid	action	MediaWiki		type=integer
+changecontentmodel	summary	action	MediaWiki		type=string
+changecontentmodel	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+changecontentmodel	title	action	MediaWiki		type=string
+changecontentmodel	token	action	MediaWiki	required,sensitive	type=string
+chartinfo	-	action	Chart	internal	
+chartinfo	global	action	Chart		type=boolean
+checktoken	-	action	MediaWiki		
+checktoken	maxtokenage	action	MediaWiki		type=integer
+checktoken	token	action	MediaWiki	required,sensitive	type=string
+checktoken	type	action	MediaWiki	required	enum=createaccount|csrf|deleteglobalaccount|login|patrol|rollback|setglobalaccountstatus|userrights|watch
+cirrus-check-sanity	-	action	CirrusSearch	internal	
+cirrus-check-sanity	cluster	action	CirrusSearch	required	enum=cloudelastic|codfw|eqiad
+cirrus-check-sanity	from	action	CirrusSearch	required	type=integer
+cirrus-check-sanity	limit	action	CirrusSearch		type=limit default=100
+cirrus-check-sanity	rerenderfrequency	action	CirrusSearch		type=integer default=16
+cirrus-check-sanity	sequenceid	action	CirrusSearch		type=integer
+cirrus-config-dump	-	action	CirrusSearch	internal	
+cirrus-config-dump	prop	action	CirrusSearch	multi	enum=expectedindices|globals|namespacemap|profiles|replicagroup|usertesting default=globals|namespacemap|profiles|replicagroup limit=50 highlimit=500
+cirrus-profiles-dump	-	action	CirrusSearch	internal	
+cirrus-profiles-dump	verbose	action	CirrusSearch		type=boolean
+cirrus-schema-dump	-	action	CirrusSearch	internal	
+cirrus-schema-dump	build	action	CirrusSearch		type=boolean
+cirrus-schema-dump	plugins	action	CirrusSearch	multi	type=string limit=50 highlimit=500
+clearhasmsg	-	action	MediaWiki		write post
+clientlogin	-	action	MediaWiki		prefix=login write post
+clientlogin	logincontinue	action	MediaWiki		type=boolean
+clientlogin	loginmergerequestfields	action	MediaWiki		type=boolean
+clientlogin	loginmessageformat	action	MediaWiki		enum=html|none|raw|wikitext default=wikitext
+clientlogin	loginpreservestate	action	MediaWiki		type=boolean
+clientlogin	loginreauthenticate	action	MediaWiki		type=string
+clientlogin	loginrequests	action	MediaWiki	multi	type=string limit=50 highlimit=500
+clientlogin	loginreturnurl	action	MediaWiki		type=string
+clientlogin	logintoken	action	MediaWiki	required,sensitive	type=string
+codemirror-validate	-	action	CodeMirror	internal	
+codemirror-validate	content	action	CodeMirror	required	type=text
+codemirror-validate	contentmodel	action	CodeMirror	required	enum=Scribunto|javascript|sanitized-css
+codemirror-validate	title	action	CodeMirror	required	type=title
+collection	-	action	Collection	internal	
+collection	submodule	action	Collection	required	enum=addarticle|addcategory|addchapter|clearcollection|getbookcreatorboxcontent|getcollection|getpopupdata|postcollection|removearticle|removeitem|renamechapter|setsorting|settitles|sortitems|suggestarticleaction|suggestundoarticleaction
+communityconfigurationedit	-	action	CommunityConfiguration		write post
+communityconfigurationedit	content	action	CommunityConfiguration	required	type=string
+communityconfigurationedit	provider	action	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|CommunityUpdates|ContentTranslation|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
+communityconfigurationedit	summary	action	CommunityConfiguration		type=string
+communityconfigurationedit	token	action	CommunityConfiguration	required,sensitive	type=string
+compare	-	action	MediaWiki		
+compare	difftype	action	MediaWiki		enum=inline|table|unified default=table
+compare	fromcontentformat	action	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+compare	fromcontentmodel	action	MediaWiki	deprecated	enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+compare	fromid	action	MediaWiki		type=integer
+compare	frompst	action	MediaWiki		type=boolean
+compare	fromrev	action	MediaWiki		type=integer
+compare	fromsection	action	MediaWiki	deprecated	type=string
+compare	fromslots	action	MediaWiki	multi	enum=main limit=50 highlimit=500
+compare	fromtext	action	MediaWiki	deprecated	type=text
+compare	fromtitle	action	MediaWiki		type=string
+compare	prop	action	MediaWiki	multi	enum=comment|diff|diffsize|ids|parsedcomment|rel|size|timestamp|title|user default=diff|ids|title limit=50 highlimit=500
+compare	slots	action	MediaWiki	multi	enum=main limit=50 highlimit=500
+compare	tocontentformat	action	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+compare	tocontentmodel	action	MediaWiki	deprecated	enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+compare	toid	action	MediaWiki		type=integer
+compare	topst	action	MediaWiki		type=boolean
+compare	torelative	action	MediaWiki		enum=cur|next|prev
+compare	torev	action	MediaWiki		type=integer
+compare	tosection	action	MediaWiki	deprecated	type=string
+compare	toslots	action	MediaWiki	multi	enum=main limit=50 highlimit=500
+compare	totext	action	MediaWiki	deprecated	type=text
+compare	totitle	action	MediaWiki		type=string
+createaccount	-	action	MediaWiki		prefix=create write post
+createaccount	createcontinue	action	MediaWiki		type=boolean
+createaccount	createmergerequestfields	action	MediaWiki		type=boolean
+createaccount	createmessageformat	action	MediaWiki		enum=html|none|raw|wikitext default=wikitext
+createaccount	createpreservestate	action	MediaWiki		type=boolean
+createaccount	createrequests	action	MediaWiki	multi	type=string limit=50 highlimit=500
+createaccount	createreturnurl	action	MediaWiki		type=string
+createaccount	createtoken	action	MediaWiki	required,sensitive	type=string
+createlocalaccount	-	action	CentralAuth		write post
+createlocalaccount	reason	action	CentralAuth		type=string
+createlocalaccount	token	action	CentralAuth	required,sensitive	type=string
+createlocalaccount	username	action	CentralAuth	required	type=string
+cspreport	-	action	MediaWiki	internal	write post
+cspreport	reportonly	action	MediaWiki		type=boolean
+cspreport	source	action	MediaWiki		type=string default=internal
+cxcheckunreviewed	-	action	ContentTranslation	internal	
+cxdelete	-	action	ContentTranslation		write post
+cxdelete	from	action	ContentTranslation	required	type=string
+cxdelete	sourcetitle	action	ContentTranslation	required	type=string
+cxdelete	to	action	ContentTranslation	required	type=string
+cxdelete	token	action	ContentTranslation	required,sensitive	type=string
+cxfavoritesuggestions	-	action	ContentTranslation	internal	write post
+cxfavoritesuggestions	from	action	ContentTranslation	required	type=string
+cxfavoritesuggestions	listaction	action	ContentTranslation	required	enum=add|remove
+cxfavoritesuggestions	title	action	ContentTranslation	required	type=string
+cxfavoritesuggestions	to	action	ContentTranslation	required	type=string
+cxfavoritesuggestions	token	action	ContentTranslation	required,sensitive	type=string
+cxpublish	-	action	ContentTranslation	internal	write post
+cxpublish	categories	action	ContentTranslation		type=string
+cxpublish	cxversion	action	ContentTranslation	required	type=integer
+cxpublish	from	action	ContentTranslation	required	type=string
+cxpublish	html	action	ContentTranslation	required	type=string
+cxpublish	publishtags	action	ContentTranslation	multi	type=string limit=50 highlimit=500
+cxpublish	sourcetitle	action	ContentTranslation	required	type=string
+cxpublish	title	action	ContentTranslation	required	type=string
+cxpublish	to	action	ContentTranslation	required	type=string
+cxpublish	token	action	ContentTranslation	required,sensitive	type=string
+cxpublish	wpCaptchaId	action	ContentTranslation		type=string
+cxpublish	wpCaptchaWord	action	ContentTranslation		type=string
+cxpublishsection	-	action	ContentTranslation	internal	write post
+cxpublishsection	captchaid	action	ContentTranslation		type=string
+cxpublishsection	captchaword	action	ContentTranslation		type=string
+cxpublishsection	existingsectiontitle	action	ContentTranslation		type=string
+cxpublishsection	html	action	ContentTranslation	required	type=string
+cxpublishsection	publishtarget	action	ContentTranslation		enum=EXPAND|NEW_SECTION|REPLACE|SANDBOX
+cxpublishsection	sectiontranslationid	action	ContentTranslation	required	type=integer
+cxpublishsection	sourcelanguage	action	ContentTranslation	required	type=string
+cxpublishsection	sourcerevid	action	ContentTranslation	required	type=string
+cxpublishsection	sourcesectiontitle	action	ContentTranslation	required	type=string
+cxpublishsection	sourcetitle	action	ContentTranslation	required	type=string
+cxpublishsection	targetlanguage	action	ContentTranslation	required	type=string
+cxpublishsection	targetsectiontitle	action	ContentTranslation	required	type=string
+cxpublishsection	title	action	ContentTranslation	required	type=string
+cxpublishsection	token	action	ContentTranslation	required,sensitive	type=string
+cxsave	-	action	ContentTranslation	internal	write post
+cxsave	content	action	ContentTranslation	required	type=string
+cxsave	cxversion	action	ContentTranslation		type=integer
+cxsave	from	action	ContentTranslation	required	type=string
+cxsave	progress	action	ContentTranslation	required	type=string
+cxsave	sourcecategories	action	ContentTranslation		type=string
+cxsave	sourcerevision	action	ContentTranslation	required	type=integer
+cxsave	sourcetitle	action	ContentTranslation	required	type=string
+cxsave	targetcategories	action	ContentTranslation		type=string
+cxsave	title	action	ContentTranslation	required	type=string
+cxsave	to	action	ContentTranslation	required	type=string
+cxsave	token	action	ContentTranslation	required,sensitive	type=string
+cxsplit	-	action	ContentTranslation	internal	write post
+cxsplit	token	action	ContentTranslation	required,sensitive	type=string
+cxsplit	translationid	action	ContentTranslation	required	type=integer
+cxtoken	-	action	ContentTranslation		write post
+cxtoken	token	action	ContentTranslation	required,sensitive	type=string
+delete	-	action	MediaWiki		write post
+delete	deletetalk	action	MediaWiki		type=boolean
+delete	oldimage	action	MediaWiki		type=string
+delete	pageid	action	MediaWiki		type=integer
+delete	reason	action	MediaWiki		type=string
+delete	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+delete	title	action	MediaWiki		type=string
+delete	token	action	MediaWiki	required,sensitive	type=string
+delete	unwatch	action	MediaWiki	deprecated	type=boolean
+delete	watch	action	MediaWiki	deprecated	type=boolean
+delete	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+delete	watchlistexpiry	action	MediaWiki		type=expiry
+deleteglobalaccount	-	action	CentralAuth		write post
+deleteglobalaccount	reason	action	CentralAuth		type=string
+deleteglobalaccount	token	action	CentralAuth	required,sensitive	type=string
+deleteglobalaccount	user	action	CentralAuth	required	type=string
+discouragetranslation	-	action	Translate		write post
+discouragetranslation	do	action	Translate	required	enum=discourage|encourage
+discouragetranslation	pageid	action	Translate		type=integer
+discouragetranslation	reason	action	Translate		type=string
+discouragetranslation	title	action	Translate		type=string
+discouragetranslation	token	action	Translate	required,sensitive	type=string
+discussiontoolscompare	-	action	DiscussionTools	internal	
+discussiontoolscompare	fromrev	action	DiscussionTools		type=integer
+discussiontoolscompare	fromtitle	action	DiscussionTools		type=string
+discussiontoolscompare	torev	action	DiscussionTools		type=integer
+discussiontoolscompare	totitle	action	DiscussionTools		type=string
+discussiontoolsedit	-	action	DiscussionTools		write post
+discussiontoolsedit	allownosectiontitle	action	DiscussionTools		type=boolean
+discussiontoolsedit	captchaid	action	DiscussionTools		type=string
+discussiontoolsedit	captchaword	action	DiscussionTools		type=string
+discussiontoolsedit	commentid	action	DiscussionTools		type=string
+discussiontoolsedit	commentname	action	DiscussionTools		type=string
+discussiontoolsedit	formtoken	action	DiscussionTools		type=string
+discussiontoolsedit	html	action	DiscussionTools		type=text
+discussiontoolsedit	mobileformat	action	DiscussionTools		type=boolean
+discussiontoolsedit	nocontent	action	DiscussionTools		type=string
+discussiontoolsedit	paction	action	DiscussionTools	required	enum=addcomment|addtopic
+discussiontoolsedit	page	action	DiscussionTools	required	type=string
+discussiontoolsedit	returnto	action	DiscussionTools		type=title
+discussiontoolsedit	returntoanchor	action	DiscussionTools		type=string
+discussiontoolsedit	returntoquery	action	DiscussionTools		type=string
+discussiontoolsedit	sectiontitle	action	DiscussionTools		type=string
+discussiontoolsedit	summary	action	DiscussionTools		type=string
+discussiontoolsedit	tags	action	DiscussionTools	multi	type=string limit=50 highlimit=500
+discussiontoolsedit	token	action	DiscussionTools	required,sensitive	type=string
+discussiontoolsedit	useskin	action	DiscussionTools		enum=apioutput|authentication-popup|cologneblue|contenttranslation|fallback|json|minerva|modern|monobook|timeless|vector|vector-2022
+discussiontoolsedit	watchlist	action	DiscussionTools		type=string
+discussiontoolsedit	wikitext	action	DiscussionTools		type=text
+discussiontoolsfindcomment	-	action	DiscussionTools		
+discussiontoolsfindcomment	heading	action	DiscussionTools		type=string
+discussiontoolsfindcomment	idorname	action	DiscussionTools		type=string
+discussiontoolsfindcomment	page	action	DiscussionTools		type=string
+discussiontoolsgetsubscriptions	-	action	DiscussionTools		
+discussiontoolsgetsubscriptions	commentname	action	DiscussionTools	required,multi	type=string limit=50 highlimit=500
+discussiontoolspageinfo	-	action	DiscussionTools	internal	
+discussiontoolspageinfo	excludesignatures	action	DiscussionTools	deprecated	type=string
+discussiontoolspageinfo	oldid	action	DiscussionTools		type=integer
+discussiontoolspageinfo	page	action	DiscussionTools		type=string
+discussiontoolspageinfo	prop	action	DiscussionTools	multi	enum=threaditemshtml|transcludedfrom default=transcludedfrom limit=50 highlimit=500
+discussiontoolspageinfo	threaditemsflags	action	DiscussionTools	multi	enum=activity|excludesignatures|noreplies limit=50 highlimit=500
+discussiontoolspreview	-	action	DiscussionTools	internal	
+discussiontoolspreview	mobileformat	action	DiscussionTools		type=boolean
+discussiontoolspreview	page	action	DiscussionTools	required	type=string
+discussiontoolspreview	sectiontitle	action	DiscussionTools		type=string
+discussiontoolspreview	type	action	DiscussionTools	required	enum=reply|topic
+discussiontoolspreview	useskin	action	DiscussionTools		enum=apioutput|authentication-popup|cologneblue|contenttranslation|fallback|json|minerva|modern|monobook|timeless|vector|vector-2022
+discussiontoolspreview	wikitext	action	DiscussionTools	required	type=text
+discussiontoolssubscribe	-	action	DiscussionTools		write post
+discussiontoolssubscribe	commentname	action	DiscussionTools	required	type=string
+discussiontoolssubscribe	page	action	DiscussionTools	required	type=string
+discussiontoolssubscribe	subscribe	action	DiscussionTools	required	type=boolean
+discussiontoolssubscribe	token	action	DiscussionTools	required,sensitive	type=string
+discussiontoolsthank	-	action	DiscussionTools		write post
+discussiontoolsthank	commentid	action	DiscussionTools	required	type=string
+discussiontoolsthank	page	action	DiscussionTools	required	type=string
+discussiontoolsthank	token	action	DiscussionTools	required,sensitive	type=string
+echocreateevent	-	action	Echo		write post
+echocreateevent	content	action	Echo	required	type=string
+echocreateevent	email	action	Echo		type=boolean
+echocreateevent	header	action	Echo	required	type=string
+echocreateevent	page	action	Echo		type=title
+echocreateevent	section	action	Echo	required	enum=alert|notice default=notice
+echocreateevent	token	action	Echo	required,sensitive	type=string
+echocreateevent	user	action	Echo		type=user
+echomarkread	-	action	Echo		write post
+echomarkread	all	action	Echo		type=boolean
+echomarkread	list	action	Echo	multi	type=string limit=50 highlimit=500
+echomarkread	sections	action	Echo	multi	enum=alert|message limit=50 highlimit=500
+echomarkread	token	action	Echo	required,sensitive	type=string
+echomarkread	unreadlist	action	Echo	multi	type=string limit=50 highlimit=500
+echomarkread	wikis	action	Echo	multi	enum=<1073 values> default=enwiki limit=50 highlimit=500
+echomarkseen	-	action	Echo		
+echomarkseen	timestampFormat	action	Echo		enum=ISO_8601|MW default=MW
+echomarkseen	type	action	Echo	required	enum=alert|all|message
+echomute	-	action	Echo		write post
+echomute	mute	action	Echo	multi	type=string limit=50 highlimit=500
+echomute	token	action	Echo	required,sensitive	type=string
+echomute	type	action	Echo	required	enum=page-linked-title|user
+echomute	unmute	action	Echo	multi	type=string limit=50 highlimit=500
+echopushsubscriptions	-	action	Echo	internal	write post
+echopushsubscriptions	command	action	Echo	required	enum=create|delete
+echopushsubscriptions	token	action	Echo	required,sensitive	type=string
+edit	-	action	MediaWiki		write post
+edit	appendtext	action	MediaWiki		type=text
+edit	baserevid	action	MediaWiki		type=integer
+edit	basetimestamp	action	MediaWiki		type=timestamp
+edit	bot	action	MediaWiki		type=boolean
+edit	captchaid	action	MediaWiki		type=string
+edit	captchaword	action	MediaWiki		type=string
+edit	contentformat	action	MediaWiki		enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+edit	contentmodel	action	MediaWiki		enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+edit	createonly	action	MediaWiki		type=boolean
+edit	discussiontoolsautosubscribe	action	MediaWiki		enum=no|preferences|yes default=preferences
+edit	editorinterface	action	MediaWiki		type=string
+edit	md5	action	MediaWiki		type=string
+edit	minor	action	MediaWiki		type=boolean
+edit	nocreate	action	MediaWiki		type=boolean
+edit	notminor	action	MediaWiki		type=boolean
+edit	pageid	action	MediaWiki		type=integer
+edit	prependtext	action	MediaWiki		type=text
+edit	recreate	action	MediaWiki		type=boolean
+edit	redirect	action	MediaWiki		type=boolean
+edit	returnto	action	MediaWiki		type=title
+edit	returntoanchor	action	MediaWiki		type=string
+edit	returntoquery	action	MediaWiki		type=string
+edit	section	action	MediaWiki		type=string
+edit	sectiontitle	action	MediaWiki		type=string
+edit	starttimestamp	action	MediaWiki		type=timestamp
+edit	summary	action	MediaWiki		type=string
+edit	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+edit	text	action	MediaWiki		type=text
+edit	title	action	MediaWiki		type=string
+edit	token	action	MediaWiki	required,sensitive	type=string
+edit	undo	action	MediaWiki		type=integer
+edit	undoafter	action	MediaWiki		type=integer
+edit	unwatch	action	MediaWiki	deprecated	type=boolean
+edit	watch	action	MediaWiki	deprecated	type=boolean
+edit	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+edit	watchlistexpiry	action	MediaWiki		type=expiry
+edit	wgConfirmEditForceShowCaptcha	action	MediaWiki		type=boolean
+editcheckreferenceurl	-	action	VisualEditor	internal	
+editcheckreferenceurl	url	action	VisualEditor	required	type=string
+editmassmessagelist	-	action	MassMessage		write post
+editmassmessagelist	add	action	MassMessage	multi	type=string limit=50 highlimit=500
+editmassmessagelist	description	action	MassMessage		type=string
+editmassmessagelist	minor	action	MassMessage		type=boolean
+editmassmessagelist	remove	action	MassMessage	multi	type=string limit=50 highlimit=500
+editmassmessagelist	spamlist	action	MassMessage	required	type=string
+editmassmessagelist	token	action	MassMessage	required,sensitive	type=string
+editmassmessagelist	watchlist	action	MassMessage		enum=nochange|preferences|unwatch|watch default=preferences
+emailuser	-	action	MediaWiki		write post
+emailuser	ccme	action	MediaWiki		type=boolean
+emailuser	subject	action	MediaWiki	required	type=string
+emailuser	target	action	MediaWiki	required	type=string
+emailuser	text	action	MediaWiki	required	type=text
+emailuser	token	action	MediaWiki	required,sensitive	type=string
+expandtemplates	-	action	MediaWiki		
+expandtemplates	generatexml	action	MediaWiki	deprecated	type=boolean
+expandtemplates	includecomments	action	MediaWiki		type=boolean
+expandtemplates	prop	action	MediaWiki	multi	enum=categories|encodedjsconfigvars|jsconfigvars|modules|parsetree|properties|ttl|volatile|wikitext limit=50 highlimit=500
+expandtemplates	revid	action	MediaWiki		type=integer
+expandtemplates	showstrategykeys	action	MediaWiki		type=boolean
+expandtemplates	templatesandboxcontentformat	action	MediaWiki		enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+expandtemplates	templatesandboxcontentmodel	action	MediaWiki		enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+expandtemplates	templatesandboxprefix	action	MediaWiki	multi	type=string limit=50 highlimit=500
+expandtemplates	templatesandboxtext	action	MediaWiki		type=text
+expandtemplates	templatesandboxtitle	action	MediaWiki		type=string
+expandtemplates	text	action	MediaWiki	required	type=text
+expandtemplates	title	action	MediaWiki		type=string
+fancycaptchareload	-	action	ConfirmEdit	internal	
+featuredfeed	-	action	FeaturedFeeds		
+featuredfeed	feed	action	FeaturedFeeds	required	enum=featured|onthisday|potd
+featuredfeed	feedformat	action	FeaturedFeeds		enum=atom|rss default=rss
+featuredfeed	language	action	FeaturedFeeds		type=string
+feedcontributions	-	action	MediaWiki		
+feedcontributions	deletedonly	action	MediaWiki		type=boolean
+feedcontributions	feedformat	action	MediaWiki		enum=atom|rss default=rss
+feedcontributions	hideminor	action	MediaWiki		type=boolean
+feedcontributions	month	action	MediaWiki		type=integer
+feedcontributions	namespace	action	MediaWiki		type=namespace
+feedcontributions	newonly	action	MediaWiki		type=boolean
+feedcontributions	showsizediff	action	MediaWiki		type=boolean
+feedcontributions	tagfilter	action	MediaWiki	multi	enum=<337 values> limit=50 highlimit=500
+feedcontributions	toponly	action	MediaWiki		type=boolean
+feedcontributions	user	action	MediaWiki	required	type=user
+feedcontributions	year	action	MediaWiki		type=integer
+feedrecentchanges	-	action	MediaWiki		
+feedrecentchanges	associated	action	MediaWiki		type=boolean
+feedrecentchanges	days	action	MediaWiki		type=integer default=7
+feedrecentchanges	feedformat	action	MediaWiki		enum=atom|rss default=rss
+feedrecentchanges	from	action	MediaWiki		type=timestamp
+feedrecentchanges	hideanons	action	MediaWiki		type=boolean
+feedrecentchanges	hidebots	action	MediaWiki		type=boolean
+feedrecentchanges	hidecategorization	action	MediaWiki		type=boolean
+feedrecentchanges	hideliu	action	MediaWiki		type=boolean
+feedrecentchanges	hideminor	action	MediaWiki		type=boolean
+feedrecentchanges	hidemyself	action	MediaWiki		type=boolean
+feedrecentchanges	hidepatrolled	action	MediaWiki		type=boolean
+feedrecentchanges	invert	action	MediaWiki		type=boolean
+feedrecentchanges	inverttags	action	MediaWiki		type=boolean
+feedrecentchanges	limit	action	MediaWiki		type=integer default=50
+feedrecentchanges	namespace	action	MediaWiki		type=namespace
+feedrecentchanges	showlinkedto	action	MediaWiki		type=boolean
+feedrecentchanges	tagfilter	action	MediaWiki		type=string
+feedrecentchanges	target	action	MediaWiki		type=string
+feedthreads	-	action	Liquid Threads		
+feedthreads	days	action	Liquid Threads		type=integer default=7
+feedthreads	feedformat	action	Liquid Threads		enum=atom|rss default=rss
+feedthreads	talkpage	action	Liquid Threads	multi	type=string limit=50 highlimit=500
+feedthreads	thread	action	Liquid Threads	multi	type=string limit=50 highlimit=500
+feedthreads	type	action	Liquid Threads	multi	enum=newthreads|replies default=newthreads limit=50 highlimit=500
+feedwatchlist	-	action	MediaWiki		
+feedwatchlist	allrev	action	MediaWiki		type=boolean
+feedwatchlist	feedformat	action	MediaWiki		enum=atom|rss default=rss
+feedwatchlist	hours	action	MediaWiki		type=integer default=24
+feedwatchlist	linktosections	action	MediaWiki		type=boolean
+feedwatchlist	wlexcludeuser	action	MediaWiki		type=user
+feedwatchlist	wlowner	action	MediaWiki		type=user
+feedwatchlist	wlshow	action	MediaWiki	multi	enum=!anon|!autopatrolled|!bot|!minor|!patrolled|!unread|anon|autopatrolled|bot|minor|patrolled|unread limit=50 highlimit=500
+feedwatchlist	wltoken	action	MediaWiki	sensitive	type=string
+feedwatchlist	wltype	action	MediaWiki	multi	enum=categorize|edit|external|log|new default=edit|new|log|categorize limit=50 highlimit=500
+filerevert	-	action	MediaWiki		write post
+filerevert	archivename	action	MediaWiki	required	type=string
+filerevert	comment	action	MediaWiki		type=string
+filerevert	filename	action	MediaWiki	required	type=string
+filerevert	token	action	MediaWiki	required,sensitive	type=string
+flagconfig	-	action	FlaggedRevs		
+flickrblacklist	-	action	Upload Wizard		
+flickrblacklist	list	action	Upload Wizard		type=boolean
+flickrblacklist	url	action	Upload Wizard		type=string
+flow	-	action	Flow		
+flow	page	action	Flow		type=string default=Topic:Flow-enabled_page
+flow	submodule	action	Flow	required	enum=close-open-topic|edit-header|edit-post|edit-title|edit-topic-summary|lock-topic|moderate-post|moderate-topic|new-topic|reply|undo-edit-header|undo-edit-post|undo-edit-topic-summary|view-header|view-post|view-post-history|view-topic|view-topic-history|view-topic-summary|view-topiclist deprecatedvalues=close-open-topic
+flow	token	action	Flow		type=string
+flow-parsoid-utils	-	action	Flow		
+flow-parsoid-utils	content	action	Flow	required	type=string
+flow-parsoid-utils	from	action	Flow	required	enum=html|wikitext
+flow-parsoid-utils	pageid	action	Flow		type=integer
+flow-parsoid-utils	title	action	Flow		type=string
+flow-parsoid-utils	to	action	Flow	required	enum=html|wikitext
+flowthank	-	action	Thanks		write post
+flowthank	postid	action	Thanks	required	type=string
+flowthank	token	action	Thanks	required,sensitive	type=string
+globalblock	-	action	GlobalBlocking		write post
+globalblock	allow-account-creation	action	GlobalBlocking		type=boolean
+globalblock	alsolocal	action	GlobalBlocking		type=boolean
+globalblock	anononly	action	GlobalBlocking		type=boolean
+globalblock	block-email	action	GlobalBlocking		type=boolean
+globalblock	enable-autoblock	action	GlobalBlocking		type=boolean
+globalblock	expiry	action	GlobalBlocking		type=expiry
+globalblock	id	action	GlobalBlocking		type=integer
+globalblock	local-allow-account-creation	action	GlobalBlocking		type=boolean
+globalblock	localanononly	action	GlobalBlocking		type=boolean
+globalblock	localblocksemail	action	GlobalBlocking		type=boolean
+globalblock	localblockstalk	action	GlobalBlocking		type=boolean
+globalblock	modify	action	GlobalBlocking		type=boolean
+globalblock	reason	action	GlobalBlocking	required	type=string
+globalblock	target	action	GlobalBlocking		type=user
+globalblock	token	action	GlobalBlocking	required,sensitive	type=string
+globalblock	unblock	action	GlobalBlocking		type=boolean
+globalpreferenceoverrides	-	action	GlobalPreferences		write post
+globalpreferenceoverrides	change	action	GlobalPreferences	multi	type=string limit=50 highlimit=500
+globalpreferenceoverrides	optionname	action	GlobalPreferences		type=string
+globalpreferenceoverrides	optionvalue	action	GlobalPreferences		type=string
+globalpreferenceoverrides	reset	action	GlobalPreferences		type=boolean
+globalpreferenceoverrides	resetkinds	action	GlobalPreferences	multi	enum=all|local-exception|registered|registered-checkmatrix|registered-multiselect|special|unused|userjs default=all limit=50 highlimit=500
+globalpreferenceoverrides	token	action	GlobalPreferences	required,sensitive	type=string
+globalpreferences	-	action	GlobalPreferences		write post
+globalpreferences	change	action	GlobalPreferences	multi	type=string limit=50 highlimit=500
+globalpreferences	optionname	action	GlobalPreferences		type=string
+globalpreferences	optionvalue	action	GlobalPreferences		type=string
+globalpreferences	reset	action	GlobalPreferences		type=boolean
+globalpreferences	resetkinds	action	GlobalPreferences	multi	enum=all|local-exception|registered|registered-checkmatrix|registered-multiselect|special|unused|userjs default=all limit=50 highlimit=500
+globalpreferences	token	action	GlobalPreferences	required,sensitive	type=string
+globaluserrights	-	action	CentralAuth		write post
+globaluserrights	add	action	CentralAuth	multi	enum=abusefilter-helper|abusefilter-maintainer|apihighlimits-requestor|captcha-exempt|founder|global-bot|global-deleter|global-flow-create|global-interface-editor|global-ipblock-exempt|global-rollbacker|global-sysop|global-temporary-account-viewer|local-bot|new-wikis-importer|ombuds|recursive-export|staff|steward|sysadmin|u4c-member|vrt-permissions|wmf-email-block-override|wmf-researcher limit=50 highlimit=500
+globaluserrights	expiry	action	CentralAuth	multi	type=string default=infinite limit=50 highlimit=500
+globaluserrights	reason	action	CentralAuth		type=string
+globaluserrights	remove	action	CentralAuth	multi	enum=abusefilter-helper|abusefilter-maintainer|apihighlimits-requestor|captcha-exempt|founder|global-bot|global-deleter|global-flow-create|global-interface-editor|global-ipblock-exempt|global-rollbacker|global-sysop|global-temporary-account-viewer|local-bot|new-wikis-importer|ombuds|recursive-export|staff|steward|sysadmin|u4c-member|vrt-permissions|wmf-email-block-override|wmf-researcher limit=50 highlimit=500
+globaluserrights	tags	action	CentralAuth	multi	enum=<45 values> limit=50 highlimit=500
+globaluserrights	token	action	CentralAuth	required,sensitive	type=string
+globaluserrights	user	action	CentralAuth		type=user
+globaluserrights	userid	action	CentralAuth	deprecated	type=integer
+groupreview	-	action	Translate		write post
+groupreview	group	action	Translate	required	type=string
+groupreview	language	action	Translate		type=string default=en
+groupreview	state	action	Translate	required	type=string
+groupreview	token	action	Translate	required,sensitive	type=string
+growthinvalidateimagerecommendation	-	action	GrowthExperiments	internal	write post
+growthinvalidateimagerecommendation	filename	action	GrowthExperiments	required	type=string
+growthinvalidateimagerecommendation	sectionnumber	action	GrowthExperiments		type=integer
+growthinvalidateimagerecommendation	sectiontitle	action	GrowthExperiments		type=string
+growthinvalidateimagerecommendation	tasktype	action	GrowthExperiments		enum=image-recommendation|section-image-recommendation default=image-recommendation
+growthinvalidateimagerecommendation	title	action	GrowthExperiments	required	type=title
+growthinvalidateimagerecommendation	token	action	GrowthExperiments	required,sensitive	type=string
+growthinvalidatepersonalizedpraisesuggestion	-	action	GrowthExperiments	internal	write post
+growthinvalidatepersonalizedpraisesuggestion	mentee	action	GrowthExperiments	required	type=user
+growthinvalidatepersonalizedpraisesuggestion	reason	action	GrowthExperiments		enum=praised|skipped
+growthinvalidatepersonalizedpraisesuggestion	skipreason	action	GrowthExperiments		enum=already-praised|not-now|not-praiseworthy|other
+growthinvalidatepersonalizedpraisesuggestion	token	action	GrowthExperiments	required,sensitive	type=string
+growthinvalidaterevisetonerecommendation	-	action	GrowthExperiments	internal	write post
+growthinvalidaterevisetonerecommendation	title	action	GrowthExperiments	required	type=title
+growthinvalidaterevisetonerecommendation	token	action	GrowthExperiments	required,sensitive	type=string
+growthmanagementorlist	-	action	GrowthExperiments		write post
+growthmanagementorlist	awaytimestamp	action	GrowthExperiments		type=timestamp
+growthmanagementorlist	geaction	action	GrowthExperiments	required	enum=add|change|remove
+growthmanagementorlist	isaway	action	GrowthExperiments		type=boolean
+growthmanagementorlist	message	action	GrowthExperiments		type=string
+growthmanagementorlist	summary	action	GrowthExperiments		type=string
+growthmanagementorlist	token	action	GrowthExperiments	required,sensitive	type=string
+growthmanagementorlist	username	action	GrowthExperiments		type=user
+growthmanagementorlist	weight	action	GrowthExperiments		enum=0|1|2|4
+growthmentordashboardupdatedata	-	action	GrowthExperiments		write post
+growthmentordashboardupdatedata	token	action	GrowthExperiments	required,sensitive	type=string
+growthsetmenteestatus	-	action	GrowthExperiments		write post
+growthsetmenteestatus	state	action	GrowthExperiments	required	enum=disabled|enabled|optout
+growthsetmenteestatus	token	action	GrowthExperiments	required,sensitive	type=string
+growthsetmentor	-	action	GrowthExperiments		write post
+growthsetmentor	mentee	action	GrowthExperiments	required	type=user
+growthsetmentor	mentor	action	GrowthExperiments	required	type=user
+growthsetmentor	reason	action	GrowthExperiments		type=string
+growthsetmentor	token	action	GrowthExperiments	required,sensitive	type=string
+growthstarmentee	-	action	GrowthExperiments		write post
+growthstarmentee	gesaction	action	GrowthExperiments	required	enum=star|unstar
+growthstarmentee	gesmentee	action	GrowthExperiments	required	type=user
+growthstarmentee	token	action	GrowthExperiments	required,sensitive	type=string
+help	-	action	MediaWiki		
+help	modules	action	MediaWiki	multi	type=string default=main limit=50 highlimit=500
+help	recursivesubmodules	action	MediaWiki		type=boolean
+help	submodules	action	MediaWiki		type=boolean
+help	toc	action	MediaWiki		type=boolean
+help	wrap	action	MediaWiki		type=boolean
+helppanelquestionposter	-	action	GrowthExperiments	internal	write post
+helppanelquestionposter	body	action	GrowthExperiments	required	type=string
+helppanelquestionposter	relevanttitle	action	GrowthExperiments		type=string
+helppanelquestionposter	source	action	GrowthExperiments		enum=helpdesk|helppanel|homepage-mentorship|mentor-helppanel|mentor-homepage default=helpdesk
+helppanelquestionposter	token	action	GrowthExperiments	required,sensitive	type=string
+homepagequestionstore	-	action	GrowthExperiments		
+homepagequestionstore	storage	action	GrowthExperiments	required	enum=growthexperiments-helppanel-questions|growthexperiments-mentor-questions
+imagerotate	-	action	MediaWiki		
+import	-	action	MediaWiki		write post
+import	assignknownusers	action	MediaWiki		type=boolean
+import	fullhistory	action	MediaWiki		type=boolean
+import	interwikipage	action	MediaWiki		type=string
+import	interwikiprefix	action	MediaWiki		type=string
+import	interwikisource	action	MediaWiki		enum=commons|de|es|fr|it|meta|nost|outreachwiki|pl|test2wiki
+import	namespace	action	MediaWiki		type=namespace
+import	rootpage	action	MediaWiki		type=string
+import	summary	action	MediaWiki		type=string
+import	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+import	templates	action	MediaWiki		type=boolean
+import	token	action	MediaWiki	required,sensitive	type=string
+import	xml	action	MediaWiki		type=upload
+json	-	format	MediaWiki		
+json	ascii	format	MediaWiki		type=boolean
+json	callback	format	MediaWiki		type=string
+json	formatversion	format	MediaWiki		enum=1|2|latest default=1
+json	utf8	format	MediaWiki		type=boolean
+jsonconfig	-	action	JsonConfig		
+jsonconfig	command	action	JsonConfig		enum=reload|reset|status default=status
+jsonconfig	namespace	action	JsonConfig		type=integer
+jsonconfig	title	action	JsonConfig		type=string
+jsondata	-	action	JsonConfig	internal	
+jsondata	title	action	JsonConfig	required	type=string
+jsonfm	-	format	MediaWiki		
+jsonfm	ascii	format	MediaWiki		type=boolean
+jsonfm	callback	format	MediaWiki		type=string
+jsonfm	formatversion	format	MediaWiki		enum=1|2|latest default=1
+jsonfm	utf8	format	MediaWiki		type=boolean
+jsonfm	wrappedhtml	format	MediaWiki		type=boolean
+jsontransform	-	action	JsonConfig	internal	
+jsontransform	jtargs	action	JsonConfig	multi	type=string limit=50 highlimit=500
+jsontransform	jtfunction	action	JsonConfig	required	type=string
+jsontransform	jtmodule	action	JsonConfig	required	type=string
+jsontransform	title	action	JsonConfig	required	type=string
+languagesearch	-	action	MediaWiki		
+languagesearch	search	action	MediaWiki	required	type=string
+languagesearch	typos	action	MediaWiki		type=integer default=1
+linkaccount	-	action	MediaWiki		prefix=link write post
+linkaccount	linkcontinue	action	MediaWiki		type=boolean
+linkaccount	linkmergerequestfields	action	MediaWiki		type=boolean
+linkaccount	linkmessageformat	action	MediaWiki		enum=html|none|raw|wikitext default=wikitext
+linkaccount	linkrequests	action	MediaWiki	multi	type=string limit=50 highlimit=500
+linkaccount	linkreturnurl	action	MediaWiki		type=string
+linkaccount	linktoken	action	MediaWiki	required,sensitive	type=string
+login	-	action	MediaWiki		prefix=lg write post
+login	lgdomain	action	MediaWiki		type=string
+login	lgname	action	MediaWiki		type=string
+login	lgpassword	action	MediaWiki	sensitive	type=password
+login	lgtoken	action	MediaWiki	sensitive	type=string
+logout	-	action	MediaWiki		write post
+logout	checkuserclienthints	action	MediaWiki	sensitive	type=string
+logout	global	action	MediaWiki		type=boolean
+logout	token	action	MediaWiki	required,sensitive	type=string
+managegroupsynchronizationcache	-	action	Translate	internal	write post
+managegroupsynchronizationcache	group	action	Translate	required	type=string
+managegroupsynchronizationcache	operation	action	Translate	required	enum=resolveGroup|resolveMessage
+managegroupsynchronizationcache	title	action	Translate		type=string
+managegroupsynchronizationcache	token	action	Translate	required,sensitive	type=string
+managemessagegroups	-	action	Translate	internal	write post
+managemessagegroups	changesetModified	action	Translate	required	type=integer
+managemessagegroups	changesetName	action	Translate		type=string default=default
+managemessagegroups	groupId	action	Translate	required	type=string
+managemessagegroups	messageKey	action	Translate	required	type=string
+managemessagegroups	operation	action	Translate	required	enum=new|rename
+managemessagegroups	renameMessageKey	action	Translate		type=string
+managemessagegroups	token	action	Translate	required,sensitive	type=string
+managetags	-	action	MediaWiki		write post
+managetags	ignorewarnings	action	MediaWiki		type=boolean
+managetags	operation	action	MediaWiki	required	enum=activate|create|deactivate|delete
+managetags	reason	action	MediaWiki		type=string
+managetags	tag	action	MediaWiki	required	type=string
+managetags	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+managetags	token	action	MediaWiki	required,sensitive	type=string
+markfortranslation	-	action	Translate		write post
+markfortranslation	forcelatestsyntaxversion	action	Translate		type=boolean
+markfortranslation	forcepriority	action	Translate		type=boolean
+markfortranslation	fuzzyunits	action	Translate	multi	type=string limit=1000 highlimit=1000
+markfortranslation	nofuzzyunits	action	Translate	multi	type=string limit=1000 highlimit=1000
+markfortranslation	pageid	action	Translate		type=integer
+markfortranslation	prioritylanguages	action	Translate	multi	type=string limit=1000 highlimit=1000
+markfortranslation	priorityreason	action	Translate		type=string
+markfortranslation	revid	action	Translate		type=integer
+markfortranslation	title	action	Translate		type=string
+markfortranslation	token	action	Translate	required,sensitive	type=string
+markfortranslation	transclusion	action	Translate		enum=no|yes
+markfortranslation	translatetitle	action	Translate		enum=no|yes
+massmessage	-	action	MassMessage		write post
+massmessage	message	action	MassMessage		type=string
+massmessage	page-message	action	MassMessage		type=string
+massmessage	spamlist	action	MassMessage	required	type=string
+massmessage	subject	action	MassMessage	required	type=string
+massmessage	token	action	MassMessage	required,sensitive	type=string
+mediadetection	-	action	Upload Wizard		
+mediadetection	filekey	action	Upload Wizard		type=string
+mediadetection	filename	action	Upload Wizard		type=string
+mergehistory	-	action	MediaWiki		write post
+mergehistory	from	action	MediaWiki		type=string
+mergehistory	fromid	action	MediaWiki		type=integer
+mergehistory	reason	action	MediaWiki		type=string
+mergehistory	starttimestamp	action	MediaWiki		type=string
+mergehistory	timestamp	action	MediaWiki		type=string
+mergehistory	to	action	MediaWiki		type=string
+mergehistory	toid	action	MediaWiki		type=integer
+mergehistory	token	action	MediaWiki	required,sensitive	type=string
+messagegroupsubscription	-	action	Translate	internal	write post
+messagegroupsubscription	groupId	action	Translate	required	type=string
+messagegroupsubscription	operation	action	Translate	required	enum=subscribe|unsubscribe
+messagegroupsubscription	token	action	Translate	required,sensitive	type=string
+move	-	action	MediaWiki		write post
+move	from	action	MediaWiki		type=string
+move	fromid	action	MediaWiki		type=integer
+move	ignorewarnings	action	MediaWiki		type=boolean
+move	movesubpages	action	MediaWiki		type=boolean
+move	movetalk	action	MediaWiki		type=boolean
+move	noredirect	action	MediaWiki		type=boolean
+move	reason	action	MediaWiki		type=string
+move	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+move	to	action	MediaWiki	required	type=string
+move	token	action	MediaWiki	required,sensitive	type=string
+move	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+move	watchlistexpiry	action	MediaWiki		type=expiry
+none	-	format	MediaWiki		
+opensearch	-	action	MediaWiki		
+opensearch	format	action	MediaWiki		enum=json|jsonfm|xml|xmlfm default=json
+opensearch	limit	action	MediaWiki		type=limit default=10
+opensearch	namespace	action	MediaWiki	multi	type=namespace default=0 limit=50 highlimit=500
+opensearch	profile	action	MediaWiki		enum=classic|engine_autoselect|fast-fuzzy|fuzzy|normal|strict default=engine_autoselect
+opensearch	redirects	action	MediaWiki		enum=resolve|return
+opensearch	search	action	MediaWiki	required	type=string
+opensearch	suggest	action	MediaWiki	deprecated	type=boolean
+opensearch	warningsaserror	action	MediaWiki		type=boolean
+options	-	action	MediaWiki		write post
+options	change	action	MediaWiki	multi	type=string limit=50 highlimit=500
+options	global	action	MediaWiki		enum=create|ignore|override|update default=ignore
+options	optionname	action	MediaWiki		type=string
+options	optionvalue	action	MediaWiki		type=string
+options	reset	action	MediaWiki		type=boolean
+options	resetkinds	action	MediaWiki	multi	enum=all|local-exception|registered|registered-checkmatrix|registered-multiselect|special|unused|userjs default=all limit=50 highlimit=500
+options	token	action	MediaWiki	required,sensitive	type=string
+pagetriageaction	-	action	PageTriage		write post
+pagetriageaction	enqueue	action	PageTriage		type=boolean
+pagetriageaction	note	action	PageTriage		type=string
+pagetriageaction	pageid	action	PageTriage	required	type=integer
+pagetriageaction	reviewed	action	PageTriage		enum=0|1
+pagetriageaction	skipnotif	action	PageTriage		type=boolean
+pagetriageaction	tags	action	PageTriage	multi	enum=<45 values> limit=50 highlimit=500
+pagetriageaction	token	action	PageTriage	required,sensitive	type=string
+pagetriagelist	-	action	PageTriage		
+pagetriagelist	afc_state	action	PageTriage		type=integer
+pagetriagelist	blocked_users	action	PageTriage		type=boolean
+pagetriagelist	date_range_from	action	PageTriage		type=timestamp
+pagetriagelist	date_range_to	action	PageTriage		type=timestamp
+pagetriagelist	dir	action	PageTriage		enum=newestfirst|newestreview|oldestfirst|oldestreview
+pagetriagelist	keyword	action	PageTriage		type=string
+pagetriagelist	learners	action	PageTriage		type=boolean
+pagetriagelist	limit	action	PageTriage		type=integer default=20
+pagetriagelist	namespace	action	PageTriage		type=integer
+pagetriagelist	no_category	action	PageTriage		type=boolean
+pagetriagelist	no_inbound_links	action	PageTriage		type=boolean
+pagetriagelist	non_autoconfirmed_users	action	PageTriage		type=boolean
+pagetriagelist	offset	action	PageTriage		type=integer
+pagetriagelist	page_id	action	PageTriage		type=integer
+pagetriagelist	pageoffset	action	PageTriage		type=integer
+pagetriagelist	recreated	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_b	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_c	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_featured	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_good	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_start	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_class_stub	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_issues_attack	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_issues_copyvio	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_issues_none	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_issues_spam	action	PageTriage		type=boolean
+pagetriagelist	show_predicted_issues_vandalism	action	PageTriage		type=boolean
+pagetriagelist	showautopatrolled	action	PageTriage		type=boolean
+pagetriagelist	showbots	action	PageTriage		type=boolean
+pagetriagelist	showdeleted	action	PageTriage		type=boolean
+pagetriagelist	showothers	action	PageTriage		type=boolean
+pagetriagelist	showredirs	action	PageTriage		type=boolean
+pagetriagelist	showreviewed	action	PageTriage		type=boolean
+pagetriagelist	showunreviewed	action	PageTriage		type=boolean
+pagetriagelist	unreferenced	action	PageTriage		type=boolean
+pagetriagelist	username	action	PageTriage		type=user
+pagetriagestats	-	action	PageTriage		
+pagetriagestats	afc_state	action	PageTriage		type=integer
+pagetriagestats	blocked_users	action	PageTriage		type=boolean
+pagetriagestats	date_range_from	action	PageTriage		type=timestamp
+pagetriagestats	date_range_to	action	PageTriage		type=timestamp
+pagetriagestats	keyword	action	PageTriage		type=string
+pagetriagestats	learners	action	PageTriage		type=boolean
+pagetriagestats	namespace	action	PageTriage		type=integer
+pagetriagestats	no_category	action	PageTriage		type=boolean
+pagetriagestats	no_inbound_links	action	PageTriage		type=boolean
+pagetriagestats	non_autoconfirmed_users	action	PageTriage		type=boolean
+pagetriagestats	recreated	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_b	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_c	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_featured	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_good	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_start	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_class_stub	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_issues_attack	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_issues_copyvio	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_issues_none	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_issues_spam	action	PageTriage		type=boolean
+pagetriagestats	show_predicted_issues_vandalism	action	PageTriage		type=boolean
+pagetriagestats	showautopatrolled	action	PageTriage		type=boolean
+pagetriagestats	showbots	action	PageTriage		type=boolean
+pagetriagestats	showdeleted	action	PageTriage		type=boolean
+pagetriagestats	showothers	action	PageTriage		type=boolean
+pagetriagestats	showredirs	action	PageTriage		type=boolean
+pagetriagestats	showreviewed	action	PageTriage		type=boolean
+pagetriagestats	showunreviewed	action	PageTriage		type=boolean
+pagetriagestats	unreferenced	action	PageTriage		type=boolean
+pagetriagestats	username	action	PageTriage		type=user
+pagetriagetagcopyvio	-	action	PageTriage		write post
+pagetriagetagcopyvio	revid	action	PageTriage	required	type=integer
+pagetriagetagcopyvio	token	action	PageTriage	required,sensitive	type=string
+pagetriagetagcopyvio	untag	action	PageTriage		type=boolean
+pagetriagetagging	-	action	PageTriage		write post
+pagetriagetagging	deletion	action	PageTriage		type=boolean
+pagetriagetagging	note	action	PageTriage		type=string
+pagetriagetagging	pageid	action	PageTriage	required	type=integer
+pagetriagetagging	taglist	action	PageTriage	required,multi	type=string limit=50 highlimit=500
+pagetriagetagging	token	action	PageTriage	required,sensitive	type=string
+pagetriagetagging	wikitext	action	PageTriage	required	type=string
+paraminfo	-	action	MediaWiki		
+paraminfo	formatmodules	action	MediaWiki	deprecated,multi	enum=json|jsonfm|none|rawfm|xml|xmlfm limit=50 highlimit=500
+paraminfo	helpformat	action	MediaWiki		enum=html|none|raw|wikitext default=none
+paraminfo	mainmodule	action	MediaWiki	deprecated	type=string
+paraminfo	modules	action	MediaWiki	multi	type=string limit=50 highlimit=500
+paraminfo	pagesetmodule	action	MediaWiki	deprecated	type=string
+paraminfo	querymodules	action	MediaWiki	deprecated,multi	enum=<137 values> limit=50 highlimit=500
+parse	-	action	MediaWiki		
+parse	contentformat	action	MediaWiki		enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+parse	contentmodel	action	MediaWiki		enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+parse	disableeditsection	action	MediaWiki		type=boolean
+parse	disablelimitreport	action	MediaWiki		type=boolean
+parse	disablepp	action	MediaWiki	deprecated	type=boolean
+parse	disablestylededuplication	action	MediaWiki		type=boolean
+parse	disabletoc	action	MediaWiki		type=boolean
+parse	effectivelanglinks	action	MediaWiki	deprecated	type=boolean
+parse	generatexml	action	MediaWiki	deprecated	type=boolean
+parse	mobileformat	action	MediaWiki		type=boolean
+parse	oldid	action	MediaWiki		type=integer
+parse	onlypst	action	MediaWiki		type=boolean
+parse	page	action	MediaWiki		type=string
+parse	pageid	action	MediaWiki		type=integer
+parse	parser	action	MediaWiki		enum=default|legacy|parsoid default=default
+parse	parsoid	action	MediaWiki	deprecated	type=boolean
+parse	preview	action	MediaWiki		type=boolean
+parse	prop	action	MediaWiki	multi	enum=<28 values> default=text|langlinks|categories|links|templates|images|externallinks|sections|tocdata|revid|displaytitle|iwlinks|properties|parsewarnings limit=50 highlimit=500 deprecatedvalues=headitems|sections
+parse	pst	action	MediaWiki		type=boolean
+parse	redirects	action	MediaWiki		type=boolean
+parse	revid	action	MediaWiki		type=integer
+parse	section	action	MediaWiki		type=string
+parse	sectionpreview	action	MediaWiki		type=boolean
+parse	sectiontitle	action	MediaWiki		type=string
+parse	showstrategykeys	action	MediaWiki		type=boolean
+parse	summary	action	MediaWiki		type=string
+parse	templatesandboxcontentformat	action	MediaWiki		enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+parse	templatesandboxcontentmodel	action	MediaWiki		enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+parse	templatesandboxprefix	action	MediaWiki	multi	type=string limit=50 highlimit=500
+parse	templatesandboxtext	action	MediaWiki		type=text
+parse	templatesandboxtitle	action	MediaWiki		type=string
+parse	text	action	MediaWiki		type=text
+parse	title	action	MediaWiki		type=string
+parse	usearticle	action	MediaWiki		type=boolean
+parse	useskin	action	MediaWiki		enum=apioutput|authentication-popup|cologneblue|contenttranslation|fallback|json|minerva|modern|monobook|timeless|vector|vector-2022
+parse	wrapoutputclass	action	MediaWiki		type=string default=mw-parser-output
+parser-migration	-	action	ParserMigration	internal	
+parser-migration	config	action	ParserMigration	multi	enum=new|old default=old|new limit=50 highlimit=500
+parser-migration	redirect	action	ParserMigration		type=string
+parser-migration	title	action	ParserMigration	required	type=string
+patrol	-	action	MediaWiki		write post
+patrol	rcid	action	MediaWiki		type=integer
+patrol	revid	action	MediaWiki		type=integer
+patrol	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+patrol	token	action	MediaWiki	required,sensitive	type=string
+protect	-	action	MediaWiki		write post
+protect	cascade	action	MediaWiki		type=boolean
+protect	expiry	action	MediaWiki	multi	type=string default=infinite limit=50 highlimit=500
+protect	pageid	action	MediaWiki		type=integer
+protect	protections	action	MediaWiki	required,multi	type=string limit=50 highlimit=500
+protect	reason	action	MediaWiki		type=string
+protect	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+protect	title	action	MediaWiki		type=string
+protect	token	action	MediaWiki	required,sensitive	type=string
+protect	watch	action	MediaWiki	deprecated	type=boolean
+protect	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+protect	watchlistexpiry	action	MediaWiki		type=expiry
+purge	-	action	MediaWiki		write post
+purge	continue	action	MediaWiki		type=string
+purge	converttitles	action	MediaWiki		type=boolean
+purge	forcelinkupdate	action	MediaWiki		type=boolean
+purge	forcerecursivelinkupdate	action	MediaWiki		type=boolean
+purge	generator	action	MediaWiki		enum=<44 values>
+purge	pageids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+purge	redirects	action	MediaWiki		type=boolean
+purge	revids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+purge	titles	action	MediaWiki	multi	type=string limit=50 highlimit=500
+query	-	action	MediaWiki		
+query	continue	action	MediaWiki		type=string
+query	converttitles	action	MediaWiki		type=boolean
+query	export	action	MediaWiki		type=boolean
+query	exportnowrap	action	MediaWiki		type=boolean
+query	exportschema	action	MediaWiki		enum=0.10|0.11 default=0.11
+query	generator	action	MediaWiki		enum=<44 values>
+query	indexpageids	action	MediaWiki		type=boolean
+query	iwurl	action	MediaWiki		type=boolean
+query	list	action	MediaWiki	multi	enum=<71 values> limit=50 highlimit=500 deprecatedvalues=checkuser|deletedrevs
+query	meta	action	MediaWiki	multi	enum=<26 values> limit=50 highlimit=500
+query	pageids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+query	prop	action	MediaWiki	multi	enum=<40 values> limit=50 highlimit=500
+query	rawcontinue	action	MediaWiki		type=boolean
+query	redirects	action	MediaWiki		type=boolean
+query	revids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+query	titles	action	MediaWiki	multi	type=string limit=50 highlimit=500
+query+abusefilters	-	list	Abuse Filter		prefix=abf
+query+abusefilters	abfdir	list	Abuse Filter		enum=newer|older default=newer
+query+abusefilters	abfendid	list	Abuse Filter		type=integer
+query+abusefilters	abflimit	list	Abuse Filter		type=limit default=10
+query+abusefilters	abfprop	list	Abuse Filter	multi	enum=actions|comments|description|hits|id|lasteditor|lastedittime|pattern|private|protected|status default=id|description|actions|status limit=50 highlimit=500
+query+abusefilters	abfshow	list	Abuse Filter	multi	enum=!deleted|!enabled|!private|!protected|deleted|enabled|private|protected limit=50 highlimit=500
+query+abusefilters	abfstartid	list	Abuse Filter		type=integer
+query+abuselog	-	list	Abuse Filter		prefix=afl
+query+abuselog	afldir	list	Abuse Filter		enum=newer|older default=older
+query+abuselog	aflend	list	Abuse Filter		type=timestamp
+query+abuselog	aflfilter	list	Abuse Filter	multi	type=string limit=50 highlimit=500
+query+abuselog	afllimit	list	Abuse Filter		type=limit default=10
+query+abuselog	afllogid	list	Abuse Filter		type=integer
+query+abuselog	aflprop	list	Abuse Filter	multi	enum=action|details|filter|hidden|ids|result|revid|timestamp|title|user default=ids|user|title|action|result|timestamp|hidden|revid limit=50 highlimit=500
+query+abuselog	aflstart	list	Abuse Filter		type=timestamp
+query+abuselog	afltitle	list	Abuse Filter		type=string
+query+abuselog	afluser	list	Abuse Filter		type=string
+query+allcampaigns	-	list	Upload Wizard		prefix=uwc
+query+allcampaigns	uwccontinue	list	Upload Wizard		type=string
+query+allcampaigns	uwcenabledonly	list	Upload Wizard		type=boolean
+query+allcampaigns	uwclimit	list	Upload Wizard		type=limit default=50
+query+allcategories	-	list	MediaWiki		prefix=ac
+query+allcategories	accontinue	list	MediaWiki		type=string
+query+allcategories	acdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+allcategories	acfrom	list	MediaWiki		type=string
+query+allcategories	aclimit	list	MediaWiki		type=limit default=10
+query+allcategories	acmax	list	MediaWiki		type=integer
+query+allcategories	acmin	list	MediaWiki		type=integer
+query+allcategories	acprefix	list	MediaWiki		type=string
+query+allcategories	acprop	list	MediaWiki	multi	enum=hidden|size limit=50 highlimit=500
+query+allcategories	acto	list	MediaWiki		type=string
+query+alldeletedrevisions	-	list	MediaWiki		prefix=adr
+query+alldeletedrevisions	adrcontentformat	list	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+query+alldeletedrevisions	adrcontinue	list	MediaWiki		type=string
+query+alldeletedrevisions	adrdiffto	list	MediaWiki	deprecated	type=string
+query+alldeletedrevisions	adrdifftotext	list	MediaWiki	deprecated	type=string
+query+alldeletedrevisions	adrdifftotextpst	list	MediaWiki	deprecated	type=boolean
+query+alldeletedrevisions	adrdir	list	MediaWiki		enum=newer|older default=older
+query+alldeletedrevisions	adrend	list	MediaWiki		type=timestamp
+query+alldeletedrevisions	adrexcludeuser	list	MediaWiki		type=user
+query+alldeletedrevisions	adrexpandtemplates	list	MediaWiki	deprecated	type=boolean
+query+alldeletedrevisions	adrfrom	list	MediaWiki		type=string
+query+alldeletedrevisions	adrgeneratetitles	list	MediaWiki		type=boolean
+query+alldeletedrevisions	adrgeneratexml	list	MediaWiki	deprecated	type=boolean
+query+alldeletedrevisions	adrlimit	list	MediaWiki		type=limit
+query+alldeletedrevisions	adrnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+alldeletedrevisions	adrparse	list	MediaWiki	deprecated	type=boolean
+query+alldeletedrevisions	adrprefix	list	MediaWiki		type=string
+query+alldeletedrevisions	adrprop	list	MediaWiki	multi	enum=comment|content|contentmodel|flags|ids|parsedcomment|parsetree|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid default=ids|timestamp|flags|comment|user limit=50 highlimit=500 deprecatedvalues=parsetree
+query+alldeletedrevisions	adrsection	list	MediaWiki		type=string
+query+alldeletedrevisions	adrslots	list	MediaWiki	multi	enum=main limit=50 highlimit=500
+query+alldeletedrevisions	adrstart	list	MediaWiki		type=timestamp
+query+alldeletedrevisions	adrtag	list	MediaWiki		type=string
+query+alldeletedrevisions	adrto	list	MediaWiki		type=string
+query+alldeletedrevisions	adruser	list	MediaWiki		type=user
+query+allfileusages	-	list	MediaWiki		prefix=af
+query+allfileusages	afcontinue	list	MediaWiki		type=string
+query+allfileusages	afdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+allfileusages	affrom	list	MediaWiki		type=string
+query+allfileusages	aflimit	list	MediaWiki		type=limit default=10
+query+allfileusages	afprefix	list	MediaWiki		type=string
+query+allfileusages	afprop	list	MediaWiki	multi	enum=ids|title default=title limit=50 highlimit=500
+query+allfileusages	afto	list	MediaWiki		type=string
+query+allfileusages	afunique	list	MediaWiki		type=boolean
+query+allimages	-	list	MediaWiki		prefix=ai
+query+allimages	aicontinue	list	MediaWiki		type=string
+query+allimages	aidir	list	MediaWiki		enum=ascending|descending|newer|older default=ascending
+query+allimages	aiend	list	MediaWiki		type=timestamp
+query+allimages	aifilterbots	list	MediaWiki		enum=all|bots|nobots default=all
+query+allimages	aifrom	list	MediaWiki		type=string
+query+allimages	ailimit	list	MediaWiki		type=limit default=10
+query+allimages	aimaxsize	list	MediaWiki		type=integer
+query+allimages	aimime	list	MediaWiki	multi	type=string limit=50 highlimit=500
+query+allimages	aiminsize	list	MediaWiki		type=integer
+query+allimages	aiprefix	list	MediaWiki		type=string
+query+allimages	aiprop	list	MediaWiki	multi	enum=badfile|bitdepth|canonicaltitle|comment|commonmetadata|dimensions|extmetadata|mediatype|metadata|mime|parsedcomment|sha1|size|thumburls|timestamp|url|user|userid default=timestamp|url limit=50 highlimit=500
+query+allimages	aisha1	list	MediaWiki		type=string
+query+allimages	aisha1base36	list	MediaWiki		type=string
+query+allimages	aisort	list	MediaWiki		enum=name|timestamp default=name
+query+allimages	aistart	list	MediaWiki		type=timestamp
+query+allimages	aito	list	MediaWiki		type=string
+query+allimages	aiuser	list	MediaWiki		type=user
+query+alllinks	-	list	MediaWiki		prefix=al
+query+alllinks	alcontinue	list	MediaWiki		type=string
+query+alllinks	aldir	list	MediaWiki		enum=ascending|descending default=ascending
+query+alllinks	alfrom	list	MediaWiki		type=string
+query+alllinks	allimit	list	MediaWiki		type=limit default=10
+query+alllinks	alnamespace	list	MediaWiki		type=namespace default=0
+query+alllinks	alprefix	list	MediaWiki		type=string
+query+alllinks	alprop	list	MediaWiki	multi	enum=ids|title default=title limit=50 highlimit=500
+query+alllinks	alto	list	MediaWiki		type=string
+query+alllinks	alunique	list	MediaWiki		type=boolean
+query+allmessages	-	meta	MediaWiki		prefix=am
+query+allmessages	amargs	meta	MediaWiki	multi	type=string limit=50 highlimit=500
+query+allmessages	amcustomised	meta	MediaWiki		enum=all|modified|unmodified default=all
+query+allmessages	amenableparser	meta	MediaWiki		type=boolean
+query+allmessages	amfilter	meta	MediaWiki		type=string
+query+allmessages	amfrom	meta	MediaWiki		type=string
+query+allmessages	amincludelocal	meta	MediaWiki		type=boolean
+query+allmessages	amlang	meta	MediaWiki		type=string
+query+allmessages	ammessages	meta	MediaWiki	multi	type=string default=* limit=50 highlimit=500
+query+allmessages	amnocontent	meta	MediaWiki		type=boolean
+query+allmessages	amprefix	meta	MediaWiki		type=string
+query+allmessages	amprop	meta	MediaWiki	multi	enum=default limit=50 highlimit=500
+query+allmessages	amtitle	meta	MediaWiki		type=string
+query+allmessages	amto	meta	MediaWiki		type=string
+query+allpages	-	list	MediaWiki		prefix=ap
+query+allpages	apcontinue	list	MediaWiki		type=string
+query+allpages	apdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+allpages	apfilterlanglinks	list	MediaWiki		enum=all|withlanglinks|withoutlanglinks default=all
+query+allpages	apfilterredir	list	MediaWiki		enum=all|nonredirects|redirects default=all
+query+allpages	apfrom	list	MediaWiki		type=string
+query+allpages	aplimit	list	MediaWiki		type=limit default=10
+query+allpages	apmaxsize	list	MediaWiki		type=integer
+query+allpages	apminsize	list	MediaWiki		type=integer
+query+allpages	apnamespace	list	MediaWiki		type=namespace default=0
+query+allpages	apprefix	list	MediaWiki		type=string
+query+allpages	apprexpiry	list	MediaWiki		enum=all|definite|indefinite default=all
+query+allpages	apprfiltercascade	list	MediaWiki		enum=all|cascading|noncascading default=all
+query+allpages	apprlevel	list	MediaWiki	multi	enum=|autoconfirmed|extendedconfirmed|sysop|templateeditor limit=50 highlimit=500
+query+allpages	apprtype	list	MediaWiki	multi	enum=edit|move|upload limit=50 highlimit=500
+query+allpages	apto	list	MediaWiki		type=string
+query+allredirects	-	list	MediaWiki		prefix=ar
+query+allredirects	arcontinue	list	MediaWiki		type=string
+query+allredirects	ardir	list	MediaWiki		enum=ascending|descending default=ascending
+query+allredirects	arfrom	list	MediaWiki		type=string
+query+allredirects	arlimit	list	MediaWiki		type=limit default=10
+query+allredirects	arnamespace	list	MediaWiki		type=namespace default=0
+query+allredirects	arprefix	list	MediaWiki		type=string
+query+allredirects	arprop	list	MediaWiki	multi	enum=fragment|ids|interwiki|title default=title limit=50 highlimit=500
+query+allredirects	arto	list	MediaWiki		type=string
+query+allredirects	arunique	list	MediaWiki		type=boolean
+query+allrevisions	-	list	MediaWiki		prefix=arv
+query+allrevisions	arvcontentformat	list	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+query+allrevisions	arvcontinue	list	MediaWiki		type=string
+query+allrevisions	arvdiffto	list	MediaWiki	deprecated	type=string
+query+allrevisions	arvdifftotext	list	MediaWiki	deprecated	type=string
+query+allrevisions	arvdifftotextpst	list	MediaWiki	deprecated	type=boolean
+query+allrevisions	arvdir	list	MediaWiki		enum=newer|older default=older
+query+allrevisions	arvend	list	MediaWiki		type=timestamp
+query+allrevisions	arvexcludeuser	list	MediaWiki		type=user
+query+allrevisions	arvexpandtemplates	list	MediaWiki	deprecated	type=boolean
+query+allrevisions	arvgeneratetitles	list	MediaWiki		type=boolean
+query+allrevisions	arvgeneratexml	list	MediaWiki	deprecated	type=boolean
+query+allrevisions	arvlimit	list	MediaWiki		type=limit
+query+allrevisions	arvnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+allrevisions	arvparse	list	MediaWiki	deprecated	type=boolean
+query+allrevisions	arvprop	list	MediaWiki	multi	enum=comment|content|contentmodel|flags|ids|oresscores|parsedcomment|parsetree|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid default=ids|timestamp|flags|comment|user limit=50 highlimit=500 deprecatedvalues=parsetree
+query+allrevisions	arvsection	list	MediaWiki		type=string
+query+allrevisions	arvslots	list	MediaWiki	multi	enum=main limit=50 highlimit=500
+query+allrevisions	arvstart	list	MediaWiki		type=timestamp
+query+allrevisions	arvuser	list	MediaWiki		type=user
+query+alltransclusions	-	list	MediaWiki		prefix=at
+query+alltransclusions	atcontinue	list	MediaWiki		type=string
+query+alltransclusions	atdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+alltransclusions	atfrom	list	MediaWiki		type=string
+query+alltransclusions	atlimit	list	MediaWiki		type=limit default=10
+query+alltransclusions	atnamespace	list	MediaWiki		type=namespace default=10
+query+alltransclusions	atprefix	list	MediaWiki		type=string
+query+alltransclusions	atprop	list	MediaWiki	multi	enum=ids|title default=title limit=50 highlimit=500
+query+alltransclusions	atto	list	MediaWiki		type=string
+query+alltransclusions	atunique	list	MediaWiki		type=boolean
+query+allusers	-	list	MediaWiki		prefix=au
+query+allusers	auactiveusers	list	MediaWiki		type=boolean
+query+allusers	auattachedwiki	list	MediaWiki		type=string
+query+allusers	audir	list	MediaWiki		enum=ascending|descending default=ascending
+query+allusers	auexcludegroup	list	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+query+allusers	auexcludenamed	list	MediaWiki		type=boolean
+query+allusers	auexcludetemp	list	MediaWiki		type=boolean
+query+allusers	aufrom	list	MediaWiki		type=string
+query+allusers	augroup	list	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+query+allusers	aulimit	list	MediaWiki		type=limit default=10
+query+allusers	auprefix	list	MediaWiki		type=string
+query+allusers	auprop	list	MediaWiki	multi	enum=blockinfo|centralids|editcount|groups|implicitgroups|registration|rights|tempexpired limit=50 highlimit=500
+query+allusers	aurights	list	MediaWiki	multi	enum=<228 values> limit=50 highlimit=500
+query+allusers	auto	list	MediaWiki		type=string
+query+allusers	auwitheditsonly	list	MediaWiki		type=boolean
+query+authmanagerinfo	-	meta	MediaWiki		prefix=ami
+query+authmanagerinfo	amimergerequestfields	meta	MediaWiki		type=boolean
+query+authmanagerinfo	amimessageformat	meta	MediaWiki		enum=html|none|raw|wikitext default=wikitext
+query+authmanagerinfo	amireauthenticate	meta	MediaWiki		type=string
+query+authmanagerinfo	amirequestsfor	meta	MediaWiki		enum=change|create|create-continue|link|link-continue|login|login-continue|remove|unlink
+query+authmanagerinfo	amisecuritysensitiveoperation	meta	MediaWiki		type=string
+query+automatictranslationdenselanguages	-	list	ContentTranslation		
+query+automatictranslationdenselanguages	limit	list	ContentTranslation		type=integer default=15
+query+automatictranslationdenselanguages	qid	list	ContentTranslation	required	type=string
+query+automatictranslationdenselanguages	section-titles	list	ContentTranslation		type=boolean
+query+babel	-	meta	Babel		prefix=bab
+query+babel	babuser	meta	Babel	required	type=user
+query+backlinks	-	list	MediaWiki		prefix=bl
+query+backlinks	blcontinue	list	MediaWiki		type=string
+query+backlinks	bldir	list	MediaWiki		enum=ascending|descending default=ascending
+query+backlinks	blfilterredir	list	MediaWiki		enum=all|nonredirects|redirects default=all
+query+backlinks	bllimit	list	MediaWiki		type=limit default=10
+query+backlinks	blnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+backlinks	blpageid	list	MediaWiki		type=integer
+query+backlinks	blredirect	list	MediaWiki		type=boolean
+query+backlinks	bltitle	list	MediaWiki		type=string
+query+betafeatures	-	list	BetaFeatures		prefix=bf
+query+betafeatures	bfcounts	list	BetaFeatures		type=string
+query+blocks	-	list	MediaWiki		prefix=bk
+query+blocks	bkcontinue	list	MediaWiki		type=string
+query+blocks	bkdir	list	MediaWiki		enum=newer|older default=older
+query+blocks	bkend	list	MediaWiki		type=timestamp
+query+blocks	bkids	list	MediaWiki	multi	type=integer limit=50 highlimit=500
+query+blocks	bkip	list	MediaWiki		type=string
+query+blocks	bklimit	list	MediaWiki		type=limit default=10
+query+blocks	bkprop	list	MediaWiki	multi	enum=by|byid|expiry|flags|id|parsedreason|range|reason|restrictions|timestamp|user|userid default=id|user|by|timestamp|expiry|reason|flags limit=50 highlimit=500
+query+blocks	bkshow	list	MediaWiki	multi	enum=!account|!ip|!range|!temp|account|ip|range|temp limit=50 highlimit=500
+query+blocks	bkstart	list	MediaWiki		type=timestamp
+query+blocks	bkusers	list	MediaWiki	multi	type=user limit=50 highlimit=500
+query+categories	-	prop	MediaWiki		prefix=cl
+query+categories	clcategories	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+categories	clcontinue	prop	MediaWiki		type=string
+query+categories	cldir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+categories	cllimit	prop	MediaWiki		type=limit default=10
+query+categories	clprop	prop	MediaWiki	multi	enum=hidden|sortkey|timestamp limit=50 highlimit=500
+query+categories	clshow	prop	MediaWiki	multi	enum=!hidden|hidden limit=50 highlimit=500
+query+categoryinfo	-	prop	MediaWiki		prefix=ci
+query+categoryinfo	cicontinue	prop	MediaWiki		type=string
+query+categorymembers	-	list	MediaWiki		prefix=cm
+query+categorymembers	cmcontinue	list	MediaWiki		type=string
+query+categorymembers	cmdir	list	MediaWiki		enum=asc|ascending|desc|descending|newer|older default=ascending
+query+categorymembers	cmend	list	MediaWiki		type=timestamp
+query+categorymembers	cmendhexsortkey	list	MediaWiki		type=string
+query+categorymembers	cmendsortkey	list	MediaWiki	deprecated	type=string
+query+categorymembers	cmendsortkeyprefix	list	MediaWiki		type=string
+query+categorymembers	cmlimit	list	MediaWiki		type=limit default=10
+query+categorymembers	cmnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+categorymembers	cmpageid	list	MediaWiki		type=integer
+query+categorymembers	cmprop	list	MediaWiki	multi	enum=ids|sortkey|sortkeyprefix|timestamp|title|type default=ids|title limit=50 highlimit=500
+query+categorymembers	cmsort	list	MediaWiki		enum=sortkey|timestamp default=sortkey
+query+categorymembers	cmstart	list	MediaWiki		type=timestamp
+query+categorymembers	cmstarthexsortkey	list	MediaWiki		type=string
+query+categorymembers	cmstartsortkey	list	MediaWiki	deprecated	type=string
+query+categorymembers	cmstartsortkeyprefix	list	MediaWiki		type=string
+query+categorymembers	cmtitle	list	MediaWiki		type=string
+query+categorymembers	cmtype	list	MediaWiki	multi	enum=file|page|subcat default=page|subcat|file limit=50 highlimit=500
+query+centralnoticeactivecampaigns	-	list	CentralNotice		prefix=cnac
+query+centralnoticeactivecampaigns	cnacincludefuture	list	CentralNotice		type=boolean
+query+centralnoticelogs	-	list	CentralNotice		
+query+centralnoticelogs	campaign	list	CentralNotice		type=string
+query+centralnoticelogs	end	list	CentralNotice		type=timestamp
+query+centralnoticelogs	limit	list	CentralNotice		type=limit default=50
+query+centralnoticelogs	offset	list	CentralNotice		type=integer default=0
+query+centralnoticelogs	start	list	CentralNotice		type=timestamp
+query+centralnoticelogs	user	list	CentralNotice		type=string
+query+checkuser	-	list	CheckUser	deprecated	prefix=cu write post
+query+checkuser	culimit	list	CheckUser		type=limit default=500
+query+checkuser	cureason	list	CheckUser	required	type=string
+query+checkuser	curequest	list	CheckUser	required	enum=actions|edits|ipusers|userips deprecatedvalues=edits
+query+checkuser	cutarget	list	CheckUser	required	type=user
+query+checkuser	cutimecond	list	CheckUser		type=string default=-2 weeks
+query+checkuser	cutoken	list	CheckUser	required,sensitive	type=string
+query+checkuser	cuxff	list	CheckUser		type=string
+query+checkuserformattedblockinfo	-	meta	CheckUser	internal	
+query+checkuserlog	-	list	CheckUser		prefix=cul
+query+checkuserlog	culcontinue	list	CheckUser		type=string
+query+checkuserlog	culdir	list	CheckUser		enum=newer|older default=older
+query+checkuserlog	culfrom	list	CheckUser		type=timestamp
+query+checkuserlog	cullimit	list	CheckUser		type=limit default=10
+query+checkuserlog	culreason	list	CheckUser		type=string
+query+checkuserlog	cultarget	list	CheckUser		type=string
+query+checkuserlog	culto	list	CheckUser		type=timestamp
+query+checkuserlog	culuser	list	CheckUser		type=string
+query+cirrusbuilddoc	-	prop	CirrusSearch	internal	prefix=cb
+query+cirrusbuilddoc	cbbuilders	prop	CirrusSearch	multi	enum=content|links limit=50 highlimit=500
+query+cirrusbuilddoc	cblimiterprofile	prop	CirrusSearch		type=string
+query+cirruscompsuggestbuilddoc	-	prop	CirrusSearch	internal	prefix=csb
+query+cirruscompsuggestbuilddoc	csbmethod	prop	CirrusSearch		type=string default=popqual
+query+cirrusdoc	-	prop	CirrusSearch	internal	prefix=cd
+query+cirrusdoc	cdincludes	prop	CirrusSearch	multi	type=string default=all limit=50 highlimit=500
+query+cirrusdoc	cdredirectscope	prop	CirrusSearch		type=boolean
+query+codexicons	-	list	MediaWiki		
+query+codexicons	names	list	MediaWiki	required,multi	enum=<291 values> limit=50 highlimit=500
+query+communityconfiguration	-	meta	CommunityConfiguration		prefix=ccr
+query+communityconfiguration	ccrassertversion	meta	CommunityConfiguration		type=string
+query+communityconfiguration	ccrprovider	meta	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|CommunityUpdates|ContentTranslation|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
+query+contenttranslation	-	list	ContentTranslation		
+query+contenttranslation	from	list	ContentTranslation		type=string
+query+contenttranslation	limit	list	ContentTranslation		type=limit default=100
+query+contenttranslation	offset	list	ContentTranslation		type=string
+query+contenttranslation	sourcesectiontitle	list	ContentTranslation		type=string
+query+contenttranslation	sourcetitle	list	ContentTranslation		type=string
+query+contenttranslation	to	list	ContentTranslation		type=string
+query+contenttranslation	translationid	list	ContentTranslation		type=string
+query+contenttranslation	type	list	ContentTranslation		enum=draft|published default=draft
+query+contenttranslation	usecase	list	ContentTranslation		enum=desktop-editor-draft|translation-corpora-units|unified-dashboard
+query+contenttranslationcorpora	-	list	ContentTranslation		
+query+contenttranslationcorpora	striphtml	list	ContentTranslation		type=boolean
+query+contenttranslationcorpora	translationid	list	ContentTranslation	required	type=integer
+query+contenttranslationcorpora	types	list	ContentTranslation	multi	enum=mt|source|user default=source|mt|user limit=50 highlimit=500
+query+contenttranslationfavoritesuggestions	-	list	ContentTranslation		
+query+contenttranslationfavoritesuggestions	limit	list	ContentTranslation		type=limit default=100
+query+contenttranslationfavoritesuggestions	offset	list	ContentTranslation		type=string
+query+contributors	-	prop	MediaWiki		prefix=pc
+query+contributors	pccontinue	prop	MediaWiki		type=string
+query+contributors	pcexcludegroup	prop	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+query+contributors	pcexcluderights	prop	MediaWiki	multi	enum=<202 values> limit=50 highlimit=500
+query+contributors	pcgroup	prop	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+query+contributors	pclimit	prop	MediaWiki		type=limit default=10
+query+contributors	pcrights	prop	MediaWiki	multi	enum=<202 values> limit=50 highlimit=500
+query+coordinates	-	prop	GeoData		prefix=co
+query+coordinates	cocontinue	prop	GeoData		type=string
+query+coordinates	codistancefrompage	prop	GeoData		type=string
+query+coordinates	codistancefrompoint	prop	GeoData		type=string
+query+coordinates	colimit	prop	GeoData		type=limit default=10
+query+coordinates	coprimary	prop	GeoData		enum=all|primary|secondary default=primary
+query+coordinates	coprop	prop	GeoData	multi	enum=country|dim|globe|name|region|type default=globe limit=50 highlimit=500
+query+cxconfig	-	meta	ContentTranslation		
+query+cxdeletedtranslations	-	meta	ContentTranslation	internal	prefix=dt
+query+cxdeletedtranslations	dtafter	meta	ContentTranslation		type=timestamp
+query+cxdeletedtranslations	dtnamespace	meta	ContentTranslation		type=namespace
+query+cxpublishedtranslations	-	list	ContentTranslation		
+query+cxpublishedtranslations	from	list	ContentTranslation	required	type=string
+query+cxpublishedtranslations	limit	list	ContentTranslation		type=limit default=500
+query+cxpublishedtranslations	offset	list	ContentTranslation		type=integer default=0
+query+cxpublishedtranslations	to	list	ContentTranslation	required	type=string
+query+cxtranslatorstats	-	list	ContentTranslation		
+query+cxtranslatorstats	translator	list	ContentTranslation		type=string
+query+deletedrevisions	-	prop	MediaWiki		prefix=drv
+query+deletedrevisions	drvcontentformat	prop	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+query+deletedrevisions	drvcontinue	prop	MediaWiki		type=string
+query+deletedrevisions	drvdiffto	prop	MediaWiki	deprecated	type=string
+query+deletedrevisions	drvdifftotext	prop	MediaWiki	deprecated	type=string
+query+deletedrevisions	drvdifftotextpst	prop	MediaWiki	deprecated	type=boolean
+query+deletedrevisions	drvdir	prop	MediaWiki		enum=newer|older default=older
+query+deletedrevisions	drvend	prop	MediaWiki		type=timestamp
+query+deletedrevisions	drvexcludeuser	prop	MediaWiki		type=user
+query+deletedrevisions	drvexpandtemplates	prop	MediaWiki	deprecated	type=boolean
+query+deletedrevisions	drvgeneratexml	prop	MediaWiki	deprecated	type=boolean
+query+deletedrevisions	drvlimit	prop	MediaWiki		type=limit
+query+deletedrevisions	drvparse	prop	MediaWiki	deprecated	type=boolean
+query+deletedrevisions	drvprop	prop	MediaWiki	multi	enum=comment|content|contentmodel|flags|ids|parsedcomment|parsetree|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid default=ids|timestamp|flags|comment|user limit=50 highlimit=500 deprecatedvalues=parsetree
+query+deletedrevisions	drvsection	prop	MediaWiki		type=string
+query+deletedrevisions	drvslots	prop	MediaWiki	multi	enum=main limit=50 highlimit=500
+query+deletedrevisions	drvstart	prop	MediaWiki		type=timestamp
+query+deletedrevisions	drvtag	prop	MediaWiki		type=string
+query+deletedrevisions	drvuser	prop	MediaWiki		type=user
+query+deletedrevs	-	list	MediaWiki	deprecated	prefix=dr
+query+deletedrevs	drcontinue	list	MediaWiki		type=string
+query+deletedrevs	drdir	list	MediaWiki		enum=newer|older default=older
+query+deletedrevs	drend	list	MediaWiki		type=timestamp
+query+deletedrevs	drexcludeuser	list	MediaWiki		type=user
+query+deletedrevs	drfrom	list	MediaWiki		type=string
+query+deletedrevs	drlimit	list	MediaWiki		type=limit default=10
+query+deletedrevs	drnamespace	list	MediaWiki		type=namespace default=0
+query+deletedrevs	drprefix	list	MediaWiki		type=string
+query+deletedrevs	drprop	list	MediaWiki	multi	enum=comment|content|len|minor|parentid|parsedcomment|revid|sha1|tags|token|user|userid default=user|comment limit=50 highlimit=500 deprecatedvalues=token
+query+deletedrevs	drstart	list	MediaWiki		type=timestamp
+query+deletedrevs	drtag	list	MediaWiki		type=string
+query+deletedrevs	drto	list	MediaWiki		type=string
+query+deletedrevs	drunique	list	MediaWiki		type=boolean
+query+deletedrevs	druser	list	MediaWiki		type=user
+query+description	-	prop	WikibaseClient	internal	prefix=desc
+query+description	desccontinue	prop	WikibaseClient		type=integer default=0
+query+description	descprefersource	prop	WikibaseClient		enum=central|local default=local
+query+duplicatefiles	-	prop	MediaWiki		prefix=df
+query+duplicatefiles	dfcontinue	prop	MediaWiki		type=string
+query+duplicatefiles	dfdir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+duplicatefiles	dflimit	prop	MediaWiki		type=limit default=10
+query+duplicatefiles	dflocalonly	prop	MediaWiki		type=boolean
+query+embeddedin	-	list	MediaWiki		prefix=ei
+query+embeddedin	eicontinue	list	MediaWiki		type=string
+query+embeddedin	eidir	list	MediaWiki		enum=ascending|descending default=ascending
+query+embeddedin	eifilterredir	list	MediaWiki		enum=all|nonredirects|redirects default=all
+query+embeddedin	eilimit	list	MediaWiki		type=limit default=10
+query+embeddedin	einamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+embeddedin	eipageid	list	MediaWiki		type=integer
+query+embeddedin	eititle	list	MediaWiki		type=string
+query+entityterms	-	prop	WikibaseClient		prefix=wbet
+query+entityterms	wbetcontinue	prop	WikibaseClient		type=integer
+query+entityterms	wbetlanguage	prop	WikibaseClient		enum=<638 values> default=uselang
+query+entityterms	wbetterms	prop	WikibaseClient	multi	enum=alias|description|label default=alias|label|description limit=50 highlimit=500
+query+extlinks	-	prop	MediaWiki		prefix=el
+query+extlinks	elcontinue	prop	MediaWiki		type=string
+query+extlinks	elexpandurl	prop	MediaWiki	deprecated	type=boolean
+query+extlinks	ellimit	prop	MediaWiki		type=limit default=10
+query+extlinks	elprotocol	prop	MediaWiki		enum=<30 values>
+query+extlinks	elquery	prop	MediaWiki		type=string
+query+extracts	-	prop	TextExtracts		prefix=ex
+query+extracts	exchars	prop	TextExtracts		type=integer
+query+extracts	excontinue	prop	TextExtracts		type=integer
+query+extracts	exintro	prop	TextExtracts		type=boolean
+query+extracts	exlimit	prop	TextExtracts		type=limit default=20
+query+extracts	explaintext	prop	TextExtracts		type=boolean
+query+extracts	exsectionformat	prop	TextExtracts		enum=plain|raw|wiki default=wiki
+query+extracts	exsentences	prop	TextExtracts		type=integer
+query+exturlusage	-	list	MediaWiki		prefix=eu
+query+exturlusage	eucontinue	list	MediaWiki		type=string
+query+exturlusage	euexpandurl	list	MediaWiki	deprecated	type=boolean
+query+exturlusage	eulimit	list	MediaWiki		type=limit default=10
+query+exturlusage	eunamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+exturlusage	euprop	list	MediaWiki	multi	enum=ids|title|url default=ids|title|url limit=50 highlimit=500
+query+exturlusage	euprotocol	list	MediaWiki		enum=<30 values>
+query+exturlusage	euquery	list	MediaWiki		type=string
+query+featureusage	-	meta	ApiFeatureUsage		prefix=afu
+query+featureusage	afuagent	meta	ApiFeatureUsage		type=string
+query+featureusage	afuend	meta	ApiFeatureUsage		type=timestamp
+query+featureusage	afufeatures	meta	ApiFeatureUsage	multi	type=string limit=50 highlimit=500
+query+featureusage	afustart	meta	ApiFeatureUsage		type=timestamp
+query+filearchive	-	list	MediaWiki		prefix=fa
+query+filearchive	facontinue	list	MediaWiki		type=string
+query+filearchive	fadir	list	MediaWiki		enum=ascending|descending default=ascending
+query+filearchive	fafrom	list	MediaWiki		type=string
+query+filearchive	falimit	list	MediaWiki		type=limit default=10
+query+filearchive	faprefix	list	MediaWiki		type=string
+query+filearchive	faprop	list	MediaWiki	multi	enum=archivename|bitdepth|description|dimensions|mediatype|metadata|mime|parseddescription|sha1|size|timestamp|user default=timestamp limit=50 highlimit=500
+query+filearchive	fasha1	list	MediaWiki		type=string
+query+filearchive	fasha1base36	list	MediaWiki		type=string
+query+filearchive	fato	list	MediaWiki		type=string
+query+filerepoinfo	-	meta	MediaWiki		prefix=fri
+query+filerepoinfo	friprop	meta	MediaWiki	multi	enum=canUpload|descBaseUrl|descriptionCacheExpiry|displayname|favicon|fetchDescription|initialCapital|local|name|rootUrl|scriptDirUrl|thumbUrl|url default=canUpload|descBaseUrl|descriptionCacheExpiry|displayname|favicon|fetchDescription|initialCapital|local|name|rootUrl|scriptDirUrl|thumbUrl|url limit=50 highlimit=500
+query+fileusage	-	prop	MediaWiki		prefix=fu
+query+fileusage	fucontinue	prop	MediaWiki		type=string
+query+fileusage	fulimit	prop	MediaWiki		type=limit default=10
+query+fileusage	funamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+fileusage	fuprop	prop	MediaWiki	multi	enum=pageid|redirect|title default=pageid|title|redirect limit=50 highlimit=500
+query+fileusage	fushow	prop	MediaWiki	multi	enum=!redirect|redirect limit=50 highlimit=500
+query+flagged	-	prop	FlaggedRevs		
+query+flowinfo	-	prop	Flow	deprecated	prefix=fli
+query+gadgetcategories	-	list	Gadgets		prefix=gc
+query+gadgetcategories	gcnames	list	Gadgets	multi	type=string limit=50 highlimit=500
+query+gadgetcategories	gcprop	list	Gadgets	multi	enum=members|name|title default=name limit=50 highlimit=500
+query+gadgets	-	list	Gadgets		prefix=ga
+query+gadgets	gaallowedonly	list	Gadgets		type=boolean
+query+gadgets	gacategories	list	Gadgets	multi	type=string limit=50 highlimit=500
+query+gadgets	gaenabledonly	list	Gadgets		type=boolean
+query+gadgets	gaids	list	Gadgets	multi	type=string limit=50 highlimit=500
+query+gadgets	gaprop	list	Gadgets	multi	enum=desc|id|metadata default=id|metadata limit=50 highlimit=500
+query+geosearch	-	list	GeoData		prefix=gs
+query+geosearch	gsbbox	list	GeoData		type=string
+query+geosearch	gscoord	list	GeoData		type=string
+query+geosearch	gsdebug	list	GeoData		type=boolean
+query+geosearch	gsglobe	list	GeoData		enum=earth|mars|moon|venus default=earth
+query+geosearch	gslimit	list	GeoData		type=limit default=10
+query+geosearch	gsmaxdim	list	GeoData		type=integer
+query+geosearch	gsnamespace	list	GeoData	multi	type=namespace default=0 limit=50 highlimit=500
+query+geosearch	gspage	list	GeoData		type=string
+query+geosearch	gsprimary	list	GeoData		enum=all|primary|secondary default=primary
+query+geosearch	gsprop	list	GeoData	multi	enum=country|dim|globe|name|region|type default=globe limit=50 highlimit=500
+query+geosearch	gsradius	list	GeoData		type=integer default=500
+query+geosearch	gssort	list	GeoData		enum=distance|relevance default=distance
+query+globalallusers	-	list	CentralAuth		prefix=agu
+query+globalallusers	agudir	list	CentralAuth		enum=ascending|descending default=ascending
+query+globalallusers	aguexcludegroup	list	CentralAuth	multi	enum=abusefilter-helper|abusefilter-maintainer|apihighlimits-requestor|captcha-exempt|founder|global-bot|global-deleter|global-flow-create|global-interface-editor|global-ipblock-exempt|global-rollbacker|global-sysop|global-temporary-account-viewer|local-bot|new-wikis-importer|ombuds|recursive-export|staff|steward|sysadmin|u4c-member|vrt-permissions|wmf-email-block-override|wmf-researcher limit=50 highlimit=500
+query+globalallusers	aguexcludenamed	list	CentralAuth		type=boolean
+query+globalallusers	aguexcludetemp	list	CentralAuth		type=boolean
+query+globalallusers	agufrom	list	CentralAuth		type=string
+query+globalallusers	agugroup	list	CentralAuth	multi	enum=abusefilter-helper|abusefilter-maintainer|apihighlimits-requestor|captcha-exempt|founder|global-bot|global-deleter|global-flow-create|global-interface-editor|global-ipblock-exempt|global-rollbacker|global-sysop|global-temporary-account-viewer|local-bot|new-wikis-importer|ombuds|recursive-export|staff|steward|sysadmin|u4c-member|vrt-permissions|wmf-email-block-override|wmf-researcher limit=50 highlimit=500
+query+globalallusers	agulimit	list	CentralAuth		type=limit default=10
+query+globalallusers	aguprefix	list	CentralAuth		type=string
+query+globalallusers	aguprop	list	CentralAuth	multi	enum=existslocally|groups|lockinfo limit=50 highlimit=500
+query+globalallusers	aguto	list	CentralAuth		type=string
+query+globalblocks	-	list	GlobalBlocking		prefix=bg
+query+globalblocks	bgaddresses	list	GlobalBlocking	deprecated,multi	type=string limit=50 highlimit=500
+query+globalblocks	bgdir	list	GlobalBlocking		enum=newer|older default=older
+query+globalblocks	bgend	list	GlobalBlocking		type=timestamp
+query+globalblocks	bgids	list	GlobalBlocking	multi	type=integer limit=50 highlimit=500
+query+globalblocks	bgip	list	GlobalBlocking		type=string
+query+globalblocks	bglimit	list	GlobalBlocking		type=limit default=10
+query+globalblocks	bgprop	list	GlobalBlocking	multi	enum=address|by|expiry|id|range|reason|target|timestamp default=id|target|by|timestamp|expiry|reason limit=50 highlimit=500 deprecatedvalues=address
+query+globalblocks	bgstart	list	GlobalBlocking		type=timestamp
+query+globalblocks	bgtargets	list	GlobalBlocking	multi	type=string limit=50 highlimit=500
+query+globalgroups	-	list	CentralAuth		prefix=ggp
+query+globalgroups	ggpprop	list	CentralAuth	multi	enum=rights limit=50 highlimit=500
+query+globalpreferences	-	meta	GlobalPreferences		prefix=gpr
+query+globalpreferences	gprprop	meta	GlobalPreferences	multi	enum=localoverrides|preferences default=preferences|localoverrides limit=50 highlimit=500
+query+globalrenamequeue	-	list	CentralAuth		prefix=grq
+query+globalrenamequeue	grqcontinue	list	CentralAuth		type=string
+query+globalrenamequeue	grqlimit	list	CentralAuth		type=limit default=10
+query+globalrenamequeue	grqnewname	list	CentralAuth		type=user
+query+globalrenamequeue	grqperformer	list	CentralAuth		type=user
+query+globalrenamequeue	grqqueue	list	CentralAuth	required	enum=closed|open
+query+globalrenamequeue	grqstatus	list	CentralAuth		enum=all|approved|rejected default=all
+query+globalrenamequeue	grqtype	list	CentralAuth		enum=all|rename|vanish default=all
+query+globalrenamequeue	grquser	list	CentralAuth		type=user
+query+globalrenamestatus	-	meta	CentralAuth		prefix=grs
+query+globalrenamestatus	grsuser	meta	CentralAuth		type=user
+query+globalusage	-	prop	Global Usage		prefix=gu
+query+globalusage	gucontinue	prop	Global Usage		type=string
+query+globalusage	gufilterlocal	prop	Global Usage		type=boolean
+query+globalusage	gulimit	prop	Global Usage		type=limit default=10
+query+globalusage	gunamespace	prop	Global Usage	multi	type=namespace default=* limit=50 highlimit=500
+query+globalusage	guprop	prop	Global Usage	multi	enum=namespace|pageid|url default=url limit=50 highlimit=500
+query+globalusage	gusite	prop	Global Usage	multi	enum=<1082 values> limit=50 highlimit=500
+query+globaluserinfo	-	meta	CentralAuth		prefix=gui
+query+globaluserinfo	guiid	meta	CentralAuth		type=integer
+query+globaluserinfo	guiprop	meta	CentralAuth	multi	enum=editcount|groups|merged|rights|unattached limit=50 highlimit=500
+query+globaluserinfo	guiuser	meta	CentralAuth		type=user
+query+globalusers	-	list	CentralAuth		prefix=gus
+query+globalusers	guscentralids	list	CentralAuth	multi	type=integer limit=50 highlimit=500
+query+globalusers	guslocalgroups	list	CentralAuth		type=boolean
+query+globalusers	gusprop	list	CentralAuth	multi	enum=editcount|groupmemberships|groups|localinfo|locked|registration|rights limit=50 highlimit=500
+query+globalusers	gususers	list	CentralAuth	multi	type=string limit=50 highlimit=500
+query+growthimagesuggestiondata	-	prop	GrowthExperiments		prefix=gisd
+query+growthimagesuggestiondata	gisdcontinue	prop	GrowthExperiments		type=string
+query+growthimagesuggestiondata	gisdtasktype	prop	GrowthExperiments		enum=image-recommendation|section-image-recommendation default=image-recommendation
+query+growthmenteestatus	-	meta	GrowthExperiments		
+query+growthmentorlist	-	list	GrowthExperiments		
+query+growthmentormentee	-	list	GrowthExperiments		
+query+growthmentormentee	gemmmentor	list	GrowthExperiments	required	type=user
+query+growthmentorstatus	-	meta	GrowthExperiments		
+query+growthnextsuggestedtasktype	-	meta	GrowthExperiments	internal	prefix=gnstt write post
+query+growthnextsuggestedtasktype	gnsttactivetasktype	meta	GrowthExperiments	required	enum=copyedit|expand|link-recommendation|links|references|revise-tone|update
+query+growthstarredmentees	-	list	GrowthExperiments		
+query+growthtasks	-	list	GrowthExperiments	internal	prefix=gt
+query+growthtasks	gtdebug	list	GrowthExperiments		type=boolean
+query+growthtasks	gtexcludepageids	list	GrowthExperiments	multi	type=integer limit=1000 highlimit=1000
+query+growthtasks	gtlimit	list	GrowthExperiments		type=limit
+query+growthtasks	gtoffset	list	GrowthExperiments		type=integer
+query+growthtasks	gttasktypes	list	GrowthExperiments	multi	enum=copyedit|expand|link-recommendation|links|references|revise-tone|update limit=7 highlimit=7
+query+growthtasks	gttopics	list	GrowthExperiments	multi	enum=<39 values> limit=39 highlimit=39
+query+growthtasks	gttopicsmode	list	GrowthExperiments		enum=AND|OR
+query+imageinfo	-	prop	MediaWiki		prefix=ii
+query+imageinfo	iibadfilecontexttitle	prop	MediaWiki		type=string
+query+imageinfo	iicontinue	prop	MediaWiki		type=string
+query+imageinfo	iiend	prop	MediaWiki		type=timestamp
+query+imageinfo	iiextmetadatafilter	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+imageinfo	iiextmetadatalanguage	prop	MediaWiki		type=string default=en
+query+imageinfo	iiextmetadatamultilang	prop	MediaWiki		type=boolean
+query+imageinfo	iilimit	prop	MediaWiki		type=limit default=1
+query+imageinfo	iilocalonly	prop	MediaWiki		type=boolean
+query+imageinfo	iimetadataversion	prop	MediaWiki		type=string default=1
+query+imageinfo	iiprop	prop	MediaWiki	multi	enum=archivename|badfile|bitdepth|canonicaltitle|comment|commonmetadata|dimensions|extmetadata|mediatype|metadata|mime|parsedcomment|sha1|size|thumbmime|thumburls|timestamp|uploadwarning|url|user|userid default=timestamp|user limit=50 highlimit=500
+query+imageinfo	iistart	prop	MediaWiki		type=timestamp
+query+imageinfo	iiurlheight	prop	MediaWiki		type=integer default=-1
+query+imageinfo	iiurlparam	prop	MediaWiki		type=string
+query+imageinfo	iiurlwidth	prop	MediaWiki		type=integer default=-1
+query+images	-	prop	MediaWiki		prefix=im
+query+images	imcontinue	prop	MediaWiki		type=string
+query+images	imdir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+images	imimages	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+images	imlimit	prop	MediaWiki		type=limit default=10
+query+imageusage	-	list	MediaWiki		prefix=iu
+query+imageusage	iucontinue	list	MediaWiki		type=string
+query+imageusage	iudir	list	MediaWiki		enum=ascending|descending default=ascending
+query+imageusage	iufilterredir	list	MediaWiki		enum=all|nonredirects|redirects default=all
+query+imageusage	iulimit	list	MediaWiki		type=limit default=10
+query+imageusage	iunamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+imageusage	iupageid	list	MediaWiki		type=integer
+query+imageusage	iuredirect	list	MediaWiki		type=boolean
+query+imageusage	iutitle	list	MediaWiki		type=string
+query+info	-	prop	MediaWiki		prefix=in
+query+info	incontinue	prop	MediaWiki		type=string
+query+info	indefaultlinkcaption	prop	MediaWiki		type=boolean
+query+info	ineditintrocustom	prop	MediaWiki		type=string
+query+info	ineditintroskip	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+info	ineditintrostyle	prop	MediaWiki		enum=lessframes|moreframes default=moreframes
+query+info	inlinkcontext	prop	MediaWiki		type=title default=Main Page
+query+info	inpreloadcustom	prop	MediaWiki		type=string
+query+info	inpreloadnewsection	prop	MediaWiki		type=boolean
+query+info	inpreloadparams	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+info	inprop	prop	MediaWiki	multi	enum=associatedpage|displaytitle|editintro|linkclasses|notificationtimestamp|preload|preloadcontent|protection|readable|subjectid|talkid|url|varianttitles|visitingwatchers|watched|watchers|watchlistlabels limit=50 highlimit=500 deprecatedvalues=preload|readable
+query+info	intestactions	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+info	intestactionsautocreate	prop	MediaWiki		type=boolean
+query+info	intestactionsdetail	prop	MediaWiki		enum=boolean|full|quick default=boolean
+query+isreviewed	-	prop	PageTriage		
+query+iwbacklinks	-	list	MediaWiki		prefix=iwbl
+query+iwbacklinks	iwblcontinue	list	MediaWiki		type=string
+query+iwbacklinks	iwbldir	list	MediaWiki		enum=ascending|descending default=ascending
+query+iwbacklinks	iwbllimit	list	MediaWiki		type=limit default=10
+query+iwbacklinks	iwblprefix	list	MediaWiki		type=string
+query+iwbacklinks	iwblprop	list	MediaWiki	multi	enum=iwprefix|iwtitle limit=50 highlimit=500
+query+iwbacklinks	iwbltitle	list	MediaWiki		type=string
+query+iwlinks	-	prop	MediaWiki		prefix=iw
+query+iwlinks	iwcontinue	prop	MediaWiki		type=string
+query+iwlinks	iwdir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+iwlinks	iwlimit	prop	MediaWiki		type=limit default=10
+query+iwlinks	iwprefix	prop	MediaWiki		type=string
+query+iwlinks	iwprop	prop	MediaWiki	multi	enum=url limit=50 highlimit=500
+query+iwlinks	iwtitle	prop	MediaWiki		type=string
+query+iwlinks	iwurl	prop	MediaWiki	deprecated	type=boolean
+query+langbacklinks	-	list	MediaWiki		prefix=lbl
+query+langbacklinks	lblcontinue	list	MediaWiki		type=string
+query+langbacklinks	lbldir	list	MediaWiki		enum=ascending|descending default=ascending
+query+langbacklinks	lbllang	list	MediaWiki		type=string
+query+langbacklinks	lbllimit	list	MediaWiki		type=limit default=10
+query+langbacklinks	lblprop	list	MediaWiki	multi	enum=lllang|lltitle limit=50 highlimit=500
+query+langbacklinks	lbltitle	list	MediaWiki		type=string
+query+langlinks	-	prop	MediaWiki		prefix=ll
+query+langlinks	llcontinue	prop	MediaWiki		type=string
+query+langlinks	lldir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+langlinks	llinlanguagecode	prop	MediaWiki		type=string default=en
+query+langlinks	lllang	prop	MediaWiki		type=string
+query+langlinks	lllimit	prop	MediaWiki		type=limit default=10
+query+langlinks	llprop	prop	MediaWiki	multi	enum=autonym|langname|url limit=50 highlimit=500
+query+langlinks	lltitle	prop	MediaWiki		type=string
+query+langlinks	llurl	prop	MediaWiki	deprecated	type=boolean
+query+langlinkscount	-	prop	ContentTranslation		
+query+languageinfo	-	meta	MediaWiki		prefix=li
+query+languageinfo	licode	meta	MediaWiki	multi	type=string default=* limit=50 highlimit=500
+query+languageinfo	licontinue	meta	MediaWiki		type=string
+query+languageinfo	liprop	meta	MediaWiki	multi	enum=autonym|bcp47|code|digitgroupingpattern|digittransforms|dir|fallbacks|minimumgroupingdigits|name|namespacealiases|namespacenames|variantnames|variants default=code limit=50 highlimit=500
+query+languagestats	-	meta	Translate		prefix=ls
+query+languagestats	lsgroup	meta	Translate		type=string
+query+languagestats	lslanguage	meta	Translate	required	type=string
+query+languagestats	lsoffset	meta	Translate		type=string default=0
+query+links	-	prop	MediaWiki		prefix=pl
+query+links	plcontinue	prop	MediaWiki		type=string
+query+links	pldir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+links	pllimit	prop	MediaWiki		type=limit default=10
+query+links	plnamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+links	pltitles	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+linkshere	-	prop	MediaWiki		prefix=lh
+query+linkshere	lhcontinue	prop	MediaWiki		type=string
+query+linkshere	lhlimit	prop	MediaWiki		type=limit default=10
+query+linkshere	lhnamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+linkshere	lhprop	prop	MediaWiki	multi	enum=pageid|redirect|title default=pageid|title|redirect limit=50 highlimit=500
+query+linkshere	lhshow	prop	MediaWiki	multi	enum=!redirect|redirect limit=50 highlimit=500
+query+linterrors	-	list	Linter		prefix=lnt
+query+linterrors	lntcategories	list	Linter	multi	enum=<26 values> default=deletable-table-tag|duplicate-ids|html5-misnesting|misc-tidy-replacement-issues|multiline-html-table-in-list|multiple-unclosed-formatting-tags|pwrap-bug-workaround|self-closed-tag|template-arg-in-extension-tag|tidy-font-bug|tidy-whitespace-bug|unclosed-quotes-in-heading|bogus-image-options|fostered|misnested-tag|multi-colon-escape|wikilink-in-extlink|empty-heading|missing-end-tag|missing-end-tag-in-heading|night-mode-unaware-background-color|obsolete-tag|pre-expansion|stripped-tag limit=50 highlimit=500
+query+linterrors	lntfrom	list	Linter		type=integer
+query+linterrors	lntlimit	list	Linter		type=limit default=10
+query+linterrors	lntnamespace	list	Linter	multi	type=namespace limit=50 highlimit=500
+query+linterrors	lntpageid	list	Linter	multi	type=integer limit=50 highlimit=500
+query+linterrors	lnttitle	list	Linter		type=string
+query+linterstats	-	meta	Linter		prefix=lntrst
+query+logevents	-	list	MediaWiki		prefix=le
+query+logevents	leaction	list	MediaWiki		enum=<124 values>
+query+logevents	lecontinue	list	MediaWiki		type=string
+query+logevents	ledir	list	MediaWiki		enum=newer|older default=older
+query+logevents	leend	list	MediaWiki		type=timestamp
+query+logevents	leids	list	MediaWiki	multi	type=integer limit=50 highlimit=500
+query+logevents	lelimit	list	MediaWiki		type=limit default=10
+query+logevents	lenamespace	list	MediaWiki		type=namespace
+query+logevents	leprefix	list	MediaWiki		type=string
+query+logevents	leprop	list	MediaWiki	multi	enum=comment|details|ids|parsedcomment|tags|timestamp|title|type|user|userid default=ids|title|type|user|timestamp|comment|details limit=50 highlimit=500
+query+logevents	lestart	list	MediaWiki		type=timestamp
+query+logevents	letag	list	MediaWiki		type=string
+query+logevents	letitle	list	MediaWiki		type=string
+query+logevents	letype	list	MediaWiki		enum=<41 values>
+query+logevents	leuser	list	MediaWiki		type=user
+query+managemessagegroups	-	meta	Translate		prefix=mmg
+query+managemessagegroups	mmgchangesetName	meta	Translate		type=string default=default
+query+managemessagegroups	mmggroupId	meta	Translate	required	type=string
+query+managemessagegroups	mmgmessageKey	meta	Translate	required	type=string
+query+mapdata	-	prop	Kartographer	internal	prefix=mpd
+query+mapdata	mpdcontinue	prop	Kartographer		type=integer
+query+mapdata	mpdgroups	prop	Kartographer		type=string
+query+mapdata	mpdlimit	prop	Kartographer		type=limit default=10
+query+mapdata	mpdparser	prop	Kartographer		enum=legacy|parsoid
+query+messagecollection	-	list	Translate		prefix=mc
+query+messagecollection	mcfilter	list	Translate	multi	type=string default=!optional|!ignored limit=50 highlimit=500
+query+messagecollection	mcgroup	list	Translate	required	type=string
+query+messagecollection	mclanguage	list	Translate		type=string default=en
+query+messagecollection	mclimit	list	Translate		type=limit default=500
+query+messagecollection	mcoffset	list	Translate		type=string
+query+messagecollection	mcprop	list	Translate	multi	enum=definition|properties|tags|translation default=definition|translation limit=50 highlimit=500
+query+messagegroups	-	meta	Translate		prefix=mg
+query+messagegroups	mgdepth	meta	Translate		type=integer default=100
+query+messagegroups	mgfilter	meta	Translate	multi	type=string limit=50 highlimit=500
+query+messagegroups	mgformat	meta	Translate		enum=flat|tree default=flat
+query+messagegroups	mgiconsize	meta	Translate		type=integer default=64
+query+messagegroups	mglanguageFilter	meta	Translate		type=string
+query+messagegroups	mgprop	meta	Translate	multi	enum=class|description|exists|icon|id|label|namespace|priority|priorityforce|prioritylangs|sourcelanguage|subscription|workflowstates default=id|label|description|class|exists limit=50 highlimit=500
+query+messagegroups	mgroot	meta	Translate		type=string
+query+messagegroupstats	-	meta	Translate		prefix=mgs
+query+messagegroupstats	mgsgroup	meta	Translate	required	type=string
+query+messagegroupstats	mgsoffset	meta	Translate		type=string default=0
+query+messagegroupstats	mgssuppresscomplete	meta	Translate		type=boolean
+query+messagegroupstats	mgssuppressempty	meta	Translate		type=boolean
+query+messagegroupsubscription	-	list	Translate	internal	prefix=qmgs
+query+messagetranslations	-	meta	Translate		prefix=mt
+query+messagetranslations	mtoffset	meta	Translate		type=integer default=0
+query+messagetranslations	mttitle	meta	Translate	required	type=string
+query+mmcontent	-	prop	MassMessage		
+query+mostviewed	-	list	PageViewInfo		prefix=pvim
+query+mostviewed	pvimlimit	list	PageViewInfo		type=limit default=10
+query+mostviewed	pvimmetric	list	PageViewInfo		enum=pageviews default=pageviews
+query+mostviewed	pvimoffset	list	PageViewInfo		type=integer default=0
+query+mystashedfiles	-	list	MediaWiki		prefix=msf
+query+mystashedfiles	msfcontinue	list	MediaWiki		type=string
+query+mystashedfiles	msflimit	list	MediaWiki		type=limit default=10
+query+mystashedfiles	msfprop	list	MediaWiki	multi	enum=size|type limit=50 highlimit=500
+query+notifications	-	meta	Echo		prefix=not
+query+notifications	notalertcontinue	meta	Echo		type=string
+query+notifications	notalertunreadfirst	meta	Echo		type=boolean
+query+notifications	notbundle	meta	Echo		type=boolean
+query+notifications	notcontinue	meta	Echo		type=string
+query+notifications	notcrosswikisummary	meta	Echo		type=boolean
+query+notifications	notfilter	meta	Echo	multi	enum=!read|read default=read|!read limit=50 highlimit=500
+query+notifications	notformat	meta	Echo		enum=flyout|html|model|special
+query+notifications	notgroupbysection	meta	Echo		type=boolean
+query+notifications	notlimit	meta	Echo		type=limit default=20
+query+notifications	notmessagecontinue	meta	Echo		type=string
+query+notifications	notmessageunreadfirst	meta	Echo		type=boolean
+query+notifications	notnotifiertypes	meta	Echo	multi	enum=email|push|web default=web limit=50 highlimit=500
+query+notifications	notprop	meta	Echo	multi	enum=count|list|seenTime default=list limit=50 highlimit=500
+query+notifications	notsections	meta	Echo	multi	enum=alert|message default=alert|message limit=50 highlimit=500
+query+notifications	nottitles	meta	Echo	multi	type=string limit=50 highlimit=500
+query+notifications	notunreadfirst	meta	Echo		type=boolean
+query+notifications	notwikis	meta	Echo	multi	enum=<1073 values> default=enwiki limit=50 highlimit=500
+query+oldreviewedpages	-	list	FlaggedRevs		prefix=or
+query+oldreviewedpages	orcategory	list	FlaggedRevs		type=string
+query+oldreviewedpages	ordir	list	FlaggedRevs		enum=newer|older default=newer
+query+oldreviewedpages	orend	list	FlaggedRevs		type=timestamp
+query+oldreviewedpages	orfilterredir	list	FlaggedRevs		enum=all|nonredirects|redirects default=all
+query+oldreviewedpages	orfilterwatched	list	FlaggedRevs		enum=all|watched default=all
+query+oldreviewedpages	orlimit	list	FlaggedRevs		type=limit default=10
+query+oldreviewedpages	ormaxsize	list	FlaggedRevs		type=integer
+query+oldreviewedpages	ornamespace	list	FlaggedRevs	multi	type=namespace default=0 limit=50 highlimit=500
+query+oldreviewedpages	orstart	list	FlaggedRevs		type=timestamp
+query+ores	-	meta	ORES		prefix=ores
+query+pageassessments	-	prop	PageAssessments		prefix=pa
+query+pageassessments	pacontinue	prop	PageAssessments		type=string
+query+pageassessments	palimit	prop	PageAssessments		type=limit default=10
+query+pageassessments	pasubprojects	prop	PageAssessments		type=boolean
+query+pagecollectionsmetadata	-	list	WikimediaCampaignEvents		
+query+pagecollectionsmetadata	titles	list	WikimediaCampaignEvents	required,multi	type=string limit=50 highlimit=500
+query+pageimages	-	prop	PageImages		prefix=pi
+query+pageimages	picontinue	prop	PageImages		type=integer
+query+pageimages	pilangcode	prop	PageImages		type=string
+query+pageimages	pilicense	prop	PageImages		enum=any|free default=free
+query+pageimages	pilimit	prop	PageImages		type=limit default=50
+query+pageimages	piprop	prop	PageImages	multi	enum=name|original|thumbnail default=thumbnail|name limit=50 highlimit=500
+query+pageimages	pithumbsize	prop	PageImages		type=integer default=50
+query+pagepropnames	-	list	MediaWiki		prefix=ppn
+query+pagepropnames	ppncontinue	list	MediaWiki		type=string
+query+pagepropnames	ppnlimit	list	MediaWiki		type=limit default=10
+query+pageprops	-	prop	MediaWiki		prefix=pp
+query+pageprops	ppcontinue	prop	MediaWiki		type=string
+query+pageprops	ppprop	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+pageswithprop	-	list	MediaWiki		prefix=pwp
+query+pageswithprop	pwpcontinue	list	MediaWiki		type=string
+query+pageswithprop	pwpdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+pageswithprop	pwplimit	list	MediaWiki		type=limit default=10
+query+pageswithprop	pwpprop	list	MediaWiki	multi	enum=ids|title|value default=ids|title limit=50 highlimit=500
+query+pageswithprop	pwppropname	list	MediaWiki	required	type=string
+query+pageterms	-	prop	WikibaseClient		prefix=wbpt
+query+pageterms	wbptcontinue	prop	WikibaseClient		type=integer
+query+pageterms	wbptlanguage	prop	WikibaseClient		enum=<637 values> default=uselang
+query+pageterms	wbptterms	prop	WikibaseClient	multi	enum=alias|description|label default=alias|label|description limit=50 highlimit=500
+query+pageviews	-	prop	PageViewInfo		prefix=pvip
+query+pageviews	pvipcontinue	prop	PageViewInfo		type=string
+query+pageviews	pvipdays	prop	PageViewInfo		type=integer default=60
+query+pageviews	pvipmetric	prop	PageViewInfo		enum=pageviews default=pageviews
+query+prefixsearch	-	list	MediaWiki		prefix=ps
+query+prefixsearch	pslimit	list	MediaWiki		type=limit default=10
+query+prefixsearch	psnamespace	list	MediaWiki	multi	type=namespace default=0 limit=50 highlimit=500
+query+prefixsearch	psoffset	list	MediaWiki		type=integer default=0
+query+prefixsearch	psprofile	list	MediaWiki		enum=classic|engine_autoselect|fast-fuzzy|fuzzy|normal|strict default=engine_autoselect
+query+prefixsearch	pssearch	list	MediaWiki	required	type=string
+query+projectpages	-	list	PageAssessments		prefix=wpp
+query+projectpages	wppassessments	list	PageAssessments		type=boolean
+query+projectpages	wppcontinue	list	PageAssessments		type=string
+query+projectpages	wpplimit	list	PageAssessments		type=limit default=10
+query+projectpages	wppprojects	list	PageAssessments	required,multi	type=string limit=50 highlimit=500
+query+projects	-	list	PageAssessments		prefix=pj
+query+projects	pjsubprojects	list	PageAssessments		type=boolean
+query+protectedtitles	-	list	MediaWiki		prefix=pt
+query+protectedtitles	ptcontinue	list	MediaWiki		type=string
+query+protectedtitles	ptdir	list	MediaWiki		enum=newer|older default=older
+query+protectedtitles	ptend	list	MediaWiki		type=timestamp
+query+protectedtitles	ptlevel	list	MediaWiki	multi	enum=autoconfirmed|extendedconfirmed|sysop|templateeditor limit=50 highlimit=500
+query+protectedtitles	ptlimit	list	MediaWiki		type=limit default=10
+query+protectedtitles	ptnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+protectedtitles	ptprop	list	MediaWiki	multi	enum=comment|expiry|level|parsedcomment|timestamp|user|userid default=timestamp|level limit=50 highlimit=500
+query+protectedtitles	ptstart	list	MediaWiki		type=timestamp
+query+querypage	-	list	MediaWiki		prefix=qp
+query+querypage	qplimit	list	MediaWiki		type=limit default=10
+query+querypage	qpoffset	list	MediaWiki		type=integer default=0
+query+querypage	qppage	list	MediaWiki	required	enum=<39 values>
+query+random	-	list	MediaWiki		prefix=rn
+query+random	rncontentmodel	list	MediaWiki		enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+query+random	rncontinue	list	MediaWiki		type=string
+query+random	rnfilterredir	list	MediaWiki		enum=all|nonredirects|redirects default=nonredirects
+query+random	rnlimit	list	MediaWiki		type=limit default=1
+query+random	rnmaxsize	list	MediaWiki		type=integer
+query+random	rnminsize	list	MediaWiki		type=integer
+query+random	rnnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+random	rnredirect	list	MediaWiki	deprecated	type=boolean
+query+readinglistentries	-	list	ReadingLists	internal	prefix=rle
+query+readinglistentries	rlechangedsince	list	ReadingLists		type=timestamp
+query+readinglistentries	rlecontinue	list	ReadingLists		type=string
+query+readinglistentries	rledir	list	ReadingLists		enum=ascending|descending default=ascending
+query+readinglistentries	rlelimit	list	ReadingLists		type=limit default=10
+query+readinglistentries	rlelists	list	ReadingLists	multi	type=integer limit=100 highlimit=500
+query+readinglistentries	rleprojects	list	ReadingLists	multi	type=string limit=100 highlimit=500
+query+readinglistentries	rlesort	list	ReadingLists		enum=name|updated
+query+readinglists	-	meta	ReadingLists	internal	prefix=rl
+query+readinglists	rlchangedsince	meta	ReadingLists		type=timestamp
+query+readinglists	rlcontinue	meta	ReadingLists		type=string
+query+readinglists	rldir	meta	ReadingLists		enum=ascending|descending default=ascending
+query+readinglists	rllimit	meta	ReadingLists		type=limit default=10
+query+readinglists	rllist	meta	ReadingLists		type=integer
+query+readinglists	rlproject	meta	ReadingLists		type=string
+query+readinglists	rlsort	meta	ReadingLists		enum=name|updated
+query+readinglists	rltitle	meta	ReadingLists		type=string
+query+recentchanges	-	list	MediaWiki		prefix=rc
+query+recentchanges	rccontinue	list	MediaWiki		type=string
+query+recentchanges	rcdir	list	MediaWiki		enum=newer|older default=older
+query+recentchanges	rcend	list	MediaWiki		type=timestamp
+query+recentchanges	rcexcludeuser	list	MediaWiki		type=user
+query+recentchanges	rcgeneraterevisions	list	MediaWiki		type=boolean
+query+recentchanges	rclimit	list	MediaWiki		type=limit default=10
+query+recentchanges	rcnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+recentchanges	rcprop	list	MediaWiki	multi	enum=comment|flags|ids|loginfo|oresscores|parsedcomment|patrolled|redirect|sha1|sizes|tags|timestamp|title|user|userid default=title|timestamp|ids limit=50 highlimit=500
+query+recentchanges	rcshow	list	MediaWiki	multi	enum=!anon|!autopatrolled|!bot|!minor|!oresreview|!patrolled|!redirect|anon|autopatrolled|bot|minor|oresreview|patrolled|redirect|unpatrolled limit=50 highlimit=500
+query+recentchanges	rcslot	list	MediaWiki		enum=main
+query+recentchanges	rcstart	list	MediaWiki		type=timestamp
+query+recentchanges	rctag	list	MediaWiki		type=string
+query+recentchanges	rctitle	list	MediaWiki		type=string
+query+recentchanges	rctoponly	list	MediaWiki		type=boolean
+query+recentchanges	rctype	list	MediaWiki	multi	enum=categorize|edit|external|log|new default=edit|new|log|categorize limit=50 highlimit=500
+query+recentchanges	rcuser	list	MediaWiki		type=user
+query+redirects	-	prop	MediaWiki		prefix=rd
+query+redirects	rdcontinue	prop	MediaWiki		type=string
+query+redirects	rdlimit	prop	MediaWiki		type=limit default=10
+query+redirects	rdnamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+redirects	rdprop	prop	MediaWiki	multi	enum=fragment|pageid|title default=pageid|title limit=50 highlimit=500
+query+redirects	rdshow	prop	MediaWiki	multi	enum=!fragment|fragment limit=50 highlimit=500
+query+revisions	-	prop	MediaWiki		prefix=rv
+query+revisions	rvcontentformat	prop	MediaWiki	deprecated	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+query+revisions	rvcontinue	prop	MediaWiki		type=string
+query+revisions	rvdiffto	prop	MediaWiki	deprecated	type=string
+query+revisions	rvdifftotext	prop	MediaWiki	deprecated	type=string
+query+revisions	rvdifftotextpst	prop	MediaWiki	deprecated	type=boolean
+query+revisions	rvdir	prop	MediaWiki		enum=newer|older default=older
+query+revisions	rvend	prop	MediaWiki		type=timestamp
+query+revisions	rvendid	prop	MediaWiki		type=integer
+query+revisions	rvexcludeuser	prop	MediaWiki		type=user
+query+revisions	rvexpandtemplates	prop	MediaWiki	deprecated	type=boolean
+query+revisions	rvgeneratexml	prop	MediaWiki	deprecated	type=boolean
+query+revisions	rvlimit	prop	MediaWiki		type=limit
+query+revisions	rvparse	prop	MediaWiki	deprecated	type=boolean
+query+revisions	rvprop	prop	MediaWiki	multi	enum=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|parsetree|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid default=ids|timestamp|flags|comment|user limit=50 highlimit=500 deprecatedvalues=parsetree
+query+revisions	rvsection	prop	MediaWiki		type=string
+query+revisions	rvslots	prop	MediaWiki	multi	enum=main limit=50 highlimit=500
+query+revisions	rvstart	prop	MediaWiki		type=timestamp
+query+revisions	rvstartid	prop	MediaWiki		type=integer
+query+revisions	rvtag	prop	MediaWiki		type=string
+query+revisions	rvuser	prop	MediaWiki		type=user
+query+search	-	list	MediaWiki		prefix=sr
+query+search	srenablerewrites	list	MediaWiki		type=boolean
+query+search	srinfo	list	MediaWiki	multi	enum=rewrittenquery|suggestion|totalhits default=totalhits|suggestion|rewrittenquery limit=50 highlimit=500
+query+search	srinterwiki	list	MediaWiki		type=boolean
+query+search	srlimit	list	MediaWiki		type=limit default=10
+query+search	srnamespace	list	MediaWiki	multi	type=namespace default=0 limit=50 highlimit=500
+query+search	sroffset	list	MediaWiki		type=integer default=0
+query+search	srprop	list	MediaWiki	multi	enum=categorysnippet|extensiondata|hasrelated|isfilematch|redirectsnippet|redirecttitle|score|sectionsnippet|sectiontitle|size|snippet|timestamp|titlesnippet|wordcount default=size|wordcount|timestamp|snippet limit=50 highlimit=500 deprecatedvalues=hasrelated|score
+query+search	srqdprofile	list	MediaWiki		enum=default|engine_autoselect|perfield_builder|perfield_builder_relaxed|perfield_builder_title_filter default=engine_autoselect
+query+search	srqiprofile	list	MediaWiki		enum=classic|classic_noboostlinks|empty|engine_autoselect|growth_underlinked|mlr-1024rs|mlr-1024rs-next|popular_inclinks|popular_inclinks_pv|wsum_inclinks|wsum_inclinks_pv default=engine_autoselect
+query+search	srsearch	list	MediaWiki	required	type=string
+query+search	srsort	list	MediaWiki		enum=create_timestamp_asc|create_timestamp_desc|incoming_links_asc|incoming_links_desc|just_match|last_edit_asc|last_edit_desc|none|random|relevance|title_natural_asc|title_natural_desc|user_random default=relevance
+query+search	srwhat	list	MediaWiki		enum=nearmatch|text|title
+query+siteinfo	-	meta	MediaWiki		prefix=si
+query+siteinfo	sifilteriw	meta	MediaWiki		enum=!local|local
+query+siteinfo	siinlanguagecode	meta	MediaWiki		type=string
+query+siteinfo	sinumberingroup	meta	MediaWiki		type=boolean
+query+siteinfo	siprop	meta	MediaWiki	multi	enum=<32 values> default=general limit=50 highlimit=500
+query+siteinfo	sishowalldb	meta	MediaWiki		type=boolean
+query+siteviews	-	meta	PageViewInfo		prefix=pvis
+query+siteviews	pvisdays	meta	PageViewInfo		type=integer default=60
+query+siteviews	pvismetric	meta	PageViewInfo		enum=pageviews|uniques default=pageviews
+query+stashimageinfo	-	prop	MediaWiki		prefix=sii
+query+stashimageinfo	siifilekey	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+stashimageinfo	siiprop	prop	MediaWiki	multi	enum=badfile|bitdepth|canonicaltitle|commonmetadata|dimensions|extmetadata|metadata|mime|sha1|size|thumbmime|thumburls|timestamp|url default=timestamp|url limit=50 highlimit=500
+query+stashimageinfo	siisessionkey	prop	MediaWiki	deprecated,multi	type=string limit=50 highlimit=500
+query+stashimageinfo	siiurlheight	prop	MediaWiki		type=integer default=-1
+query+stashimageinfo	siiurlparam	prop	MediaWiki		type=string
+query+stashimageinfo	siiurlwidth	prop	MediaWiki		type=integer default=-1
+query+tags	-	list	MediaWiki		prefix=tg
+query+tags	tgcontinue	list	MediaWiki		type=string
+query+tags	tglimit	list	MediaWiki		type=limit default=10
+query+tags	tgprop	list	MediaWiki	multi	enum=active|defined|description|displayname|hitcount|source limit=50 highlimit=500
+query+templates	-	prop	MediaWiki		prefix=tl
+query+templates	tlcontinue	prop	MediaWiki		type=string
+query+templates	tldir	prop	MediaWiki		enum=ascending|descending default=ascending
+query+templates	tllimit	prop	MediaWiki		type=limit default=10
+query+templates	tlnamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+templates	tltemplates	prop	MediaWiki	multi	type=string limit=50 highlimit=500
+query+threads	-	list	Liquid Threads		prefix=th
+query+threads	thauthor	list	Liquid Threads	multi	type=string limit=50 highlimit=500
+query+threads	thdir	list	Liquid Threads		enum=newer|older default=newer
+query+threads	thendid	list	Liquid Threads		type=integer
+query+threads	thid	list	Liquid Threads	multi	type=string limit=50 highlimit=500
+query+threads	thlimit	list	Liquid Threads		type=limit default=10
+query+threads	thpage	list	Liquid Threads	multi	type=string limit=50 highlimit=500
+query+threads	thprop	list	Liquid Threads	multi	enum=ancestor|author|created|id|modified|page|parent|reactions|replies|rootid|signature|subject|summaryid|type default=id|subject|page|parent|author limit=50 highlimit=500
+query+threads	thrender	list	Liquid Threads		type=boolean
+query+threads	threnderlevel	list	Liquid Threads		type=integer default=0
+query+threads	threndermaxdepth	list	Liquid Threads		type=string
+query+threads	threndermaxthreadcount	list	Liquid Threads		type=string
+query+threads	threnderstartrepliesat	list	Liquid Threads		type=string
+query+threads	threnderthreadcount	list	Liquid Threads		type=integer default=1
+query+threads	threnderthreadpos	list	Liquid Threads		type=integer default=1
+query+threads	throot	list	Liquid Threads	multi	type=string limit=50 highlimit=500
+query+threads	thshowdeleted	list	Liquid Threads		type=boolean
+query+threads	thstartid	list	Liquid Threads		type=integer
+query+threads	thsummary	list	Liquid Threads	multi	type=string limit=50 highlimit=500
+query+tokens	-	meta	MediaWiki		
+query+tokens	type	meta	MediaWiki	multi	enum=createaccount|csrf|deleteglobalaccount|login|patrol|rollback|setglobalaccountstatus|userrights|watch default=csrf limit=50 highlimit=500
+query+trackingcategories	-	list	MediaWiki		prefix=tc
+query+trackingcategories	tccontinue	list	MediaWiki		type=string
+query+trackingcategories	tclimit	list	MediaWiki		type=limit default=10
+query+trackingcategories	tcmax	list	MediaWiki		type=integer
+query+trackingcategories	tcmin	list	MediaWiki		type=integer
+query+trackingcategories	tcprop	list	MediaWiki	multi	enum=hidden|size limit=50 highlimit=500
+query+trackingcategories	tctrackingcatname	list	MediaWiki	multi	type=string limit=50 highlimit=500
+query+transcludedin	-	prop	MediaWiki		prefix=ti
+query+transcludedin	ticontinue	prop	MediaWiki		type=string
+query+transcludedin	tilimit	prop	MediaWiki		type=limit default=10
+query+transcludedin	tinamespace	prop	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+transcludedin	tiprop	prop	MediaWiki	multi	enum=pageid|redirect|title default=pageid|title|redirect limit=50 highlimit=500
+query+transcludedin	tishow	prop	MediaWiki	multi	enum=!redirect|redirect limit=50 highlimit=500
+query+transcodestatus	-	prop	TimedMediaHandler		
+query+unreadnotificationpages	-	meta	Echo		prefix=unp
+query+unreadnotificationpages	unpgrouppages	meta	Echo		type=boolean
+query+unreadnotificationpages	unplimit	meta	Echo		type=limit default=10
+query+unreadnotificationpages	unpwikis	meta	Echo	multi	enum=<1073 values> default=enwiki limit=50 highlimit=500
+query+usercontribs	-	list	MediaWiki		prefix=uc
+query+usercontribs	uccontinue	list	MediaWiki		type=string
+query+usercontribs	ucdir	list	MediaWiki		enum=newer|older default=older
+query+usercontribs	ucend	list	MediaWiki		type=timestamp
+query+usercontribs	uciprange	list	MediaWiki		type=string
+query+usercontribs	uclimit	list	MediaWiki		type=limit default=10
+query+usercontribs	ucnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+usercontribs	ucprop	list	MediaWiki	multi	enum=comment|flags|ids|oresscores|parsedcomment|patrolled|size|sizediff|tags|timestamp|title default=ids|title|timestamp|comment|size|flags limit=50 highlimit=500
+query+usercontribs	ucshow	list	MediaWiki	multi	enum=!autopatrolled|!minor|!new|!oresreview|!patrolled|!top|autopatrolled|minor|new|oresreview|patrolled|top limit=50 highlimit=500
+query+usercontribs	ucstart	list	MediaWiki		type=timestamp
+query+usercontribs	uctag	list	MediaWiki		type=string
+query+usercontribs	uctoponly	list	MediaWiki	deprecated	type=boolean
+query+usercontribs	ucuser	list	MediaWiki	multi	type=user limit=50 highlimit=500
+query+usercontribs	ucuserids	list	MediaWiki	multi	type=integer limit=50 highlimit=500
+query+usercontribs	ucuserprefix	list	MediaWiki		type=string
+query+userinfo	-	meta	MediaWiki		prefix=ui
+query+userinfo	uiattachedwiki	meta	MediaWiki		type=string
+query+userinfo	uiprop	meta	MediaWiki	multi	enum=acceptlang|blockinfo|cancreateaccount|centralids|changeablegroups|editcount|email|groupmemberships|groups|hasmsg|implicitgroups|latestcontrib|options|ratelimits|realname|registrationdate|rights|theoreticalratelimits|unreadcount|watchlistlabels limit=50 highlimit=500
+query+users	-	list	MediaWiki		prefix=us
+query+users	usattachedwiki	list	MediaWiki		type=string
+query+users	usprop	list	MediaWiki	multi	enum=blockinfo|cancreate|centralids|editcount|emailable|gender|groupmemberships|groups|implicitgroups|registration|rights|tempexpired limit=50 highlimit=500
+query+users	ususerids	list	MediaWiki	multi	type=integer limit=50 highlimit=500
+query+users	ususers	list	MediaWiki	multi	type=string limit=50 highlimit=500
+query+videoinfo	-	prop	TimedMediaHandler		prefix=vi
+query+videoinfo	vibadfilecontexttitle	prop	TimedMediaHandler		type=string
+query+videoinfo	vicontinue	prop	TimedMediaHandler		type=string
+query+videoinfo	viend	prop	TimedMediaHandler		type=timestamp
+query+videoinfo	viextmetadatafilter	prop	TimedMediaHandler	multi	type=string limit=50 highlimit=500
+query+videoinfo	viextmetadatalanguage	prop	TimedMediaHandler		type=string default=en
+query+videoinfo	viextmetadatamultilang	prop	TimedMediaHandler		type=boolean
+query+videoinfo	vilimit	prop	TimedMediaHandler		type=limit default=1
+query+videoinfo	vilocalonly	prop	TimedMediaHandler		type=boolean
+query+videoinfo	vimetadataversion	prop	TimedMediaHandler		type=string default=1
+query+videoinfo	viprop	prop	TimedMediaHandler	multi	enum=archivename|badfile|bitdepth|canonicaltitle|comment|commonmetadata|derivatives|dimensions|extmetadata|mediatype|metadata|mime|parsedcomment|sha1|size|thumbmime|thumburls|timedtext|timestamp|uploadwarning|url|user|userid default=timestamp|user limit=50 highlimit=500
+query+videoinfo	vistart	prop	TimedMediaHandler		type=timestamp
+query+videoinfo	viurlheight	prop	TimedMediaHandler		type=integer default=-1
+query+videoinfo	viurlparam	prop	TimedMediaHandler		type=string
+query+videoinfo	viurlwidth	prop	TimedMediaHandler		type=integer default=-1
+query+watchlist	-	list	MediaWiki		prefix=wl
+query+watchlist	wlallrev	list	MediaWiki		type=boolean
+query+watchlist	wlcontinue	list	MediaWiki		type=string
+query+watchlist	wldir	list	MediaWiki		enum=newer|older default=older
+query+watchlist	wlend	list	MediaWiki		type=timestamp
+query+watchlist	wlexcludeuser	list	MediaWiki		type=user
+query+watchlist	wllabels	list	MediaWiki	multi	type=integer limit=50 highlimit=500
+query+watchlist	wllimit	list	MediaWiki		type=limit default=10
+query+watchlist	wlnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+watchlist	wlowner	list	MediaWiki		type=user
+query+watchlist	wlprop	list	MediaWiki	multi	enum=comment|expiry|flags|ids|labels|loginfo|notificationtimestamp|oresscores|parsedcomment|patrol|sizes|tags|timestamp|title|user|userid default=ids|title|flags limit=50 highlimit=500
+query+watchlist	wlshow	list	MediaWiki	multi	enum=!anon|!autopatrolled|!bot|!minor|!oresreview|!patrolled|!unread|anon|autopatrolled|bot|minor|oresreview|patrolled|unread limit=50 highlimit=500
+query+watchlist	wlstart	list	MediaWiki		type=timestamp
+query+watchlist	wltoken	list	MediaWiki	sensitive	type=string
+query+watchlist	wltype	list	MediaWiki	multi	enum=categorize|edit|external|log|new default=edit|new|log|categorize limit=50 highlimit=500
+query+watchlist	wluser	list	MediaWiki		type=user
+query+watchlistraw	-	list	MediaWiki		prefix=wr
+query+watchlistraw	wrcontinue	list	MediaWiki		type=string
+query+watchlistraw	wrdir	list	MediaWiki		enum=ascending|descending default=ascending
+query+watchlistraw	wrfromtitle	list	MediaWiki		type=string
+query+watchlistraw	wrlimit	list	MediaWiki		type=limit default=10
+query+watchlistraw	wrnamespace	list	MediaWiki	multi	type=namespace limit=50 highlimit=500
+query+watchlistraw	wrowner	list	MediaWiki		type=user
+query+watchlistraw	wrprop	list	MediaWiki	multi	enum=changed limit=50 highlimit=500
+query+watchlistraw	wrshow	list	MediaWiki	multi	enum=!changed|changed limit=50 highlimit=500
+query+watchlistraw	wrtoken	list	MediaWiki	sensitive	type=string
+query+watchlistraw	wrtotitle	list	MediaWiki		type=string
+query+wbcontentlanguages	-	meta	WikibaseClient		prefix=wbcl
+query+wbcontentlanguages	wbclcontext	meta	WikibaseClient		enum=monolingualtext|term|term-lexicographical default=term
+query+wbcontentlanguages	wbclprop	meta	WikibaseClient	multi	enum=autonym|code|name default=code limit=50 highlimit=500
+query+wbdatabridgeconfig	-	meta	WikibaseClient	internal	prefix=wbdbc
+query+wbentityusage	-	prop	WikibaseClient		prefix=wbeu
+query+wbentityusage	wbeuaspect	prop	WikibaseClient	multi	enum=C|D|L|O|S|T|X limit=50 highlimit=500
+query+wbentityusage	wbeucontinue	prop	WikibaseClient		type=string
+query+wbentityusage	wbeuentities	prop	WikibaseClient	multi	type=string limit=50 highlimit=500
+query+wbentityusage	wbeulimit	prop	WikibaseClient		type=limit default=10
+query+wbentityusage	wbeuprop	prop	WikibaseClient	multi	enum=url limit=50 highlimit=500
+query+wblistentityusage	-	list	WikibaseClient		prefix=wbleu
+query+wblistentityusage	wbleuaspect	list	WikibaseClient	multi	enum=C|D|L|O|S|T|X limit=50 highlimit=500
+query+wblistentityusage	wbleucontinue	list	WikibaseClient		type=string
+query+wblistentityusage	wbleuentities	list	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+query+wblistentityusage	wbleulimit	list	WikibaseClient		type=limit default=10
+query+wblistentityusage	wbleuprop	list	WikibaseClient	multi	enum=url limit=50 highlimit=500
+query+wbsearch	-	list	WikibaseClient	internal	prefix=wbs
+query+wbsearch	wbslanguage	list	WikibaseClient		enum=<637 values>
+query+wbsearch	wbslimit	list	WikibaseClient		type=limit default=7
+query+wbsearch	wbsprofile	list	WikibaseClient		enum=default default=default
+query+wbsearch	wbssearch	list	WikibaseClient	required	type=string
+query+wbsearch	wbsstrictlanguage	list	WikibaseClient		type=boolean
+query+wbsearch	wbstype	list	WikibaseClient		enum=item|lexeme|mediainfo|property default=item
+query+wbsubscribers	-	list	WikibaseClient		prefix=wbls
+query+wbsubscribers	wblscontinue	list	WikibaseClient		type=string
+query+wbsubscribers	wblsentities	list	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+query+wbsubscribers	wblslimit	list	WikibaseClient		type=limit default=10
+query+wbsubscribers	wblsprop	list	WikibaseClient	multi	enum=url limit=50 highlimit=500
+query+wikibase	-	meta	WikibaseClient		prefix=wb
+query+wikibase	wbprop	meta	WikibaseClient	multi	enum=siteid|url default=url|siteid limit=50 highlimit=500
+query+wikisets	-	list	CentralAuth		prefix=ws
+query+wikisets	wsfrom	list	CentralAuth		type=string
+query+wikisets	wslimit	list	CentralAuth		type=limit default=10
+query+wikisets	wsorderbyname	list	CentralAuth		type=boolean
+query+wikisets	wsprop	list	CentralAuth	multi	enum=type|wikisincluded|wikisnotincluded limit=50 highlimit=500
+rawfm	-	format	MediaWiki		
+rawfm	wrappedhtml	format	MediaWiki		type=boolean
+readinglists	-	action	ReadingLists	internal	write post
+readinglists	command	action	ReadingLists	required	enum=create|createentry|delete|deleteentry|setup|teardown|update
+readinglists	token	action	ReadingLists	required,sensitive	type=string
+removeauthenticationdata	-	action	MediaWiki		write post
+removeauthenticationdata	request	action	MediaWiki	required	type=string
+removeauthenticationdata	token	action	MediaWiki	required,sensitive	type=string
+resetpassword	-	action	MediaWiki		write post
+resetpassword	email	action	MediaWiki		type=string
+resetpassword	token	action	MediaWiki	required,sensitive	type=string
+resetpassword	user	action	MediaWiki		type=user
+review	-	action	FlaggedRevs		write post
+review	comment	action	FlaggedRevs		type=string
+review	revid	action	FlaggedRevs		type=string
+review	token	action	FlaggedRevs	required,sensitive	type=string
+review	unapprove	action	FlaggedRevs		type=boolean
+revisiondelete	-	action	MediaWiki		write post
+revisiondelete	hide	action	MediaWiki	multi	enum=comment|content|user limit=50 highlimit=500
+revisiondelete	ids	action	MediaWiki	required,multi	type=string limit=50 highlimit=500
+revisiondelete	reason	action	MediaWiki		type=string
+revisiondelete	show	action	MediaWiki	multi	enum=comment|content|user limit=50 highlimit=500
+revisiondelete	suppress	action	MediaWiki		enum=no|nochange|yes default=nochange
+revisiondelete	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+revisiondelete	target	action	MediaWiki		type=string
+revisiondelete	token	action	MediaWiki	required,sensitive	type=string
+revisiondelete	type	action	MediaWiki	required	enum=archive|filearchive|logging|oldimage|revision
+rollback	-	action	MediaWiki		write post
+rollback	markbot	action	MediaWiki		type=boolean
+rollback	pageid	action	MediaWiki		type=integer
+rollback	summary	action	MediaWiki		type=string
+rollback	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+rollback	title	action	MediaWiki		type=string
+rollback	token	action	MediaWiki	required,sensitive	type=string
+rollback	user	action	MediaWiki	required	type=user
+rollback	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+rollback	watchlistexpiry	action	MediaWiki		type=expiry
+rsd	-	action	MediaWiki		
+sanitize-mapdata	-	action	Kartographer	internal	write post
+sanitize-mapdata	text	action	Kartographer	required	type=text
+sanitize-mapdata	title	action	Kartographer		type=string default=Dummy title (called from Kartographer\Api\ApiSanitizeMapData)
+scribunto-console	-	action	Scribunto	internal	write post
+scribunto-console	clear	action	Scribunto		type=boolean
+scribunto-console	content	action	Scribunto		type=text
+scribunto-console	question	action	Scribunto	required	type=text
+scribunto-console	session	action	Scribunto		type=integer
+scribunto-console	title	action	Scribunto		type=string
+scribunto-console	token	action	Scribunto	required,sensitive	type=string
+searchtranslations	-	action	Translate		
+searchtranslations	case	action	Translate		type=string default=0
+searchtranslations	filter	action	Translate		enum=|fuzzy|translated|untranslated
+searchtranslations	group	action	Translate		type=string
+searchtranslations	language	action	Translate		type=string
+searchtranslations	limit	action	Translate		type=limit default=25
+searchtranslations	match	action	Translate		type=string
+searchtranslations	offset	action	Translate		type=integer default=0
+searchtranslations	query	action	Translate	required	type=string
+searchtranslations	service	action	Translate		enum=codfw-k8s|default|eqiad-k8s default=default
+searchtranslations	sourcelanguage	action	Translate		type=string default=en
+securepollauth	-	action	SecurePoll	internal	write post
+securepollauth	id	action	SecurePoll	required	type=integer
+securepollauth	token	action	SecurePoll	required	type=string
+setglobalaccountstatus	-	action	CentralAuth		write post
+setglobalaccountstatus	hidden	action	CentralAuth		enum=|lists|suppressed
+setglobalaccountstatus	locked	action	CentralAuth		enum=|lock|unlock
+setglobalaccountstatus	reason	action	CentralAuth		type=string
+setglobalaccountstatus	statecheck	action	CentralAuth		type=string
+setglobalaccountstatus	token	action	CentralAuth	required,sensitive	type=string
+setglobalaccountstatus	user	action	CentralAuth	required	type=string
+setnotificationtimestamp	-	action	MediaWiki		write post
+setnotificationtimestamp	continue	action	MediaWiki		type=string
+setnotificationtimestamp	converttitles	action	MediaWiki		type=boolean
+setnotificationtimestamp	entirewatchlist	action	MediaWiki		type=boolean
+setnotificationtimestamp	generator	action	MediaWiki		enum=<44 values>
+setnotificationtimestamp	newerthanrevid	action	MediaWiki		type=integer
+setnotificationtimestamp	pageids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+setnotificationtimestamp	redirects	action	MediaWiki		type=boolean
+setnotificationtimestamp	revids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+setnotificationtimestamp	timestamp	action	MediaWiki		type=timestamp
+setnotificationtimestamp	titles	action	MediaWiki	multi	type=string limit=50 highlimit=500
+setnotificationtimestamp	token	action	MediaWiki	required,sensitive	type=string
+setnotificationtimestamp	torevid	action	MediaWiki		type=integer
+setpagelanguage	-	action	MediaWiki		write post
+setpagelanguage	lang	action	MediaWiki	required	enum=<550 values>
+setpagelanguage	pageid	action	MediaWiki		type=integer
+setpagelanguage	reason	action	MediaWiki		type=string
+setpagelanguage	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+setpagelanguage	title	action	MediaWiki		type=string
+setpagelanguage	token	action	MediaWiki	required,sensitive	type=string
+shortenurl	-	action	UrlShortener		write post
+shortenurl	qrcode	action	UrlShortener		type=boolean
+shortenurl	url	action	UrlShortener	required	type=string
+sitematrix	-	action	SiteMatrix		prefix=sm
+sitematrix	smcontinue	action	SiteMatrix		type=string
+sitematrix	smlangprop	action	SiteMatrix	multi	enum=code|dir|localname|name|site default=code|name|site|dir|localname limit=50 highlimit=500
+sitematrix	smlimit	action	SiteMatrix		type=limit default=5000
+sitematrix	smsiteprop	action	SiteMatrix	multi	enum=code|dbname|lang|sitename|url default=url|dbname|code|sitename limit=50 highlimit=500
+sitematrix	smstate	action	SiteMatrix	multi	enum=all|closed|fishbowl|nonglobal|private default=all limit=50 highlimit=500
+sitematrix	smtype	action	SiteMatrix	multi	enum=language|special default=special|language limit=50 highlimit=500
+spamblacklist	-	action	SpamBlacklist		
+spamblacklist	url	action	SpamBlacklist	required,multi	type=string limit=50 highlimit=500
+stabilize	-	action	FlaggedRevs		write post
+stabilize	expiry	action	FlaggedRevs		type=string default=infinite
+stabilize	protectlevel	action	FlaggedRevs		enum=autoconfirmed|none default=none
+stabilize	reason	action	FlaggedRevs		type=string
+stabilize	title	action	FlaggedRevs	required	type=string
+stabilize	token	action	FlaggedRevs	required,sensitive	type=string
+stashedit	-	action	MediaWiki	internal	write post
+stashedit	baserevid	action	MediaWiki	required	type=integer
+stashedit	contentformat	action	MediaWiki	required	enum=application/json|application/octet-stream|application/unknown|application/vue+xml|application/x-binary|text/css|text/javascript|text/plain|text/unknown|text/x-wiki|unknown/unknown
+stashedit	contentmodel	action	MediaWiki	required	enum=GadgetDefinition|Graph.JsonConfig|Json.JsonConfig|JsonSchema|MassMessageListContent|Scribunto|SecurePoll|css|javascript|json|sanitized-css|text|unknown|vue|wikitext|worklist
+stashedit	section	action	MediaWiki		type=string
+stashedit	sectiontitle	action	MediaWiki		type=string
+stashedit	stashedtexthash	action	MediaWiki		type=string
+stashedit	summary	action	MediaWiki		type=string
+stashedit	text	action	MediaWiki		type=text
+stashedit	title	action	MediaWiki	required	type=string
+stashedit	token	action	MediaWiki	required,sensitive	type=string
+streamconfigs	-	action	EventStreamConfig		
+streamconfigs	all_settings	action	EventStreamConfig	deprecated	type=boolean
+streamconfigs	constraints	action	EventStreamConfig	multi	type=string limit=50 highlimit=500
+streamconfigs	streams	action	EventStreamConfig	multi	type=string limit=250 highlimit=500
+strikevote	-	action	SecurePoll		write post
+strikevote	option	action	SecurePoll	required	enum=strike|unstrike
+strikevote	reason	action	SecurePoll	required	type=string
+strikevote	token	action	SecurePoll	required,sensitive	type=string
+strikevote	voteid	action	SecurePoll	required	type=integer
+sxdelete	-	action	ContentTranslation		write post
+sxdelete	sectionid	action	ContentTranslation	required	type=string
+sxdelete	sectiontranslationid	action	ContentTranslation	required	type=integer
+sxdelete	token	action	ContentTranslation	required,sensitive	type=string
+sxdelete	translationid	action	ContentTranslation	required	type=integer
+sxsave	-	action	ContentTranslation	internal	write post
+sxsave	content	action	ContentTranslation	required	type=string
+sxsave	issandbox	action	ContentTranslation		type=boolean
+sxsave	progress	action	ContentTranslation	required	type=string
+sxsave	sectionid	action	ContentTranslation	required	type=string
+sxsave	sourcelanguage	action	ContentTranslation	required	type=string
+sxsave	sourcerevision	action	ContentTranslation	required	type=integer
+sxsave	sourcesectiontitle	action	ContentTranslation	required	type=string
+sxsave	sourcetitle	action	ContentTranslation	required	type=string
+sxsave	targetlanguage	action	ContentTranslation	required	type=string
+sxsave	targetsectiontitle	action	ContentTranslation	required	type=string
+sxsave	targettitle	action	ContentTranslation	required	type=string
+sxsave	token	action	ContentTranslation	required,sensitive	type=string
+tag	-	action	MediaWiki		write post
+tag	add	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+tag	logid	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+tag	rcid	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+tag	reason	action	MediaWiki		type=string
+tag	remove	action	MediaWiki	multi	type=string limit=50 highlimit=500
+tag	revid	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+tag	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+tag	token	action	MediaWiki	required,sensitive	type=string
+templatedata	-	action	TemplateData		
+templatedata	converttitles	action	TemplateData		type=boolean
+templatedata	doNotIgnoreMissingTitles	action	TemplateData	deprecated	type=boolean
+templatedata	generator	action	TemplateData		enum=<44 values>
+templatedata	includeMissingTitles	action	TemplateData		type=boolean
+templatedata	lang	action	TemplateData		type=string
+templatedata	pageids	action	TemplateData	multi	type=integer limit=50 highlimit=500
+templatedata	redirects	action	TemplateData		type=boolean
+templatedata	revids	action	TemplateData	multi	type=integer limit=50 highlimit=500
+templatedata	titles	action	TemplateData	multi	type=string limit=50 highlimit=500
+thank	-	action	Thanks		write post
+thank	log	action	Thanks		type=integer
+thank	rev	action	Thanks		type=integer
+thank	source	action	Thanks		type=string
+thank	token	action	Thanks	required,sensitive	type=string
+threadaction	-	action	Liquid Threads		write post
+threadaction	bump	action	Liquid Threads		type=string
+threadaction	captchaid	action	Liquid Threads		type=string
+threadaction	captchaword	action	Liquid Threads		type=string
+threadaction	discussiontoolsautosubscribe	action	Liquid Threads		enum=no|preferences|yes default=preferences
+threadaction	editorinterface	action	Liquid Threads		type=string
+threadaction	method	action	Liquid Threads		type=string
+threadaction	newparent	action	Liquid Threads		type=string
+threadaction	operand	action	Liquid Threads		type=string
+threadaction	reason	action	Liquid Threads		type=string
+threadaction	render	action	Liquid Threads		type=string
+threadaction	signature	action	Liquid Threads		type=string
+threadaction	sortkey	action	Liquid Threads		type=string
+threadaction	subject	action	Liquid Threads		type=string
+threadaction	talkpage	action	Liquid Threads		type=string
+threadaction	text	action	Liquid Threads		type=string
+threadaction	thread	action	Liquid Threads	multi	type=string limit=50 highlimit=500
+threadaction	threadaction	action	Liquid Threads	required	enum=addreaction|deletereaction|edit|inlineeditform|markread|markunread|merge|newthread|reply|setsortkey|setsubject|split
+threadaction	token	action	Liquid Threads	required,sensitive	type=string
+threadaction	type	action	Liquid Threads		type=string
+threadaction	value	action	Liquid Threads		type=string
+threadaction	wgConfirmEditForceShowCaptcha	action	Liquid Threads		type=boolean
+timedtext	-	action	TimedMediaHandler	internal	
+timedtext	lang	action	TimedMediaHandler		type=string
+timedtext	pageid	action	TimedMediaHandler		type=integer
+timedtext	title	action	TimedMediaHandler		type=string
+timedtext	trackformat	action	TimedMediaHandler	required	enum=srt|vtt
+titleblacklist	-	action	TitleBlacklist		prefix=tb
+titleblacklist	tbaction	action	TitleBlacklist		enum=create|createpage|createtalk|edit|move|new-account|upload default=edit
+titleblacklist	tbnooverride	action	TitleBlacklist		type=boolean
+titleblacklist	tbtitle	action	TitleBlacklist	required	type=string
+torblock	-	action	TorBlock		
+torblock	ip	action	TorBlock	required	type=string
+transcodereset	-	action	TimedMediaHandler		write post
+transcodereset	title	action	TimedMediaHandler	required	type=string
+transcodereset	token	action	TimedMediaHandler	required,sensitive	type=string
+transcodereset	transcodekey	action	TimedMediaHandler		type=string
+translationaids	-	action	Translate		
+translationaids	group	action	Translate		type=string
+translationaids	prop	action	Translate	multi	enum=definition|definitiondiff|documentation|editsummaries|gettext|groups|inotherlanguages|insertables|mt|support|translation|ttmserver default=groups|definition|translation|inotherlanguages|documentation|mt|definitiondiff|ttmserver|support|gettext|insertables|editsummaries limit=50 highlimit=500
+translationaids	title	action	Translate	required	type=string
+translationcheck	-	action	Translate	internal	
+translationcheck	title	action	Translate	required	type=string
+translationcheck	translation	action	Translate	required	type=string
+translationentitysearch	-	action	Translate	internal	
+translationentitysearch	entitytype	action	Translate	multi	enum=groups|messages default=groups|messages limit=50 highlimit=500
+translationentitysearch	grouptypes	action	Translate	multi	enum=aggregate-groups|message-bundles|translatable-pages limit=50 highlimit=500
+translationentitysearch	limit	action	Translate		type=limit default=10
+translationentitysearch	query	action	Translate		type=string
+translationreview	-	action	Translate		write post
+translationreview	revision	action	Translate	required	type=integer
+translationreview	token	action	Translate	required,sensitive	type=string
+translationstats	-	action	Translate		
+translationstats	count	action	Translate	required	enum=edits|reviewers|reviews|users
+translationstats	days	action	Translate	required	type=integer default=30
+translationstats	group	action	Translate	multi	type=string limit=50 highlimit=500
+translationstats	language	action	Translate	multi	type=string limit=50 highlimit=500
+translationstats	scale	action	Translate		enum=days|hours|months|weeks|years default=days
+translationstats	start	action	Translate		type=timestamp
+ttmserver	-	action	Translate		
+ttmserver	service	action	Translate		
+ttmserver	sourcelanguage	action	Translate	required	type=string
+ttmserver	targetlanguage	action	Translate	required	type=string
+ttmserver	text	action	Translate	required	type=string
+ulslocalization	-	action	UniversalLanguageSelector	internal	
+ulslocalization	language	action	UniversalLanguageSelector	required	type=string
+ulssetlang	-	action	UniversalLanguageSelector	internal	write post
+ulssetlang	languagecode	action	UniversalLanguageSelector	required	type=string
+ulssetlang	token	action	UniversalLanguageSelector	required,sensitive	type=string
+unblock	-	action	MediaWiki		write post
+unblock	id	action	MediaWiki		type=integer
+unblock	reason	action	MediaWiki		type=string
+unblock	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+unblock	token	action	MediaWiki	required,sensitive	type=string
+unblock	user	action	MediaWiki		type=user
+unblock	userid	action	MediaWiki	deprecated	type=integer
+unblock	watchlistexpiry	action	MediaWiki		type=expiry
+unblock	watchuser	action	MediaWiki		type=boolean
+undelete	-	action	MediaWiki		write post
+undelete	fileids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+undelete	reason	action	MediaWiki		type=string
+undelete	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+undelete	timestamps	action	MediaWiki	multi	type=timestamp limit=50 highlimit=500
+undelete	title	action	MediaWiki	required	type=string
+undelete	token	action	MediaWiki	required,sensitive	type=string
+undelete	undeletetalk	action	MediaWiki		type=boolean
+undelete	watchlist	action	MediaWiki		enum=nochange|preferences|unwatch|watch default=preferences
+undelete	watchlistexpiry	action	MediaWiki		type=expiry
+unlinkaccount	-	action	MediaWiki		write post
+unlinkaccount	request	action	MediaWiki	required	type=string
+unlinkaccount	token	action	MediaWiki	required,sensitive	type=string
+upload	-	action	MediaWiki		write post
+upload	async	action	MediaWiki		type=boolean
+upload	autotext	action	MediaWiki		type=boolean
+upload	captchaid	action	MediaWiki		type=string
+upload	captchaword	action	MediaWiki		type=string
+upload	checkstatus	action	MediaWiki		type=boolean
+upload	chunk	action	MediaWiki		type=upload
+upload	comment	action	MediaWiki		type=string
+upload	file	action	MediaWiki		type=upload
+upload	filekey	action	MediaWiki		type=string
+upload	filename	action	MediaWiki		type=string
+upload	filesize	action	MediaWiki		type=integer
+upload	ignorewarnings	action	MediaWiki		type=boolean
+upload	license	action	MediaWiki		type=string
+upload	offset	action	MediaWiki		type=integer
+upload	sessionkey	action	MediaWiki	deprecated	type=string
+upload	stash	action	MediaWiki		type=boolean
+upload	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+upload	text	action	MediaWiki		type=text
+upload	token	action	MediaWiki	required,sensitive	type=string
+upload	uploadwizardpublish	action	MediaWiki		type=boolean
+upload	url	action	MediaWiki		type=string
+upload	watch	action	MediaWiki	deprecated	type=boolean
+upload	watchlist	action	MediaWiki		enum=nochange|preferences|watch default=preferences
+upload	watchlistexpiry	action	MediaWiki		type=expiry
+upload	wgConfirmEditForceShowCaptcha	action	MediaWiki		type=string
+userrights	-	action	MediaWiki		write post
+userrights	add	action	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+userrights	expiry	action	MediaWiki	multi	type=string default=infinite limit=50 highlimit=500
+userrights	reason	action	MediaWiki		type=string
+userrights	remove	action	MediaWiki	multi	enum=<30 values> limit=50 highlimit=500
+userrights	tags	action	MediaWiki	multi	enum=<45 values> limit=50 highlimit=500
+userrights	token	action	MediaWiki	required,sensitive	type=string
+userrights	user	action	MediaWiki		type=user
+userrights	userid	action	MediaWiki	deprecated	type=integer
+userrights	watchlistexpiry	action	MediaWiki		type=expiry
+userrights	watchuser	action	MediaWiki		type=boolean
+validatepassword	-	action	MediaWiki		write post
+validatepassword	email	action	MediaWiki		type=string
+validatepassword	password	action	MediaWiki	required,sensitive	type=password
+validatepassword	realname	action	MediaWiki		type=string
+validatepassword	user	action	MediaWiki		type=user
+visualeditor	-	action	VisualEditor	internal	
+visualeditor	badetag	action	VisualEditor		type=string
+visualeditor	editintro	action	VisualEditor		type=string
+visualeditor	format	action	VisualEditor		enum=json|jsonfm default=jsonfm
+visualeditor	oldid	action	VisualEditor		type=integer
+visualeditor	paction	action	VisualEditor	required	enum=metadata|parse|parsefragment|templatesused|wikitext
+visualeditor	page	action	VisualEditor	required	type=string
+visualeditor	preload	action	VisualEditor		type=string
+visualeditor	preloadparams	action	VisualEditor	multi	type=string limit=50 highlimit=500
+visualeditor	pst	action	VisualEditor		type=boolean
+visualeditor	section	action	VisualEditor		type=string
+visualeditor	stash	action	VisualEditor		type=boolean
+visualeditor	wikitext	action	VisualEditor		type=text
+visualeditoredit	-	action	VisualEditor	internal	write post
+visualeditoredit	basetimestamp	action	VisualEditor		type=timestamp
+visualeditoredit	cachekey	action	VisualEditor		type=string
+visualeditoredit	captchaid	action	VisualEditor		type=string
+visualeditoredit	captchaword	action	VisualEditor		type=string
+visualeditoredit	etag	action	VisualEditor		type=string
+visualeditoredit	html	action	VisualEditor		type=raw
+visualeditoredit	minor	action	VisualEditor		type=string
+visualeditoredit	mobileformat	action	VisualEditor		type=boolean
+visualeditoredit	nocontent	action	VisualEditor		type=boolean
+visualeditoredit	oldid	action	VisualEditor		type=integer
+visualeditoredit	paction	action	VisualEditor	required	enum=diff|save|serialize|serializeforcache
+visualeditoredit	page	action	VisualEditor	required	type=string
+visualeditoredit	plugins	action	VisualEditor	multi	type=string limit=50 highlimit=500
+visualeditoredit	returnto	action	VisualEditor		type=title
+visualeditoredit	returntoanchor	action	VisualEditor		type=string
+visualeditoredit	returntoquery	action	VisualEditor		type=string
+visualeditoredit	section	action	VisualEditor		type=string
+visualeditoredit	sectiontitle	action	VisualEditor		type=string
+visualeditoredit	starttimestamp	action	VisualEditor		type=timestamp
+visualeditoredit	summary	action	VisualEditor		type=string
+visualeditoredit	tags	action	VisualEditor	multi	type=string limit=50 highlimit=500
+visualeditoredit	token	action	VisualEditor	required,sensitive	type=string
+visualeditoredit	useskin	action	VisualEditor		enum=apioutput|authentication-popup|cologneblue|contenttranslation|fallback|json|minerva|modern|monobook|timeless|vector|vector-2022
+visualeditoredit	watchlist	action	VisualEditor		type=string
+visualeditoredit	wgConfirmEditForceShowCaptcha	action	VisualEditor		type=boolean
+visualeditoredit	wikitext	action	VisualEditor		type=text
+watch	-	action	MediaWiki		write post
+watch	continue	action	MediaWiki		type=string
+watch	converttitles	action	MediaWiki		type=boolean
+watch	expiry	action	MediaWiki		type=expiry
+watch	generator	action	MediaWiki		enum=<44 values>
+watch	labels	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+watch	pageids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+watch	redirects	action	MediaWiki		type=boolean
+watch	revids	action	MediaWiki	multi	type=integer limit=50 highlimit=500
+watch	title	action	MediaWiki	deprecated	type=string
+watch	titles	action	MediaWiki	multi	type=string limit=50 highlimit=500
+watch	token	action	MediaWiki	required,sensitive	type=string
+watch	unwatch	action	MediaWiki		type=boolean
+wbavailablebadges	-	action	WikibaseClient		
+wbcheckconstraintparameters	-	action	WikibaseQualityConstraints		
+wbcheckconstraintparameters	constraintid	action	WikibaseQualityConstraints	multi	type=string limit=50 highlimit=500
+wbcheckconstraintparameters	propertyid	action	WikibaseQualityConstraints	multi	type=string limit=50 highlimit=500
+wbcheckconstraints	-	action	WikibaseQualityConstraints		
+wbcheckconstraints	claimid	action	WikibaseQualityConstraints	multi	type=string limit=50 highlimit=500
+wbcheckconstraints	constraintid	action	WikibaseQualityConstraints	multi	type=string limit=50 highlimit=500
+wbcheckconstraints	id	action	WikibaseQualityConstraints	multi	type=string limit=50 highlimit=500
+wbcheckconstraints	status	action	WikibaseQualityConstraints	multi	enum=bad-parameters|compliance|deprecated|exception|not-in-scope|suggestion|todo|violation|warning default=violation|warning|suggestion|bad-parameters limit=50 highlimit=500
+wbcreateclaim	-	action	WikibaseClient		write post
+wbcreateclaim	baserevid	action	WikibaseClient		type=integer
+wbcreateclaim	bot	action	WikibaseClient		type=boolean
+wbcreateclaim	entity	action	WikibaseClient	required	type=string
+wbcreateclaim	property	action	WikibaseClient	required	type=string
+wbcreateclaim	returnto	action	WikibaseClient		type=title
+wbcreateclaim	returntoanchor	action	WikibaseClient		type=string
+wbcreateclaim	returntoquery	action	WikibaseClient		type=string
+wbcreateclaim	snaktype	action	WikibaseClient	required	enum=novalue|somevalue|value
+wbcreateclaim	summary	action	WikibaseClient		type=string
+wbcreateclaim	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbcreateclaim	token	action	WikibaseClient	required,sensitive	type=string
+wbcreateclaim	value	action	WikibaseClient		type=text
+wbcreateredirect	-	action	WikibaseClient		write post
+wbcreateredirect	bot	action	WikibaseClient		type=boolean
+wbcreateredirect	from	action	WikibaseClient	required	type=string
+wbcreateredirect	returnto	action	WikibaseClient		type=title
+wbcreateredirect	returntoanchor	action	WikibaseClient		type=string
+wbcreateredirect	returntoquery	action	WikibaseClient		type=string
+wbcreateredirect	to	action	WikibaseClient	required	type=string
+wbcreateredirect	token	action	WikibaseClient	required,sensitive	type=string
+wbeditentity	-	action	WikibaseClient		write post
+wbeditentity	baserevid	action	WikibaseClient		type=integer
+wbeditentity	bot	action	WikibaseClient		type=boolean
+wbeditentity	clear	action	WikibaseClient		type=boolean
+wbeditentity	data	action	WikibaseClient	required	type=text
+wbeditentity	id	action	WikibaseClient		type=string
+wbeditentity	new	action	WikibaseClient		enum=mediainfo
+wbeditentity	returnto	action	WikibaseClient		type=title
+wbeditentity	returntoanchor	action	WikibaseClient		type=string
+wbeditentity	returntoquery	action	WikibaseClient		type=string
+wbeditentity	site	action	WikibaseClient		enum=<964 values>
+wbeditentity	summary	action	WikibaseClient		type=string
+wbeditentity	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbeditentity	title	action	WikibaseClient		type=string
+wbeditentity	token	action	WikibaseClient	required,sensitive	type=string
+wbformatentities	-	action	WikibaseClient		
+wbformatentities	generate	action	WikibaseClient		enum=text/html|text/plain default=text/html
+wbformatentities	ids	action	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+wbformatvalue	-	action	WikibaseClient		
+wbformatvalue	datatype	action	WikibaseClient		enum=commonsMedia|external-id|geo-shape|globe-coordinate|math|monolingualtext|musical-notation|quantity|string|tabular-data|time|url|wikibase-item|wikibase-property
+wbformatvalue	datavalue	action	WikibaseClient	required	type=text
+wbformatvalue	generate	action	WikibaseClient		enum=text/html|text/html; disposition=verbose|text/html; disposition=verbose-preview|text/plain|text/x-wiki default=text/x-wiki
+wbformatvalue	options	action	WikibaseClient		type=text
+wbformatvalue	property	action	WikibaseClient		type=string
+wbgetclaims	-	action	WikibaseClient		
+wbgetclaims	claim	action	WikibaseClient		type=string
+wbgetclaims	entity	action	WikibaseClient		type=string
+wbgetclaims	property	action	WikibaseClient		type=string
+wbgetclaims	props	action	WikibaseClient	multi	enum=references default=references limit=50 highlimit=500
+wbgetclaims	rank	action	WikibaseClient		enum=deprecated|normal|preferred
+wbgetentities	-	action	WikibaseClient		
+wbgetentities	ids	action	WikibaseClient	multi	type=string limit=50 highlimit=500
+wbgetentities	languagefallback	action	WikibaseClient		type=boolean
+wbgetentities	languages	action	WikibaseClient	multi	enum=<637 values> limit=50 highlimit=500
+wbgetentities	normalize	action	WikibaseClient		type=boolean
+wbgetentities	props	action	WikibaseClient	multi	enum=aliases|claims|datatype|descriptions|info|labels|sitelinks|sitelinks/urls default=info|sitelinks|aliases|labels|descriptions|claims|datatype limit=50 highlimit=500
+wbgetentities	redirects	action	WikibaseClient		enum=no|yes default=yes
+wbgetentities	sitefilter	action	WikibaseClient	multi	enum=<964 values> limit=50 highlimit=500
+wbgetentities	sites	action	WikibaseClient	multi	enum=<964 values> limit=50 highlimit=500
+wbgetentities	titles	action	WikibaseClient	multi	type=string limit=50 highlimit=500
+wbgraphql	-	action	WikibaseClient		write post
+wbladdform	-	action	WikibaseLexeme	internal	write post
+wbladdform	baserevid	action	WikibaseLexeme		type=integer
+wbladdform	bot	action	WikibaseLexeme		type=boolean
+wbladdform	data	action	WikibaseLexeme	required	type=text
+wbladdform	lexemeId	action	WikibaseLexeme	required	type=string
+wbladdform	returnto	action	WikibaseLexeme		type=title
+wbladdform	returntoanchor	action	WikibaseLexeme		type=string
+wbladdform	returntoquery	action	WikibaseLexeme		type=string
+wbladdform	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wbladdform	token	action	WikibaseLexeme	required,sensitive	type=string
+wbladdsense	-	action	WikibaseLexeme	internal	write post
+wbladdsense	baserevid	action	WikibaseLexeme		type=integer
+wbladdsense	bot	action	WikibaseLexeme		type=boolean
+wbladdsense	data	action	WikibaseLexeme	required	type=text
+wbladdsense	lexemeId	action	WikibaseLexeme	required	type=string
+wbladdsense	returnto	action	WikibaseLexeme		type=title
+wbladdsense	returntoanchor	action	WikibaseLexeme		type=string
+wbladdsense	returntoquery	action	WikibaseLexeme		type=string
+wbladdsense	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wbladdsense	token	action	WikibaseLexeme	required,sensitive	type=string
+wbleditformelements	-	action	WikibaseLexeme	internal	write post
+wbleditformelements	baserevid	action	WikibaseLexeme		type=integer
+wbleditformelements	bot	action	WikibaseLexeme		type=boolean
+wbleditformelements	data	action	WikibaseLexeme	required	type=text
+wbleditformelements	formId	action	WikibaseLexeme	required	type=string
+wbleditformelements	returnto	action	WikibaseLexeme		type=title
+wbleditformelements	returntoanchor	action	WikibaseLexeme		type=string
+wbleditformelements	returntoquery	action	WikibaseLexeme		type=string
+wbleditformelements	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wbleditformelements	token	action	WikibaseLexeme	required,sensitive	type=string
+wbleditsenseelements	-	action	WikibaseLexeme	internal	write post
+wbleditsenseelements	baserevid	action	WikibaseLexeme		type=integer
+wbleditsenseelements	bot	action	WikibaseLexeme		type=boolean
+wbleditsenseelements	data	action	WikibaseLexeme	required	type=text
+wbleditsenseelements	returnto	action	WikibaseLexeme		type=title
+wbleditsenseelements	returntoanchor	action	WikibaseLexeme		type=string
+wbleditsenseelements	returntoquery	action	WikibaseLexeme		type=string
+wbleditsenseelements	senseId	action	WikibaseLexeme	required	type=string
+wbleditsenseelements	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wbleditsenseelements	token	action	WikibaseLexeme	required,sensitive	type=string
+wblinktitles	-	action	WikibaseClient		write post
+wblinktitles	bot	action	WikibaseClient		type=boolean
+wblinktitles	fromsite	action	WikibaseClient	required	enum=<964 values>
+wblinktitles	fromtitle	action	WikibaseClient	required	type=string
+wblinktitles	returnto	action	WikibaseClient		type=title
+wblinktitles	returntoanchor	action	WikibaseClient		type=string
+wblinktitles	returntoquery	action	WikibaseClient		type=string
+wblinktitles	token	action	WikibaseClient	required,sensitive	type=string
+wblinktitles	tosite	action	WikibaseClient	required	enum=<964 values>
+wblinktitles	totitle	action	WikibaseClient	required	type=string
+wblmergelexemes	-	action	WikibaseLexeme		write post
+wblmergelexemes	bot	action	WikibaseLexeme		type=boolean
+wblmergelexemes	returnto	action	WikibaseLexeme		type=title
+wblmergelexemes	returntoanchor	action	WikibaseLexeme		type=string
+wblmergelexemes	returntoquery	action	WikibaseLexeme		type=string
+wblmergelexemes	source	action	WikibaseLexeme	required	type=string
+wblmergelexemes	summary	action	WikibaseLexeme		type=string
+wblmergelexemes	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wblmergelexemes	target	action	WikibaseLexeme	required	type=string
+wblmergelexemes	token	action	WikibaseLexeme	required,sensitive	type=string
+wblremoveform	-	action	WikibaseLexeme	internal	write post
+wblremoveform	baserevid	action	WikibaseLexeme		type=integer
+wblremoveform	bot	action	WikibaseLexeme		type=boolean
+wblremoveform	id	action	WikibaseLexeme	required	type=string
+wblremoveform	returnto	action	WikibaseLexeme		type=title
+wblremoveform	returntoanchor	action	WikibaseLexeme		type=string
+wblremoveform	returntoquery	action	WikibaseLexeme		type=string
+wblremoveform	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wblremoveform	token	action	WikibaseLexeme	required,sensitive	type=string
+wblremovesense	-	action	WikibaseLexeme	internal	write post
+wblremovesense	baserevid	action	WikibaseLexeme		type=integer
+wblremovesense	bot	action	WikibaseLexeme		type=boolean
+wblremovesense	id	action	WikibaseLexeme	required	type=string
+wblremovesense	returnto	action	WikibaseLexeme		type=title
+wblremovesense	returntoanchor	action	WikibaseLexeme		type=string
+wblremovesense	returntoquery	action	WikibaseLexeme		type=string
+wblremovesense	tags	action	WikibaseLexeme	multi	enum=<45 values> limit=50 highlimit=500
+wblremovesense	token	action	WikibaseLexeme	required,sensitive	type=string
+wbmergeitems	-	action	WikibaseClient		write post
+wbmergeitems	bot	action	WikibaseClient		type=boolean
+wbmergeitems	fromid	action	WikibaseClient	required	type=string
+wbmergeitems	ignoreconflicts	action	WikibaseClient	multi	enum=description|sitelink|statement limit=50 highlimit=500
+wbmergeitems	returnto	action	WikibaseClient		type=title
+wbmergeitems	returntoanchor	action	WikibaseClient		type=string
+wbmergeitems	returntoquery	action	WikibaseClient		type=string
+wbmergeitems	summary	action	WikibaseClient		type=string
+wbmergeitems	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbmergeitems	toid	action	WikibaseClient	required	type=string
+wbmergeitems	token	action	WikibaseClient	required,sensitive	type=string
+wbparsevalue	-	action	WikibaseClient		
+wbparsevalue	datatype	action	WikibaseClient		enum=commonsMedia|external-id|geo-shape|globe-coordinate|math|monolingualtext|musical-notation|quantity|string|tabular-data|time|url|wikibase-item|wikibase-property
+wbparsevalue	options	action	WikibaseClient		type=text
+wbparsevalue	parser	action	WikibaseClient	deprecated	enum=commonsMedia|external-id|geo-shape|globe-coordinate|globecoordinate|math|monolingualtext|musical-notation|null|quantity|string|tabular-data|time|url|wikibase-entityid|wikibase-item|wikibase-property
+wbparsevalue	property	action	WikibaseClient		type=string
+wbparsevalue	validate	action	WikibaseClient		type=boolean
+wbparsevalue	values	action	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+wbremoveclaims	-	action	WikibaseClient		write post
+wbremoveclaims	baserevid	action	WikibaseClient		type=integer
+wbremoveclaims	bot	action	WikibaseClient		type=boolean
+wbremoveclaims	claim	action	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+wbremoveclaims	returnto	action	WikibaseClient		type=title
+wbremoveclaims	returntoanchor	action	WikibaseClient		type=string
+wbremoveclaims	returntoquery	action	WikibaseClient		type=string
+wbremoveclaims	summary	action	WikibaseClient		type=string
+wbremoveclaims	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbremoveclaims	token	action	WikibaseClient	required,sensitive	type=string
+wbremovequalifiers	-	action	WikibaseClient		write post
+wbremovequalifiers	baserevid	action	WikibaseClient		type=integer
+wbremovequalifiers	bot	action	WikibaseClient		type=boolean
+wbremovequalifiers	claim	action	WikibaseClient	required	type=string
+wbremovequalifiers	qualifiers	action	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+wbremovequalifiers	returnto	action	WikibaseClient		type=title
+wbremovequalifiers	returntoanchor	action	WikibaseClient		type=string
+wbremovequalifiers	returntoquery	action	WikibaseClient		type=string
+wbremovequalifiers	summary	action	WikibaseClient		type=string
+wbremovequalifiers	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbremovequalifiers	token	action	WikibaseClient	required,sensitive	type=string
+wbremovereferences	-	action	WikibaseClient		write post
+wbremovereferences	baserevid	action	WikibaseClient		type=integer
+wbremovereferences	bot	action	WikibaseClient		type=boolean
+wbremovereferences	references	action	WikibaseClient	required,multi	type=string limit=50 highlimit=500
+wbremovereferences	returnto	action	WikibaseClient		type=title
+wbremovereferences	returntoanchor	action	WikibaseClient		type=string
+wbremovereferences	returntoquery	action	WikibaseClient		type=string
+wbremovereferences	statement	action	WikibaseClient	required	type=string
+wbremovereferences	summary	action	WikibaseClient		type=string
+wbremovereferences	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbremovereferences	token	action	WikibaseClient	required,sensitive	type=string
+wbsearchentities	-	action	WikibaseClient		
+wbsearchentities	continue	action	WikibaseClient		type=integer default=0
+wbsearchentities	language	action	WikibaseClient	required	enum=<637 values>
+wbsearchentities	limit	action	WikibaseClient		type=limit default=7
+wbsearchentities	profile	action	WikibaseClient		enum=default default=default
+wbsearchentities	props	action	WikibaseClient	multi	enum=url default=url limit=50 highlimit=500
+wbsearchentities	search	action	WikibaseClient	required	type=string
+wbsearchentities	strictlanguage	action	WikibaseClient		type=boolean
+wbsearchentities	type	action	WikibaseClient		enum=form|item|lexeme|property|sense default=item
+wbsetaliases	-	action	WikibaseClient		write post
+wbsetaliases	add	action	WikibaseClient	multi	type=string limit=50 highlimit=500
+wbsetaliases	baserevid	action	WikibaseClient		type=integer
+wbsetaliases	bot	action	WikibaseClient		type=boolean
+wbsetaliases	id	action	WikibaseClient		type=string
+wbsetaliases	language	action	WikibaseClient	required	enum=<637 values>
+wbsetaliases	new	action	WikibaseClient		
+wbsetaliases	remove	action	WikibaseClient	multi	type=string limit=50 highlimit=500
+wbsetaliases	returnto	action	WikibaseClient		type=title
+wbsetaliases	returntoanchor	action	WikibaseClient		type=string
+wbsetaliases	returntoquery	action	WikibaseClient		type=string
+wbsetaliases	set	action	WikibaseClient	multi	type=string limit=50 highlimit=500
+wbsetaliases	site	action	WikibaseClient		enum=<964 values>
+wbsetaliases	summary	action	WikibaseClient		type=string
+wbsetaliases	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetaliases	title	action	WikibaseClient		type=string
+wbsetaliases	token	action	WikibaseClient	required,sensitive	type=string
+wbsetclaim	-	action	WikibaseClient		write post
+wbsetclaim	baserevid	action	WikibaseClient		type=integer
+wbsetclaim	bot	action	WikibaseClient		type=boolean
+wbsetclaim	claim	action	WikibaseClient	required	type=text
+wbsetclaim	ignoreduplicatemainsnak	action	WikibaseClient		type=boolean
+wbsetclaim	index	action	WikibaseClient		type=integer
+wbsetclaim	returnto	action	WikibaseClient		type=title
+wbsetclaim	returntoanchor	action	WikibaseClient		type=string
+wbsetclaim	returntoquery	action	WikibaseClient		type=string
+wbsetclaim	summary	action	WikibaseClient		type=string
+wbsetclaim	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetclaim	token	action	WikibaseClient	required,sensitive	type=string
+wbsetclaimvalue	-	action	WikibaseClient		write post
+wbsetclaimvalue	baserevid	action	WikibaseClient		type=integer
+wbsetclaimvalue	bot	action	WikibaseClient		type=boolean
+wbsetclaimvalue	claim	action	WikibaseClient	required	type=string
+wbsetclaimvalue	returnto	action	WikibaseClient		type=title
+wbsetclaimvalue	returntoanchor	action	WikibaseClient		type=string
+wbsetclaimvalue	returntoquery	action	WikibaseClient		type=string
+wbsetclaimvalue	snaktype	action	WikibaseClient	required	enum=novalue|somevalue|value
+wbsetclaimvalue	summary	action	WikibaseClient		type=string
+wbsetclaimvalue	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetclaimvalue	token	action	WikibaseClient	required,sensitive	type=string
+wbsetclaimvalue	value	action	WikibaseClient		type=text
+wbsetdescription	-	action	WikibaseClient		write post
+wbsetdescription	baserevid	action	WikibaseClient		type=integer
+wbsetdescription	bot	action	WikibaseClient		type=boolean
+wbsetdescription	id	action	WikibaseClient		type=string
+wbsetdescription	language	action	WikibaseClient	required	enum=<637 values>
+wbsetdescription	new	action	WikibaseClient		enum=mediainfo
+wbsetdescription	returnto	action	WikibaseClient		type=title
+wbsetdescription	returntoanchor	action	WikibaseClient		type=string
+wbsetdescription	returntoquery	action	WikibaseClient		type=string
+wbsetdescription	site	action	WikibaseClient		enum=<964 values>
+wbsetdescription	summary	action	WikibaseClient		type=string
+wbsetdescription	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetdescription	title	action	WikibaseClient		type=string
+wbsetdescription	token	action	WikibaseClient	required,sensitive	type=string
+wbsetdescription	value	action	WikibaseClient		type=string
+wbsetlabel	-	action	WikibaseClient		write post
+wbsetlabel	baserevid	action	WikibaseClient		type=integer
+wbsetlabel	bot	action	WikibaseClient		type=boolean
+wbsetlabel	id	action	WikibaseClient		type=string
+wbsetlabel	language	action	WikibaseClient	required	enum=<637 values>
+wbsetlabel	new	action	WikibaseClient		enum=mediainfo
+wbsetlabel	returnto	action	WikibaseClient		type=title
+wbsetlabel	returntoanchor	action	WikibaseClient		type=string
+wbsetlabel	returntoquery	action	WikibaseClient		type=string
+wbsetlabel	site	action	WikibaseClient		enum=<964 values>
+wbsetlabel	summary	action	WikibaseClient		type=string
+wbsetlabel	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetlabel	title	action	WikibaseClient		type=string
+wbsetlabel	token	action	WikibaseClient	required,sensitive	type=string
+wbsetlabel	value	action	WikibaseClient		type=string
+wbsetqualifier	-	action	WikibaseClient		write post
+wbsetqualifier	baserevid	action	WikibaseClient		type=integer
+wbsetqualifier	bot	action	WikibaseClient		type=boolean
+wbsetqualifier	claim	action	WikibaseClient	required	type=string
+wbsetqualifier	property	action	WikibaseClient		type=string
+wbsetqualifier	returnto	action	WikibaseClient		type=title
+wbsetqualifier	returntoanchor	action	WikibaseClient		type=string
+wbsetqualifier	returntoquery	action	WikibaseClient		type=string
+wbsetqualifier	snakhash	action	WikibaseClient		type=string
+wbsetqualifier	snaktype	action	WikibaseClient		enum=novalue|somevalue|value
+wbsetqualifier	summary	action	WikibaseClient		type=string
+wbsetqualifier	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetqualifier	token	action	WikibaseClient	required,sensitive	type=string
+wbsetqualifier	value	action	WikibaseClient		type=text
+wbsetreference	-	action	WikibaseClient		write post
+wbsetreference	baserevid	action	WikibaseClient		type=integer
+wbsetreference	bot	action	WikibaseClient		type=boolean
+wbsetreference	index	action	WikibaseClient		type=integer
+wbsetreference	reference	action	WikibaseClient		type=string
+wbsetreference	returnto	action	WikibaseClient		type=title
+wbsetreference	returntoanchor	action	WikibaseClient		type=string
+wbsetreference	returntoquery	action	WikibaseClient		type=string
+wbsetreference	snaks	action	WikibaseClient	required	type=text
+wbsetreference	snaks-order	action	WikibaseClient		type=string
+wbsetreference	statement	action	WikibaseClient	required	type=string
+wbsetreference	summary	action	WikibaseClient		type=string
+wbsetreference	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetreference	token	action	WikibaseClient	required,sensitive	type=string
+wbsetsitelink	-	action	WikibaseClient		write post
+wbsetsitelink	badges	action	WikibaseClient	multi	limit=50 highlimit=500
+wbsetsitelink	baserevid	action	WikibaseClient		type=integer
+wbsetsitelink	bot	action	WikibaseClient		type=boolean
+wbsetsitelink	id	action	WikibaseClient		type=string
+wbsetsitelink	linksite	action	WikibaseClient	required	enum=<964 values>
+wbsetsitelink	linktitle	action	WikibaseClient		type=string
+wbsetsitelink	new	action	WikibaseClient		enum=mediainfo
+wbsetsitelink	returnto	action	WikibaseClient		type=title
+wbsetsitelink	returntoanchor	action	WikibaseClient		type=string
+wbsetsitelink	returntoquery	action	WikibaseClient		type=string
+wbsetsitelink	site	action	WikibaseClient		enum=<964 values>
+wbsetsitelink	summary	action	WikibaseClient		type=string
+wbsetsitelink	tags	action	WikibaseClient	multi	enum=<38 values> limit=50 highlimit=500
+wbsetsitelink	title	action	WikibaseClient		type=string
+wbsetsitelink	token	action	WikibaseClient	required,sensitive	type=string
+wbsgetsuggestions	-	action	PropertySuggester		
+wbsgetsuggestions	context	action	PropertySuggester		enum=item|qualifier|reference default=item
+wbsgetsuggestions	continue	action	PropertySuggester		type=integer
+wbsgetsuggestions	entity	action	PropertySuggester		type=string
+wbsgetsuggestions	event	action	PropertySuggester		type=string
+wbsgetsuggestions	include	action	PropertySuggester		enum=|all
+wbsgetsuggestions	language	action	PropertySuggester		enum=<637 values> default=en
+wbsgetsuggestions	limit	action	PropertySuggester		type=limit default=7
+wbsgetsuggestions	properties	action	PropertySuggester	multi	type=string limit=50 highlimit=500
+wbsgetsuggestions	search	action	PropertySuggester		type=string
+wbsgetsuggestions	types	action	PropertySuggester	multi	type=string limit=50 highlimit=500
+webapp-manifest	-	action	MobileFrontend		
+webauthn	-	action	OATHAuth		
+webauthn	credential	action	OATHAuth		type=string
+webauthn	friendlyname	action	OATHAuth		type=string
+webauthn	func	action	OATHAuth	required	enum=getAuthInfo|getRegisterInfo|register
+webauthn	passkeyMode	action	OATHAuth		type=boolean
+wikilove	-	action	WikiLove		write post
+wikilove	email	action	WikiLove		type=string
+wikilove	message	action	WikiLove		type=string
+wikilove	subject	action	WikiLove	required	type=string
+wikilove	tags	action	WikiLove	multi	enum=<45 values> limit=50 highlimit=500
+wikilove	text	action	WikiLove	required	type=string
+wikilove	title	action	WikiLove	required	type=string
+wikilove	token	action	WikiLove	required,sensitive	type=string
+wikilove	type	action	WikiLove		type=string
+wikimediaeventsblockededit	-	action	WikimediaEvents	internal	
+wikimediaeventsblockededit	interface	action	WikimediaEvents	required	enum=discussiontools|mobilefrontend|other|visualeditor|wikieditor
+wikimediaeventsblockededit	page	action	WikimediaEvents	required	type=string
+wikimediaeventsblockededit	platform	action	WikimediaEvents	required	enum=desktop|mobile
+wikimediaeventshcaptchaeditattempt	-	action	WikimediaEvents	internal	write post
+wikimediaeventshcaptchaeditattempt	editing_session_id	action	WikimediaEvents	required	type=string
+wikimediaeventshcaptchaeditattempt	proposed_content	action	WikimediaEvents	required	type=string
+wikimediaeventshcaptchaeditattempt	revision_id	action	WikimediaEvents	required	type=integer
+wikimediaeventshcaptchaeditattempt	title	action	WikimediaEvents	required	type=string
+xml	-	format	MediaWiki		
+xml	includexmlnamespace	format	MediaWiki		type=boolean
+xmlfm	-	format	MediaWiki		
+xmlfm	includexmlnamespace	format	MediaWiki		type=boolean
+xmlfm	wrappedhtml	format	MediaWiki		type=boolean

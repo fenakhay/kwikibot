@@ -1,0 +1,47 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!build-logic/src/
+local.properties
+
+# IDE
+.idea/
+*.iml
+.kotlin/
+.vscode/
+*.swp
+*~
+
+# Local credentials and caches — never commit these. The password is read from
+# KWIKIBOT_PASSWORD rather than from a file, so the likely accident is a .env
+# written to hold it.
+kwikibot.toml
+kwikibot.secrets.toml
+.env
+.env.*
+apicache/
+logs/
+*.lwp
+
+# What a JVM leaves behind when it crashes or runs out of memory. The benchmarks
+# fork JVMs with a large heap, and these land in the working directory rather
+# than anywhere out of the way.
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
+.attach_pid*
+
+# The release workflow's helper scripts are Python, and running one by hand to
+# check it leaves this behind.
+__pycache__/
+*.pyc
+
+# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Left by a merge that went badly
+*.orig
+*.rej

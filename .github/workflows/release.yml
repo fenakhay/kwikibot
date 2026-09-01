@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - id: read
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$tag' is not a release version of the form v1.2.3"
+            exit 1
+          fi
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  maven-central:
+    needs: version
+    runs-on: ubuntu-latest
+    environment: maven-central
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build and check
+        run: ./gradlew build detekt apiCheck -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+
+      - name: Upload to the Central Portal
+        env:
+          CENTRAL_PORTAL_USERNAME: ${{ secrets.CENTRAL_PORTAL_USERNAME }}
+          CENTRAL_PORTAL_PASSWORD: ${{ secrets.CENTRAL_PORTAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./gradlew nmcpPublishAggregationToCentralPortal -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+
+  package:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows-x64
+          - os: macos-26
+            name: macos-arm64
+          - os: macos-26-intel
+            name: macos-x64
+          - os: ubuntu-latest
+            name: linux-x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build the self-contained tool
+        run: ./gradlew :kwikibot-cli:appArchive -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+
+      - name: Build the Linux packages
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install --yes fakeroot rpm
+          ./gradlew :kwikibot-cli:linuxPackages -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+
+      - name: Smoke-test the packaged tool
+        run: |
+          binary=$(find kwikibot-cli/build/jpackage/image -type f \
+            \( -name kwikibot -o -name kwikibot.exe \) -not -path '*/runtime/*' | head -1)
+          if [[ -z "$binary" ]]; then
+            echo "::error::No kwikibot launcher in the app image"
+            find kwikibot-cli/build/jpackage/image -maxdepth 3
+            exit 1
+          fi
+          echo "launcher: $binary"
+          "$binary" version
+          "$binary" detect https://en.wiktionary.org
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package-${{ matrix.name }}
+          path: kwikibot-cli/build/distributions/*
+          if-no-files-found: error
+
+  release:
+    needs: [version, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Checksum everything
+        working-directory: artifacts
+        run: |
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" --generate-notes artifacts/*
+
+  scoop:
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: package-windows-x64
+          path: artifacts
+
+      - name: Point the bucket at the new release
+        run: |
+          archive="artifacts/kwikibot-${{ needs.version.outputs.version }}-windows-x64.zip"
+          python3 .github/scripts/update_scoop.py \
+            "${{ needs.version.outputs.version }}" "$(sha256sum "$archive" | cut -d' ' -f1)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket/kwikibot.json
+          git commit -m "Point the Scoop bucket at $GITHUB_REF_NAME"
+          git push origin main
+
+  homebrew:
+    needs: [version, release]
+    if: vars.HOMEBREW_TAP != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Write the formula into the tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAP: ${{ vars.HOMEBREW_TAP }}
+        run: |
+          digest() { sha256sum "artifacts/kwikibot-$VERSION-$1.tar.gz" | cut -d' ' -f1; }
+
+          git clone "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" tap
+          python3 .github/scripts/brew_formula.py \
+            "$GITHUB_REPOSITORY" "$VERSION" tap/Formula/kwikibot.rb \
+            "$(digest macos-arm64)" "$(digest macos-x64)" "$(digest linux-x64)"
+
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/kwikibot.rb
+          git commit -m "kwikibot $VERSION"
+          git push || (git pull --rebase && git push)
