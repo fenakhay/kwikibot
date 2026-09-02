@@ -36,7 +36,16 @@ jobs:
           path: '**/build/reports/tests/**'
 
   native:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
 
@@ -54,6 +63,7 @@ jobs:
       - name: Smoke-test the native binary
         run: |
           binary=kwikibot-cli/build/native/nativeCompile/kwikibot
+          case "$RUNNER_OS" in Windows) binary="$binary.exe" ;; esac
           "$binary" version
           "$binary" detect https://en.wiktionary.org
           "$binary" whoami --contact https://example.org/kwikibot-ci

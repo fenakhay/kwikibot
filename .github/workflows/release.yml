@@ -62,6 +62,8 @@ jobs:
           - os: ubuntu-latest
             name: linux-x64
     runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
     defaults:
       run:
         shell: bash
