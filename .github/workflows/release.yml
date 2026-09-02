@@ -73,7 +73,6 @@ jobs:
           java-version: '25'
           distribution: graalvm
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: 'true'
 
       - uses: gradle/actions/setup-gradle@v6
 
