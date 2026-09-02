@@ -7,6 +7,25 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.0.1] — 2026-09-02
+
+### Fixed
+
+- The version comes from the jar manifest rather than a hardcoded constant, so a release no
+  longer reports the one before it.
+- A missing configuration prints a message instead of an uncaught `IllegalArgumentException`,
+  a stack trace and `Failed to launch JVM`.
+- The Homebrew formula points at the `.tgz` archives that are published, with their real
+  checksums, and wraps the packaged launcher instead of symlinking it. A jpackage launcher
+  reads its configuration relative to its own path, and the symlink sent it outside the app
+  image.
+
+### Changed
+
+- `UserAgent.LIBRARY_VERSION` is a `val`, not a `const val`. Source-compatible with 1.0.0, not
+  binary-compatible.
+- With no jar to read, the version reports as `dev`.
+
 ## [1.0.0] — 2026-09-02
 
 First release.
@@ -41,4 +60,5 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[1.0.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.1
 [1.0.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.0

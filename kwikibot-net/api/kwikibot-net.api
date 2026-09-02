@@ -242,7 +242,6 @@ public final class com/fenakhay/kwikibot/net/TokenStore$Companion {
 
 public final class com/fenakhay/kwikibot/net/UserAgent {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/UserAgent$Companion;
-	public static final field LIBRARY_VERSION Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
@@ -259,6 +258,7 @@ public final class com/fenakhay/kwikibot/net/UserAgent {
 }
 
 public final class com/fenakhay/kwikibot/net/UserAgent$Companion {
+	public final fun getLIBRARY_VERSION ()Ljava/lang/String;
 }
 
 public final class com/fenakhay/kwikibot/net/WikiHttpClient {

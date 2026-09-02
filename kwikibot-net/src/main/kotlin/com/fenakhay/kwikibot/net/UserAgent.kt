@@ -30,7 +30,12 @@ public data class UserAgent(
 
     /** What this library reports about itself in the header. */
     public companion object {
-        /** Reported alongside the tool so wiki operators can identify the client library. */
-        public const val LIBRARY_VERSION: String = "1.0.0"
+        /**
+         * Reported alongside the tool so wiki operators can identify the client library.
+         *
+         * Read from the jar manifest, so a release cannot report the version of the one before
+         * it.
+         */
+        public val LIBRARY_VERSION: String get() = Kwikibot.version
     }
 }

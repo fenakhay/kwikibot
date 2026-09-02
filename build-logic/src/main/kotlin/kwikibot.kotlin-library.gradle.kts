@@ -29,6 +29,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(21)
 }
 
+val implementationTitle = project.name
+val implementationVersion = project.version.toString()
+
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes(
+            "Implementation-Title" to implementationTitle,
+            "Implementation-Version" to implementationVersion,
+        )
+    }
+}
+
 dependencies {
     "testImplementation"(platform(libs.junit.bom))
     "testImplementation"(kotlin("test"))

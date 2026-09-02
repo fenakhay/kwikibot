@@ -51,5 +51,5 @@ public object Kwikibot {
     }
 
     /** What [version] reports when there is no jar to read it from. */
-    private const val FALLBACK_VERSION = "1.0.0"
+    private const val FALLBACK_VERSION = "dev"
 }

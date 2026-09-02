@@ -91,7 +91,8 @@ class KtorTransportTest {
 
         transport.call(ApiRequest.of("query"))
 
-        sent shouldBe "TestBot/1.0 (https://example.org/TestBot) kwikibot/1.0.0"
+        sent shouldBe
+            "TestBot/1.0 (https://example.org/TestBot) kwikibot/${UserAgent.LIBRARY_VERSION}"
     }
 
     @Test

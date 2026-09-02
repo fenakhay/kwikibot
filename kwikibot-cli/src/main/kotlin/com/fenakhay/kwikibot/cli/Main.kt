@@ -138,7 +138,7 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
     }
 
     private companion object {
-        const val VERSION = "1.0.0"
+        val VERSION = Kwikibot.version
     }
 }
 
@@ -264,7 +264,7 @@ public class Detect : SuspendingCliktCommand(name = "detect") {
     }
 
     private companion object {
-        const val VERSION = "1.0.0"
+        val VERSION = Kwikibot.version
     }
 }
 
