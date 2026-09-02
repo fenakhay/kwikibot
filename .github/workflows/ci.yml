@@ -58,7 +58,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build the native binary
-        run: ./gradlew :kwikibot-cli:nativeCompile --no-configuration-cache --stacktrace
+        run: ./gradlew :kwikibot-cli:nativeCompile --stacktrace
 
       - name: Smoke-test the native binary
         run: |

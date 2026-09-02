@@ -15,7 +15,7 @@ turbine = "1.2.1"
 
 nmcp = "1.6.2"
 kover = "0.9.9"
-graalvm = "0.11.0"
+graalvm = "1.1.11"
 benchmark = "0.4.14"
 
 [libraries]

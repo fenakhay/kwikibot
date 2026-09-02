@@ -79,7 +79,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build the native binary
-        run: ./gradlew :kwikibot-cli:appArchive -PreleaseVersion=${{ needs.version.outputs.version }} --no-configuration-cache --stacktrace
+        run: ./gradlew :kwikibot-cli:appArchive -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
       - name: Build the Linux packages
         if: matrix.os == 'ubuntu-latest'
