@@ -6,25 +6,29 @@ plugins {
 val generatedVersionDir = layout.buildDirectory.dir("generated/version")
 val libraryVersion = project.version.toString()
 
-val generateVersionSource = tasks.register("generateVersionSource") {
-    val output = generatedVersionDir
-    val value = libraryVersion
+val generateVersionSource =
+    tasks.register("generateVersionSource") {
+        val output = generatedVersionDir
+        val value = libraryVersion
 
-    inputs.property("version", value)
-    outputs.dir(output)
+        inputs.property("version", value)
+        outputs.dir(output)
 
-    doLast {
-        val target = output.get().asFile.resolve("com/fenakhay/kwikibot/net")
-        target.mkdirs()
-        target.resolve("BuildVersion.kt").writeText(
-            """
+        doLast {
+            val target = output.get().asFile.resolve("com/fenakhay/kwikibot/net")
+            target.mkdirs()
+            target
+                .resolve("BuildVersion.kt")
+                .writeText(
+                    """
             package com.fenakhay.kwikibot.net
 
             internal const val BUILD_VERSION: String = "$value"
-            """.trimIndent() + "\n",
-        )
+            """
+                        .trimIndent() + "\n"
+                )
+        }
     }
-}
 
 kotlin.sourceSets.named("main") {
     kotlin.srcDir(generateVersionSource)

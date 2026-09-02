@@ -9,17 +9,18 @@ package com.fenakhay.kwikibot.examples.compounds
  * ```
  * * '''[[Special:Edit/volcano|volcano]]''' <br><br>====Derived terms====<br>{{col|en|[[hypervolcano]]|[[vog]]
  * ```
- * Its `{{col}}` is deliberately left unterminated: an unclosed `{{` makes MediaWiki render the
- * snippet literally instead of expanding it into a column table. Nothing here depends on the
- * closing braces — the line is scanned for wikilinks after the marker.
+ *
+ * Its `{{col}}` is deliberately left unterminated: an unclosed `{{` makes MediaWiki render the snippet
+ * literally instead of expanding it into a column table. Nothing here depends on the closing braces — the
+ * line is scanned for wikilinks after the marker.
  *
  * The **bare** layout (`A-I`, `J-Pe`) is a target, a colon, and pipe-separated terms:
  * ```
  * * '''[[Special:Edit/Amerindian|Amerindian]]''': [[Amerindianism]]|[[Amerindianist]]
  * ```
- * It carries no language code, so terms are taken as [DEFAULT_LANG]. That is sound for this
- * series: the lists are generated from English compounds, and every `{{col}}` in the snippet
- * layout says `en`.
+ *
+ * It carries no language code, so terms are taken as [DEFAULT_LANG]. That is sound for this series: the lists
+ * are generated from English compounds, and every `{{col}}` in the snippet layout says `en`.
  */
 public object TodoList {
 
@@ -30,10 +31,11 @@ public object TodoList {
     private val TARGET = Regex("""\[\[\s*Special:Edit/([^\[\]]+?)]]""", RegexOption.IGNORE_CASE)
 
     /** `{{col|en|`, `{{col3|en|`, `{{der4|en|` — the container, and the language code. */
-    private val CONTAINER = Regex(
-        """\{\{\s*(?:col|der|rel)[0-9]*\s*\|\s*([a-z][a-z0-9-]*)\s*\|""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val CONTAINER =
+        Regex(
+            """\{\{\s*(?:col|der|rel)[0-9]*\s*\|\s*([a-z][a-z0-9-]*)\s*\|""",
+            RegexOption.IGNORE_CASE,
+        )
 
     /** Any wikilink; the inner text is split on `|` and `#` afterwards. */
     private val LINK = Regex("""\[\[([^\[\]]+?)]]""")
@@ -41,8 +43,8 @@ public object TodoList {
     /**
      * The `''':` that closes the bolded target and opens a bare term list.
      *
-     * Matched at the end of the target link rather than searched for, so a snippet line — whose
-     * target is followed by `<br>` — can never be mistaken for a bare one.
+     * Matched at the end of the target link rather than searched for, so a snippet line — whose target is
+     * followed by `<br>` — can never be mistaken for a bare one.
      */
     private val BARE_PAYLOAD = Regex("""\s*(?:''')?\s*:\s*""")
 
@@ -51,21 +53,65 @@ public object TodoList {
     /**
      * Prefixes that take a title off en.wiktionary's main namespace.
      *
-     * The lists contain a handful of `Special:Edit/w:Etsy` targets. This is the first of two
-     * gates; the second is [com.fenakhay.kwikibot.client.Wiki.ref], which refuses an interwiki
-     * title outright and needs no list kept up to date.
+     * The lists contain a handful of `Special:Edit/w:Etsy` targets. This is the first of two gates; the
+     * second is [com.fenakhay.kwikibot.client.Wiki.ref], which refuses an interwiki title outright and needs
+     * no list kept up to date.
      */
-    private val OFF_WIKI = setOf(
-        // sister projects and meta-wikis
-        "b", "c", "commons", "d", "foundation", "incubator", "m", "meta", "mediawikiwiki",
-        "mw", "n", "outreach", "phab", "q", "s", "species", "translatewiki", "v", "voy",
-        "w", "wikibooks", "wikidata", "wikinews", "wikipedia", "wikiquote", "wikisource",
-        "wikispecies", "wikiversity", "wikivoyage", "wikt",
-        // en.wiktionary namespaces; entries live in main space, which has no prefix
-        "appendix", "category", "citations", "concordance", "help", "image", "index",
-        "media", "mediawiki", "module", "rhymes", "reconstruction", "sign gloss", "special",
-        "talk", "template", "thesaurus", "transwiki", "user", "wiktionary",
-    )
+    private val OFF_WIKI =
+        setOf(
+            // sister projects and meta-wikis
+            "b",
+            "c",
+            "commons",
+            "d",
+            "foundation",
+            "incubator",
+            "m",
+            "meta",
+            "mediawikiwiki",
+            "mw",
+            "n",
+            "outreach",
+            "phab",
+            "q",
+            "s",
+            "species",
+            "translatewiki",
+            "v",
+            "voy",
+            "w",
+            "wikibooks",
+            "wikidata",
+            "wikinews",
+            "wikipedia",
+            "wikiquote",
+            "wikisource",
+            "wikispecies",
+            "wikiversity",
+            "wikivoyage",
+            "wikt",
+            // en.wiktionary namespaces; entries live in main space, which has no prefix
+            "appendix",
+            "category",
+            "citations",
+            "concordance",
+            "help",
+            "image",
+            "index",
+            "media",
+            "mediawiki",
+            "module",
+            "rhymes",
+            "reconstruction",
+            "sign gloss",
+            "special",
+            "talk",
+            "template",
+            "thesaurus",
+            "transwiki",
+            "user",
+            "wiktionary",
+        )
 
     /** `fr:`, `zh-min-nan:` — interwiki links to other-language projects. */
     private val LANGUAGE_PREFIX = Regex("""^[a-z]{2,3}(?:-[a-z0-9-]+)?$""")
@@ -106,17 +152,18 @@ public object TodoList {
     public data class ParseReport(
         /** The work the page describes. */
         val tasks: List<Task>,
-        /** How many lines were not understood, which is worth reporting rather than
-         *  discarding: a list page that parses to nothing looks the same as one with
-         *  nothing to do. */
+        /**
+         * How many lines were not understood, which is worth reporting rather than discarding: a list page
+         * that parses to nothing looks the same as one with nothing to do.
+         */
         val skippedLines: Int,
     )
 
     /**
      * Whether a title carries an interwiki or namespace prefix.
      *
-     * Talk forms (`User talk:`) are covered because the prefix is matched whole. A leading colon
-     * and titles that merely contain one, such as `:-)`, are not prefixed and stay usable.
+     * Talk forms (`User talk:`) are covered because the prefix is matched whole. A leading colon and titles
+     * that merely contain one, such as `:-)`, are not prefixed and stay usable.
      */
     public fun isOffWiki(title: String): Boolean {
         val head = title.substringBefore(':', missingDelimiterValue = "")
@@ -137,9 +184,9 @@ public object TodoList {
     /**
      * The structure of one `*` line, with no filtering applied.
      *
-     * `null` only when the line has no `Special:Edit` target or no payload marker at all.
-     * Off-wiki targets, self-references and duplicates are reported as written, because the
-     * report of what was *not* done needs to see them.
+     * `null` only when the line has no `Special:Edit` target or no payload marker at all. Off-wiki targets,
+     * self-references and duplicates are reported as written, because the report of what was *not* done needs
+     * to see them.
      */
     public fun extractLine(line: String): RawLine? {
         val text = line.trim()
@@ -151,10 +198,11 @@ public object TodoList {
 
         val payload = payloadAfter(text, target.range.last + 1) ?: return null
 
-        val terms = LINK.findAll(text.substring(payload.start))
-            .map { linkTarget(it.groupValues[1]) }
-            .filter { it.isNotEmpty() }
-            .toList()
+        val terms =
+            LINK.findAll(text.substring(payload.start))
+                .map { linkTarget(it.groupValues[1]) }
+                .filter { it.isNotEmpty() }
+                .toList()
 
         return RawLine(title, payload.lang, terms, payload.layout)
     }
@@ -165,10 +213,9 @@ public object TodoList {
     /**
      * Finds the marker that opens the term list, or `null` when the line has none.
      *
-     * The container is looked for first: a snippet line carries `{{col|en|`, and its language
-     * code is the one to use. Only a line without one can be a bare list, and its separator is
-     * matched at the end of the target link rather than searched for, so the colon inside
-     * `Special:Edit` cannot open a payload.
+     * The container is looked for first: a snippet line carries `{{col|en|`, and its language code is the one
+     * to use. Only a line without one can be a bare list, and its separator is matched at the end of the
+     * target link rather than searched for, so the colon inside `Special:Edit` cannot open a payload.
      */
     private fun payloadAfter(text: String, from: Int): Payload? {
         CONTAINER.find(text, from)?.let { container ->
@@ -203,8 +250,8 @@ public object TodoList {
     /**
      * Emits a list line in the source page's own layout, byte for byte.
      *
-     * The snippet layout's `{{col}}` is left unterminated, exactly as the lists write it: an
-     * unclosed `{{` is what makes MediaWiki show the snippet rather than expand it.
+     * The snippet layout's `{{col}}` is left unterminated, exactly as the lists write it: an unclosed `{{` is
+     * what makes MediaWiki show the snippet rather than expand it.
      */
     public fun renderLine(
         title: String,
@@ -259,8 +306,7 @@ public object TodoList {
                 body.startsWith("#x", ignoreCase = true) ->
                     body.drop(2).toIntOrNull(HEX)?.let { String(Character.toChars(it)) }
 
-                body.startsWith("#") ->
-                    body.drop(1).toIntOrNull()?.let { String(Character.toChars(it)) }
+                body.startsWith("#") -> body.drop(1).toIntOrNull()?.let { String(Character.toChars(it)) }
 
                 else -> NAMED[body.lowercase()]
             } ?: match.value
@@ -271,8 +317,15 @@ public object TodoList {
 
     private val ENTITY = Regex("""&(#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);""")
 
-    private val NAMED = mapOf(
-        "amp" to "&", "lt" to "<", "gt" to ">", "quot" to "\"", "apos" to "'",
-        "nbsp" to " ", "ndash" to "–", "mdash" to "—",
-    )
+    private val NAMED =
+        mapOf(
+            "amp" to "&",
+            "lt" to "<",
+            "gt" to ">",
+            "quot" to "\"",
+            "apos" to "'",
+            "nbsp" to " ",
+            "ndash" to "–",
+            "mdash" to "—",
+        )
 }

@@ -3,9 +3,9 @@ package com.fenakhay.kwikibot.wikitext
 /**
  * Which text a replacement is allowed to touch.
  *
- * Exclusions are structural rather than a list the caller maintains: templates, comments,
- * `<nowiki>` and link targets are nodes in the parsed page, so avoiding them is the default and
- * including one is an explicit choice.
+ * Exclusions are structural rather than a list the caller maintains: templates, comments, `<nowiki>` and link
+ * targets are nodes in the parsed page, so avoiding them is the default and including one is an explicit
+ * choice.
  */
 public data class TextScope(
     /** Text inside `{{template}}` names and parameters. */
@@ -27,13 +27,14 @@ public data class TextScope(
         public val PROSE: TextScope = TextScope()
 
         /** Every piece of text, wherever it sits. */
-        public val EVERYWHERE: TextScope = TextScope(
-            templates = true,
-            linkTargets = true,
-            comments = true,
-            rawTags = true,
-            headings = true,
-            tagAttributes = true,
-        )
+        public val EVERYWHERE: TextScope =
+            TextScope(
+                templates = true,
+                linkTargets = true,
+                comments = true,
+                rawTags = true,
+                headings = true,
+                tagAttributes = true,
+            )
     }
 }

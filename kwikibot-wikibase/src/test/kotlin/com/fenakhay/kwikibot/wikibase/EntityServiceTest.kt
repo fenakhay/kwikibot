@@ -1,12 +1,18 @@
 package com.fenakhay.kwikibot.wikibase
 
 import com.fenakhay.kwikibot.model.WikiError
-import com.fenakhay.kwikibot.net.ApiEndpoint
-import com.fenakhay.kwikibot.net.KtorTransport
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
-import com.fenakhay.kwikibot.net.TokenStore
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.auth.TokenStore
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.KtorTransport
+import com.fenakhay.kwikibot.wikibase.entity.Entity
+import com.fenakhay.kwikibot.wikibase.value.DataValue
+import com.fenakhay.kwikibot.wikibase.value.EntityId
+import com.fenakhay.kwikibot.wikibase.value.Rank
+import com.fenakhay.kwikibot.wikibase.value.Snak
+import com.fenakhay.kwikibot.wikibase.value.Statement
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -20,14 +26,15 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import java.net.URLDecoder
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.time.Duration
 
 class EntityServiceTest {
 
@@ -36,7 +43,7 @@ class EntityServiceTest {
         val service = service {
             respondJson(
                 """{"entities":{"Q42":{"type":"item","id":"Q42","lastrevid":7,
-                   "labels":{"en":{"language":"en","value":"Douglas Adams"}}}}}""",
+                   "labels":{"en":{"language":"en","value":"Douglas Adams"}}}}}"""
             )
         }
 
@@ -72,7 +79,7 @@ class EntityServiceTest {
         val service = service {
             respondJson(
                 """{"entities":{"Q42":{"type":"item","id":"Q42",
-                   "sitelinks":{"enwiki":{"site":"enwiki","title":"Douglas Adams"}}}}}""",
+                   "sitelinks":{"enwiki":{"site":"enwiki","title":"Douglas Adams"}}}}}"""
             )
         }
 
@@ -87,7 +94,7 @@ class EntityServiceTest {
         val service = service {
             respondJson(
                 """{"search":[{"id":"Q42","label":"Douglas Adams","description":"writer"},
-                   {"id":"Q5","label":"human"}]}""",
+                   {"id":"Q5","label":"human"}]}"""
             )
         }
 
@@ -110,11 +117,12 @@ class EntityServiceTest {
             }
         }
 
-        val saved = service.edit(EntityId("Q42")) {
-            labels = mapOf("en" to "Douglas Adams")
-            summary = "label"
-            baseRevision = 7
-        }
+        val saved =
+            service.edit(EntityId("Q42")) {
+                labels = mapOf("en" to "Douglas Adams")
+                summary = "label"
+                baseRevision = 7
+            }
 
         saved.lastRevisionId shouldBe 8
         body.contains("action=wbeditentity") shouldBe true
@@ -130,10 +138,13 @@ class EntityServiceTest {
             if (request.url.parameters["meta"] == "tokens") {
                 respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
             } else {
-                data = request.body.toByteArray().decodeToString()
-                    .split("&")
-                    .first { it.startsWith("data=") }
-                    .removePrefix("data=")
+                data =
+                    request.body
+                        .toByteArray()
+                        .decodeToString()
+                        .split("&")
+                        .first { it.startsWith("data=") }
+                        .removePrefix("data=")
                 respondJson("""{"entity":{"type":"item","id":"Q42"},"success":1}""")
             }
         }
@@ -141,8 +152,8 @@ class EntityServiceTest {
         service.edit(EntityId("Q42")) { labels = mapOf("en" to "hello") }
 
         val decoded = Json.parseToJsonElement(urlDecode(data)).jsonObject
-        decoded["labels"]?.jsonObject?.get("en")?.jsonObject
-            ?.get("value")?.jsonPrimitive?.content shouldBe "hello"
+        decoded["labels"]?.jsonObject?.get("en")?.jsonObject?.get("value")?.jsonPrimitive?.content shouldBe
+            "hello"
     }
 
     @Test
@@ -155,18 +166,19 @@ class EntityServiceTest {
                     """{"claim":{"id":"Q42${'$'}abc","type":"statement","rank":"preferred",
                        "mainsnak":{"snaktype":"value","property":"P31",
                        "datavalue":{"type":"wikibase-entityid","value":{"id":"Q5"}}}},
-                       "success":1}""",
+                       "success":1}"""
                 )
             }
         }
 
-        val saved = service.setStatement(
-            EntityId("Q42"),
-            Statement(
-                Snak.Value(EntityId("P31"), DataValue.EntityRef(EntityId("Q5"))),
-                rank = Rank.PREFERRED,
-            ),
-        )
+        val saved =
+            service.setStatement(
+                EntityId("Q42"),
+                Statement(
+                    Snak.Value(EntityId("P31"), DataValue.EntityRef(EntityId("Q5"))),
+                    rank = Rank.PREFERRED,
+                ),
+            )
 
         saved.rank shouldBe Rank.PREFERRED
         saved.value.shouldBeInstanceOf<DataValue.EntityRef>().id shouldBe EntityId("Q5")
@@ -183,9 +195,7 @@ class EntityServiceTest {
                     respondJson("""{"query":{"tokens":{"csrftoken":"T$tokensIssued"}}}""")
                 }
 
-                writes++ == 0 -> respondJson(
-                    """{"errors":[{"code":"badtoken","text":"invalid token"}]}""",
-                )
+                writes++ == 0 -> respondJson("""{"errors":[{"code":"badtoken","text":"invalid token"}]}""")
 
                 else -> respondJson("""{"entity":{"type":"item","id":"Q42"},"success":1}""")
             }
@@ -203,9 +213,7 @@ class EntityServiceTest {
             if (request.url.parameters["meta"] == "tokens") {
                 respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
             } else {
-                respondJson(
-                    """{"errors":[{"code":"permissiondenied","text":"not allowed"}]}""",
-                )
+                respondJson("""{"errors":[{"code":"permissiondenied","text":"not allowed"}]}""")
             }
         }
 
@@ -258,7 +266,7 @@ class EntityServiceTest {
         val service = service {
             respondJson(
                 """{"results":[{"type":"time","value":{"time":"+2026-08-31T00:00:00Z",
-                   "precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}}]}""",
+                   "precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}}]}"""
             )
         }
 
@@ -269,26 +277,32 @@ class EntityServiceTest {
 
     @Test
     fun `an entity that was merged away is not decoded as an empty one`() {
-        val response = Json.parseToJsonElement(
-            """{"entities":{"Q42":{"id":"Q42","redirects":{"from":"Q42","to":"Q5"}}}}""",
-        ).jsonObject
+        val response =
+            Json.parseToJsonElement(
+                    """{"entities":{"Q42":{"id":"Q42","redirects":{"from":"Q42","to":"Q5"}}}}"""
+                )
+                .jsonObject
 
         EntityDecoder.decodeAll(response) shouldBe emptyMap()
         EntityDecoder.redirectTarget(
-            response.getValue("entities").jsonObject.getValue("Q42").jsonObject,
+            response.getValue("entities").jsonObject.getValue("Q42").jsonObject
         ) shouldBe EntityId("Q5")
     }
 
     @Test
     fun `a file's structured data decodes as media info`() {
-        val response = Json.parseToJsonElement(
-            """{"entities":{"M123":{"type":"mediainfo","id":"M123","lastrevid":7,
+        val response =
+            Json.parseToJsonElement(
+                    """{"entities":{"M123":{"type":"mediainfo","id":"M123","lastrevid":7,
                "labels":{"en":{"language":"en","value":"A volcano at dawn"}},
-               "statements":{}}}}""",
-        ).jsonObject
+               "statements":{}}}}"""
+                )
+                .jsonObject
 
-        val media = EntityDecoder.decodeAll(response).getValue(EntityId("M123"))
-            .shouldBeInstanceOf<Entity.MediaInfo>()
+        val media =
+            EntityDecoder.decodeAll(response)
+                .getValue(EntityId("M123"))
+                .shouldBeInstanceOf<Entity.MediaInfo>()
 
         media.caption("en") shouldBe "A volcano at dawn"
         media.descriptions shouldBe emptyMap()
@@ -319,9 +333,10 @@ class EntityServiceTest {
             }
         }
 
-        val created = service.create(EntityId.Kind.ITEM) {
-            labels = mapOf("en" to "New thing")
-        }
+        val created =
+            service.create(EntityId.Kind.ITEM) {
+                labels = mapOf("en" to "New thing")
+            }
 
         created.id shouldBe EntityId("Q99")
         body.contains("action=wbeditentity") shouldBe true
@@ -387,20 +402,20 @@ class EntityServiceTest {
     }
 
     private fun TestScope.service(
-        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
     ): EntityService {
-        val transport = KtorTransport(
-            client = HttpClient(MockEngine(handler)),
-            endpoint = ApiEndpoint("www.wikidata.org"),
-            userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot"),
-            throttle = Throttle(Duration.ZERO, Duration.ZERO, testScheduler.timeSource),
-            retry = RetryPolicy.NONE,
-        )
+        val transport =
+            KtorTransport(
+                client = HttpClient(MockEngine(handler)),
+                endpoint = ApiEndpoint("www.wikidata.org"),
+                userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot"),
+                throttle = Throttle(Duration.ZERO, Duration.ZERO, testScheduler.timeSource),
+                retry = RetryPolicy.NONE,
+            )
         return ApiEntityService(transport, TokenStore(transport))
     }
 
-    private fun urlDecode(value: String): String =
-        java.net.URLDecoder.decode(value, Charsets.UTF_8)
+    private fun urlDecode(value: String): String = URLDecoder.decode(value, Charsets.UTF_8)
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

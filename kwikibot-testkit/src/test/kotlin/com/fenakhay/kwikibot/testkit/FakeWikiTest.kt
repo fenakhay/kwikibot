@@ -1,18 +1,18 @@
 package com.fenakhay.kwikibot.testkit
 
-import com.fenakhay.kwikibot.model.EditOutcome
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.model.Protection
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.WikiError
-import com.fenakhay.kwikibot.net.ApiRequest
+import com.fenakhay.kwikibot.model.edit.EditOutcome
+import com.fenakhay.kwikibot.model.edit.Protection
+import com.fenakhay.kwikibot.net.transport.ApiRequest
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.runTest
 
 class FakeWikiTest {
 
@@ -39,17 +39,18 @@ class FakeWikiTest {
     fun `the services the fake does not implement throw, naming what was called`() {
         val wiki = FakeWiki("volcano" to "x")
 
-        val services: List<Pair<String, () -> Any>> = listOf(
-            "lists" to { wiki.lists },
-            "revisions" to { wiki.revisions },
-            "users" to { wiki.users },
-            "logs" to { wiki.logs },
-            "files" to { wiki.files },
-            "extensions" to { wiki.extensions },
-            "proofread" to { wiki.proofread },
-            "renderer" to { wiki.renderer },
-            "meta" to { wiki.meta },
-        )
+        val services: List<Pair<String, () -> Any>> =
+            listOf(
+                "lists" to { wiki.lists },
+                "revisions" to { wiki.revisions },
+                "users" to { wiki.users },
+                "logs" to { wiki.logs },
+                "files" to { wiki.files },
+                "extensions" to { wiki.extensions },
+                "proofread" to { wiki.proofread },
+                "renderer" to { wiki.renderer },
+                "meta" to { wiki.meta },
+            )
 
         for ((name, read) in services) {
             assertFailsWith<NotImplementedError> { read() }.message.orEmpty() shouldContain name
@@ -60,9 +61,10 @@ class FakeWikiTest {
     fun `the transport refuses, so a test cannot reach the network through the fake`() = runTest {
         val wiki = FakeWiki("volcano" to "x")
 
-        val error = assertFailsWith<NotImplementedError> {
-            wiki.transport.call(ApiRequest.of("query", "meta" to "siteinfo"))
-        }
+        val error =
+            assertFailsWith<NotImplementedError> {
+                wiki.transport.call(ApiRequest.of("query", "meta" to "siteinfo"))
+            }
 
         error.message.orEmpty() shouldContain "query"
         wiki.transport.endpoint.server shouldBe "test.example.org"
@@ -101,29 +103,32 @@ class FakeWikiTest {
     fun `an edit that writes back the same text is a no-op, as it is on a wiki`() = runTest {
         val pages = FakePageService("volcano" to "==English==")
 
-        pages.edit(pages.ref("volcano")) { text = "==English==" }
-            .shouldBeInstanceOf<EditOutcome.NoChange>()
+        pages.edit(pages.ref("volcano")) { text = "==English==" }.shouldBeInstanceOf<EditOutcome.NoChange>()
         pages.edits.isEmpty() shouldBe true
     }
 
     @Test
     fun `an injected refusal comes back instead of the edit`() = runTest {
-        val pages = FakePageService(
-            texts = mapOf("volcano" to "x"),
-            refuse = { EditOutcome.Protected(it, detail = "the page is protected", level = "sysop") },
-        )
+        val pages =
+            FakePageService(
+                texts = mapOf("volcano" to "x"),
+                refuse = { EditOutcome.Protected(it, detail = "the page is protected", level = "sysop") },
+            )
 
-        pages.edit(pages.ref("volcano")) { text = "y" }
-            .shouldBeInstanceOf<EditOutcome.Protected>().level shouldBe "sysop"
+        pages
+            .edit(pages.ref("volcano")) { text = "y" }
+            .shouldBeInstanceOf<EditOutcome.Protected>()
+            .level shouldBe "sysop"
         pages.text("volcano") shouldBe "x"
     }
 
     @Test
     fun `an injected failure is thrown, so a bot's error path can be tested`() = runTest {
-        val pages = FakePageService(
-            texts = mapOf("volcano" to "x"),
-            failWith = { WikiError.Auth.NotLoggedIn("editing") },
-        )
+        val pages =
+            FakePageService(
+                texts = mapOf("volcano" to "x"),
+                failWith = { WikiError.Auth.NotLoggedIn("editing") },
+            )
 
         assertFailsWith<WikiError.Auth.NotLoggedIn> {
             pages.edit(pages.ref("volcano")) { text = "y" }
@@ -135,8 +140,7 @@ class FakeWikiTest {
         val pages = FakePageService("volcano" to "==English==")
         pages.edit(pages.ref("volcano")) { text = "vandalism" }
 
-        pages.rollback(pages.ref("volcano"), user = "Vandal")
-            .shouldBeInstanceOf<EditOutcome.Saved>()
+        pages.rollback(pages.ref("volcano"), user = "Vandal").shouldBeInstanceOf<EditOutcome.Saved>()
 
         pages.text("volcano") shouldBe "==English=="
     }
@@ -145,16 +149,14 @@ class FakeWikiTest {
     fun `rolling back an unedited page changes nothing`() = runTest {
         val pages = FakePageService("volcano" to "==English==")
 
-        pages.rollback(pages.ref("volcano"), user = "Nobody")
-            .shouldBeInstanceOf<EditOutcome.NoChange>()
+        pages.rollback(pages.ref("volcano"), user = "Nobody").shouldBeInstanceOf<EditOutcome.NoChange>()
     }
 
     @Test
     fun `rolling back a page the fake never held is a no-op, not a crash`() = runTest {
         val pages = FakePageService("volcano" to "x")
 
-        pages.rollback(pages.ref("Unknown"), user = "Nobody")
-            .shouldBeInstanceOf<EditOutcome.NoChange>()
+        pages.rollback(pages.ref("Unknown"), user = "Nobody").shouldBeInstanceOf<EditOutcome.NoChange>()
     }
 
     @Test
@@ -245,22 +247,19 @@ class FakeWikiTest {
     }
 
     @Test
-    fun `the fake refuses nothing, a bot under test not being tested on its permissions`() =
-        runTest {
-            val pages = FakePageService("volcano" to "x")
+    fun `the fake refuses nothing, a bot under test not being tested on its permissions`() = runTest {
+        val pages = FakePageService("volcano" to "x")
 
-            val checks = pages.testActions(listOf(pages.ref("volcano")), setOf("edit"))
+        val checks = pages.testActions(listOf(pages.ref("volcano")), setOf("edit"))
 
-            checks.values.single().allows("edit") shouldBe true
-        }
+        checks.values.single().allows("edit") shouldBe true
+    }
 
     @Test
     fun `contents fetches many pages and leaves out the ones that are missing`() = runTest {
         val pages = FakePageService("volcano" to "a", "vulcan" to "b")
 
-        val found = pages.contents(
-            listOf(pages.ref("volcano"), pages.ref("vulcan"), pages.ref("Nope")),
-        )
+        val found = pages.contents(listOf(pages.ref("volcano"), pages.ref("vulcan"), pages.ref("Nope")))
 
         found.size shouldBe 2
     }

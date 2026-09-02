@@ -1,23 +1,22 @@
 package com.fenakhay.kwikibot.protocol
 
-import com.fenakhay.kwikibot.model.Namespace
-import com.fenakhay.kwikibot.model.Title
-import com.fenakhay.kwikibot.model.TitleCase
+import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.model.title.TitleCase
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.Test
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import kotlin.test.Test
 
 class SiteInfoTest {
 
     private val response by lazy {
-        val stream = checkNotNull(javaClass.getResourceAsStream("/siteinfo-enwiki.json")) {
-            "siteinfo-enwiki.json missing from test resources"
-        }
-        Json.parseToJsonElement(stream.reader().readText())
-            .jsonObject["response"]!!
-            .jsonObject
+        val stream =
+            checkNotNull(javaClass.getResourceAsStream("/siteinfo-enwiki.json")) {
+                "siteinfo-enwiki.json missing from test resources"
+            }
+        Json.parseToJsonElement(stream.reader().readText()).jsonObject["response"]!!.jsonObject
     }
 
     private val siteInfo by lazy { SiteInfo.decode(response) }
@@ -67,8 +66,9 @@ class SiteInfoTest {
 
     @Test
     fun `the decoded namespaces drive title parsing`() {
-        val title = Title.parse("wp:Administrators", siteInfo.namespaces, siteInfo.interwiki)
-            .shouldBeInstanceOf<Title.Local>()
+        val title =
+            Title.parse("wp:Administrators", siteInfo.namespaces, siteInfo.interwiki)
+                .shouldBeInstanceOf<Title.Local>()
 
         title.namespace shouldBe Namespace.PROJECT
         title.text shouldBe "Administrators"
@@ -76,9 +76,11 @@ class SiteInfoTest {
 
     @Test
     fun `a partial response decodes without failing`() {
-        val general = Json.parseToJsonElement(
-            """{"query":{"general":{"wikiid":"testwiki","sitename":"Test","lang":"en"}}}""",
-        ).jsonObject
+        val general =
+            Json.parseToJsonElement(
+                    """{"query":{"general":{"wikiid":"testwiki","sitename":"Test","lang":"en"}}}"""
+                )
+                .jsonObject
 
         val partial = SiteInfo.decode(general)
 

@@ -5,28 +5,27 @@ import com.akuleshov7.ktoml.TomlInputConfig
 import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.client.WikiConfig
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.net.Credentials
-import com.fenakhay.kwikibot.net.DiskCache
-import com.fenakhay.kwikibot.net.ResponseCache
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.fenakhay.kwikibot.net.auth.Credentials
+import com.fenakhay.kwikibot.net.cache.DiskCache
+import com.fenakhay.kwikibot.net.cache.ResponseCache
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.time.Duration
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * A bot's configuration, read from a TOML file into an immutable value.
  *
- * Declarative rather than executable: the file cannot run code, and the worst a malformed one can
- * do is fail to parse.
+ * Declarative rather than executable: the file cannot run code, and the worst a malformed one can do is fail
+ * to parse.
  *
- * **Passwords are not stored here.** The file names an environment variable to read the
- * password from, so a configuration can be committed, shared and diffed without a credential
- * ever being in it.
+ * **Passwords are not stored here.** The file names an environment variable to read the password from, so a
+ * configuration can be committed, shared and diffed without a credential ever being in it.
  *
  * ```toml
  * [bot]
@@ -56,26 +55,27 @@ public data class BotConfig(
     /**
      * The replication lag above which a wiki should defer our requests, in seconds.
      *
-     * Wikimedia asks bots for 5. Zero means send no `maxlag` at all, which only makes sense for
-     * a self-hosted wiki.
+     * Wikimedia asks bots for 5. Zero means send no `maxlag` at all, which only makes sense for a self-hosted
+     * wiki.
      */
     val maxlag: Int = DEFAULT_MAXLAG,
 ) {
 
     /** The client configuration this file describes. */
-    public fun toWikiConfig(): WikiConfig = WikiConfig(
-        userAgent = UserAgent(bot.name, bot.version, bot.contact),
-        throttle = Throttle(read = throttle.readDelay, write = throttle.writeDelay),
-        maxlag = maxlag.takeIf { it > 0 },
-        cache = cache?.let { DiskCache(Path(it.path), it.timeToLive) } ?: ResponseCache.NONE,
-    )
+    public fun toWikiConfig(): WikiConfig =
+        WikiConfig(
+            userAgent = UserAgent(bot.name, bot.version, bot.contact),
+            throttle = Throttle(read = throttle.readDelay, write = throttle.writeDelay),
+            maxlag = maxlag.takeIf { it > 0 },
+            cache = cache?.let { DiskCache(Path(it.path), it.timeToLive) } ?: ResponseCache.NONE,
+        )
 
     /**
      * The credentials this file describes.
      *
-     * @throws IllegalStateException if a login is configured but the environment variable holding
-     *   its password is not set — a bot that silently falls back to editing anonymously is worse
-     *   than one that stops.
+     * @throws IllegalStateException if a login is configured but the environment variable holding its
+     *   password is not set — a bot that silently falls back to editing anonymously is worse than one that
+     *   stops.
      */
     public fun credentials(environment: (String) -> String? = System::getenv): Credentials {
         val settings = login ?: return Credentials.Anonymous
@@ -90,8 +90,9 @@ public data class BotConfig(
     }
 
     /** The family named in the file. */
-    public fun family(): Family = Family.named(wiki.family)
-        ?: error("unknown family '${wiki.family}'; name a Wikimedia project or set wiki.server")
+    public fun family(): Family =
+        Family.named(wiki.family)
+            ?: error("unknown family '${wiki.family}'; name a Wikimedia project or set wiki.server")
 
     /** The language code named in the file. */
     public fun language(): LangCode = LangCode(wiki.lang)
@@ -124,8 +125,11 @@ public data class BotConfig(
         /** Between writes. Ten seconds is the conventional bot pace on Wikimedia wikis. */
         val write: String = "10s",
     ) {
-        internal val readDelay: Duration get() = Duration.parse(read)
-        internal val writeDelay: Duration get() = Duration.parse(write)
+        internal val readDelay: Duration
+            get() = Duration.parse(read)
+
+        internal val writeDelay: Duration
+            get() = Duration.parse(write)
     }
 
     /**
@@ -133,8 +137,8 @@ public data class BotConfig(
      *
      * @param account the account name, without the bot-password suffix.
      * @param botName the bot password's own name.
-     * @param passwordEnv the name of an environment variable holding the bot password. The
-     *   password itself is deliberately not a field: a configuration file gets committed.
+     * @param passwordEnv the name of an environment variable holding the bot password. The password itself is
+     *   deliberately not a field: a configuration file gets committed.
      */
     @Serializable
     public data class LoginSettings(
@@ -153,7 +157,8 @@ public data class BotConfig(
         /** How long an entry stays usable, as a Kotlin duration: `12h`. */
         val ttl: String = "12h",
     ) {
-        internal val timeToLive: Duration get() = Duration.parse(ttl)
+        internal val timeToLive: Duration
+            get() = Duration.parse(ttl)
     }
 
     /** Reading a configuration file, and the defaults it falls back to. */
@@ -175,9 +180,8 @@ public data class BotConfig(
         /**
          * Finds and reads the configuration, or `null` if there is none.
          *
-         * Searched in the order of [searchPath]: the working directory first, so a bot in a
-         * checkout uses that checkout's configuration rather than whatever is in the home
-         * directory.
+         * Searched in the order of [searchPath]: the working directory first, so a bot in a checkout uses
+         * that checkout's configuration rather than whatever is in the home directory.
          */
         public fun find(explicit: Path? = null): BotConfig? {
             explicit?.let {
@@ -188,18 +192,19 @@ public data class BotConfig(
         }
 
         /** Where a configuration is looked for, in order. */
-        public fun searchPath(): List<Path> = listOfNotNull(
-            Path(FILE_NAME),
-            System.getenv("KWIKIBOT_CONFIG")?.let { Path(it) },
-            configHome()?.resolve(Path("kwikibot", FILE_NAME)),
-        )
+        public fun searchPath(): List<Path> =
+            listOfNotNull(
+                Path(FILE_NAME),
+                System.getenv("KWIKIBOT_CONFIG")?.let { Path(it) },
+                configHome()?.resolve(Path("kwikibot", FILE_NAME)),
+            )
 
         /**
          * The directory user configuration lives in.
          *
-         * `XDG_CONFIG_HOME` is the config home; `~/.config` is only its default for when the
-         * variable is unset. Searching both would name the same file twice on any machine that
-         * sets the variable to that default, which is what a Linux desktop does.
+         * `XDG_CONFIG_HOME` is the config home; `~/.config` is only its default for when the variable is
+         * unset. Searching both would name the same file twice on any machine that sets the variable to that
+         * default, which is what a Linux desktop does.
          */
         private fun configHome(): Path? =
             System.getenv("XDG_CONFIG_HOME")?.let { Path(it) }
@@ -208,10 +213,11 @@ public data class BotConfig(
         /**
          * A configuration file to start from.
          *
-         * Written by `kwiki init-config`. The login section names an environment variable
-         * rather than holding a password.
+         * Written by `kwiki init-config`. The login section names an environment variable rather than holding
+         * a password.
          */
-        public fun template(): String = """
+        public fun template(): String =
+            """
             # kwikibot configuration. Passwords are never stored here: the login section names
             # an environment variable to read one from.
 
@@ -241,6 +247,7 @@ public data class BotConfig(
             # path = "apicache"
             # ttl = "12h"
 
-        """.trimIndent()
+            """
+                .trimIndent()
     }
 }

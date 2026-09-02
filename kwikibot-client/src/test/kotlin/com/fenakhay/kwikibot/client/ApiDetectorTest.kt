@@ -6,12 +6,14 @@ import kotlin.test.Test
 
 class ApiDetectorTest {
 
-    private val wikimedia = """
+    private val wikimedia =
+        """
         <html><head>
         <link rel="EditURI" type="application/rsd+xml"
               href="//en.wiktionary.org/w/api.php?action=rsd"/>
         </head><body>…</body></html>
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `a protocol-relative link takes the scheme of the page it was found on`() {
@@ -53,8 +55,7 @@ class ApiDetectorTest {
 
     @Test
     fun `entities in the attribute are decoded`() {
-        val html =
-            """<link rel="EditURI" href="//example.org/w/api.php?action=rsd&amp;x=1"/>"""
+        val html = """<link rel="EditURI" href="//example.org/w/api.php?action=rsd&amp;x=1"/>"""
 
         ApiDetector.endpointFrom(html, "https://example.org/wiki/A")?.apiUrl shouldBe
             "https://example.org/w/api.php"
@@ -70,8 +71,7 @@ class ApiDetectorTest {
 
     @Test
     fun `a page that advertises nothing gives nothing, rather than a guess`() {
-        ApiDetector.endpointFrom("<html><head></head></html>", "https://example.org/")
-            .shouldBeNull()
+        ApiDetector.endpointFrom("<html><head></head></html>", "https://example.org/").shouldBeNull()
     }
 
     @Test

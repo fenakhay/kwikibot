@@ -1,23 +1,26 @@
 package com.fenakhay.kwikibot.bot
 
-import com.fenakhay.kwikibot.net.Credentials
+import com.fenakhay.kwikibot.net.auth.Credentials
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlin.test.Test
+import kotlin.io.path.Path
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.writeText
+import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class BotConfigTest {
 
-    private val minimal = """
+    private val minimal =
+        """
         [bot]
         name = "FenaBot"
         contact = "https://en.wiktionary.org/wiki/User:FenaBot"
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `a minimal file is enough`() {
@@ -31,15 +34,17 @@ class BotConfigTest {
 
     @Test
     fun `throttles are read as durations, not as numbers of something`() {
-        val config = BotConfig.parse(
-            """
+        val config =
+            BotConfig.parse(
+                """
             $minimal
 
             [throttle]
             read = "250ms"
             write = "30s"
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent()
+            )
 
         config.throttle.readDelay shouldBe 250.milliseconds
         config.throttle.writeDelay shouldBe 30.seconds
@@ -47,16 +52,18 @@ class BotConfigTest {
 
     @Test
     fun `the password comes from the environment, never from the file`() {
-        val config = BotConfig.parse(
-            """
+        val config =
+            BotConfig.parse(
+                """
             $minimal
 
             [login]
             account = "FenaBot"
             botName = "compounds"
             passwordEnv = "TEST_PASSWORD"
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent()
+            )
 
         val credentials = config.credentials { name -> if (name == "TEST_PASSWORD") "s3cret" else null }
 
@@ -67,16 +74,18 @@ class BotConfigTest {
 
     @Test
     fun `a configured login with no password in the environment stops rather than editing anonymously`() {
-        val config = BotConfig.parse(
-            """
+        val config =
+            BotConfig.parse(
+                """
             $minimal
 
             [login]
             account = "FenaBot"
             botName = "compounds"
             passwordEnv = "TEST_PASSWORD"
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent()
+            )
 
         val failure = assertFailsWith<IllegalStateException> { config.credentials { null } }
 
@@ -97,7 +106,8 @@ class BotConfigTest {
 
                 [throttle]
                 reed = "250ms"
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
         }
     }
@@ -120,18 +130,21 @@ class BotConfigTest {
 
     @Test
     fun `a client configuration is built from the file`() {
-        val config = BotConfig.parse(
-            """
-            [bot]
-            name = "FenaBot"
-            version = "2.0"
-            contact = "https://example.org/FenaBot"
+        val config =
+            BotConfig.parse(
+                    """
+                    [bot]
+                    name = "FenaBot"
+                    version = "2.0"
+                    contact = "https://example.org/FenaBot"
 
-            [throttle]
-            read = "100ms"
-            write = "10s"
-            """.trimIndent(),
-        ).toWikiConfig()
+                    [throttle]
+                    read = "100ms"
+                    write = "10s"
+                    """
+                        .trimIndent()
+                )
+                .toWikiConfig()
 
         config.userAgent.headerValue shouldContain "FenaBot/2.0"
         config.maxlag shouldBe BotConfig.DEFAULT_MAXLAG
@@ -139,15 +152,18 @@ class BotConfigTest {
 
     @Test
     fun `maxlag can be turned off for a wiki you run yourself`() {
-        val config = BotConfig.parse(
-            """
-            maxlag = 0
+        val config =
+            BotConfig.parse(
+                    """
+                    maxlag = 0
 
-            [bot]
-            name = "FenaBot"
-            contact = "https://example.org/FenaBot"
-            """.trimIndent(),
-        ).toWikiConfig()
+                    [bot]
+                    name = "FenaBot"
+                    contact = "https://example.org/FenaBot"
+                    """
+                        .trimIndent()
+                )
+                .toWikiConfig()
 
         config.maxlag shouldBe null
     }
@@ -156,14 +172,16 @@ class BotConfigTest {
     fun `the family named in the file is resolved`() {
         BotConfig.parse(minimal).family().name shouldBe "wiktionary"
 
-        val unknown = BotConfig.parse(
-            """
+        val unknown =
+            BotConfig.parse(
+                """
             $minimal
 
             [wiki]
             family = "notaproject"
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent()
+            )
         assertFailsWith<IllegalStateException> { unknown.family() }
     }
 
@@ -179,7 +197,7 @@ class BotConfigTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            BotConfig.find(kotlin.io.path.Path("no-such-file-anywhere.toml"))
+            BotConfig.find(Path("no-such-file-anywhere.toml"))
         }
     }
 

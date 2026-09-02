@@ -3,8 +3,8 @@ package com.fenakhay.kwikibot.net
 /**
  * What this library is, for the places that have to say so.
  *
- * The version is compiled in by the build, so it is the same whether this runs from a jar, from
- * a build directory or from a native image.
+ * The version is compiled in by the build, so it is the same whether this runs from a jar, from a build
+ * directory or from a native image.
  */
 public object Kwikibot {
 
@@ -17,11 +17,11 @@ public object Kwikibot {
     /**
      * The library version.
      *
-     * Compiled in by the build rather than read from the jar manifest. A native image has no
-     * manifest, so reading one would make every native build report the wrong version while
-     * still appearing to work.
+     * Compiled in by the build rather than read from the jar manifest. A native image has no manifest, so
+     * reading one would make every native build report the wrong version while still appearing to work.
      */
-    public val version: String get() = BUILD_VERSION
+    public val version: String
+        get() = BUILD_VERSION
 
     /**
      * The runtime this bot is on, for a version report.
@@ -38,8 +38,8 @@ public object Kwikibot {
     /**
      * Everything worth putting in a version report, one line each.
      *
-     * Deliberately not the machine name, the working directory or the user: a version report
-     * gets pasted into a public bug report, and none of those belong there.
+     * Deliberately not the machine name, the working directory or the user: a version report gets pasted into
+     * a public bug report, and none of those belong there.
      */
     public fun report(): String = buildString {
         appendLine("$NAME $version")

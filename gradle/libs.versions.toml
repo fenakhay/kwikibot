@@ -16,11 +16,14 @@ turbine = "1.2.1"
 nmcp = "1.6.2"
 kover = "0.9.9"
 graalvm = "1.1.11"
+ktfmt = "0.64"
+spotless = "8.10.1"
 benchmark = "0.4.14"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.6" }
+spotless-plugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 kover-plugin = { module = "org.jetbrains.kotlinx.kover:org.jetbrains.kotlinx.kover.gradle.plugin", version.ref = "kover" }
 dokka-plugin = { module = "org.jetbrains.dokka:org.jetbrains.dokka.gradle.plugin", version = "2.2.0" }
 nmcp-plugin = { module = "com.gradleup.nmcp:com.gradleup.nmcp.gradle.plugin", version.ref = "nmcp" }
@@ -56,5 +59,6 @@ binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibil
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "benchmark" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

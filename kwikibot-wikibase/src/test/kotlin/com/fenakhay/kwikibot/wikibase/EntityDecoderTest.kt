@@ -1,19 +1,26 @@
 package com.fenakhay.kwikibot.wikibase
 
+import com.fenakhay.kwikibot.wikibase.entity.Entity
+import com.fenakhay.kwikibot.wikibase.value.DataValue
+import com.fenakhay.kwikibot.wikibase.value.EntityId
+import com.fenakhay.kwikibot.wikibase.value.Rank
+import com.fenakhay.kwikibot.wikibase.value.Snak
+import com.fenakhay.kwikibot.wikibase.value.Statement
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.Test
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import kotlin.test.Test
 
 class EntityDecoderTest {
 
     private val entities by lazy {
-        val stream = checkNotNull(javaClass.getResourceAsStream("/entities.json")) {
-            "entities.json missing from test resources"
-        }
+        val stream =
+            checkNotNull(javaClass.getResourceAsStream("/entities.json")) {
+                "entities.json missing from test resources"
+            }
         val json = Json.parseToJsonElement(stream.reader().readText()).jsonObject
         EntityDecoder.decodeAll(json)
     }
@@ -134,9 +141,7 @@ class EntityDecoderTest {
         ((douglasAdams.lastRevisionId ?: 0L) > 0L) shouldBe true
     }
 
-    private fun snak(json: String) = EntityDecoder.decodeSnak(
-        Json.parseToJsonElement(json).jsonObject,
-    )
+    private fun snak(json: String) = EntityDecoder.decodeSnak(Json.parseToJsonElement(json).jsonObject)
 
     @Test
     fun `no value and unknown value stay different from each other`() {
@@ -146,43 +151,50 @@ class EntityDecoderTest {
 
     @Test
     fun `a value type this library does not model is kept rather than dropped`() {
-        val value = EntityDecoder.decodeValue(
-            Json.parseToJsonElement("""{"type":"future-type","value":{"a":1}}""").jsonObject,
-        )
+        val value =
+            EntityDecoder.decodeValue(
+                Json.parseToJsonElement("""{"type":"future-type","value":{"a":1}}""").jsonObject
+            )
 
         value.shouldBeInstanceOf<DataValue.Unknown>().type shouldBe "future-type"
     }
 
     @Test
     fun `an older entity reference with only a numeric id is reassembled`() {
-        val value = EntityDecoder.decodeValue(
-            Json.parseToJsonElement(
-                """{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":5}}""",
-            ).jsonObject,
-        )
+        val value =
+            EntityDecoder.decodeValue(
+                Json.parseToJsonElement(
+                        """{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":5}}"""
+                    )
+                    .jsonObject
+            )
 
         value.shouldBeInstanceOf<DataValue.EntityRef>().id shouldBe EntityId("Q5")
     }
 
     @Test
     fun `a quantity keeps its amount as written`() {
-        val value = EntityDecoder.decodeValue(
-            Json.parseToJsonElement(
-                """{"type":"quantity","value":{"amount":"+1.00000000000000001","unit":"1"}}""",
-            ).jsonObject,
-        )
+        val value =
+            EntityDecoder.decodeValue(
+                Json.parseToJsonElement(
+                        """{"type":"quantity","value":{"amount":"+1.00000000000000001","unit":"1"}}"""
+                    )
+                    .jsonObject
+            )
 
         value.shouldBeInstanceOf<DataValue.Quantity>().amount shouldBe "+1.00000000000000001"
     }
 
     @Test
     fun `a globe coordinate records which globe it is on`() {
-        val value = EntityDecoder.decodeValue(
-            Json.parseToJsonElement(
-                """{"type":"globecoordinate","value":{"latitude":48.8,"longitude":2.3,
-                   "precision":0.0001,"globe":"http://www.wikidata.org/entity/Q2"}}""",
-            ).jsonObject,
-        )
+        val value =
+            EntityDecoder.decodeValue(
+                Json.parseToJsonElement(
+                        """{"type":"globecoordinate","value":{"latitude":48.8,"longitude":2.3,
+                   "precision":0.0001,"globe":"http://www.wikidata.org/entity/Q2"}}"""
+                    )
+                    .jsonObject
+            )
 
         val coordinate = value.shouldBeInstanceOf<DataValue.GlobeCoordinate>()
         coordinate.latitude shouldBe 48.8
@@ -195,16 +207,19 @@ class EntityDecoderTest {
         val normal = Statement(Snak.NoValue(EntityId("P1")), rank = Rank.NORMAL)
         val deprecated = Statement(Snak.NoValue(EntityId("P1")), rank = Rank.DEPRECATED)
 
-        val item = Entity.Item(
-            id = EntityId("Q1"),
-            statements = mapOf(EntityId("P1") to listOf(deprecated, normal, preferred)),
-        )
+        val item =
+            Entity.Item(
+                id = EntityId("Q1"),
+                statements = mapOf(EntityId("P1") to listOf(deprecated, normal, preferred)),
+            )
 
         item.best(EntityId("P1")) shouldBe preferred
         Entity.Item(
-            id = EntityId("Q1"),
-            statements = mapOf(EntityId("P1") to listOf(deprecated)),
-        ).best(EntityId("P1")).shouldBeNull()
+                id = EntityId("Q1"),
+                statements = mapOf(EntityId("P1") to listOf(deprecated)),
+            )
+            .best(EntityId("P1"))
+            .shouldBeNull()
     }
 
     @Test

@@ -7,24 +7,27 @@ import kotlin.time.Instant
 
 class SignaturesTest {
 
-    private val thread = """
+    private val thread =
+        """
         == A question ==
 
         Does anyone know? ~~~~ [[User:Someone|Someone]] ([[User talk:Someone|talk]])
         21:43, 31 August 2026 (UTC)
 
         :Yes. [[User:Other|Other]] ([[User talk:Other|talk]]) 09:12, 1 September 2026 (UTC)
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `every signature in a thread is found, in the order they appear`() {
         val found = Signatures.ENGLISH.findAll(thread)
 
         found.size shouldBe 2
-        found.map { it.text } shouldBe listOf(
-            "21:43, 31 August 2026 (UTC)",
-            "09:12, 1 September 2026 (UTC)",
-        )
+        found.map { it.text } shouldBe
+            listOf(
+                "21:43, 31 August 2026 (UTC)",
+                "09:12, 1 September 2026 (UTC)",
+            )
     }
 
     @Test
@@ -36,8 +39,7 @@ class SignaturesTest {
 
     @Test
     fun `the earliest is when it started`() {
-        Signatures.ENGLISH.earliest(thread)?.instant shouldBe
-            Instant.parse("2026-08-31T21:43:00Z")
+        Signatures.ENGLISH.earliest(thread)?.instant shouldBe Instant.parse("2026-08-31T21:43:00Z")
     }
 
     @Test
@@ -66,8 +68,7 @@ class SignaturesTest {
         val abbreviated = "-- X 21:43, 31. Aug. 2026 (CEST)"
         val spelled = "-- X 21:43, 31. August 2026 (CEST)"
 
-        Signatures.GERMAN.latest(abbreviated)?.instant shouldBe
-            Instant.parse("2026-08-31T21:43:00Z")
+        Signatures.GERMAN.latest(abbreviated)?.instant shouldBe Instant.parse("2026-08-31T21:43:00Z")
         Signatures.GERMAN.latest(spelled)?.instant shouldBe Instant.parse("2026-08-31T21:43:00Z")
     }
 
@@ -99,18 +100,19 @@ class SignaturesTest {
     fun `a timestamp written in non-ASCII digits is read`() {
         val devanagari = "-- X २१:४३, ३१ August २०२६ (UTC)"
 
-        Signatures.ENGLISH.latest(devanagari)?.instant shouldBe
-            Instant.parse("2026-08-31T21:43:00Z")
+        Signatures.ENGLISH.latest(devanagari)?.instant shouldBe Instant.parse("2026-08-31T21:43:00Z")
     }
 
     @Test
     fun `a timestamp inside an HTML comment is not a reply`() {
-        val page = """
+        val page =
+            """
             <!-- archived earlier:
             -- Old 09:00, 1 January 2020 (UTC)
             -->
             -- New 21:43, 31 August 2026 (UTC)
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val found = Signatures.ENGLISH.findAll(page)
 
@@ -130,8 +132,7 @@ class SignaturesTest {
 
     @Test
     fun `an unterminated comment swallows the rest of the page, as MediaWiki renders it`() {
-        val page =
-            "-- X 21:43, 31 August 2026 (UTC)\n<!-- unfinished\n-- Y 22:00, 31 August 2026 (UTC)"
+        val page = "-- X 21:43, 31 August 2026 (UTC)\n<!-- unfinished\n-- Y 22:00, 31 August 2026 (UTC)"
 
         val found = Signatures.ENGLISH.findAll(page)
 
@@ -140,10 +141,12 @@ class SignaturesTest {
 
     @Test
     fun `formats compose, so a wiki that sees several languages can read them all`() {
-        val mixed = """
+        val mixed =
+            """
             -- X 21:43, 31 August 2026 (UTC)
             -- Y 1 septembre 2026 à 09:12 (CEST)
-        """.trimIndent()
+            """
+                .trimIndent()
 
         Signatures.ALL.findAll(mixed).size shouldBe 2
         Signatures.ALL.findAll(mixed).map { it.language } shouldBe listOf("en", "fr")

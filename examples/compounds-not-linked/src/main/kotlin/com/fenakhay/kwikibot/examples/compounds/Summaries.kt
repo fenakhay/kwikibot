@@ -3,9 +3,9 @@ package com.fenakhay.kwikibot.examples.compounds
 /**
  * The edit summaries this bot writes.
  *
- * Every summary names the todo page, so an edit can be traced back to the request that produced
- * it, and says when the list was rewritten rather than merely extended — a reformat should never
- * be a surprise to a reader of their watchlist.
+ * Every summary names the todo page, so an edit can be traced back to the request that produced it, and says
+ * when the list was rewritten rather than merely extended — a reformat should never be a surprise to a reader
+ * of their watchlist.
  */
 public object Summaries {
 

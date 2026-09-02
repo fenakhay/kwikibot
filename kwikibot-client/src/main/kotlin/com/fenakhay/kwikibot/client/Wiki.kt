@@ -1,24 +1,34 @@
 package com.fenakhay.kwikibot.client
 
-import com.fenakhay.kwikibot.model.InterwikiMap
-import com.fenakhay.kwikibot.model.Namespace
-import com.fenakhay.kwikibot.model.NamespaceMap
-import com.fenakhay.kwikibot.model.PageRef
-import com.fenakhay.kwikibot.model.Title
+import com.fenakhay.kwikibot.client.service.ExtensionService
+import com.fenakhay.kwikibot.client.service.FileService
+import com.fenakhay.kwikibot.client.service.ListService
+import com.fenakhay.kwikibot.client.service.LogService
+import com.fenakhay.kwikibot.client.service.MetaService
+import com.fenakhay.kwikibot.client.service.PageService
+import com.fenakhay.kwikibot.client.service.ProofreadService
+import com.fenakhay.kwikibot.client.service.RenderService
+import com.fenakhay.kwikibot.client.service.RevisionService
+import com.fenakhay.kwikibot.client.service.UserService
 import com.fenakhay.kwikibot.model.WikiError
-import com.fenakhay.kwikibot.model.WikiId
-import com.fenakhay.kwikibot.net.Identity
-import com.fenakhay.kwikibot.net.MediaWikiTransport
-import com.fenakhay.kwikibot.net.TokenStore
+import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.model.title.InterwikiMap
+import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.NamespaceMap
+import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.net.auth.Identity
+import com.fenakhay.kwikibot.net.auth.TokenStore
+import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.ParamInfo
 import com.fenakhay.kwikibot.protocol.SiteInfo
 
 /**
  * One wiki, ready to be worked with.
  *
- * Services hang off this handle — `wiki.pages`, `wiki.categories` — rather than being methods
- * on it, so each stays small and independently testable, and so IDE completion offers a short
- * list instead of the sixty methods a single site object accumulates.
+ * Services hang off this handle — `wiki.pages`, `wiki.categories` — rather than being methods on it, so each
+ * stays small and independently testable, and so IDE completion offers a short list instead of the sixty
+ * methods a single site object accumulates.
  *
  * A `Wiki` is cheap to pass around and safe to share between coroutines.
  */
@@ -71,8 +81,8 @@ public interface Wiki {
     /**
      * What this wiki says its own API accepts.
      *
-     * Worth asking rather than assuming: a query limit is 50 for one account and 500 for
-     * another, and parameters come and go between MediaWiki versions.
+     * Worth asking rather than assuming: a query limit is 50 for one account and 500 for another, and
+     * parameters come and go between MediaWiki versions.
      */
     public val paramInfo: ParamInfo
 
@@ -80,8 +90,8 @@ public interface Wiki {
      * Resolves a raw title against this wiki's namespaces and interwiki prefixes.
      *
      * @throws WikiError.Page.BadTitle if the title is not one MediaWiki would accept.
-     * @throws WikiError.Page.OffWiki if it names a page on another project — the check that
-     *   stops a bot from editing the wrong wiki.
+     * @throws WikiError.Page.OffWiki if it names a page on another project — the check that stops a bot from
+     *   editing the wrong wiki.
      */
     public fun ref(raw: String, defaultNamespace: Namespace = Namespace.MAIN): PageRef =
         when (val title = Title.parse(raw, namespaces, interwiki, defaultNamespace)) {
@@ -98,10 +108,12 @@ public interface Wiki {
     public fun ref(title: Title.Local): PageRef = PageRef(id, title)
 
     /** This wiki's namespaces. */
-    public val namespaces: NamespaceMap get() = info.namespaces
+    public val namespaces: NamespaceMap
+        get() = info.namespaces
 
     /** This wiki's interwiki prefixes. */
-    public val interwiki: InterwikiMap get() = info.interwiki
+    public val interwiki: InterwikiMap
+        get() = info.interwiki
 
     /** The transport, for actions this library does not model yet. */
     public val transport: MediaWikiTransport

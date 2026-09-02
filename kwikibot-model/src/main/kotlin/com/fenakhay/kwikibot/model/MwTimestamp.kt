@@ -5,15 +5,14 @@ import kotlin.time.Instant
 /**
  * The timestamp formats MediaWiki emits and accepts.
  *
- * The API returns ISO 8601 (`2026-08-31T21:43:26Z`), while database fields, `sort=timestamp`
- * parameters and older dumps use the compact form (`20260831214326`). Both are read; the ISO
- * form is written, since every modern endpoint accepts it.
+ * The API returns ISO 8601 (`2026-08-31T21:43:26Z`), while database fields, `sort=timestamp` parameters and
+ * older dumps use the compact form (`20260831214326`). Both are read; the ISO form is written, since every
+ * modern endpoint accepts it.
  */
 public object MwTimestamp {
 
-    private val COMPACT = Regex(
-        """(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<minute>\d{2})(?<second>\d{2})""",
-    )
+    private val COMPACT =
+        Regex("""(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<hour>\d{2})(?<minute>\d{2})(?<second>\d{2})""")
 
     /** Values MediaWiki uses to mean "no end", in protection expiries and block durations. */
     private val NEVER = setOf("infinity", "infinite", "indefinite", "never")
@@ -48,8 +47,7 @@ public object MwTimestamp {
     }
 
     /** Renders [instant] in the compact `YYYYMMDDHHMMSS` form. */
-    public fun formatCompact(instant: Instant): String =
-        format(instant).filter { it.isDigit() }
+    public fun formatCompact(instant: Instant): String = format(instant).filter { it.isDigit() }
 
     /** `20260831214326` to `2026-08-31T21:43:26Z`, or `null` if this is not the compact form. */
     private fun String.compactToIso(): String? {

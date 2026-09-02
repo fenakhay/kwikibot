@@ -8,6 +8,7 @@ dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.kotlin.serialization.plugin)
     implementation(libs.detekt.plugin)
+    implementation(libs.spotless.plugin)
     implementation(libs.kover.plugin)
     implementation(libs.dokka.plugin)
     implementation(libs.nmcp.plugin)

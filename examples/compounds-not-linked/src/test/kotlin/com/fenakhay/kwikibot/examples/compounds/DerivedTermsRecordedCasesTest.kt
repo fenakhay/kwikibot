@@ -1,18 +1,19 @@
 package com.fenakhay.kwikibot.examples.compounds
 
+import kotlin.test.Test
+import kotlin.test.fail
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.test.Test
-import kotlin.test.fail
 
 class DerivedTermsRecordedCasesTest {
 
     private val fixture by lazy {
-        val stream = checkNotNull(javaClass.getResourceAsStream("/transform.json")) {
-            "transform.json missing from test resources"
-        }
+        val stream =
+            checkNotNull(javaClass.getResourceAsStream("/transform.json")) {
+                "transform.json missing from test resources"
+            }
         Json.parseToJsonElement(stream.reader().readText()).jsonObject
     }
 
@@ -26,12 +27,13 @@ class DerivedTermsRecordedCasesTest {
             val name = case["name"]!!.jsonPrimitive.content
             checked++
 
-            val result = DerivedTerms.add(
-                text = case["text"]!!.jsonPrimitive.content,
-                title = case["title"]!!.jsonPrimitive.content,
-                lang = case["lang"]!!.jsonPrimitive.content,
-                terms = case["terms"]!!.jsonArray.map { it.jsonPrimitive.content },
-            )
+            val result =
+                DerivedTerms.add(
+                    text = case["text"]!!.jsonPrimitive.content,
+                    title = case["title"]!!.jsonPrimitive.content,
+                    lang = case["lang"]!!.jsonPrimitive.content,
+                    terms = case["terms"]!!.jsonArray.map { it.jsonPrimitive.content },
+                )
 
             val wantStatus = case["status"]!!.jsonPrimitive.content
             val wantReason = case["reason"]!!.jsonPrimitive.content
@@ -62,6 +64,5 @@ class DerivedTermsRecordedCasesTest {
         }
     }
 
-    private fun String.escaped(): String =
-        "'" + take(400).replace("\n", "\\n") + "'"
+    private fun String.escaped(): String = "'" + take(400).replace("\n", "\\n") + "'"
 }

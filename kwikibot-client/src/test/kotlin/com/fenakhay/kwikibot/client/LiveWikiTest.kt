@@ -1,30 +1,34 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.client.service.ParseProperty
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.model.Namespace
 import com.fenakhay.kwikibot.model.TextDirection
-import com.fenakhay.kwikibot.model.Title
+import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.model.title.TitleCase
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.wikitext.Wikitext
-import com.fenakhay.kwikibot.wikitext.outline
+import com.fenakhay.kwikibot.wikitext.ops.outline
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.Test
+import kotlin.test.fail
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag
-import kotlin.test.Test
-import kotlin.test.fail
-import kotlin.time.Duration.Companion.milliseconds
 
 @Tag("live")
 class LiveWikiTest {
 
-    private val config = WikiConfig(
-        userAgent = UserAgent("kwikibot-livetest", "0.1.0", "https://en.wiktionary.org/wiki/User:FenaBot"),
-        throttle = Throttle(read = 500.milliseconds),
-    )
+    private val config =
+        WikiConfig(
+            userAgent =
+                UserAgent("kwikibot-livetest", "0.1.0", "https://en.wiktionary.org/wiki/User:FenaBot"),
+            throttle = Throttle(read = 500.milliseconds),
+        )
 
     private fun onWiktionary(block: suspend (Wiki) -> Unit): Unit = runBlocking {
         WikiClient(config).use { client ->
@@ -38,15 +42,14 @@ class LiveWikiTest {
         wiki.info.server shouldBe "en.wiktionary.org"
 
         val main = checkNotNull(wiki.namespaces[Namespace.MAIN])
-        main.case shouldBe com.fenakhay.kwikibot.model.TitleCase.CASE_SENSITIVE
+        main.case shouldBe TitleCase.CASE_SENSITIVE
     }
 
     @Test
-    fun `an interwiki target is refused rather than resolved to another project`() =
-        onWiktionary { wiki ->
-            wiki.parse("w:Etsy").shouldBeInstanceOf<Title.Interwiki>()
-            wiki.parse("volcano").shouldBeInstanceOf<Title.Local>()
-        }
+    fun `an interwiki target is refused rather than resolved to another project`() = onWiktionary { wiki ->
+        wiki.parse("w:Etsy").shouldBeInstanceOf<Title.Interwiki>()
+        wiki.parse("volcano").shouldBeInstanceOf<Title.Local>()
+    }
 
     @Test
     fun `real pages round-trip through the parser byte for byte`(): Unit = onWiktionary { wiki ->
@@ -59,7 +62,7 @@ class LiveWikiTest {
         if (broken.isNotEmpty()) {
             fail(
                 "these live pages did not round-trip: " +
-                    broken.joinToString { "${it.title.text} (${it.text.length} chars)" },
+                    broken.joinToString { "${it.title.text} (${it.text.length} chars)" }
             )
         }
     }
@@ -69,9 +72,10 @@ class LiveWikiTest {
         val content = checkNotNull(wiki.pages.content(wiki.ref("volcano"))) { "volcano should exist" }
         val outline = Wikitext.parse(content.text).outline()
 
-        val english = checkNotNull(outline.find("English", level = 2)) {
-            "expected an English section, found ${outline.subsections.map { it.title }}"
-        }
+        val english =
+            checkNotNull(outline.find("English", level = 2)) {
+                "expected an English section, found ${outline.subsections.map { it.title }}"
+            }
         check(english.subsections.isNotEmpty()) { "expected subsections under English" }
 
         outline.serialize() shouldBe content.text
@@ -79,10 +83,11 @@ class LiveWikiTest {
 
     @Test
     fun `a category can be walked`(): Unit = onWiktionary { wiki ->
-        val members = wiki.lists
-            .categoryMembers(wiki.ref("Category:English lemmas", Namespace.CATEGORY))
-            .take(5)
-            .toList()
+        val members =
+            wiki.lists
+                .categoryMembers(wiki.ref("Category:English lemmas", Namespace.CATEGORY))
+                .take(5)
+                .toList()
 
         members.size shouldBe 5
         members.all { it.wiki == wiki.id } shouldBe true
@@ -124,10 +129,11 @@ class LiveWikiTest {
     @Test
     fun `an anonymous client is told it may not edit a protected page, and why`(): Unit =
         onWiktionary { wiki ->
-            val checks = wiki.pages
-                .testActions(listOf(wiki.ref("Wiktionary:Main Page")), setOf("edit"))
-                .values
-                .single()
+            val checks =
+                wiki.pages
+                    .testActions(listOf(wiki.ref("Wiktionary:Main Page")), setOf("edit"))
+                    .values
+                    .single()
 
             checks.allows("edit") shouldBe false
             checks.reasons("edit").isNotEmpty() shouldBe true
@@ -138,14 +144,9 @@ class LiveWikiTest {
         onWiktionary { wiki ->
             val page = wiki.ref("volcano")
 
-            val rendered = wiki.renderer.sections(page)
-                .filter { it.level == 2 }
-                .map { it.heading }
+            val rendered = wiki.renderer.sections(page).filter { it.level == 2 }.map { it.heading }
             val content = checkNotNull(wiki.pages.content(page)) { "volcano should exist" }
-            val parsed = Wikitext.parse(content.text)
-                .outline()
-                .subsections
-                .mapNotNull { it.title }
+            val parsed = Wikitext.parse(content.text).outline().subsections.mapNotNull { it.title }
 
             rendered shouldBe parsed
             rendered.isNotEmpty() shouldBe true
@@ -155,9 +156,8 @@ class LiveWikiTest {
     fun `a draft's red links are visible before it is saved`(): Unit = onWiktionary { wiki ->
         val draft = "[[lava]] and [[a page that does not exist zzqq]]"
 
-        val links = wiki.renderer
-            .resolveText(draft, context = wiki.ref("volcano"), setOf(ParseProperty.LINKS))
-            .links
+        val links =
+            wiki.renderer.resolveText(draft, context = wiki.ref("volcano"), setOf(ParseProperty.LINKS)).links
 
         links.single { it.page.title.text == "lava" }.exists shouldBe true
         links.single { it.page.title.text.startsWith("a page that does not") }.exists shouldBe false
@@ -166,8 +166,8 @@ class LiveWikiTest {
     @Test
     fun `categories and prefixes enumerate`(): Unit = onWiktionary { wiki ->
         wiki.lists.allCategories(prefix = "English ", limit = 5).toList().isNotEmpty() shouldBe true
-        wiki.lists.prefixSearch("volcan", limit = 10).toList()
-            .any { it.title.text == "volcano" } shouldBe true
+        wiki.lists.prefixSearch("volcan", limit = 10).toList().any { it.title.text == "volcano" } shouldBe
+            true
     }
 
     @Test
@@ -196,11 +196,10 @@ class LiveWikiTest {
     }
 
     @Test
-    fun `a wiktionary reads its files from Commons as well as its own`(): Unit =
-        onWiktionary { wiki ->
-            val repos = wiki.files.repositories()
+    fun `a wiktionary reads its files from Commons as well as its own`(): Unit = onWiktionary { wiki ->
+        val repos = wiki.files.repositories()
 
-            repos.any { it.isLocal } shouldBe true
-            repos.any { !it.isLocal } shouldBe true
-        }
+        repos.any { it.isLocal } shouldBe true
+        repos.any { !it.isLocal } shouldBe true
+    }
 }

@@ -12,25 +12,26 @@ public sealed interface EditPermission {
     /** The page carries an exclusion this bot is covered by. */
     public data class Denied(
         /** Which exclusion applied, which is what a run report records. */
-        val reason: String,
+        val reason: String
     ) : EditPermission
 
     /** Whether editing is allowed. */
-    public val isAllowed: Boolean get() = this is Allowed
+    public val isAllowed: Boolean
+        get() = this is Allowed
 }
 
 /**
  * Whether a page has excluded this bot with `{{nobots}}` or `{{bots}}`.
  *
- * Wikis block bots that edit pages carrying an exclusion, so this is checked before an edit is
- * computed rather than before it is saved.
+ * Wikis block bots that edit pages carrying an exclusion, so this is checked before an edit is computed
+ * rather than before it is saved.
  *
  * The rules, in the order they are checked:
  *
  * - `{{nobots}}` with no parameters denies every bot.
  * - `{{nobots|deny=all}}` denies every bot; `{{nobots|deny=FenaBot,OtherBot}}` denies those.
- * - `{{nobots|allow=FenaBot}}` denies every bot *except* those, which is the case most
- *   implementations get wrong by reading `allow` as a permission rather than as a whitelist.
+ * - `{{nobots|allow=FenaBot}}` denies every bot *except* those, which is the case most implementations get
+ *   wrong by reading `allow` as a permission rather than as a whitelist.
  * - `{{bots|deny=…}}` and `{{bots|allow=…}}` mean the same as their `nobots` equivalents.
  * - `{{bots|optout=all}}` denies bots that respect opt-outs, which is what this is.
  *
@@ -44,8 +45,8 @@ public class BotPolicy(
     /**
      * The task, for `{{bots|optout=}}`.
      *
-     * Some pages opt out of one kind of edit rather than all of them: `{{bots|optout=nosummary}}`
-     * asks bots not to leave summary-only edits.
+     * Some pages opt out of one kind of edit rather than all of them: `{{bots|optout=nosummary}}` asks bots
+     * not to leave summary-only edits.
      */
     private val task: String? = null,
 ) {
@@ -89,9 +90,9 @@ public class BotPolicy(
     /**
      * Whether an opt-out covers this bot's task.
      *
-     * `optout=all` covers everything. A named opt-out only applies when the bot said what it was
-     * doing; a bot that did not name its task is not covered by a task-specific opt-out, since
-     * there is nothing to compare.
+     * `optout=all` covers everything. A named opt-out only applies when the bot said what it was doing; a bot
+     * that did not name its task is not covered by a task-specific opt-out, since there is nothing to
+     * compare.
      */
     private fun optedOut(value: String): Boolean {
         val kinds = value.split(',').map { it.trim() }

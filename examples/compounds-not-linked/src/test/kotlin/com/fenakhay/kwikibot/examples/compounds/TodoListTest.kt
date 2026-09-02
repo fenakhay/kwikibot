@@ -154,12 +154,14 @@ class TodoListTest {
 
     @Test
     fun `a page counts the bullet lines it could not use`() {
-        val page = """
+        val page =
+            """
             Some prose that is not a list.
             ${snippet("vole", "volepox")}
             * a bullet that is not an entry
             ${snippet("blah", "blah")}
-        """.trimIndent()
+        """
+                .trimIndent()
 
         val report = TodoList.parsePage(page)
 
@@ -169,11 +171,13 @@ class TodoListTest {
 
     @Test
     fun `repeated targets merge, keeping first-seen order`() {
-        val page = listOf(
-            snippet("vole", "volepox"),
-            snippet("volcano", "vog"),
-            snippet("vole", "volery"),
-        ).joinToString("\n")
+        val page =
+            listOf(
+                    snippet("vole", "volepox"),
+                    snippet("volcano", "vog"),
+                    snippet("vole", "volery"),
+                )
+                .joinToString("\n")
 
         val tasks = TodoList.parsePage(page).tasks
 

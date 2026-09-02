@@ -1,17 +1,18 @@
 package com.fenakhay.kwikibot.examples.compounds
 
-import com.fenakhay.kwikibot.wikitext.Template
-import com.fenakhay.kwikibot.wikitext.TextNode
-import com.fenakhay.kwikibot.wikitext.WikiLink
 import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.Wikitext
+import com.fenakhay.kwikibot.wikitext.node.Node
+import com.fenakhay.kwikibot.wikitext.node.Template
+import com.fenakhay.kwikibot.wikitext.node.TextNode
+import com.fenakhay.kwikibot.wikitext.node.WikiLink
 import java.text.Normalizer
 
 /**
  * The contents of a derived terms section, however they were written.
  *
- * A list may be a `{{col}}` template, a bullet list, or nothing at all. All three are read into
- * the same shape so the section can be re-emitted as a single column template.
+ * A list may be a `{{col}}` template, a bullet list, or nothing at all. All three are read into the same
+ * shape so the section can be re-emitted as a single column template.
  */
 public data class Container(
     /** How the list was written, which decides how it is written back. */
@@ -50,10 +51,10 @@ public data class Container(
  * One listed term.
  *
  * @param term what dedupe and sorting work on.
- * @param raw what gets written back, indent prefix and inline modifiers included, so a term
- *   carrying a gloss survives a re-sort unchanged.
- * @param indent the sublist depth: the number of asterisks in a `* ` prefix. An indented item
- *   is a child of the one above it and must travel with it when the list is re-sorted.
+ * @param raw what gets written back, indent prefix and inline modifiers included, so a term carrying a gloss
+ *   survives a re-sort unchanged.
+ * @param indent the sublist depth: the number of asterisks in a `* ` prefix. An indented item is a child of
+ *   the one above it and must travel with it when the list is re-sorted.
  */
 public data class Entry(val term: String, val raw: String, val indent: Int = 0)
 
@@ -61,10 +62,11 @@ public data class Entry(val term: String, val raw: String, val indent: Int = 0)
 public object Containers {
 
     /** `{{col}}`, `{{col3}}`, `{{der4}}` and friends: all "language, then terms". */
-    private val CONTAINER_NAME = Regex(
-        """^(?:col|der|rel)[0-9]*$|^col-auto$|^coln$""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val CONTAINER_NAME =
+        Regex(
+            """^(?:col|der|rel)[0-9]*$|^col-auto$|^coln$""",
+            RegexOption.IGNORE_CASE,
+        )
 
     private val LINK_TEMPLATES = setOf("l", "link", "m", "mention")
 
@@ -74,8 +76,8 @@ public object Containers {
     /**
      * A `{{col}}` sublist indent: asterisks followed by a space.
      *
-     * The space is load-bearing. `*duxota` with no space is a reconstructed term, not an
-     * indented one, which [Template:col](https://en.wiktionary.org/wiki/Template:col) documents.
+     * The space is load-bearing. `*duxota` with no space is a reconstructed term, not an indented one, which
+     * [Template:col](https://en.wiktionary.org/wiki/Template:col) documents.
      */
     private val INDENT = Regex("""^(\*+)[ \t]+""")
 
@@ -92,8 +94,8 @@ public object Containers {
     }
 
     /**
-     * Sorting the way `Module:columns` does: diacritic-insensitive and case-insensitive, so
-     * `é` sorts with `e` rather than after `z`.
+     * Sorting the way `Module:columns` does: diacritic-insensitive and case-insensitive, so `é` sorts with
+     * `e` rather than after `z`.
      */
     public fun sortKey(term: String): Pair<String, String> {
         val folded = Normalizer.normalize(term.lowercase(), Normalizer.Form.NFKD)
@@ -102,8 +104,8 @@ public object Containers {
     }
 
     /**
-     * Reads a derived terms body, or `null` when it is written in a form that cannot safely be
-     * rewritten — in which case the page is left alone.
+     * Reads a derived terms body, or `null` when it is written in a form that cannot safely be rewritten — in
+     * which case the page is left alone.
      */
     public fun read(body: String): Container? {
         val stripped = body.trim()
@@ -122,9 +124,7 @@ public object Containers {
 
     private fun readTemplate(template: Template): Container? {
         val positional = template.parameters.filter { !it.showKey }
-        val named = template.parameters
-            .filter { it.showKey }
-            .map { it.key to it.value.serialize().trim() }
+        val named = template.parameters.filter { it.showKey }.map { it.key to it.value.serialize().trim() }
 
         if (positional.isEmpty()) return null
         // keepfirst and keeplast pin rows out of the sort; reproducing that is not worth guessing.
@@ -149,8 +149,8 @@ public object Containers {
     /**
      * Reads one positional slot of a container template.
      *
-     * `null` means the slot holds something this cannot rewrite safely, which makes the whole
-     * section unrecognised rather than partly understood.
+     * `null` means the slot holds something this cannot rewrite safely, which makes the whole section
+     * unrecognised rather than partly understood.
      */
     private fun entryFromParameter(value: String): Entry? {
         val text = value.trim()
@@ -199,10 +199,11 @@ public object Containers {
         val template = templates.singleOrNull() ?: return null
         val positional = template.parameters.filter { !it.showKey }
 
-        val usable = template.serialize().trim() == text &&      // nothing else on the line
-            template.title.lowercase() in LINK_TEMPLATES &&
-            template.parameters.none { it.showKey } &&
-            positional.size == LINK_TEMPLATE_ARITY
+        val usable =
+            template.serialize().trim() == text && // nothing else on the line
+                template.title.lowercase() in LINK_TEMPLATES &&
+                template.parameters.none { it.showKey } &&
+                positional.size == LINK_TEMPLATE_ARITY
         if (!usable) return null
 
         val term = TodoList.normalizeTitle(positional[1].value.serialize().trim())
@@ -221,10 +222,9 @@ public object Containers {
     /**
      * Orders a `{{col}}` body the way `Module:columns` does.
      *
-     * Each indented sublist is tethered to the item above it and sorts as one unit, and
-     * sublists sort internally, so a child never drifts away from its parent. With `|sort=0`
-     * the order is left exactly as given, which for a merge means existing terms keep their
-     * sequence and new ones land at the end.
+     * Each indented sublist is tethered to the item above it and sorts as one unit, and sublists sort
+     * internally, so a child never drifts away from its parent. With `|sort=0` the order is left exactly as
+     * given, which for a merge means existing terms keep their sequence and new ones land at the end.
      */
     public fun order(entries: List<Entry>, container: Container? = null): List<Entry> {
         if (container?.sortingDisabled == true) return entries
@@ -267,11 +267,12 @@ public object Containers {
             val name = template.title.lowercase()
             val positional = template.parameters.filter { !it.showKey }.map { it.value.serialize().trim() }
 
-            val values = when {
-                isContainerName(name) -> positional.drop(1)
-                name in LINK_TEMPLATES -> positional.drop(1).take(1)
-                else -> continue
-            }
+            val values =
+                when {
+                    isContainerName(name) -> positional.drop(1)
+                    name in LINK_TEMPLATES -> positional.drop(1).take(1)
+                    else -> continue
+                }
 
             values.forEach { value ->
                 val bare = TodoList.normalizeTitle(splitIndent(value).second.substringBefore('<'))
@@ -291,7 +292,7 @@ public object Containers {
             node.children += sorted
         }
         return nodes.sortedWith(
-            compareBy({ sortKey(it.entry.term).first }, { sortKey(it.entry.term).second }),
+            compareBy({ sortKey(it.entry.term).first }, { sortKey(it.entry.term).second })
         )
     }
 
@@ -306,8 +307,7 @@ public object Containers {
 }
 
 /** The wikicode of a term list, for callers that want the nodes rather than the text. */
-internal fun Container.toMarkup(lang: String): Markup =
-    Wikitext.parse(Containers.render(lang, entries, this))
+internal fun Container.toMarkup(lang: String): Markup = Wikitext.parse(Containers.render(lang, entries, this))
 
-internal fun textOf(nodes: List<com.fenakhay.kwikibot.wikitext.Node>): String =
+internal fun textOf(nodes: List<Node>): String =
     nodes.joinToString("") { (it as? TextNode)?.text ?: it.serialize() }

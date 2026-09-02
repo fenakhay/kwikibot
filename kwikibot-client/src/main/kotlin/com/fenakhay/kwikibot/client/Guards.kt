@@ -5,9 +5,8 @@ import com.fenakhay.kwikibot.model.WikiError
 /**
  * Checks a wiki can do what is about to be asked of it.
  *
- * Plain calls, intended to run once at the start of a run rather than per page. A bot that
- * lacks a right should fail before it reads ten thousand pages, not on its first attempt to use
- * it.
+ * Plain calls, intended to run once at the start of a run rather than per page. A bot that lacks a right
+ * should fail before it reads ten thousand pages, not on its first attempt to use it.
  *
  * ```
  * wiki.requireRight("rollback")
@@ -58,10 +57,11 @@ public fun Wiki.hasVersion(version: MediaWikiVersion): Boolean =
 /**
  * A MediaWiki version, comparable the way MediaWiki numbers them.
  *
- * String comparison is not enough — `1.10` is newer than `1.9`, and `1.44.0-wmf.3` is older than
- * `1.44.0` — so the numbers are compared as numbers and a suffix loses to its absence.
+ * String comparison is not enough — `1.10` is newer than `1.9`, and `1.44.0-wmf.3` is older than `1.44.0` —
+ * so the numbers are compared as numbers and a suffix loses to its absence.
  */
-public class MediaWikiVersion private constructor(
+public class MediaWikiVersion
+private constructor(
     private val numbers: List<Int>,
     private val suffix: String,
     private val text: String,
@@ -85,8 +85,7 @@ public class MediaWikiVersion private constructor(
         }
     }
 
-    override fun equals(other: Any?): Boolean =
-        other is MediaWikiVersion && compareTo(other) == 0
+    override fun equals(other: Any?): Boolean = other is MediaWikiVersion && compareTo(other) == 0
 
     override fun hashCode(): Int = numbers.hashCode() * PRIME + suffix.hashCode()
 
@@ -99,14 +98,13 @@ public class MediaWikiVersion private constructor(
         /**
          * Reads a version as MediaWiki reports it: `1.44.0`, `1.45.0-wmf.6`, `1.43.0-rc.1`.
          *
-         * Anything unparseable becomes version zero rather than throwing, since a wiki that
-         * reports a version this library cannot read is still a wiki worth talking to.
+         * Anything unparseable becomes version zero rather than throwing, since a wiki that reports a version
+         * this library cannot read is still a wiki worth talking to.
          */
         public fun parse(raw: String): MediaWikiVersion {
             val trimmed = raw.trim().removePrefix("MediaWiki ")
-            val numbers = trimmed.takeWhile { it.isDigit() || it == '.' }
-                .split('.')
-                .mapNotNull { it.toIntOrNull() }
+            val numbers =
+                trimmed.takeWhile { it.isDigit() || it == '.' }.split('.').mapNotNull { it.toIntOrNull() }
             val suffix = trimmed.dropWhile { it.isDigit() || it == '.' }
 
             return MediaWikiVersion(numbers, suffix, trimmed)

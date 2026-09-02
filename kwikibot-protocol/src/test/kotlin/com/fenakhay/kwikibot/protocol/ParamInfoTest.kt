@@ -1,10 +1,11 @@
 package com.fenakhay.kwikibot.protocol
 
-import com.fenakhay.kwikibot.net.ApiEndpoint
-import com.fenakhay.kwikibot.net.KtorTransport
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.KtorTransport
+import com.fenakhay.kwikibot.protocol.decode.OptionSet
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
@@ -16,23 +17,25 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlin.test.Test
+import kotlin.time.Duration
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
-import kotlin.time.Duration
 
 class ParamInfoTest {
 
-    private val categoryMembers = """
+    private val categoryMembers =
+        """
         {"paraminfo":{"modules":[{
           "name":"categorymembers","path":"query+categorymembers","prefix":"cm",
           "parameters":[
             {"name":"title","type":"string","required":false},
             {"name":"type","type":["page","subcat","file"],"multi":true},
             {"name":"limit","type":"limit","limit":500,"highlimit":5000}]}]}}
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `a module reports the parameters it takes`() = runTest {
@@ -46,13 +49,12 @@ class ParamInfoTest {
     }
 
     @Test
-    fun `a limit depends on the account, which is why it is asked for rather than assumed`() =
-        runTest {
-            val info = paramInfo { respondJson(categoryMembers) }
+    fun `a limit depends on the account, which is why it is asked for rather than assumed`() = runTest {
+        val info = paramInfo { respondJson(categoryMembers) }
 
-            info.limit("query+categorymembers", "limit", highLimits = false) shouldBe 500
-            info.limit("query+categorymembers", "limit", highLimits = true) shouldBe 5000
-        }
+        info.limit("query+categorymembers", "limit", highLimits = false) shouldBe 500
+        info.limit("query+categorymembers", "limit", highLimits = true) shouldBe 5000
+    }
 
     @Test
     fun `a parameter this wiki does not have is reported as absent`() = runTest {
@@ -100,16 +102,17 @@ class ParamInfoTest {
     }
 
     private fun TestScope.paramInfo(
-        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
-    ): ParamInfo = ParamInfo(
-        KtorTransport(
-            client = HttpClient(MockEngine(handler)),
-            endpoint = ApiEndpoint("en.wiktionary.org"),
-            userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot"),
-            throttle = Throttle(Duration.ZERO, Duration.ZERO, testScheduler.timeSource),
-            retry = RetryPolicy.NONE,
-        ),
-    )
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
+    ): ParamInfo =
+        ParamInfo(
+            KtorTransport(
+                client = HttpClient(MockEngine(handler)),
+                endpoint = ApiEndpoint("en.wiktionary.org"),
+                userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot"),
+                throttle = Throttle(Duration.ZERO, Duration.ZERO, testScheduler.timeSource),
+                retry = RetryPolicy.NONE,
+            )
+        )
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

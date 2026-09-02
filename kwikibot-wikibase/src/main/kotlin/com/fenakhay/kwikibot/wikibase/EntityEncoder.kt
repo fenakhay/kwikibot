@@ -1,5 +1,12 @@
 package com.fenakhay.kwikibot.wikibase
 
+import com.fenakhay.kwikibot.wikibase.entity.LanguageValue
+import com.fenakhay.kwikibot.wikibase.entity.SiteLink
+import com.fenakhay.kwikibot.wikibase.value.DataValue
+import com.fenakhay.kwikibot.wikibase.value.EntityId
+import com.fenakhay.kwikibot.wikibase.value.Rank
+import com.fenakhay.kwikibot.wikibase.value.Snak
+import com.fenakhay.kwikibot.wikibase.value.Statement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -11,11 +18,11 @@ import kotlinx.serialization.json.putJsonObject
 /**
  * Writes entities back into the JSON a Wikibase accepts.
  *
- * The inverse of [EntityDecoder], and deliberately its mirror image: `wbeditentity` and
- * `wbsetclaim` take the same serialization the API hands out, so anything the decoder reads must
- * be writable again unchanged. That is what the round-trip test asserts, and it is the only way
- * a bot can read a statement, change one qualifier and save it without quietly dropping the
- * parts it did not understand — including a [DataValue.Unknown], which is written back verbatim.
+ * The inverse of [EntityDecoder], and deliberately its mirror image: `wbeditentity` and `wbsetclaim` take the
+ * same serialization the API hands out, so anything the decoder reads must be writable again unchanged. That
+ * is what the round-trip test asserts, and it is the only way a bot can read a statement, change one
+ * qualifier and save it without quietly dropping the parts it did not understand — including a
+ * [DataValue.Unknown], which is written back verbatim.
  */
 public object EntityEncoder {
 
@@ -42,7 +49,7 @@ public object EntityEncoder {
                         buildJsonObject {
                             put("snaks", encodeSnakGroups(groups))
                             putJsonArray("snaks-order") { groups.keys.forEach { add(it.value) } }
-                        },
+                        }
                     )
                 }
             }
@@ -64,101 +71,105 @@ public object EntityEncoder {
     }
 
     /** Encodes one data value. A type this library does not model is written back as it came. */
-    public fun encodeValue(value: DataValue): JsonObject = when (value) {
-        is DataValue.Unknown -> value.json.jsonObject
+    public fun encodeValue(value: DataValue): JsonObject =
+        when (value) {
+            is DataValue.Unknown -> value.json.jsonObject
 
-        is DataValue.Text -> buildJsonObject {
-            put("type", "string")
-            put("value", value.value)
+            is DataValue.Text ->
+                buildJsonObject {
+                    put("type", "string")
+                    put("value", value.value)
+                }
+
+            is DataValue.EntityRef ->
+                buildJsonObject {
+                    put("type", "wikibase-entityid")
+                    putJsonObject("value") {
+                        put("entity-type", value.id.entityType)
+                        // Older Wikibase installs key entity references by number rather than by id;
+                        // both are sent so either kind of reader is satisfied.
+                        value.id.numericId?.let { put("numeric-id", it) }
+                        put("id", value.id.value)
+                    }
+                }
+
+            is DataValue.Time ->
+                buildJsonObject {
+                    put("type", "time")
+                    putJsonObject("value") {
+                        put("time", value.time)
+                        put("timezone", value.timezone)
+                        put("before", value.before)
+                        put("after", value.after)
+                        put("precision", value.precision)
+                        put("calendarmodel", value.calendarModel)
+                    }
+                }
+
+            is DataValue.Quantity ->
+                buildJsonObject {
+                    put("type", "quantity")
+                    putJsonObject("value") {
+                        put("amount", value.amount)
+                        put("unit", value.unit)
+                        value.upperBound?.let { put("upperBound", it) }
+                        value.lowerBound?.let { put("lowerBound", it) }
+                    }
+                }
+
+            is DataValue.GlobeCoordinate ->
+                buildJsonObject {
+                    put("type", "globecoordinate")
+                    putJsonObject("value") {
+                        put("latitude", value.latitude)
+                        put("longitude", value.longitude)
+                        put("precision", value.precision)
+                        put("globe", value.globe)
+                    }
+                }
+
+            is DataValue.Monolingual ->
+                buildJsonObject {
+                    put("type", "monolingualtext")
+                    putJsonObject("value") {
+                        put("text", value.text)
+                        put("language", value.language)
+                    }
+                }
         }
 
-        is DataValue.EntityRef -> buildJsonObject {
-            put("type", "wikibase-entityid")
-            putJsonObject("value") {
-                put("entity-type", value.id.entityType)
-                // Older Wikibase installs key entity references by number rather than by id;
-                // both are sent so either kind of reader is satisfied.
-                value.id.numericId?.let { put("numeric-id", it) }
-                put("id", value.id.value)
-            }
+    /** Encodes statements grouped by property, as an entity `claims` block. */
+    public fun encodeStatements(statements: Map<EntityId, List<Statement>>): JsonObject = buildJsonObject {
+        statements.forEach { (property, group) ->
+            putJsonArray(property.value) { group.forEach { add(encodeStatement(it)) } }
         }
+    }
 
-        is DataValue.Time -> buildJsonObject {
-            put("type", "time")
-            putJsonObject("value") {
-                put("time", value.time)
-                put("timezone", value.timezone)
-                put("before", value.before)
-                put("after", value.after)
-                put("precision", value.precision)
-                put("calendarmodel", value.calendarModel)
-            }
-        }
-
-        is DataValue.Quantity -> buildJsonObject {
-            put("type", "quantity")
-            putJsonObject("value") {
-                put("amount", value.amount)
-                put("unit", value.unit)
-                value.upperBound?.let { put("upperBound", it) }
-                value.lowerBound?.let { put("lowerBound", it) }
-            }
-        }
-
-        is DataValue.GlobeCoordinate -> buildJsonObject {
-            put("type", "globecoordinate")
-            putJsonObject("value") {
-                put("latitude", value.latitude)
-                put("longitude", value.longitude)
-                put("precision", value.precision)
-                put("globe", value.globe)
-            }
-        }
-
-        is DataValue.Monolingual -> buildJsonObject {
-            put("type", "monolingualtext")
-            putJsonObject("value") {
-                put("text", value.text)
-                put("language", value.language)
+    /** Encodes labels, descriptions or lemmas. */
+    public fun encodeLanguageValues(values: Map<String, LanguageValue>): JsonObject = buildJsonObject {
+        values.forEach { (language, entry) ->
+            putJsonObject(language) {
+                put("language", entry.language.ifEmpty { language })
+                put("value", entry.value)
             }
         }
     }
 
-    /** Encodes statements grouped by property, as an entity `claims` block. */
-    public fun encodeStatements(statements: Map<EntityId, List<Statement>>): JsonObject =
-        buildJsonObject {
-            statements.forEach { (property, group) ->
-                putJsonArray(property.value) { group.forEach { add(encodeStatement(it)) } }
-            }
-        }
-
-    /** Encodes labels, descriptions or lemmas. */
-    public fun encodeLanguageValues(values: Map<String, LanguageValue>): JsonObject =
-        buildJsonObject {
-            values.forEach { (language, entry) ->
-                putJsonObject(language) {
-                    put("language", entry.language.ifEmpty { language })
-                    put("value", entry.value)
-                }
-            }
-        }
-
     /** Encodes aliases, which unlike labels are a list per language. */
-    public fun encodeAliases(values: Map<String, List<LanguageValue>>): JsonObject =
-        buildJsonObject {
-            values.forEach { (language, entries) ->
-                putJsonArray(language) {
-                    entries.forEach { entry ->
-                        add(
-                            buildJsonObject {
-                                put("language", entry.language.ifEmpty { language })
-                                put("value", entry.value)
-                            },
-                        )
-                    }
+    public fun encodeAliases(values: Map<String, List<LanguageValue>>): JsonObject = buildJsonObject {
+        values.forEach { (language, entries) ->
+            putJsonArray(language) {
+                entries.forEach { entry ->
+                    add(
+                        buildJsonObject {
+                            put("language", entry.language.ifEmpty { language })
+                            put("value", entry.value)
+                        }
+                    )
                 }
             }
         }
+    }
 
     /** Encodes sitelinks, badges included. */
     public fun encodeSiteLinks(links: Map<String, SiteLink>): JsonObject = buildJsonObject {
@@ -178,35 +189,38 @@ public object EntityEncoder {
     }
 
     private val Rank.wire: String
-        get() = when (this) {
-            Rank.PREFERRED -> "preferred"
-            Rank.NORMAL -> "normal"
-            Rank.DEPRECATED -> "deprecated"
-        }
+        get() =
+            when (this) {
+                Rank.PREFERRED -> "preferred"
+                Rank.NORMAL -> "normal"
+                Rank.DEPRECATED -> "deprecated"
+            }
 }
 
 /** What Wikibase calls this kind of entity on the wire. */
 internal val EntityId.entityType: String
-    get() = when (kind) {
-        EntityId.Kind.ITEM -> "item"
-        EntityId.Kind.PROPERTY -> "property"
-        EntityId.Kind.LEXEME -> "lexeme"
-        EntityId.Kind.FORM -> "form"
-        EntityId.Kind.SENSE -> "sense"
-        EntityId.Kind.MEDIA_INFO -> "mediainfo"
-        EntityId.Kind.UNKNOWN -> "unknown"
-    }
+    get() =
+        when (kind) {
+            EntityId.Kind.ITEM -> "item"
+            EntityId.Kind.PROPERTY -> "property"
+            EntityId.Kind.LEXEME -> "lexeme"
+            EntityId.Kind.FORM -> "form"
+            EntityId.Kind.SENSE -> "sense"
+            EntityId.Kind.MEDIA_INFO -> "mediainfo"
+            EntityId.Kind.UNKNOWN -> "unknown"
+        }
 
 /**
  * The number in an id, for the older serialization that keys entities by it.
  *
- * Forms and senses have no numeric id of their own — `L1-F1` is not a number — so they have
- * none here either.
+ * Forms and senses have no numeric id of their own — `L1-F1` is not a number — so they have none here either.
  */
 internal val EntityId.numericId: Int?
-    get() = when (kind) {
-        EntityId.Kind.ITEM, EntityId.Kind.PROPERTY, EntityId.Kind.LEXEME ->
-            value.drop(1).toIntOrNull()
+    get() =
+        when (kind) {
+            EntityId.Kind.ITEM,
+            EntityId.Kind.PROPERTY,
+            EntityId.Kind.LEXEME -> value.drop(1).toIntOrNull()
 
-        else -> null
-    }
+            else -> null
+        }

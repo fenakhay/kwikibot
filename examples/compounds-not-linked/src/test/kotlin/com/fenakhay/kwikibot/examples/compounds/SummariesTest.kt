@@ -20,20 +20,22 @@ class SummariesTest {
 
     @Test
     fun `rewriting the list says so`() {
-        val summary = Summaries.forEdit(
-            listOf("vog"),
-            setOf(TransformResult.Rule.NORMALIZE_CONTAINER),
-        )
+        val summary =
+            Summaries.forEdit(
+                listOf("vog"),
+                setOf(TransformResult.Rule.NORMALIZE_CONTAINER),
+            )
 
         summary shouldContain "; normalize list to {{col}}"
     }
 
     @Test
     fun `a plain addition does not claim a normalization`() {
-        val summary = Summaries.forEdit(
-            listOf("vog"),
-            setOf(TransformResult.Rule.ADD_DERIVED_TERMS),
-        )
+        val summary =
+            Summaries.forEdit(
+                listOf("vog"),
+                setOf(TransformResult.Rule.ADD_DERIVED_TERMS),
+            )
 
         summary.contains("normalize") shouldBe false
     }

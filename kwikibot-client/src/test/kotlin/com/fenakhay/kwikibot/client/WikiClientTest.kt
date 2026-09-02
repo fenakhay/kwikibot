@@ -1,12 +1,12 @@
 package com.fenakhay.kwikibot.client
 
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.model.Namespace
-import com.fenakhay.kwikibot.model.Title
-import com.fenakhay.kwikibot.net.ApiEndpoint
+import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.Title
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.MockEngine
@@ -18,17 +18,18 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 
 class WikiClientTest {
 
     private val userinfo =
         """{"query":{"userinfo":{"id":0,"name":"192.0.2.1","groups":["*"],"rights":["read"]}}}"""
 
-    private val siteinfo = """
+    private val siteinfo =
+        """
         {"query":{
           "general":{"wikiid":"testwiki","sitename":"Test Wiki","lang":"en",
                      "server":"//test.example.org","articlepath":"/wiki/${'$'}1",
@@ -38,7 +39,8 @@ class WikiClientTest {
             "4":{"id":4,"name":"Project","canonical":"Project","case":"first-letter"},
             "14":{"id":14,"name":"Category","canonical":"Category","case":"first-letter"}},
           "interwikimap":[{"prefix":"w","url":"https://en.wikipedia.org/wiki/${'$'}1"}]}}
-    """.trimIndent()
+        """
+            .trimIndent()
 
     private fun TestScope.client(asked: MutableList<String> = mutableListOf()): WikiClient {
         val engine = MockEngine { request ->
@@ -61,11 +63,12 @@ class WikiClientTest {
         )
     }
 
-    private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData = respond(
-        ByteReadChannel(body),
-        HttpStatusCode.OK,
-        headersOf(HttpHeaders.ContentType, "application/json"),
-    )
+    private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
+        respond(
+            ByteReadChannel(body),
+            HttpStatusCode.OK,
+            headersOf(HttpHeaders.ContentType, "application/json"),
+        )
 
     @Test
     fun `opening a wiki reads who we are and what the wiki is`() = runTest {
@@ -101,10 +104,19 @@ class WikiClientTest {
             val before = asked.size
 
             listOf(
-                wiki.pages, wiki.lists, wiki.revisions, wiki.users, wiki.logs,
-                wiki.files, wiki.extensions, wiki.proofread, wiki.renderer, wiki.meta,
-                wiki.paramInfo,
-            ).forEach { it shouldBe it }
+                    wiki.pages,
+                    wiki.lists,
+                    wiki.revisions,
+                    wiki.users,
+                    wiki.logs,
+                    wiki.files,
+                    wiki.extensions,
+                    wiki.proofread,
+                    wiki.renderer,
+                    wiki.meta,
+                    wiki.paramInfo,
+                )
+                .forEach { it shouldBe it }
 
             asked.size shouldBe before
         }
@@ -119,8 +131,7 @@ class WikiClientTest {
             category.namespace shouldBe Namespace.CATEGORY
             category.text shouldBe "Volcanoes"
 
-            wiki.ref("volcano").title.shouldBeInstanceOf<Title.Local>().namespace shouldBe
-                Namespace.MAIN
+            wiki.ref("volcano").title.shouldBeInstanceOf<Title.Local>().namespace shouldBe Namespace.MAIN
         }
     }
 

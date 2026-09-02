@@ -1,12 +1,15 @@
 package com.fenakhay.kwikibot.bot
 
+import com.fenakhay.kwikibot.bot.run.Edit
+import com.fenakhay.kwikibot.bot.run.PageOutcome
+import com.fenakhay.kwikibot.bot.run.botRun
 import com.fenakhay.kwikibot.testkit.FakePageService
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.Test
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
 
 class BotPolicyTest {
 
@@ -92,21 +95,23 @@ class BotRunExclusionTest {
 
     @Test
     fun `a page that asked bots to stay away is skipped, and not transformed`() = runTest {
-        val pages = FakePageService(
-            "volcano" to "{{nobots}}\n==English==",
-            "mountain" to "==English==",
-        )
+        val pages =
+            FakePageService(
+                "volcano" to "{{nobots}}\n==English==",
+                "mountain" to "==English==",
+            )
         var transformed = 0
 
-        val report = botRun(pages) {
-            source(flowOf(pages.ref("volcano"), pages.ref("mountain")))
-            exclusionPolicy = BotPolicy("FenaBot")
-            dryRun = false
-            transform { content ->
-                transformed++
-                Edit(content.text + "\n<!-- seen -->", "test")
+        val report =
+            botRun(pages) {
+                source(flowOf(pages.ref("volcano"), pages.ref("mountain")))
+                exclusionPolicy = BotPolicy("FenaBot")
+                dryRun = false
+                transform { content ->
+                    transformed++
+                    Edit(content.text + "\n<!-- seen -->", "test")
+                }
             }
-        }
 
         transformed shouldBe 1
         pages.text("volcano") shouldBe "{{nobots}}\n==English=="
@@ -119,11 +124,12 @@ class BotRunExclusionTest {
     fun `without a policy nothing is excluded, which is why a bot sets one`() = runTest {
         val pages = FakePageService("volcano" to "{{nobots}}\n==English==")
 
-        val report = botRun(pages) {
-            source(flowOf(pages.ref("volcano")))
-            dryRun = false
-            transform { Edit(it.text + "!", "test") }
-        }
+        val report =
+            botRun(pages) {
+                source(flowOf(pages.ref("volcano")))
+                dryRun = false
+                transform { Edit(it.text + "!", "test") }
+            }
 
         report.outcomes.filterIsInstance<PageOutcome.Saved>().size shouldBe 1
     }

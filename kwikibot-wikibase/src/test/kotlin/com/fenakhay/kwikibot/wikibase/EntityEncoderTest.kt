@@ -1,19 +1,25 @@
 package com.fenakhay.kwikibot.wikibase
 
+import com.fenakhay.kwikibot.wikibase.entity.LanguageValue
+import com.fenakhay.kwikibot.wikibase.entity.SiteLink
+import com.fenakhay.kwikibot.wikibase.value.DataValue
+import com.fenakhay.kwikibot.wikibase.value.EntityId
+import com.fenakhay.kwikibot.wikibase.value.Snak
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.Test
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.test.Test
 
 class EntityEncoderTest {
 
     private val entities by lazy {
-        val stream = checkNotNull(javaClass.getResourceAsStream("/entities.json")) {
-            "entities.json missing from test resources"
-        }
+        val stream =
+            checkNotNull(javaClass.getResourceAsStream("/entities.json")) {
+                "entities.json missing from test resources"
+            }
         val json = Json.parseToJsonElement(stream.reader().readText()).jsonObject
         EntityDecoder.decodeAll(json)
     }
@@ -25,20 +31,17 @@ class EntityEncoderTest {
         (statements.size > 1) shouldBe true
 
         statements.forEach { statement ->
-            EntityDecoder.decodeStatement(EntityEncoder.encodeStatement(statement)) shouldBe
-                statement
+            EntityDecoder.decodeStatement(EntityEncoder.encodeStatement(statement)) shouldBe statement
         }
     }
 
     @Test
     fun `qualifiers keep the order they were read in`() {
-        val statement = entities.values
-            .flatMap { it.statements.values.flatten() }
-            .first { it.qualifiers.size > 1 }
+        val statement =
+            entities.values.flatMap { it.statements.values.flatten() }.first { it.qualifiers.size > 1 }
 
         val encoded = EntityEncoder.encodeStatement(statement)
-        val order = checkNotNull(encoded["qualifiers-order"]).jsonArray
-            .map { it.jsonPrimitive.content }
+        val order = checkNotNull(encoded["qualifiers-order"]).jsonArray.map { it.jsonPrimitive.content }
 
         order shouldBe statement.qualifiers.map { it.property.value }.distinct()
         EntityDecoder.decodeStatement(encoded).qualifiers shouldBe statement.qualifiers
@@ -46,9 +49,9 @@ class EntityEncoderTest {
 
     @Test
     fun `a value type this library does not model is written back byte for byte`() {
-        val original = Json.parseToJsonElement(
-            """{"type":"future-type","value":{"nested":{"a":1},"list":[1,2]}}""",
-        ).jsonObject
+        val original =
+            Json.parseToJsonElement("""{"type":"future-type","value":{"nested":{"a":1},"list":[1,2]}}""")
+                .jsonObject
         val value = EntityDecoder.decodeValue(original)
 
         value.shouldBeInstanceOf<DataValue.Unknown>()
@@ -89,22 +92,22 @@ class EntityEncoderTest {
         val data = EntityEdit().apply { labels = mapOf("en" to "test") }.data()
 
         data.keys shouldBe setOf("labels")
-        data["labels"]?.jsonObject?.get("en")?.jsonObject
-            ?.get("value")?.jsonPrimitive?.content shouldBe "test"
+        data["labels"]?.jsonObject?.get("en")?.jsonObject?.get("value")?.jsonPrimitive?.content shouldBe
+            "test"
     }
 
     @Test
     fun `aliases encode as a list per language, unlike labels`() {
-        val encoded = EntityEncoder.encodeAliases(
-            mapOf(
-                "en" to listOf(LanguageValue("en", "volcano"), LanguageValue("en", "volcanoes")),
-                "fr" to listOf(LanguageValue("fr", "volcan")),
-            ),
-        )
+        val encoded =
+            EntityEncoder.encodeAliases(
+                mapOf(
+                    "en" to listOf(LanguageValue("en", "volcano"), LanguageValue("en", "volcanoes")),
+                    "fr" to listOf(LanguageValue("fr", "volcan")),
+                )
+            )
 
         val english = encoded["en"]!!.jsonArray
-        english.map { it.jsonObject["value"]!!.jsonPrimitive.content } shouldBe
-            listOf("volcano", "volcanoes")
+        english.map { it.jsonObject["value"]!!.jsonPrimitive.content } shouldBe listOf("volcano", "volcanoes")
         encoded["fr"]!!.jsonArray.single().jsonObject["language"]!!.jsonPrimitive.content shouldBe "fr"
     }
 
@@ -117,12 +120,13 @@ class EntityEncoderTest {
 
     @Test
     fun `sitelinks encode with their badges`() {
-        val encoded = EntityEncoder.encodeSiteLinks(
-            mapOf(
-                "enwiki" to SiteLink("enwiki", "Volcano", listOf(EntityId("Q17437796"))),
-                "frwiki" to SiteLink("frwiki", "Volcan"),
-            ),
-        )
+        val encoded =
+            EntityEncoder.encodeSiteLinks(
+                mapOf(
+                    "enwiki" to SiteLink("enwiki", "Volcano", listOf(EntityId("Q17437796"))),
+                    "frwiki" to SiteLink("frwiki", "Volcan"),
+                )
+            )
 
         val english = encoded["enwiki"]!!.jsonObject
         english["title"]!!.jsonPrimitive.content shouldBe "Volcano"

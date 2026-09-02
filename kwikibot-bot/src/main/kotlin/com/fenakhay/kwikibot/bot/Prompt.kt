@@ -20,9 +20,9 @@ public data class Choice<out T>(
 /**
  * Asking a person something, and what to do when no person is present.
  *
- * A prompt that reads the terminal blocks indefinitely when a process runs unattended, so
- * [NonInteractive] is a full implementation rather than a stub: it answers with a configured
- * default and counts the questions it answered.
+ * A prompt that reads the terminal blocks indefinitely when a process runs unattended, so [NonInteractive] is
+ * a full implementation rather than a stub: it answers with a configured default and counts the questions it
+ * answered.
  *
  * ```
  * val prompt = if (System.console() != null) TerminalPrompt() else NonInteractive(answer = false)
@@ -46,9 +46,9 @@ public interface Prompt {
 /**
  * A prompt with no person behind it.
  *
- * Every question is answered with the configured default and counted. A bot can check [asked]
- * afterwards and say in its report how many decisions it made on the operator's behalf, which is
- * the honest version of "it ran unattended".
+ * Every question is answered with the configured default and counted. A bot can check [asked] afterwards and
+ * say in its report how many decisions it made on the operator's behalf, which is the honest version of "it
+ * ran unattended".
  */
 public class NonInteractive(
     private val answer: Boolean = false,
@@ -59,7 +59,8 @@ public class NonInteractive(
     public var asked: Int = 0
         private set
 
-    override val isInteractive: Boolean get() = false
+    override val isInteractive: Boolean
+        get() = false
 
     override suspend fun confirm(question: String, default: Boolean): Boolean {
         asked++
@@ -81,19 +82,19 @@ public class NonInteractive(
 /**
  * A prompt that reads the terminal.
  *
- * Reading is blocking, which is what a terminal is; nothing here is called often enough for that
- * to matter, and pretending otherwise would mean a thread pool for the sake of one `readLine`.
+ * Reading is blocking, which is what a terminal is; nothing here is called often enough for that to matter,
+ * and pretending otherwise would mean a thread pool for the sake of one `readLine`.
  *
- * If standard input reaches its end — a closed pipe, a job sent to the background — the default
- * is taken rather than looping on an empty read, which is how a script that lost its terminal
- * spins forever.
+ * If standard input reaches its end — a closed pipe, a job sent to the background — the default is taken
+ * rather than looping on an empty read, which is how a script that lost its terminal spins forever.
  */
 public class TerminalPrompt(
     private val output: (String) -> Unit = ::print,
     private val input: () -> String? = ::readlnOrNull,
 ) : Prompt {
 
-    override val isInteractive: Boolean get() = true
+    override val isInteractive: Boolean
+        get() = true
 
     override suspend fun confirm(question: String, default: Boolean): Boolean {
         val hint = if (default) "[Y/n]" else "[y/N]"
@@ -102,8 +103,10 @@ public class TerminalPrompt(
         return when (input()?.trim()?.lowercase()) {
             null -> default
             "" -> default
-            "y", "yes" -> true
-            "n", "no" -> false
+            "y",
+            "yes" -> true
+            "n",
+            "no" -> false
             else -> confirm(question, default)
         }
     }
@@ -114,8 +117,7 @@ public class TerminalPrompt(
         val keys = choices.joinToString(", ") { "${it.key} = ${it.label}" }
         output("$question ($keys) ")
 
-        val typed = input()?.trim()?.lowercase()
-            ?: return choices.first().value
+        val typed = input()?.trim()?.lowercase() ?: return choices.first().value
 
         val chosen = choices.firstOrNull { it.key.lowercaseChar().toString() == typed }
         return chosen?.value ?: choose(question, choices)
@@ -132,8 +134,8 @@ public class TerminalPrompt(
 /**
  * A prompt with the answers written down in advance.
  *
- * For tests, and for a run that has been through the questions once already and knows what it
- * wants. Running out of answers falls back to [fallback] rather than blocking.
+ * For tests, and for a run that has been through the questions once already and knows what it wants. Running
+ * out of answers falls back to [fallback] rather than blocking.
  */
 public class ScriptedPrompt(
     answers: List<String>,
@@ -142,7 +144,8 @@ public class ScriptedPrompt(
 
     private val remaining = ArrayDeque(answers)
 
-    override val isInteractive: Boolean get() = false
+    override val isInteractive: Boolean
+        get() = false
 
     override suspend fun confirm(question: String, default: Boolean): Boolean {
         val answer = remaining.removeFirstOrNull() ?: return fallback.confirm(question, default)
@@ -151,8 +154,7 @@ public class ScriptedPrompt(
 
     override suspend fun choose(question: String, choices: List<Choice<String>>): String {
         val answer = remaining.removeFirstOrNull() ?: return fallback.choose(question, choices)
-        return choices.firstOrNull { it.key.lowercaseChar() == answer.first().lowercaseChar() }
-            ?.value
+        return choices.firstOrNull { it.key.lowercaseChar() == answer.first().lowercaseChar() }?.value
             ?: choices.first().value
     }
 

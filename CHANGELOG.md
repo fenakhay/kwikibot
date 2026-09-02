@@ -7,6 +7,49 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.0.3] — 2026-09-03
+
+### Added
+
+- `SparqlClient` takes credentials and retries a busy service. `SparqlAuth.wcqs(token)` carries the
+  cookie the Commons Query Service reads; without it that service returns an error page rather than
+  a challenge, so a missing token looked like a query that found nothing. A `429` or a `5xx` retries
+  on the existing `RetryPolicy`, honouring `Retry-After`.
+- `SparqlClient.COMMONS` and `SparqlClient.LINGUA_LIBRE`, beside `WIKIDATA`.
+- `ExternalSources.sparql(...)`, so a query service can be a `PageSource` like PetScan and PagePile.
+- `ExternalSources.petScan(parameters, ...)`, taking the query itself rather than a saved PSID. A
+  saved query is the better habit, but cannot be built at run time.
+- `ExternalSources.petScanTitles(...)`, which returns the titles rather than pages to edit.
+  Resolving a million of them against the wiki costs a title parse apiece and silently drops the
+  ones that fail.
+- `BotRunBuilder.readBatch`, which reads that many pages per request instead of one: a sweep of
+  283,000 entries is 5,660 requests at fifty rather than 283,000 at one. Defaults to 1, which takes
+  the single-page path as before.
+- `Section.withSubsectionAt(index, subsection)`. `withSubsection` appends, which is only correct
+  when the new section sorts last.
+
+### Fixed
+
+- `ExternalSources.petScan` and `pagePile` sent no `User-Agent`, against Wikimedia's user-agent
+  policy. Both now require one, as every other off-`api.php` helper already did.
+- `''italic''` and `'''bold'''` no longer run past the end of their line. An unmatched `'''` paired
+  with the next one anywhere on the page, taking the headings in between inside the tag, so
+  `outline()` stopped seeing whole sections. On the entry `1`, one inside a `<gallery>` paired with
+  one in the Swedish section and hid English, Chinese and German. MediaWiki applies apostrophe
+  markup a line at a time; now so does this.
+
+### Changed
+
+- Every public type moved into a subpackage named for what it does, so every import changes:
+  `model.Title` is now `model.title.Title`, `client.PageService` is now
+  `client.service.PageService`, and so on across all seven modules.
+- Implementation classes left the public packages for `internal` subpackages, so a package listing
+  shows only what a consumer can call.
+- `ExternalSources.petScan` and `pagePile` take a `UserAgent`. Source- and binary-breaking.
+- `SparqlClient`'s constructor gained two parameters with defaults. Source-compatible with 1.0.x,
+  not binary-compatible.
+- Formatting is enforced by Spotless with ktfmt, which also removes unused imports.
+
 ## [1.0.2] — 2026-09-02
 
 ### Changed
@@ -66,6 +109,7 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[1.0.3]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.3
 [1.0.2]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.2
 [1.0.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.1
 [1.0.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.0

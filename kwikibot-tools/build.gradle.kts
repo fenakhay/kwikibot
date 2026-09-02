@@ -15,17 +15,18 @@ application {
 
 val surfaceFile = rootProject.layout.projectDirectory.file("api-surface.tsv")
 
-val wikiApiDump = tasks.register<JavaExec>("wikiApiDump") {
-    group = "verification"
-    description = "Rewrites api-surface.tsv from what the reference wikis report."
+val wikiApiDump =
+    tasks.register<JavaExec>("wikiApiDump") {
+        group = "verification"
+        description = "Rewrites api-surface.tsv from what the reference wikis report."
 
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set(application.mainClass)
-    args(surfaceFile.asFile.absolutePath)
-}
+        classpath = sourceSets["main"].runtimeClasspath
+        mainClass.set(application.mainClass)
+        args(surfaceFile.asFile.absolutePath)
+    }
 
-val corpusFile = rootProject.layout.projectDirectory
-    .file("kwikibot-wikitext/src/test/resources/wikitext-cases.json")
+val corpusFile =
+    rootProject.layout.projectDirectory.file("kwikibot-wikitext/src/test/resources/wikitext-cases.json")
 
 tasks.register<JavaExec>("wikitextCorpusDump") {
     group = "verification"
@@ -36,8 +37,8 @@ tasks.register<JavaExec>("wikitextCorpusDump") {
     args(corpusFile.asFile.absolutePath)
 }
 
-val roundTripFile = rootProject.layout.projectDirectory
-    .file("kwikibot-wikitext/src/test/resources/roundtrip-pages.json.gz")
+val roundTripFile =
+    rootProject.layout.projectDirectory.file("kwikibot-wikitext/src/test/resources/roundtrip-pages.json.gz")
 
 tasks.register<JavaExec>("wikitextRoundTripDump") {
     group = "verification"
@@ -48,8 +49,8 @@ tasks.register<JavaExec>("wikitextRoundTripDump") {
     args(roundTripFile.asFile.absolutePath)
 }
 
-val largePagesFile = rootProject.layout.projectDirectory
-    .file("kwikibot-benchmarks/src/main/resources/large-pages.json.gz")
+val largePagesFile =
+    rootProject.layout.projectDirectory.file("kwikibot-benchmarks/src/main/resources/large-pages.json.gz")
 
 tasks.register<JavaExec>("wikitextLargePageDump") {
     group = "verification"

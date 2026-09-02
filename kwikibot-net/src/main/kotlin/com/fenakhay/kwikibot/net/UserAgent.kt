@@ -3,8 +3,8 @@ package com.fenakhay.kwikibot.net
 /**
  * The `User-Agent` every request carries.
  *
- * Wikimedia's user-agent policy requires a descriptive string with a way to reach the operator;
- * requests without one are refused. This type makes that contact detail impossible to forget.
+ * Wikimedia's user-agent policy requires a descriptive string with a way to reach the operator; requests
+ * without one are refused. This type makes that contact detail impossible to forget.
  *
  * @param tool the bot or tool name, e.g. `FenaBot`.
  * @param version the tool version, e.g. `1.0`.
@@ -33,9 +33,9 @@ public data class UserAgent(
         /**
          * Reported alongside the tool so wiki operators can identify the client library.
          *
-         * Read from the jar manifest, so a release cannot report the version of the one before
-         * it.
+         * Read from the jar manifest, so a release cannot report the version of the one before it.
          */
-        public val LIBRARY_VERSION: String get() = Kwikibot.version
+        public val LIBRARY_VERSION: String
+            get() = Kwikibot.version
     }
 }

@@ -5,15 +5,13 @@ import kotlin.test.Test
 
 class CosmeticChangesTest {
 
-    private fun tidy(pass: CosmeticPass, text: String): String =
-        CosmeticChanges.of(pass).apply(text)
+    private fun tidy(pass: CosmeticPass, text: String): String = CosmeticChanges.of(pass).apply(text)
 
     @Test
     fun `trailing whitespace goes and nothing else moves`() {
         val before = "==English==   \nA word.  \n\n{{col|en|a|b}}\t\n"
 
-        tidy(CosmeticChanges.TRAILING_WHITESPACE, before) shouldBe
-            "==English==\nA word.\n\n{{col|en|a|b}}\n"
+        tidy(CosmeticChanges.TRAILING_WHITESPACE, before) shouldBe "==English==\nA word.\n\n{{col|en|a|b}}\n"
     }
 
     @Test
@@ -32,8 +30,7 @@ class CosmeticChangesTest {
 
     @Test
     fun `a link whose text repeats its target loses the text`() {
-        tidy(CosmeticChanges.REDUNDANT_LINK_TEXT, "[[volcano|volcano]] erupts") shouldBe
-            "[[volcano]] erupts"
+        tidy(CosmeticChanges.REDUNDANT_LINK_TEXT, "[[volcano|volcano]] erupts") shouldBe "[[volcano]] erupts"
     }
 
     @Test
@@ -45,8 +42,7 @@ class CosmeticChangesTest {
 
     @Test
     fun `bold and italic tags become the markup that means the same thing`() {
-        tidy(CosmeticChanges.HTML_EMPHASIS, "<b>loud</b> and <i>soft</i>") shouldBe
-            "'''loud''' and ''soft''"
+        tidy(CosmeticChanges.HTML_EMPHASIS, "<b>loud</b> and <i>soft</i>") shouldBe "'''loud''' and ''soft''"
     }
 
     @Test
@@ -71,8 +67,7 @@ class CosmeticChangesTest {
 
     @Test
     fun `entities with a plain character behind them are decoded`() {
-        tidy(CosmeticChanges.HTML_ENTITIES, "1990&ndash;1995 caf&eacute;") shouldBe
-            "1990–1995 café"
+        tidy(CosmeticChanges.HTML_ENTITIES, "1990&ndash;1995 caf&eacute;") shouldBe "1990–1995 café"
     }
 
     @Test
@@ -98,8 +93,7 @@ class CosmeticChangesTest {
     fun `a heading with nothing under it goes`() {
         val before = "==English==\nA word.\n\n==Etymology==\n\n==French==\nUn mot.\n"
 
-        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe
-            "==English==\nA word.\n\n==French==\nUn mot.\n"
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==English==\nA word.\n\n==French==\nUn mot.\n"
     }
 
     @Test
@@ -133,10 +127,11 @@ class CosmeticChangesTest {
 
     @Test
     fun `passes compose in the order they were given`() {
-        val tidier = CosmeticChanges.of(
-            CosmeticChanges.HTML_EMPHASIS,
-            CosmeticChanges.TRAILING_WHITESPACE,
-        )
+        val tidier =
+            CosmeticChanges.of(
+                CosmeticChanges.HTML_EMPHASIS,
+                CosmeticChanges.TRAILING_WHITESPACE,
+            )
 
         tidier.apply("<b>a</b>   \nb") shouldBe "'''a'''\nb"
     }

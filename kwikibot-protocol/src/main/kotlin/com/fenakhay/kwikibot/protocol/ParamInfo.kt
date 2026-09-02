@@ -1,7 +1,7 @@
 package com.fenakhay.kwikibot.protocol
 
-import com.fenakhay.kwikibot.net.ApiRequest
-import com.fenakhay.kwikibot.net.MediaWikiTransport
+import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
@@ -75,14 +75,13 @@ public data class ModuleDescription(
 /**
  * What a wiki says its own API accepts.
  *
- * Two things make this worth asking rather than assuming. A limit is not a constant: the same
- * query returns 50 results for one account and 500 for another, and hard-coding either wastes
- * requests or gets them refused. And a parameter is not permanent: MediaWiki adds and removes
- * them between versions, so a bot that must run against an old third-party wiki has to ask
- * before it sends.
+ * Two things make this worth asking rather than assuming. A limit is not a constant: the same query returns
+ * 50 results for one account and 500 for another, and hard-coding either wastes requests or gets them
+ * refused. And a parameter is not permanent: MediaWiki adds and removes them between versions, so a bot that
+ * must run against an old third-party wiki has to ask before it sends.
  *
- * Answers are cached for the life of the object, since they change only when the wiki is
- * upgraded, and concurrent callers asking for the same module produce one request.
+ * Answers are cached for the life of the object, since they change only when the wiki is upgraded, and
+ * concurrent callers asking for the same module produce one request.
  */
 public class ParamInfo(private val transport: MediaWikiTransport) {
 
@@ -106,8 +105,8 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
     /**
      * The most results [module] will return in one request for this account.
      *
-     * `null` when the module has no such limit, or the wiki did not say. A caller that gets
-     * `null` should send `max` and let the wiki decide, which is what it is for.
+     * `null` when the module has no such limit, or the wiki did not say. A caller that gets `null` should
+     * send `max` and let the wiki decide, which is what it is for.
      */
     public suspend fun limit(module: String, parameter: String, highLimits: Boolean): Int? {
         val described = module(module)?.get(parameter) ?: return null
@@ -121,13 +120,14 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
     /**
      * Every module matching [patterns], which may use the `*` the API accepts.
      *
-     * `modules("*", "query+*")` describes a wiki's whole API surface in one request. Results join
-     * the cache, so a later [module] call for any of them costs nothing.
+     * `modules("*", "query+*")` describes a wiki's whole API surface in one request. Results join the cache,
+     * so a later [module] call for any of them costs nothing.
      */
     public suspend fun modules(vararg patterns: String): List<ModuleDescription> {
-        val described = request(patterns.joinToString("|"))
-            .filterNot { it.containsKey("missing") }
-            .map { it.toModule(it.string("path").orEmpty()) }
+        val described =
+            request(patterns.joinToString("|"))
+                .filterNot { it.containsKey("missing") }
+                .map { it.toModule(it.string("path").orEmpty()) }
 
         mutex.withLock {
             described.forEach { cached[it.path] = it }
@@ -150,63 +150,72 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
      * `helpformat=none` drops the prose, which is most of the payload and none of what this reads.
      */
     private suspend fun request(modules: String): List<JsonObject> {
-        val response = transport.call(
-            ApiRequest.of("paraminfo", "modules" to modules, "helpformat" to "none"),
-        ).throwOnError()
+        val response =
+            transport
+                .call(ApiRequest.of("paraminfo", "modules" to modules, "helpformat" to "none"))
+                .throwOnError()
 
-        return response["paraminfo"]?.jsonObject
-            ?.get("modules")?.jsonArray
-            ?.map { it.jsonObject }
-            .orEmpty()
+        return response["paraminfo"]?.jsonObject?.get("modules")?.jsonArray?.map { it.jsonObject }.orEmpty()
     }
 
-    private fun JsonObject.toModule(fallback: String) = ModuleDescription(
-        name = string("name") ?: fallback,
-        path = string("path") ?: fallback,
-        parameters = this["parameters"]?.jsonArray
-            ?.map { it.jsonObject }
-            ?.associate { parameter ->
-                val name = parameter.string("name").orEmpty()
-                name to parameter.toDescription(name)
-            }
-            .orEmpty(),
-        isWrite = flag("writerights") || flag("mustbeposted"),
-        mustBePosted = flag("mustbeposted"),
-        source = string("source"),
-        sourceName = string("sourcename"),
-        group = string("group"),
-        prefix = string("prefix").orEmpty(),
-        deprecated = flag("deprecated"),
-        internal = flag("internal"),
-    )
+    private fun JsonObject.toModule(fallback: String) =
+        ModuleDescription(
+            name = string("name") ?: fallback,
+            path = string("path") ?: fallback,
+            parameters =
+                this["parameters"]
+                    ?.jsonArray
+                    ?.map { it.jsonObject }
+                    ?.associate { parameter ->
+                        val name = parameter.string("name").orEmpty()
+                        name to parameter.toDescription(name)
+                    }
+                    .orEmpty(),
+            isWrite = flag("writerights") || flag("mustbeposted"),
+            mustBePosted = flag("mustbeposted"),
+            source = string("source"),
+            sourceName = string("sourcename"),
+            group = string("group"),
+            prefix = string("prefix").orEmpty(),
+            deprecated = flag("deprecated"),
+            internal = flag("internal"),
+        )
 
-    private fun JsonObject.toDescription(name: String) = ParamDescription(
-        name = name,
-        // "type" is a string for a simple type and a list when the parameter takes a fixed set.
-        type = this["type"]?.let { element ->
-            runCatching { element.jsonPrimitive.content }.getOrNull()
-        },
-        values = this["type"]?.let { element ->
-            runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
-        }.orEmpty(),
-        limit = this["limit"]?.jsonPrimitive?.intOrNull,
-        highLimit = this["highlimit"]?.jsonPrimitive?.intOrNull,
-        required = flag("required"),
-        multiValued = flag("multi"),
-        default = this["default"]?.let { element ->
-            runCatching { element.jsonPrimitive.content }.getOrNull()
-        },
-        deprecated = flag("deprecated"),
-        deprecatedValues = this["deprecatedvalues"]?.let { element ->
-            runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
-        }.orEmpty(),
-        sensitive = flag("sensitive"),
-    )
+    private fun JsonObject.toDescription(name: String) =
+        ParamDescription(
+            name = name,
+            // "type" is a string for a simple type and a list when the parameter takes a fixed set.
+            type =
+                this["type"]?.let { element ->
+                    runCatching { element.jsonPrimitive.content }.getOrNull()
+                },
+            values =
+                this["type"]
+                    ?.let { element ->
+                        runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
+                    }
+                    .orEmpty(),
+            limit = this["limit"]?.jsonPrimitive?.intOrNull,
+            highLimit = this["highlimit"]?.jsonPrimitive?.intOrNull,
+            required = flag("required"),
+            multiValued = flag("multi"),
+            default =
+                this["default"]?.let { element ->
+                    runCatching { element.jsonPrimitive.content }.getOrNull()
+                },
+            deprecated = flag("deprecated"),
+            deprecatedValues =
+                this["deprecatedvalues"]
+                    ?.let { element ->
+                        runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
+                    }
+                    .orEmpty(),
+            sensitive = flag("sensitive"),
+        )
 
     private fun JsonObject.string(key: String): String? =
         this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
 
     private fun JsonObject.flag(key: String): Boolean =
-        this[key]?.let { runCatching { it.jsonPrimitive.content != "false" }.getOrDefault(true) }
-            ?: false
+        this[key]?.let { runCatching { it.jsonPrimitive.content != "false" }.getOrDefault(true) } ?: false
 }

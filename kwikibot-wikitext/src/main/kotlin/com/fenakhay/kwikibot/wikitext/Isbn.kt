@@ -1,29 +1,33 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.ops.replaceText
+
 /**
  * An ISBN, checked.
  *
- * The point of the type is the check digit. An ISBN with a wrong one is a typo, and a bot that
- * "reformats" it without noticing has tidied a number that identifies nothing.
+ * The point of the type is the check digit. An ISBN with a wrong one is a typo, and a bot that "reformats" it
+ * without noticing has tidied a number that identifies nothing.
  *
- * **Hyphenation is not done.** Where the hyphens go in an ISBN depends on the registration group
- * and the registrant, which is a table the ISBN agency publishes and revises; guessing produces
- * hyphens in the wrong places rather than none at all. [normalised] gives the digits, and an
- * ISBN that arrived hyphenated keeps its own hyphens through [ReformatIsbns].
+ * **Hyphenation is not done.** Where the hyphens go in an ISBN depends on the registration group and the
+ * registrant, which is a table the ISBN agency publishes and revises; guessing produces hyphens in the wrong
+ * places rather than none at all. [normalised] gives the digits, and an ISBN that arrived hyphenated keeps
+ * its own hyphens through [ReformatIsbns].
  */
-public class Isbn private constructor(
+public class Isbn
+private constructor(
     /** The digits, without hyphens or spaces, with any check character in upper case. */
-    public val normalised: String,
+    public val normalised: String
 ) {
 
     /** Whether this is the thirteen-digit form. */
-    public val isIsbn13: Boolean get() = normalised.length == LENGTH_13
+    public val isIsbn13: Boolean
+        get() = normalised.length == LENGTH_13
 
     /**
      * This ISBN as thirteen digits.
      *
-     * A ten-digit ISBN converts by prefixing `978` and recomputing the check digit; a
-     * thirteen-digit one is returned unchanged.
+     * A ten-digit ISBN converts by prefixing `978` and recomputing the check digit; a thirteen-digit one is
+     * returned unchanged.
      */
     public fun toIsbn13(): Isbn {
         if (isIsbn13) return this
@@ -51,8 +55,8 @@ public class Isbn private constructor(
         /**
          * Reads an ISBN, or `null` if it is not one.
          *
-         * `null` covers both "this is not the right number of digits" and "the check digit does
-         * not add up". A caller that wants to tell them apart is looking at a typo either way.
+         * `null` covers both "this is not the right number of digits" and "the check digit does not add up".
+         * A caller that wants to tell them apart is looking at a typo either way.
          */
         public fun parse(raw: String): Isbn? {
             val digits = raw.filterNot { it == '-' || it == ' ' }.uppercase()
@@ -69,14 +73,16 @@ public class Isbn private constructor(
 
         private fun isValid10(digits: String): Boolean {
             // Weighted 10..1, with X standing for ten in the last place only.
-            val sum = digits.withIndex().sumOf { (index, character) ->
-                val value = when {
-                    character.isDigit() -> character - '0'
-                    character == CHECK_X && index == LENGTH_10 - 1 -> LENGTH_10
-                    else -> return false
+            val sum =
+                digits.withIndex().sumOf { (index, character) ->
+                    val value =
+                        when {
+                            character.isDigit() -> character - '0'
+                            character == CHECK_X && index == LENGTH_10 - 1 -> LENGTH_10
+                            else -> return false
+                        }
+                    value * (LENGTH_10 - index)
                 }
-                value * (LENGTH_10 - index)
-            }
             return sum % MODULUS_10 == 0
         }
 
@@ -87,9 +93,10 @@ public class Isbn private constructor(
 
         /** The check digit for the first twelve digits of a thirteen-digit ISBN. */
         private fun checkDigit13(body: String): Char {
-            val sum = body.withIndex().sumOf { (index, character) ->
-                (character - '0') * if (index % 2 == 0) 1 else WEIGHT_ODD
-            }
+            val sum =
+                body.withIndex().sumOf { (index, character) ->
+                    (character - '0') * if (index % 2 == 0) 1 else WEIGHT_ODD
+                }
             return '0' + (MODULUS_13 - sum % MODULUS_13) % MODULUS_13
         }
     }
@@ -100,17 +107,17 @@ public class Isbn private constructor(
  *
  * Two things, both optional, and neither of them hyphenation:
  *
- * - an ISBN whose check digit does not add up is left exactly as written, because it is a typo
- *   and a bot cannot know which digit was mistyped;
- * - a valid ten-digit ISBN can be converted to thirteen digits, which is what most projects
- *   asked for when the format changed.
+ * - an ISBN whose check digit does not add up is left exactly as written, because it is a typo and a bot
+ *   cannot know which digit was mistyped;
+ * - a valid ten-digit ISBN can be converted to thirteen digits, which is what most projects asked for when
+ *   the format changed.
  *
- * Only prose is touched: an ISBN inside a template parameter belongs to that template, and
- * rewriting it can change what the citation renders.
+ * Only prose is touched: an ISBN inside a template parameter belongs to that template, and rewriting it can
+ * change what the citation renders.
  */
 public class ReformatIsbns(
     /** Whether to convert valid ten-digit ISBNs to the thirteen-digit form. */
-    private val toIsbn13: Boolean = false,
+    private val toIsbn13: Boolean = false
 ) : CosmeticPass {
 
     override fun apply(code: Markup): Markup {

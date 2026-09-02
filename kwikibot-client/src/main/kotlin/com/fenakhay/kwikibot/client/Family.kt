@@ -1,13 +1,14 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.client.model.MatrixWiki
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.net.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 
 /**
  * A group of wikis that share a domain pattern.
  *
- * A family is the rule for turning a language code into a host, not a table of hosts. The common
- * Wikimedia projects therefore need no data, and anything else is one [custom] call.
+ * A family is the rule for turning a language code into a host, not a table of hosts. The common Wikimedia
+ * projects therefore need no data, and anything else is one [custom] call.
  */
 public sealed interface Family {
 
@@ -44,9 +45,8 @@ public sealed interface Family {
     /**
      * The Wikimedia families, queried by name.
      *
-     * A table rather than a lookup because these are fixed: the set of projects changes
-     * on the order of once a decade, while the wikis inside them change weekly, which is
-     * what `SiteMatrix` is for.
+     * A table rather than a lookup because these are fixed: the set of projects changes on the order of once
+     * a decade, while the wikis inside them change weekly, which is what `SiteMatrix` is for.
      */
     public companion object {
         /** Encyclopedias. */
@@ -78,10 +78,23 @@ public sealed interface Family {
         /** The write-capable test wiki, where live write tests belong. */
         public val TEST: Family = SingleSite("test", "test.wikipedia.org")
 
-        private val BY_NAME: Map<String, Family> = listOf(
-            WIKIPEDIA, WIKTIONARY, WIKISOURCE, WIKIQUOTE, WIKIBOOKS, WIKINEWS,
-            WIKIVERSITY, WIKIVOYAGE, COMMONS, WIKIDATA, META, MEDIAWIKI, TEST,
-        ).associateBy { it.name }
+        private val BY_NAME: Map<String, Family> =
+            listOf(
+                    WIKIPEDIA,
+                    WIKTIONARY,
+                    WIKISOURCE,
+                    WIKIQUOTE,
+                    WIKIBOOKS,
+                    WIKINEWS,
+                    WIKIVERSITY,
+                    WIKIVOYAGE,
+                    COMMONS,
+                    WIKIDATA,
+                    META,
+                    MEDIAWIKI,
+                    TEST,
+                )
+                .associateBy { it.name }
 
         /** The family of this name, or `null` if it is not one of the known projects. */
         public fun named(name: String): Family? = BY_NAME[name.lowercase()]
@@ -93,8 +106,8 @@ public sealed interface Family {
         /**
          * The family of a wiki at an endpoint, whatever the endpoint is.
          *
-         * For a wiki found by [ApiDetector]: the endpoint already says where the API lives, so
-         * the family is only a name to hang it on.
+         * For a wiki found by [ApiDetector]: the endpoint already says where the API lives, so the family is
+         * only a name to hang it on.
          */
         public fun at(endpoint: ApiEndpoint, name: String = endpoint.server): Family =
             SingleSite(name, endpoint.server, endpoint.scriptPath)
@@ -102,8 +115,8 @@ public sealed interface Family {
         /**
          * The family of one wiki in the site matrix.
          *
-         * A wiki created last month is in the matrix and is not in any list this library ships,
-         * which is why the matrix is read rather than a shipped table.
+         * A wiki created last month is in the matrix and is not in any list this library ships, which is why
+         * the matrix is read rather than a shipped table.
          */
         public fun of(wiki: MatrixWiki): Family = at(wiki.endpoint, wiki.project ?: wiki.id.dbName)
     }

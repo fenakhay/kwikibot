@@ -1,19 +1,20 @@
 package com.fenakhay.kwikibot.examples.compounds
 
+import kotlin.test.Test
+import kotlin.test.fail
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.test.Test
-import kotlin.test.fail
 
 class TodoListRecordedCasesTest {
 
     private val fixture by lazy {
-        val stream = checkNotNull(javaClass.getResourceAsStream("/todo-tasks.json")) {
-            "todo-tasks.json missing from test resources"
-        }
+        val stream =
+            checkNotNull(javaClass.getResourceAsStream("/todo-tasks.json")) {
+                "todo-tasks.json missing from test resources"
+            }
         Json.parseToJsonElement(stream.reader().readText()).jsonObject
     }
 
@@ -33,8 +34,9 @@ class TodoListRecordedCasesTest {
             tasks += expected.size
 
             if (report.skippedLines != case["skippedLines"]!!.jsonPrimitive.int) {
-                problems += "$name: skipped ${report.skippedLines}, expected " +
-                    case["skippedLines"]!!.jsonPrimitive.int
+                problems +=
+                    "$name: skipped ${report.skippedLines}, expected " +
+                        case["skippedLines"]!!.jsonPrimitive.int
             }
 
             if (report.tasks.size != expected.size) {
@@ -48,8 +50,9 @@ class TodoListRecordedCasesTest {
                 val wantTerms = want["terms"]!!.jsonArray.map { it.jsonPrimitive.content }
 
                 if (actual.title != wantTitle || actual.lang != wantLang || actual.terms != wantTerms) {
-                    problems += "$name: got ${actual.title}/${actual.lang}/${actual.terms}, " +
-                        "expected $wantTitle/$wantLang/$wantTerms"
+                    problems +=
+                        "$name: got ${actual.title}/${actual.lang}/${actual.terms}, " +
+                            "expected $wantTitle/$wantLang/$wantTerms"
                 }
             }
         }

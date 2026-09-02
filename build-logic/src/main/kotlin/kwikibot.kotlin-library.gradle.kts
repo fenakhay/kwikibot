@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    id("com.diffplug.spotless")
     id("dev.detekt")
     id("org.jetbrains.kotlinx.kover")
     id("org.jetbrains.dokka")
@@ -79,6 +80,27 @@ tasks.register<Test>("liveTest") {
     outputs.upToDateWhen { false }
 
     failOnNoDiscoveredTests = false
+}
+
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        targetExclude("**/build/**")
+        ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle().configure {
+            it.setMaxWidth(110)
+            it.setBlockIndent(4)
+            it.setContinuationIndent(4)
+            it.setRemoveUnusedImports(true)
+        }
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle().configure {
+            it.setMaxWidth(110)
+            it.setBlockIndent(4)
+            it.setContinuationIndent(4)
+        }
+    }
 }
 
 detekt {

@@ -1,14 +1,15 @@
 package com.fenakhay.kwikibot.examples.compounds
 
 import com.fenakhay.kwikibot.wikitext.Wikitext
-import com.fenakhay.kwikibot.wikitext.outline
+import com.fenakhay.kwikibot.wikitext.ops.outline
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class EntryLayoutTest {
 
-    private val entry = """
+    private val entry =
+        """
         ==English==
 
         ===Etymology===
@@ -31,7 +32,8 @@ class EntryLayoutTest {
         {{sv-noun}}
 
         [[Category:English lemmas]]
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `the language section is found and excludes the others`() {
@@ -83,9 +85,10 @@ class EntryLayoutTest {
 
     @Test
     fun `headings that are not parts of speech are never treated as one`() {
-        val page = Wikitext.parse(
-            "==English==\n\n===Etymology===\ne\n\n===Pronunciation===\np\n\n===Anagrams===\na\n",
-        )
+        val page =
+            Wikitext.parse(
+                "==English==\n\n===Etymology===\ne\n\n===Pronunciation===\np\n\n===Anagrams===\na\n"
+            )
         val english = checkNotNull(EntryLayout.language(page, "English"))
 
         EntryLayout.posSections(english) shouldBe emptyList()
@@ -101,21 +104,23 @@ class EntryLayoutTest {
 
     @Test
     fun `numbered etymologies push parts of speech down a level`() {
-        val page = Wikitext.parse(
-            """
-            ==English==
+        val page =
+            Wikitext.parse(
+                """
+                ==English==
 
-            ===Etymology 1===
+                ===Etymology 1===
 
-            ====Noun====
-            n
+                ====Noun====
+                n
 
-            ===Etymology 2===
+                ===Etymology 2===
 
-            ====Verb====
-            v
-            """.trimIndent(),
-        )
+                ====Verb====
+                v
+                """
+                    .trimIndent()
+            )
         val english = checkNotNull(EntryLayout.language(page, "English"))
 
         EntryLayout.usesNumberedEtymologies(english) shouldBe true
@@ -166,9 +171,8 @@ class EntryLayoutTest {
 
     @Test
     fun `a new section goes before the first heading that should follow it`() {
-        val page = Wikitext.parse(
-            "==English==\n\n===Noun===\nn\n\n====Synonyms====\ns\n\n====Translations====\nt\n",
-        )
+        val page =
+            Wikitext.parse("==English==\n\n===Noun===\nn\n\n====Synonyms====\ns\n\n====Translations====\nt\n")
         val noun = checkNotNull(EntryLayout.language(page, "English")?.find("Noun"))
 
         EntryLayout.insertionIndex(noun, "Derived terms") shouldBe 1

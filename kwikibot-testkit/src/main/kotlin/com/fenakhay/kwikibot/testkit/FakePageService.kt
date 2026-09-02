@@ -1,29 +1,29 @@
 package com.fenakhay.kwikibot.testkit
 
-import com.fenakhay.kwikibot.client.WatchMode
-import com.fenakhay.kwikibot.client.EditBuilder
-import com.fenakhay.kwikibot.client.PageService
-import com.fenakhay.kwikibot.model.ActionChecks
-import com.fenakhay.kwikibot.model.CategoryInfo
-import com.fenakhay.kwikibot.model.Contributors
-import com.fenakhay.kwikibot.model.EditOutcome
-import com.fenakhay.kwikibot.model.Namespace
-import com.fenakhay.kwikibot.model.PageContent
+import com.fenakhay.kwikibot.client.service.EditBuilder
+import com.fenakhay.kwikibot.client.service.PageService
+import com.fenakhay.kwikibot.client.service.WatchMode
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.model.PageRef
-import com.fenakhay.kwikibot.model.Protection
 import com.fenakhay.kwikibot.model.RevisionId
-import com.fenakhay.kwikibot.model.Title
 import com.fenakhay.kwikibot.model.WikiError
-import com.fenakhay.kwikibot.model.WikiId
+import com.fenakhay.kwikibot.model.edit.ActionChecks
+import com.fenakhay.kwikibot.model.edit.EditOutcome
+import com.fenakhay.kwikibot.model.edit.Protection
+import com.fenakhay.kwikibot.model.page.CategoryInfo
+import com.fenakhay.kwikibot.model.page.PageContent
+import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.model.user.Contributors
 import kotlin.time.Instant
 
 /**
  * A wiki's pages held in memory, for testing bots without a wiki.
  *
- * Edits are applied to the in-memory text and recorded in [edits], so a test can assert both
- * what the bot decided and what the page ended up saying. Refusals and failures are injectable,
- * because the paths worth testing in a bot are the ones where the wiki says no.
+ * Edits are applied to the in-memory text and recorded in [edits], so a test can assert both what the bot
+ * decided and what the page ended up saying. Refusals and failures are injectable, because the paths worth
+ * testing in a bot are the ones where the wiki says no.
  *
  * ```
  * val pages = FakePageService("volcano" to "==English==")
@@ -71,7 +71,9 @@ public class FakePageService(
 
     override suspend fun edit(ref: PageRef, block: EditBuilder.() -> Unit): EditOutcome {
         failWith?.let { throw it() }
-        refuse(ref)?.let { return it }
+        refuse(ref)?.let {
+            return it
+        }
 
         val builder = EditBuilder().apply(block)
         val updated = builder.text ?: (texts[key(ref)].orEmpty() + builder.appendText.orEmpty())
@@ -110,8 +112,8 @@ public class FakePageService(
     /**
      * The page-level administrative actions do nothing in the fake.
      *
-     * They exist so a bot that calls one compiles and runs against it; a fake wiki has no history
-     * to merge and no content models to change between.
+     * They exist so a bot that calls one compiles and runs against it; a fake wiki has no history to merge
+     * and no content models to change between.
      */
     override suspend fun mergeHistory(
         from: PageRef,
@@ -141,29 +143,23 @@ public class FakePageService(
     override suspend fun testActions(
         refs: Collection<PageRef>,
         actions: Set<String>,
-    ): Map<PageRef, ActionChecks> =
-        refs.associateWith { ActionChecks(actions.associateWith { emptyList() }) }
+    ): Map<PageRef, ActionChecks> = refs.associateWith { ActionChecks(actions.associateWith { emptyList() }) }
 
     /**
      * Nothing points at anything in the fake, and no category holds anything.
      *
-     * A bot under test decides what to do from the page text it was given; these answer so that
-     * a code path reading them runs, not so that it finds something.
+     * A bot under test decides what to do from the page text it was given; these answer so that a code path
+     * reading them runs, not so that it finds something.
      */
-    override suspend fun contributors(refs: Collection<PageRef>): Map<PageRef, Contributors> =
-        emptyMap()
+    override suspend fun contributors(refs: Collection<PageRef>): Map<PageRef, Contributors> = emptyMap()
 
-    override suspend fun categoryInfo(refs: Collection<PageRef>): Map<PageRef, CategoryInfo> =
-        emptyMap()
+    override suspend fun categoryInfo(refs: Collection<PageRef>): Map<PageRef, CategoryInfo> = emptyMap()
 
-    override suspend fun backlinksOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> =
-        emptyMap()
+    override suspend fun backlinksOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> = emptyMap()
 
-    override suspend fun transclusionsOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> =
-        emptyMap()
+    override suspend fun transclusionsOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> = emptyMap()
 
-    override suspend fun fileUsageOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> =
-        emptyMap()
+    override suspend fun fileUsageOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> = emptyMap()
 
     override suspend fun protections(refs: Collection<PageRef>): Map<PageRef, List<Protection>> =
         refs.mapNotNull { ref -> protections[key(ref)]?.let { ref to it } }.toMap()
@@ -181,8 +177,8 @@ public class FakePageService(
     /**
      * Reverts the page to the text it had before this fake applied any edit.
      *
-     * A real rollback undoes only the top run of edits by one user; there is one editor here, so
-     * the two amount to the same thing.
+     * A real rollback undoes only the top run of edits by one user; there is one editor here, so the two
+     * amount to the same thing.
      */
     override suspend fun rollback(
         ref: PageRef,
@@ -191,8 +187,7 @@ public class FakePageService(
         markBot: Boolean,
         watchlist: WatchMode,
     ): EditOutcome {
-        val original = originals[key(ref)]
-            ?: return EditOutcome.NoChange(ref, RevisionId(nextRevision))
+        val original = originals[key(ref)] ?: return EditOutcome.NoChange(ref, RevisionId(nextRevision))
         if (texts[key(ref)] == original) {
             return EditOutcome.NoChange(ref, RevisionId(nextRevision))
         }
@@ -222,8 +217,8 @@ public class FakePageService(
     /**
      * Returns the text unchanged.
      *
-     * Expanding a template means running the wiki's parser, which a fake cannot do and must not
-     * pretend to: a test that needs expansion needs a wiki.
+     * Expanding a template means running the wiki's parser, which a fake cannot do and must not pretend to: a
+     * test that needs expansion needs a wiki.
      */
     override suspend fun expandText(wikitext: String, title: PageRef?): String = wikitext
 
@@ -238,9 +233,9 @@ public class FakePageService(
     /**
      * The key a title is stored under.
      *
-     * A wiki capitalises the first letter of a title, and [Wiki.ref] does the same before this
-     * fake ever sees it. Storing what the test typed would leave a page seeded as "volcano"
-     * unreachable through `wiki.ref("volcano")`, which reads as a bot finding nothing.
+     * A wiki capitalises the first letter of a title, and [Wiki.ref] does the same before this fake ever sees
+     * it. Storing what the test typed would leave a page seeded as "volcano" unreachable through
+     * `wiki.ref("volcano")`, which reads as a bot finding nothing.
      */
     private fun key(title: String): String = title.replaceFirstChar { it.uppercaseChar() }
 

@@ -67,12 +67,19 @@ tasks.register("recordBaseline") {
     val target = File(baselinePath)
     val reports = reportsDir
     doLast {
-        val report = requireNotNull(
-            reports.get().asFile.listFiles().orEmpty()
-                .filter { it.isDirectory }
-                .maxByOrNull { it.lastModified() }
-                ?.resolve("main.json"),
-        ) { "no benchmark report found" }
+        val report =
+            requireNotNull(
+                reports
+                    .get()
+                    .asFile
+                    .listFiles()
+                    .orEmpty()
+                    .filter { it.isDirectory }
+                    .maxByOrNull { it.lastModified() }
+                    ?.resolve("main.json")
+            ) {
+                "no benchmark report found"
+            }
 
         report.copyTo(target, overwrite = true)
         logger.lifecycle("baseline recorded from ${report.parentFile.name}")
@@ -90,12 +97,19 @@ tasks.register<JavaExec>("compareToBaseline") {
     val baseline = baselinePath
     val reports = reportsDir
     argumentProviders.add {
-        val report = requireNotNull(
-            reports.get().asFile.listFiles().orEmpty()
-                .filter { it.isDirectory }
-                .maxByOrNull { it.lastModified() }
-                ?.resolve("main.json"),
-        ) { "no benchmark report found" }
+        val report =
+            requireNotNull(
+                reports
+                    .get()
+                    .asFile
+                    .listFiles()
+                    .orEmpty()
+                    .filter { it.isDirectory }
+                    .maxByOrNull { it.lastModified() }
+                    ?.resolve("main.json")
+            ) {
+                "no benchmark report found"
+            }
 
         listOf(baseline, report.absolutePath)
     }

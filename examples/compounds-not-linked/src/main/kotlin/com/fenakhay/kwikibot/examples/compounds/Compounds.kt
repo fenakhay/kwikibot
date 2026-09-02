@@ -1,22 +1,20 @@
 package com.fenakhay.kwikibot.examples.compounds
 
 import com.fenakhay.kwikibot.bot.BotPolicy
-import com.fenakhay.kwikibot.bot.Edit
-import com.fenakhay.kwikibot.bot.Progress
-import com.fenakhay.kwikibot.bot.RunLog
-import com.fenakhay.kwikibot.bot.StopPolicy
-import com.fenakhay.kwikibot.bot.botRun
-import com.fenakhay.kwikibot.bot.reportTo
+import com.fenakhay.kwikibot.bot.run.Edit
+import com.fenakhay.kwikibot.bot.run.Progress
+import com.fenakhay.kwikibot.bot.run.RunLog
+import com.fenakhay.kwikibot.bot.run.StopPolicy
+import com.fenakhay.kwikibot.bot.run.botRun
+import com.fenakhay.kwikibot.bot.run.reportTo
 import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.WikiClient
 import com.fenakhay.kwikibot.client.WikiConfig
 import com.fenakhay.kwikibot.model.LangCode
-import com.fenakhay.kwikibot.net.Credentials
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
+import com.fenakhay.kwikibot.net.auth.Credentials
 import java.io.Writer
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -26,9 +24,12 @@ import kotlin.io.path.readText
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
 
 /** What to print when the arguments are wrong. */
-private const val USAGE = """
+private const val USAGE =
+    """
 compounds — add derived terms to the entries of their components
 
   --todo PATH        A local copy of the todo list page to work from. Required.
@@ -48,37 +49,40 @@ all three the bot runs anonymously, which is enough for a dry run.
 private const val DEFAULT_STOP_PAGE = "User:FenaBot/Stop"
 
 /**
- * Adds the derived terms listed at `Wiktionary:Todo/compounds not linked to from components`
- * to the entries of their components.
+ * Adds the derived terms listed at `Wiktionary:Todo/compounds not linked to from components` to the entries
+ * of their components.
  *
- * The bot is the plumbing between three pure pieces: [TodoList] reads the work list,
- * [DerivedTerms] computes each edit, and [Summaries] describes it. Everything else — reading
- * pages, pacing, retries, the stop check, the diffs and the skip log — belongs to the library.
+ * The bot is the plumbing between three pure pieces: [TodoList] reads the work list, [DerivedTerms] computes
+ * each edit, and [Summaries] describes it. Everything else — reading pages, pacing, retries, the stop check,
+ * the diffs and the skip log — belongs to the library.
  *
  * ```
  * compounds --todo todo.wikitext --contact https://en.wiktionary.org/wiki/User:FenaBot --limit 5
  * compounds --todo todo.wikitext --contact … --save --diff-log logs/diffs.log
  * ```
  *
- * The run is assembled here rather than inherited from a base class the library supplies, because
- * assembling it is the part of writing a bot worth seeing — and because a library should have an
- * opinion about editing wikis and none about how a program is started. kwikibot hands over the
- * pieces ([botRun], [BotPolicy], [RunLog], [Progress], [reportTo]); this decides how they fit and
- * owns its own command line.
+ * The run is assembled here rather than inherited from a base class the library supplies, because assembling
+ * it is the part of writing a bot worth seeing — and because a library should have an opinion about editing
+ * wikis and none about how a program is started. kwikibot hands over the pieces ([botRun], [BotPolicy],
+ * [RunLog], [Progress], [reportTo]); this decides how they fit and owns its own command line.
  */
 public suspend fun main(args: Array<String>) {
-    val options = runCatching { Options.parse(args) }.getOrElse { failure ->
-        System.err.println("compounds: ${failure.message}")
-        System.err.println(USAGE)
-        exitProcess(2)
+    val options = runCatching {
+        Options.parse(args)
     }
+        .getOrElse { failure ->
+            System.err.println("compounds: ${failure.message}")
+            System.err.println(USAGE)
+            exitProcess(2)
+        }
 
-    val config = WikiConfig(
-        userAgent = UserAgent("compounds-not-linked-bot", "0.1.0", options.contact),
-        // The wiki's own guidance for bots: a read every tenth of a second, an edit every ten
-        // seconds.
-        throttle = Throttle(read = 100.milliseconds, write = 10.seconds),
-    )
+    val config =
+        WikiConfig(
+            userAgent = UserAgent("compounds-not-linked-bot", "0.1.0", options.contact),
+            // The wiki's own guidance for bots: a read every tenth of a second, an edit every ten
+            // seconds.
+            throttle = Throttle(read = 100.milliseconds, write = 10.seconds),
+        )
 
     WikiClient(config, credentials = credentialsFromEnvironment()).use { client ->
         val wiki = client.wiki(LangCode("en"), Family.WIKTIONARY)
@@ -90,8 +94,8 @@ public suspend fun main(args: Array<String>) {
 /**
  * Reads the todo list, works through it, and returns what happened.
  *
- * The log files are opened around the run and closed however it ends, so an interrupted run still
- * leaves a readable diff log.
+ * The log files are opened around the run and closed however it ends, so an interrupted run still leaves a
+ * readable diff log.
  */
 private suspend fun run(wiki: Wiki, options: Options) =
     options.diffLog.writer().use { diffs ->
@@ -99,44 +103,47 @@ private suspend fun run(wiki: Wiki, options: Options) =
             val tasks = TodoList.parsePage(options.todo.readText()).tasks
             val progress = Progress(total = options.limit ?: tasks.size)
 
-            wiki.botRun {
-                // Each task names the entry to edit and the terms to add to it. Titles that
-                // resolve off this wiki are refused by wiki.ref, which is the second of the two
-                // gates the todo parser opens the first of.
-                source(tasks.asFlow().map { wiki.ref(it.title) })
+            wiki
+                .botRun {
+                    // Each task names the entry to edit and the terms to add to it. Titles that
+                    // resolve off this wiki are refused by wiki.ref, which is the second of the two
+                    // gates the todo parser opens the first of.
+                    source(tasks.asFlow().map { wiki.ref(it.title) })
 
-                transform { page ->
-                    val task = tasks.first { it.title == page.title.text }
+                    transform { page ->
+                        val task = tasks.first { it.title == page.title.text }
 
-                    val result = DerivedTerms.add(
-                        text = page.text,
-                        title = task.title,
-                        lang = task.lang,
-                        terms = task.terms,
-                    )
+                        val result =
+                            DerivedTerms.add(
+                                text = page.text,
+                                title = task.title,
+                                lang = task.lang,
+                                terms = task.terms,
+                            )
 
-                    when (result.status) {
-                        TransformResult.Status.SKIPPED -> skip(result.reason)
-                        TransformResult.Status.UNCHANGED -> null
-                        TransformResult.Status.CHANGED ->
-                            Edit(result.text, Summaries.forEdit(result.added, result.rules))
+                        when (result.status) {
+                            TransformResult.Status.SKIPPED -> skip(result.reason)
+                            TransformResult.Status.UNCHANGED -> null
+                            TransformResult.Status.CHANGED ->
+                                Edit(result.text, Summaries.forEdit(result.added, result.rules))
+                        }
                     }
+
+                    // Writing is opt-in, so the first run of a changed bot shows what it would do
+                    // rather than doing it.
+                    dryRun = !options.save
+                    limit = options.limit
+
+                    // Honours {{nobots}} as this account. The builder cannot fill this in itself
+                    // because it does not know which account the session logged in as.
+                    exclusionPolicy = BotPolicy(wiki.identity.name)
+
+                    // Fail-closed: if the stop page cannot be read, the bot does not edit.
+                    stopPolicy = StopPolicy.page(wiki.pages, wiki.ref(options.stopPage))
+
+                    onOutcome = reportTo(RunLog(diffs = diffs, skips = skips), progress)
                 }
-
-                // Writing is opt-in, so the first run of a changed bot shows what it would do
-                // rather than doing it.
-                dryRun = !options.save
-                limit = options.limit
-
-                // Honours {{nobots}} as this account. The builder cannot fill this in itself
-                // because it does not know which account the session logged in as.
-                exclusionPolicy = BotPolicy(wiki.identity.name)
-
-                // Fail-closed: if the stop page cannot be read, the bot does not edit.
-                stopPolicy = StopPolicy.page(wiki.pages, wiki.ref(options.stopPage))
-
-                onOutcome = reportTo(RunLog(diffs = diffs, skips = skips), progress)
-            }.also { progress.finish() }
+                .also { progress.finish() }
         }
     }
 
@@ -154,9 +161,9 @@ private class Options(
         /**
          * Reads the arguments, or throws with what was wrong.
          *
-         * Hand-written because the example is meant to be read end to end, and because a bot's
-         * front end is its own business — kwikibot has an opinion about editing wikis and none
-         * about how a program is invoked.
+         * Hand-written because the example is meant to be read end to end, and because a bot's front end is
+         * its own business — kwikibot has an opinion about editing wikis and none about how a program is
+         * invoked.
          */
         fun parse(args: Array<String>): Options {
             val values = mutableMapOf<String, String>()
@@ -183,9 +190,10 @@ private class Options(
                 todo = Path(required(values, "--todo")),
                 contact = required(values, "--contact"),
                 save = "--save" in flags,
-                limit = values["--limit"]?.let {
-                    it.toIntOrNull() ?: throw IllegalArgumentException("--limit needs a number")
-                },
+                limit =
+                    values["--limit"]?.let {
+                        it.toIntOrNull() ?: throw IllegalArgumentException("--limit needs a number")
+                    },
                 diffLog = values["--diff-log"]?.let(::Path),
                 skipLog = values["--skip-log"]?.let(::Path),
                 stopPage = values["--stop-page"] ?: DEFAULT_STOP_PAGE,
@@ -200,8 +208,8 @@ private class Options(
 /**
  * Bot credentials from the environment, or anonymous.
  *
- * Anonymous is enough to read, which is enough for a dry run — so a first look at what the bot
- * would do needs no account at all.
+ * Anonymous is enough to read, which is enough for a dry run — so a first look at what the bot would do needs
+ * no account at all.
  */
 private fun credentialsFromEnvironment(): Credentials {
     val account = System.getenv("KWIKIBOT_ACCOUNT") ?: return Credentials.Anonymous

@@ -1,13 +1,13 @@
 package com.fenakhay.kwikibot.net
 
 import io.kotest.matchers.shouldBe
+import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class ThrottleTest {
 
@@ -31,11 +31,12 @@ class ThrottleTest {
 
     @Test
     fun `writes are paced separately and far more slowly`() = runTest {
-        val throttle = Throttle(
-            read = 100.milliseconds,
-            write = 10.seconds,
-            timeSource = testScheduler.timeSource,
-        )
+        val throttle =
+            Throttle(
+                read = 100.milliseconds,
+                write = 10.seconds,
+                timeSource = testScheduler.timeSource,
+            )
 
         throttle.acquire(RequestKind.WRITE)
         throttle.acquire(RequestKind.WRITE)
@@ -45,11 +46,12 @@ class ThrottleTest {
 
     @Test
     fun `a write also paces the read that follows it`() = runTest {
-        val throttle = Throttle(
-            read = 100.milliseconds,
-            write = 10.seconds,
-            timeSource = testScheduler.timeSource,
-        )
+        val throttle =
+            Throttle(
+                read = 100.milliseconds,
+                write = 10.seconds,
+                timeSource = testScheduler.timeSource,
+            )
 
         throttle.acquire(RequestKind.WRITE)
         throttle.acquire(RequestKind.READ)

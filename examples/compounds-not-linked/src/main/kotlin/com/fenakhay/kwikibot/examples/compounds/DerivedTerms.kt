@@ -1,11 +1,11 @@
 package com.fenakhay.kwikibot.examples.compounds
 
-import com.fenakhay.kwikibot.wikitext.Heading
-import com.fenakhay.kwikibot.wikitext.Node
-import com.fenakhay.kwikibot.wikitext.Section
 import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.Wikitext
-import com.fenakhay.kwikibot.wikitext.outline
+import com.fenakhay.kwikibot.wikitext.node.Heading
+import com.fenakhay.kwikibot.wikitext.node.Node
+import com.fenakhay.kwikibot.wikitext.ops.Section
+import com.fenakhay.kwikibot.wikitext.ops.outline
 
 /** What the transform did, or why it declined to do anything. */
 public data class TransformResult(
@@ -45,7 +45,8 @@ public data class TransformResult(
     }
 
     /** Whether there is an edit to save. */
-    public val changed: Boolean get() = status == Status.CHANGED
+    public val changed: Boolean
+        get() = status == Status.CHANGED
 }
 
 /**
@@ -54,13 +55,12 @@ public data class TransformResult(
  * Pure: no wiki access, so every rule can be exercised offline against real page text.
  *
  * The placement rules, in order:
- *  1. The entry must have exactly one part-of-speech section under the target language. Zero or
- *     several is a skip rather than a guess: filing a term under the wrong sense is worse than
- *     deferring it.
- *  2. If that section already has a derived terms subsection, its contents are read, merged
- *     with the new terms, sorted, and re-emitted as a single `{{col}}`.
- *  3. Otherwise a new subsection is created where WT:EL says it belongs: after the synonyms and
- *     other nyms, before related terms, descendants and translations.
+ * 1. The entry must have exactly one part-of-speech section under the target language. Zero or several is a
+ *    skip rather than a guess: filing a term under the wrong sense is worse than deferring it.
+ * 2. If that section already has a derived terms subsection, its contents are read, merged with the new
+ *    terms, sorted, and re-emitted as a single `{{col}}`.
+ * 3. Otherwise a new subsection is created where WT:EL says it belongs: after the synonyms and other nyms,
+ *    before related terms, descendants and translations.
  */
 public object DerivedTerms {
 
@@ -97,9 +97,10 @@ public object DerivedTerms {
         val (language, pos) = located.language to located.pos
 
         val wanted = wantedTerms(language, title, terms)
-        val derived = pos.subsections.filter {
-            it.title?.lowercase() == EntryLayout.DERIVED_TERMS.lowercase()
-        }
+        val derived =
+            pos.subsections.filter {
+                it.title?.lowercase() == EntryLayout.DERIVED_TERMS.lowercase()
+            }
 
         when {
             wanted.isEmpty() -> return TransformResult(text, TransformResult.Status.UNCHANGED)
@@ -111,10 +112,11 @@ public object DerivedTerms {
         // section of the page being *inside* this one still means nothing follows it.
         val followed = page.outline().all().last() !in pos.all().toSet()
 
-        val updated = when (val outcome = plan(pos, derived.singleOrNull(), lang, wanted, followed)) {
-            is Outcome.Refused -> return skip(text, outcome.reason)
-            is Outcome.Ok -> outcome.update
-        }
+        val updated =
+            when (val outcome = plan(pos, derived.singleOrNull(), lang, wanted, followed)) {
+                is Outcome.Refused -> return skip(text, outcome.reason)
+                is Outcome.Ok -> outcome.update
+            }
 
         val rebuilt = page.outline().replace(pos, updated.section).serialize()
 
@@ -133,15 +135,13 @@ public object DerivedTerms {
     /**
      * Finds the one part-of-speech section to edit, or says why there is not one.
      *
-     * Zero or several is a refusal rather than a guess: filing a term under the wrong sense is
-     * worse than deferring it for review.
+     * Zero or several is a refusal rather than a guess: filing a term under the wrong sense is worse than
+     * deferring it for review.
      */
     private fun locate(page: Markup, lang: String): Located {
-        val heading = languageHeading(lang)
-            ?: return Located.Refused("unknown_lang_code:$lang")
+        val heading = languageHeading(lang) ?: return Located.Refused("unknown_lang_code:$lang")
 
-        val language = EntryLayout.language(page, heading)
-            ?: return Located.Refused("no_lang_section")
+        val language = EntryLayout.language(page, heading) ?: return Located.Refused("no_lang_section")
 
         val candidates = EntryLayout.posSections(language)
         return when (candidates.size) {
@@ -174,13 +174,15 @@ public object DerivedTerms {
     /**
      * Terms already listed under any derived or related terms heading in the language section.
      *
-     * Related terms counts as well as derived terms: a term listed there is not missing, and
-     * adding it again would be noise.
+     * Related terms counts as well as derived terms: a term listed there is not missing, and adding it again
+     * would be noise.
      */
-    private fun existingListedTerms(language: Section): Set<String> = language.all()
-        .filter { it.title?.lowercase() in LISTING_HEADINGS }
-        .flatMap { Containers.listedTerms(it.content.serialize()).asSequence() }
-        .toSet()
+    private fun existingListedTerms(language: Section): Set<String> =
+        language
+            .all()
+            .filter { it.title?.lowercase() in LISTING_HEADINGS }
+            .flatMap { Containers.listedTerms(it.content.serialize()).asSequence() }
+            .toSet()
 
     /** Either the section to write, or the reason the page is being left alone. */
     private fun plan(
@@ -189,11 +191,12 @@ public object DerivedTerms {
         lang: String,
         wanted: List<String>,
         followed: Boolean,
-    ): Outcome = if (derived == null) {
-        Outcome.Ok(createSection(pos, lang, wanted, followed))
-    } else {
-        extendSection(pos, derived, lang, wanted)
-    }
+    ): Outcome =
+        if (derived == null) {
+            Outcome.Ok(createSection(pos, lang, wanted, followed))
+        } else {
+            extendSection(pos, derived, lang, wanted)
+        }
 
     /** A part-of-speech section with the new terms merged into its existing list. */
     private fun extendSection(
@@ -203,8 +206,7 @@ public object DerivedTerms {
         wanted: List<String>,
     ): Outcome {
         val body = derived.content.serialize()
-        val container = Containers.read(body)
-            ?: return Outcome.Refused("unrecognized_container")
+        val container = Containers.read(body) ?: return Outcome.Refused("unrecognized_container")
 
         val containerLang = container.lang?.trim()
         if (containerLang != null && !containerLang.equals(lang, ignoreCase = true)) {
@@ -241,31 +243,32 @@ public object DerivedTerms {
         val heading = Heading(Markup.of(EntryLayout.DERIVED_TERMS), level = pos.level + 1)
         val index = EntryLayout.insertionIndex(pos, EntryLayout.DERIVED_TERMS)
 
-        val section = if (index < pos.subsections.size) {
-            val newSection = Section(heading, Wikitext.parse("\n$rendered\n\n").nodes)
-            pos.copy(
-                subsections = pos.subsections.take(index) + newSection + pos.subsections.drop(index),
-            )
-        } else {
-            // Appending: the page furniture at the end — categories, topic templates, a rule —
-            // has to stay below the new section rather than above it.
-            val (stripped, furniture) = takeTrailingFurniture(pos)
-            // A blank line goes below the list whenever something follows it: the furniture
-            // that just moved past it, or the next section. Furniture that already begins with
-            // a newline supplies its own, and at the very end of a page a blank line would only
-            // be a stray newline in the diff.
-            val furnitureText = furniture.joinToString("") { it.serialize() }
-            val below = when {
-                furnitureText.startsWith("\n") -> "\n"
-                furniture.isNotEmpty() || followed -> "\n\n"
-                else -> "\n"
+        val section =
+            if (index < pos.subsections.size) {
+                val newSection = Section(heading, Wikitext.parse("\n$rendered\n\n").nodes)
+                pos.copy(subsections = pos.subsections.take(index) + newSection + pos.subsections.drop(index))
+            } else {
+                // Appending: the page furniture at the end — categories, topic templates, a rule —
+                // has to stay below the new section rather than above it.
+                val (stripped, furniture) = takeTrailingFurniture(pos)
+                // A blank line goes below the list whenever something follows it: the furniture
+                // that just moved past it, or the next section. Furniture that already begins with
+                // a newline supplies its own, and at the very end of a page a blank line would only
+                // be a stray newline in the diff.
+                val furnitureText = furniture.joinToString("") { it.serialize() }
+                val below =
+                    when {
+                        furnitureText.startsWith("\n") -> "\n"
+                        furniture.isNotEmpty() || followed -> "\n\n"
+                        else -> "\n"
+                    }
+                val newSection =
+                    Section(
+                        heading = heading,
+                        nodes = Wikitext.parse("\n$rendered$below").nodes + furniture,
+                    )
+                ensureBlankLineBefore(stripped).let { it.copy(subsections = it.subsections + newSection) }
             }
-            val newSection = Section(
-                heading = heading,
-                nodes = Wikitext.parse("\n$rendered$below").nodes + furniture,
-            )
-            ensureBlankLineBefore(stripped).let { it.copy(subsections = it.subsections + newSection) }
-        }
 
         return Update(
             section,
@@ -276,9 +279,8 @@ public object DerivedTerms {
     /**
      * Strips the trailing page furniture from wherever it ended up.
      *
-     * Categories written at the bottom of an entry belong, structurally, to whichever section
-     * happens to be last — so they are taken from the deepest last subsection, not from the
-     * section being appended to.
+     * Categories written at the bottom of an entry belong, structurally, to whichever section happens to be
+     * last — so they are taken from the deepest last subsection, not from the section being appended to.
      */
     private fun takeTrailingFurniture(section: Section): Pair<Section, List<Node>> {
         if (section.subsections.isEmpty()) {
@@ -298,12 +300,13 @@ public object DerivedTerms {
         }
 
         val text = section.content.serialize()
-        val missing = when {
-            text.isEmpty() -> "\n\n"
-            text.endsWith("\n\n") -> ""
-            text.endsWith("\n") -> "\n"
-            else -> "\n\n"
-        }
+        val missing =
+            when {
+                text.isEmpty() -> "\n\n"
+                text.endsWith("\n\n") -> ""
+                text.endsWith("\n") -> "\n"
+                else -> "\n\n"
+            }
         if (missing.isEmpty()) return section
 
         return section.withContent(Wikitext.parse(text + missing))
@@ -312,23 +315,24 @@ public object DerivedTerms {
     /**
      * Names the ambiguous sections, annotating repeats.
      *
-     * `Proper noun x2` rather than `Proper noun, Proper noun`: two sections sharing a title, one
-     * per numbered etymology, must not read as a single unambiguous one.
+     * `Proper noun x2` rather than `Proper noun, Proper noun`: two sections sharing a title, one per numbered
+     * etymology, must not read as a single unambiguous one.
      */
-    private fun describe(sections: List<Section>): String = sections
-        .groupingBy { it.title.orEmpty() }
-        .eachCount()
-        .toSortedMap()
-        .map { (name, count) -> if (count == 1) name else "$name x$count" }
-        .joinToString(",")
+    private fun describe(sections: List<Section>): String =
+        sections
+            .groupingBy { it.title.orEmpty() }
+            .eachCount()
+            .toSortedMap()
+            .map { (name, count) -> if (count == 1) name else "$name x$count" }
+            .joinToString(",")
 
     private data class Update(val section: Section, val rules: Set<TransformResult.Rule>)
 
     /**
      * The result of planning an edit.
      *
-     * A reason travels with the refusal rather than in a field on this object: the transform is
-     * a singleton, and two runs sharing it must not be able to overwrite each other's reason.
+     * A reason travels with the refusal rather than in a field on this object: the transform is a singleton,
+     * and two runs sharing it must not be able to overwrite each other's reason.
      */
     private sealed interface Outcome {
         data class Ok(val update: Update) : Outcome
@@ -339,8 +343,9 @@ public object DerivedTerms {
     private fun skip(text: String, reason: String) =
         TransformResult(text, TransformResult.Status.SKIPPED, reason)
 
-    private val LISTING_HEADINGS = setOf(
-        EntryLayout.DERIVED_TERMS.lowercase(),
-        EntryLayout.RELATED_TERMS.lowercase(),
-    )
+    private val LISTING_HEADINGS =
+        setOf(
+            EntryLayout.DERIVED_TERMS.lowercase(),
+            EntryLayout.RELATED_TERMS.lowercase(),
+        )
 }

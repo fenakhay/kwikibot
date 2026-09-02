@@ -8,7 +8,7 @@ package com.fenakhay.kwikibot.model
 @JvmInline
 public value class LangCode(
     /** The code as the wiki's interwiki map spells it, not always an ISO tag. */
-    public val code: String,
+    public val code: String
 ) {
     init {
         require(code.isNotBlank()) { "language code must not be blank" }
@@ -21,7 +21,7 @@ public value class LangCode(
 @JvmInline
 public value class PageId(
     /** The wiki's own id, stable across renames where a title is not. */
-    public val value: Long,
+    public val value: Long
 ) {
     override fun toString(): String = value.toString()
 }
@@ -30,7 +30,7 @@ public value class PageId(
 @JvmInline
 public value class RevisionId(
     /** The revision's own id, which is never reused. */
-    public val value: Long,
+    public val value: Long
 ) {
     override fun toString(): String = value.toString()
 }

@@ -6,9 +6,9 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * How long to wait before trying a failed request again.
  *
- * Deliberately deterministic — no jitter — so that a run is reproducible and the timing tests
- * can assert exact virtual-clock values. A single bot is not a thundering herd; the pacing that
- * protects the wiki is [Throttle], not randomised backoff.
+ * Deliberately deterministic — no jitter — so that a run is reproducible and the timing tests can assert
+ * exact virtual-clock values. A single bot is not a thundering herd; the pacing that protects the wiki is
+ * [Throttle], not randomised backoff.
  */
 public data class RetryPolicy(
     /** How many times a request may be retried before the failure is raised. */
@@ -41,8 +41,8 @@ public data class RetryPolicy(
     /**
      * The wait to use when the server named one.
      *
-     * A server that says `Retry-After` is telling us something the backoff curve does not know,
-     * so it wins — but never shortens the wait we would have taken anyway.
+     * A server that says `Retry-After` is telling us something the backoff curve does not know, so it wins —
+     * but never shortens the wait we would have taken anyway.
      */
     public fun delayFor(attempt: Int, retryAfter: Duration?): Duration =
         maxOf(delayFor(attempt), retryAfter ?: Duration.ZERO)

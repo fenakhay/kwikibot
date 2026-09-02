@@ -23,17 +23,21 @@ application {
 
 val os: OperatingSystem = OperatingSystem.current()
 
-val platform = when {
-    os.isWindows -> "windows"
-    os.isMacOsX -> "macos"
-    else -> "linux"
-}
+val platform =
+    when {
+        os.isWindows -> "windows"
+        os.isMacOsX -> "macos"
+        else -> "linux"
+    }
 
-val architecture = when (val arch = System.getProperty("os.arch")) {
-    "aarch64", "arm64" -> "arm64"
-    "amd64", "x86_64" -> "x64"
-    else -> arch
-}
+val architecture =
+    when (val arch = System.getProperty("os.arch")) {
+        "aarch64",
+        "arm64" -> "arm64"
+        "amd64",
+        "x86_64" -> "x64"
+        else -> arch
+    }
 
 val packageVersion = version.toString().substringBefore("-")
 
@@ -59,9 +63,10 @@ graalvmNative {
     }
 }
 
-val nativeBinary = layout.buildDirectory.file(
-    if (os.isWindows) "native/nativeCompile/kwikibot.exe" else "native/nativeCompile/kwikibot",
-)
+val nativeBinary =
+    layout.buildDirectory.file(
+        if (os.isWindows) "native/nativeCompile/kwikibot.exe" else "native/nativeCompile/kwikibot"
+    )
 
 val archiveSetup: AbstractArchiveTask.() -> Unit = {
     group = "distribution"
@@ -79,14 +84,15 @@ val archiveSetup: AbstractArchiveTask.() -> Unit = {
     }
 }
 
-val appArchive = if (os.isWindows) {
-    tasks.register<Zip>("appArchive", archiveSetup)
-} else {
-    tasks.register<Tar>("appArchive") {
-        compression = Compression.GZIP
-        archiveSetup()
+val appArchive =
+    if (os.isWindows) {
+        tasks.register<Zip>("appArchive", archiveSetup)
+    } else {
+        tasks.register<Tar>("appArchive") {
+            compression = Compression.GZIP
+            archiveSetup()
+        }
     }
-}
 
 tasks.named("assemble") {
     setDependsOn(dependsOn.filterNot { it == appArchive })

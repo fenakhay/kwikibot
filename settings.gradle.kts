@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     repositories { mavenCentral() }
 }
 
-rootProject.name = "kwikibot-build"
+rootProject.name = "kwikibot-root"
 
 include(
     "kwikibot",
