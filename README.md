@@ -169,7 +169,7 @@ binary, and there is nothing to depend on.
 ## The kwikibot tool
 
 `kwikibot` answers the first question of any misbehaving bot: is it me or the wiki? It ships as a
-self-contained binary with its own bundled runtime, so it needs no JDK installed.
+native binary, so it needs no JDK installed and starts in milliseconds.
 
 ```bash
 scoop bucket add kwikibot https://github.com/fenakhay/kwikibot
@@ -182,8 +182,8 @@ brew install fenakhay/tap/kwikibot
 
 Debian and RPM packages are attached to each [release](https://github.com/fenakhay/kwikibot/releases),
 as are plain archives for Windows, macOS (Intel and Apple Silicon) and Linux. Unpack one and put
-its directory on your path. `SHA256SUMS` covers every file. To build it yourself:
-`./gradlew :kwikibot-cli:appArchive`.
+the binary on your path. `SHA256SUMS` covers every file. To build it yourself:
+`./gradlew :kwikibot-cli:appArchive`, which needs a GraalVM JDK.
 
 ```
 $ kwikibot detect https://en.wiktionary.org

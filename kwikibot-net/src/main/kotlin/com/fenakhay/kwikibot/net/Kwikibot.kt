@@ -3,9 +3,8 @@ package com.fenakhay.kwikibot.net
 /**
  * What this library is, for the places that have to say so.
  *
- * The version is read from the jar's manifest when there is one and falls back to a constant
- * when running from a build directory, so a bot started from Gradle reports something sensible
- * rather than "unknown".
+ * The version is compiled in by the build, so it is the same whether this runs from a jar, from
+ * a build directory or from a native image.
  */
 public object Kwikibot {
 
@@ -18,13 +17,11 @@ public object Kwikibot {
     /**
      * The library version.
      *
-     * From the jar manifest, or [FALLBACK_VERSION] when there is no jar — which is every run
-     * from a build directory, including every test.
+     * Compiled in by the build rather than read from the jar manifest. A native image has no
+     * manifest, so reading one would make every native build report the wrong version while
+     * still appearing to work.
      */
-    public val version: String by lazy {
-        runCatching { Kwikibot::class.java.`package`?.implementationVersion }.getOrNull()
-            ?: FALLBACK_VERSION
-    }
+    public val version: String get() = BUILD_VERSION
 
     /**
      * The runtime this bot is on, for a version report.
@@ -49,7 +46,4 @@ public object Kwikibot {
         appendLine("runtime: $runtime")
         appendLine("platform: $platform")
     }
-
-    /** What [version] reports when there is no jar to read it from. */
-    private const val FALLBACK_VERSION = "dev"
 }

@@ -29,10 +29,7 @@ TEMPLATE = '''class Kwikibot < Formula
   end
 
   def install
-    libexec.install Dir["*"]
-    launcher = Dir[libexec/"**/kwikibot"].find {{ |path| File.file?(path) && File.executable?(path) }}
-    odie "no kwikibot launcher in the archive" if launcher.nil?
-    bin.write_exec_script launcher
+    bin.install "kwikibot"
   end
 
   test do

@@ -15,6 +15,7 @@ turbine = "1.2.1"
 
 nmcp = "1.6.2"
 kover = "0.9.9"
+graalvm = "0.11.0"
 benchmark = "0.4.14"
 
 [libraries]
@@ -54,5 +55,6 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
 benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "benchmark" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

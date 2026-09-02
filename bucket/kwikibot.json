@@ -9,7 +9,6 @@
             "hash": "5db89643475b4b53078e3839e2da67b8ba9f22bca7c1b9febecb1e2d21bf0a29"
         }
     },
-    "extract_dir": "kwikibot",
     "bin": "kwikibot.exe",
     "checkver": {
         "github": "https://github.com/fenakhay/kwikibot"

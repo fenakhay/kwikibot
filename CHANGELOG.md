@@ -7,6 +7,12 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.0.2] — 2026-09-02
+
+### Changed
+
+- `kwikibot` is a native binary rather than a bundled JVM, and starts in 94ms instead of 560ms.
+
 ## [1.0.1] — 2026-09-02
 
 ### Fixed
@@ -60,5 +66,6 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[1.0.2]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.2
 [1.0.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.1
 [1.0.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.0

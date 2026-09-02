@@ -1,0 +1,16 @@
+name: kwikibot
+arch: amd64
+platform: linux
+version: ${VERSION}
+section: utils
+maintainer: Fenakhay <fenakhaywiki@gmail.com>
+description: Command-line tool for talking to a MediaWiki wiki
+vendor: fenakhay
+homepage: https://github.com/fenakhay/kwikibot
+license: MIT
+
+contents:
+  - src: kwikibot-cli/build/native/nativeCompile/kwikibot
+    dst: /usr/bin/kwikibot
+    file_info:
+      mode: 0755
