@@ -172,7 +172,12 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           TAP: ${{ vars.HOMEBREW_TAP }}
         run: |
-          digest() { sha256sum "artifacts/kwikibot-$VERSION-$1.tar.gz" | cut -d' ' -f1; }
+          set -euo pipefail
+          digest() {
+            archive="artifacts/kwikibot-$VERSION-$1.tgz"
+            test -f "$archive" || { echo "::error::no archive at $archive"; exit 1; }
+            sha256sum "$archive" | cut -d' ' -f1
+          }
 
           git clone "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" tap
           python3 .github/scripts/brew_formula.py \

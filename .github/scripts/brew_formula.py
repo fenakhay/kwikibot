@@ -14,17 +14,17 @@ TEMPLATE = '''class Kwikibot < Formula
 
   on_macos do
     on_arm do
-      url "{base}/kwikibot-{version}-macos-arm64.tar.gz"
+      url "{base}/kwikibot-{version}-macos-arm64.tgz"
       sha256 "{arm}"
     end
     on_intel do
-      url "{base}/kwikibot-{version}-macos-x64.tar.gz"
+      url "{base}/kwikibot-{version}-macos-x64.tgz"
       sha256 "{intel}"
     end
   end
 
   on_linux do
-    url "{base}/kwikibot-{version}-linux-x64.tar.gz"
+    url "{base}/kwikibot-{version}-linux-x64.tgz"
     sha256 "{linux}"
   end
 
@@ -44,6 +44,10 @@ end
 
 def main() -> None:
     repo, version, out, arm, intel, linux = sys.argv[1:7]
+
+    for name, digest in (("arm64", arm), ("x64", intel), ("linux", linux)):
+        if len(digest) != 64:
+            raise SystemExit(f"{name}: expected a sha256, got {digest!r}")
 
     formula = TEMPLATE.format(
         repo=repo,
