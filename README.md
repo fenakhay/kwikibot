@@ -4,6 +4,7 @@ A Kotlin library for writing MediaWiki bots.
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.fenakhay.kwikibot/kwikibot)](https://central.sonatype.com/artifact/com.fenakhay.kwikibot/kwikibot)
 [![CI](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml/badge.svg)](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/fenakhay/kwikibot/branch/main/graph/badge.svg)](https://codecov.io/gh/fenakhay/kwikibot)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Coroutines-first, immutable domain types, no hidden I/O behind property getters, and a wikitext
