@@ -41,29 +41,7 @@ private val REFERENCE_WIKIS = listOf(
 /** Wildcards covering the whole surface: every action, and every submodule of `query`. */
 private val PATTERNS = arrayOf("*", "query+*")
 
-/**
- * The longest list of accepted values worth writing out in full.
- *
- * Above this a parameter is enumerating namespaces or language codes, where the names are noise
- * and a change of length is the only part worth noticing.
- */
-private const val MAX_VALUES = 24
-
 private const val NO_PARAMETER = "-"
-
-private val HEADER = """
-    # What the reference wikis say their API accepts, as `action=paraminfo` reports it.
-    #
-    # Regenerate with ./gradlew wikiApiDump. The diff is the point: a row that appears is surface
-    # kwikibot does not cover yet, and a row that gains a `deprecated` flag is notice that
-    # something is going away. This records what the wikis offer, not what kwikibot implements -
-    # the README is the statement of what is covered.
-    #
-    # Limits are the ones an anonymous client is given, since that is what this runs as. An
-    # account with apihighlimits is granted the `highlimit` instead.
-    #
-    # Wikis: ${REFERENCE_WIKIS.joinToString(", ")}
-""".trimIndent()
 
 private const val COLUMNS = "module\tparameter\tgroup\tsource\tflags\tdetail"
 
@@ -154,7 +132,7 @@ private suspend fun collect(): String {
         }
     }
 
-    return (listOf(HEADER, COLUMNS) + rows.map { it.render() }).joinToString("\n", postfix = "\n")
+    return (listOf(COLUMNS) + rows.map { it.render() }).joinToString("\n", postfix = "\n")
 }
 
 private fun ModuleDescription.rows(): List<Row> {
@@ -201,13 +179,8 @@ private fun ParamDescription.row(module: ModuleDescription) = Row(
 )
 
 private fun ParamDescription.detail(): String = listOfNotNull(
-    values.takeIf { it.isNotEmpty() }?.let { accepted ->
-        if (accepted.size <= MAX_VALUES) {
-            "enum=${accepted.sorted().joinToString("|")}"
-        } else {
-            "enum=<${accepted.size} values>"
-        }
-    },
+    values.takeIf { it.isNotEmpty() }
+        ?.let { accepted -> "enum=${accepted.sorted().joinToString("|")}" },
     type?.let { "type=$it" },
     default?.takeIf { it.isNotEmpty() }?.let { "default=$it" },
     limit?.let { "limit=$it" },
