@@ -84,22 +84,10 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
         // The file supplies what the flags do not, so a configured checkout needs no flags and
         // a one-off invocation needs no file.
         val file = BotConfig.find(configPath)
-
-        val config = file?.toWikiConfig()?.let { fromFile ->
-            contact?.let { fromFile.copy(userAgent = UserAgent("kwikibot", VERSION, it)) } ?: fromFile
-        } ?: WikiConfig(
-            userAgent = UserAgent(
-                "kwikibot",
-                VERSION,
-                requireNotNull(contact) {
-                    "no configuration found and no --contact given; run 'kwikibot init-config' " +
-                        "or pass --contact"
-                },
-            ),
-        )
+        val config = wikiConfig(file)
 
         // A misconfigured bot is an ordinary outcome of running a command-line tool, so it is
-            // reported as a message. A stack trace here would say nothing the message does not.
+        // reported as a message. A stack trace here would say nothing the message does not.
         val credentials = try {
             credentials(file)
         } catch (e: IllegalStateException) {
@@ -127,12 +115,26 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
         return file?.credentials() ?: Credentials.Anonymous
     }
 
+    /** What the file says, overridden by the flags, or the flags alone. */
+    private fun wikiConfig(file: BotConfig?): WikiConfig {
+        file?.toWikiConfig()?.let { fromFile ->
+            return contact?.let { fromFile.copy(userAgent = UserAgent("kwikibot", VERSION, it)) }
+                ?: fromFile
+        }
+
+        val given = contact ?: throw CliktError(
+            "no configuration found and no --contact given; run 'kwikibot init-config' " +
+                "or pass --contact",
+        )
+        return WikiConfig(userAgent = UserAgent("kwikibot", VERSION, given))
+    }
+
     private fun language(file: BotConfig?): LangCode =
         if (lang != null) LangCode(lang!!) else file?.language() ?: LangCode("en")
 
     private fun resolveFamily(file: BotConfig?): Family {
         val named = family ?: return file?.family() ?: Family.WIKTIONARY
-        return Family.named(named) ?: throw IllegalArgumentException("unknown family: $named")
+        return Family.named(named) ?: throw CliktError("unknown family: $named")
     }
 
     private companion object {
