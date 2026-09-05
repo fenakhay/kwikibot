@@ -1,9 +1,8 @@
 package com.fenakhay.kwikibot.bot.run
 
-import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.edit.EditOutcome
-import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.testkit.FakePageService
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlin.test.Test
@@ -16,31 +15,23 @@ class BotReportTest {
             "geyser" to "==English==",
         )
 
-    private fun content(title: String, text: String, redirectTo: String? = null) =
-        PageContent(
+    private fun refused(title: String) =
+        PageOutcome.Refused(
             pages.ref(title),
-            RevisionId(1),
-            text,
-            redirectTarget = redirectTo?.let { pages.ref(it).title },
+            EditOutcome.Protected(pages.ref(title), "locked", "sysop"),
         )
 
     @Test
-    fun `a report counts each outcome under its own heading`() {
+    fun `a report carries a count under each heading`() {
         val report =
             BotReport(
-                outcomes =
-                    listOf(
-                        PageOutcome.Saved(pages.ref("a"), RevisionId(2)),
-                        PageOutcome.Saved(pages.ref("b"), RevisionId(3)),
-                        PageOutcome.Pending(pages.ref("c"), Edit("new", "a summary"), before = "old"),
-                        PageOutcome.Skipped(pages.ref("d"), "nothing to do"),
-                        PageOutcome.Missing(pages.ref("e")),
-                        PageOutcome.Refused(
-                            pages.ref("f"),
-                            EditOutcome.Protected(pages.ref("f"), "locked", "sysop"),
-                        ),
-                        PageOutcome.Failed(pages.ref("g"), IllegalStateException("network")),
-                    )
+                processed = 7,
+                saved = 2,
+                pending = 1,
+                skipped = 2,
+                refused = 1,
+                failed = 1,
+                problems = listOf(refused("f")),
             )
 
         report.processed shouldBe 7
@@ -54,19 +45,29 @@ class BotReportTest {
 
     @Test
     fun `a run with nothing refused or failed is clean`() {
-        BotReport(listOf(PageOutcome.Saved(pages.ref("a"), RevisionId(2)))).clean shouldBe true
-        BotReport(emptyList()).clean shouldBe true
+        BotReport(processed = 1, saved = 1).clean shouldBe true
+        BotReport().clean shouldBe true
+    }
+
+    @Test
+    fun `the problems it kept are the refusals and failures`() {
+        val report = BotReport(processed = 2, refused = 1, failed = 1, problems = listOf(refused("f")))
+
+        report.problems shouldHaveSize 1
+        // Two went wrong and one was kept, so the list is not the whole of it.
+        report.problemsTruncated shouldBe true
+    }
+
+    @Test
+    fun `a report that kept every problem does not claim to be truncated`() {
+        val report = BotReport(processed = 1, refused = 1, problems = listOf(refused("f")))
+
+        report.problemsTruncated shouldBe false
     }
 
     @Test
     fun `a report prints as one line, which is what gets logged`() {
-        val report =
-            BotReport(
-                outcomes = listOf(PageOutcome.Saved(pages.ref("a"), RevisionId(2))),
-                stopped = true,
-            )
-
-        val printed = report.toString()
+        val printed = BotReport(processed = 1, saved = 1, stopped = true).toString()
 
         printed shouldContain "processed=1"
         printed shouldContain "saved=1"
@@ -76,6 +77,6 @@ class BotReportTest {
 
     @Test
     fun `a run that finished says nothing about stopping`() {
-        BotReport(emptyList()).toString().contains("stopped") shouldBe false
+        BotReport().toString().contains("stopped") shouldBe false
     }
 }

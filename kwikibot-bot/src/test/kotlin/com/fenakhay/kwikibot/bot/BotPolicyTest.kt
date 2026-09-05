@@ -102,21 +102,23 @@ class BotRunExclusionTest {
             )
         var transformed = 0
 
-        val report =
-            botRun(pages) {
-                source(flowOf(pages.ref("volcano"), pages.ref("mountain")))
-                exclusionPolicy = BotPolicy("FenaBot")
-                dryRun = false
-                transform { content ->
-                    transformed++
-                    Edit(content.text + "\n<!-- seen -->", "test")
-                }
+        val seen = mutableListOf<PageOutcome>()
+
+        botRun(pages) {
+            source(flowOf(pages.ref("volcano"), pages.ref("mountain")))
+            exclusionPolicy = BotPolicy("FenaBot")
+            dryRun = false
+            transform { content ->
+                transformed++
+                Edit(content.text + "\n<!-- seen -->", "test")
             }
+            onOutcome = { seen += it }
+        }
 
         transformed shouldBe 1
         pages.text("volcano") shouldBe "{{nobots}}\n==English=="
 
-        val skipped = report.outcomes.filterIsInstance<PageOutcome.Skipped>().single()
+        val skipped = seen.filterIsInstance<PageOutcome.Skipped>().single()
         skipped.reason shouldContain "nobots"
     }
 
@@ -131,6 +133,6 @@ class BotRunExclusionTest {
                 transform { Edit(it.text + "!", "test") }
             }
 
-        report.outcomes.filterIsInstance<PageOutcome.Saved>().size shouldBe 1
+        report.saved shouldBe 1
     }
 }

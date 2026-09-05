@@ -7,18 +7,27 @@ import com.fenakhay.kwikibot.net.UserAgent
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.cookies.HttpCookies
+import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
+import io.ktor.client.request.preparePost
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Cookie
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.http.Url
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -190,6 +199,147 @@ public class SparqlClient(
         select(query).mapNotNull { it[variable]?.entityId }
 
     /**
+     * Runs a SELECT query and gives its rows to [use] one at a time.
+     *
+     * The answer is asked for in TSV and spooled to a temporary file as it arrives, then read back a line at
+     * a time, so it is never held whole. The file is deleted before this returns.
+     *
+     * @param T whatever [use] makes of the rows, which is all that outlives this call.
+     * @param query the SELECT to run.
+     * @param use given the rows in the order the service returned them. The sequence is single-pass and is
+     *   not valid once this returns.
+     * @throws WikiError.Api if the service rejects the query, with what it said.
+     */
+    public suspend fun <T> selectStreamed(query: String, use: suspend (Sequence<SparqlRow>) -> T): T {
+        val spooled = withContext(Dispatchers.IO) { Files.createTempFile("sparql-", ".tsv") }
+
+        return try {
+            spool(query, spooled)
+
+            spooled.toFile().bufferedReader().use { reader ->
+                val lines = reader.lineSequence().iterator()
+                if (!lines.hasNext()) return@use use(emptySequence())
+
+                // The header names the variables, each written as it was in the query: `?item`.
+                val names = lines.next().split(TAB).map { it.trim().removePrefix("?") }
+
+                use(lines.asSequence().map { line -> rowOf(names, line) })
+            }
+        } finally {
+            withContext(Dispatchers.IO) { Files.deleteIfExists(spooled) }
+        }
+    }
+
+    /** One TSV line as a row, matched up with the variables the header named. */
+    private fun rowOf(names: List<String>, line: String): SparqlRow {
+        val cells = line.split(TAB)
+
+        return names
+            .withIndex()
+            .mapNotNull { (index, name) ->
+                val cell = cells.getOrNull(index)?.trim().orEmpty()
+                // An unbound variable is an empty cell, and reads back as absent rather than as an
+                // empty value.
+                if (cell.isEmpty()) null else name to termOf(cell)
+            }
+            .toMap()
+    }
+
+    /**
+     * One TSV cell as a value.
+     *
+     * The service writes terms the way Turtle does: a URI in angle brackets, a literal in quotes with an
+     * optional `@language` or `^^<datatype>`, a blank node as `_:something`. Anything else is taken as it
+     * stands, which is what a bare number is.
+     */
+    private fun termOf(cell: String): SparqlValue =
+        when {
+            cell.startsWith("<") && cell.endsWith(">") ->
+                SparqlValue(value = cell.substring(1, cell.length - 1), type = "uri")
+
+            cell.startsWith("_:") -> SparqlValue(value = cell.removePrefix("_:"), type = "bnode")
+
+            cell.startsWith("\"") -> {
+                val close = cell.lastIndexOf('"')
+                val text = unescape(cell.substring(1, close.coerceAtLeast(1)))
+                val after = cell.substring((close + 1).coerceAtMost(cell.length))
+
+                SparqlValue(
+                    value = text,
+                    type = "literal",
+                    language = after.removePrefix("@").takeIf { after.startsWith("@") },
+                    dataType =
+                        after.removePrefix("^^").removeSurrounding("<", ">").takeIf {
+                            after.startsWith("^^")
+                        },
+                )
+            }
+
+            else -> SparqlValue(value = cell, type = "literal")
+        }
+
+    /** The escapes the service writes inside a literal, undone. */
+    private fun unescape(text: String): String =
+        text
+            .replace("\\t", "\t")
+            .replace("\\n", "\n")
+            .replace("\\r", "\r")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\")
+
+    /**
+     * Writes the answer to [target], retrying while the service says it is busy.
+     *
+     * The body goes from the socket to the file in chunks and is never held as a string.
+     */
+    private suspend fun spool(query: String, target: Path) {
+        var attempt = 0
+
+        while (true) {
+            val busy =
+                http
+                    .preparePost(endpoint) {
+                        header(HttpHeaders.UserAgent, userAgent.headerValue)
+                        // The service escapes tabs and newlines inside a literal, so a line is one row.
+                        header(HttpHeaders.Accept, "text/tab-separated-values")
+                        setBody(
+                            FormDataContent(
+                                Parameters.build {
+                                    append("query", query)
+                                    append("format", "tsv")
+                                }
+                            )
+                        )
+                    }
+                    .execute { response ->
+                        if (response.isBusy()) {
+                            response.retryAfter() to true
+                        } else {
+                            withContext(Dispatchers.IO) {
+                                response.bodyAsChannel().toInputStream().use { source ->
+                                    Files.newOutputStream(target).use { sink -> source.copyTo(sink) }
+                                }
+                            }
+                            null to false
+                        }
+                    }
+
+            if (!busy.second) return
+
+            if (attempt >= retry.maxRetries) {
+                throw WikiError.Api(
+                    "sparqlfailed",
+                    "the query service stayed busy after ${retry.maxRetries} retries",
+                    "sparql",
+                )
+            }
+
+            attempt++
+            delay(retry.delayFor(attempt, busy.first))
+        }
+    }
+
+    /**
      * The body of a query response, retrying while the service says it is busy.
      *
      * A query service under load answers `429` with `Retry-After` rather than queueing, so a caller that does
@@ -257,5 +407,8 @@ public class SparqlClient(
 
         /** How much of an unparseable body to quote back. Enough to recognise, not to drown in. */
         private const val ERROR_EXCERPT = 200
+
+        /** What separates one TSV cell from the next. */
+        private const val TAB = '\t'
     }
 }

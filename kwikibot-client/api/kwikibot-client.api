@@ -358,6 +358,7 @@ public final class com/fenakhay/kwikibot/client/model/SparqlClient {
 	public final fun entityIds (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun entityIds$default (Lcom/fenakhay/kwikibot/client/model/SparqlClient;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun select (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun selectStreamed (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/fenakhay/kwikibot/client/model/SparqlClient$Companion {

@@ -86,19 +86,33 @@ internal class Tokenizer {
      * another of its own kind in the part being retried, so what is re-read is bounded by one construct
      * rather than by the nesting depth of the page.
      *
-     * The pending text is kept whole rather than as a length. Emitting a token flushes the buffer into one,
-     * so a length taken before that points into the *next* run of text, and restoring it would keep a few
-     * characters of whatever came after.
+     * The pending text is remembered as a length, not copied. A mark is taken for every bracketed link and
+     * every tag, used or not, so copying the text pending at the time was the parser's largest unconditional
+     * allocation.
+     *
+     * A length works because of where a flush goes: the buffer becomes the first token after the mark, so its
+     * first [pending] characters are what was buffered. The text is either still in the buffer or at the
+     * front of that token.
      */
-    private class Mark(val head: Int, val tokens: Int, val pending: String)
+    private class Mark(val head: Int, val tokens: Int, val pending: Int)
 
-    private fun mark() = Mark(head, tokens.size, buffer.toString())
+    private fun mark() = Mark(head, tokens.size, buffer.length)
 
     /** Undoes everything emitted since [mark], then emits [literal] and steps over it. */
     private fun rollBackTo(mark: Mark, literal: Char) {
+        // Read before the tokens are dropped: if the buffer was flushed since the mark, this is where it
+        // went, and it is about to be removed.
+        val flushed = tokens.getOrNull(mark.tokens) as? Token.Text
+
         while (tokens.size > mark.tokens) tokens.removeLast()
-        buffer.setLength(0)
-        buffer.append(mark.pending)
+
+        if (flushed == null) {
+            // Never flushed, so what was pending is still at the front of the builder.
+            buffer.setLength(mark.pending)
+        } else {
+            buffer.setLength(0)
+            buffer.append(flushed.text, 0, mark.pending)
+        }
 
         head = mark.head
         emitText(literal)

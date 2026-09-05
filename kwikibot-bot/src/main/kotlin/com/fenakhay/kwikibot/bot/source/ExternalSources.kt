@@ -6,17 +6,26 @@ import com.fenakhay.kwikibot.client.model.SparqlClient
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.net.UserAgent
 import io.ktor.client.HttpClient
-import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.prepareRequest
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.Parameters
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import java.nio.file.Files
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -51,17 +60,17 @@ public object ExternalSources {
     public fun petScan(id: String, client: HttpClient, userAgent: UserAgent): PageSource =
         PageSource { wiki ->
             flow {
-                val body =
-                    client
-                        .get(PETSCAN) {
-                            header(HttpHeaders.UserAgent, userAgent.headerValue)
-                            parameter("psid", id)
-                            parameter("format", "json")
-                            parameter("doit", "1")
-                        }
-                        .bodyAsText()
+                val titles: suspend (Sequence<String>) -> Unit = { titles ->
+                    titles.forEach { title -> wiki.refOrSkip(title)?.let { emit(it) } }
+                }
 
-                titlesFromPetScan(body).forEach { title -> emit(wiki.refOrSkip(title) ?: return@forEach) }
+                titlesFrom(client, titles) {
+                    method = HttpMethod.Get
+                    header(HttpHeaders.UserAgent, userAgent.headerValue)
+                    parameter("psid", id)
+                    parameter("format", "plain")
+                    parameter("doit", "1")
+                }
             }
         }
 
@@ -80,8 +89,8 @@ public object ExternalSources {
         userAgent: UserAgent,
     ): PageSource = PageSource { wiki ->
         flow {
-            petScanTitles(parameters, client, userAgent).forEach { title ->
-                emit(wiki.refOrSkip(title) ?: return@forEach)
+            withPetScanTitles(parameters, client, userAgent) { titles ->
+                titles.forEach { title -> wiki.refOrSkip(title)?.let { emit(it) } }
             }
         }
     }
@@ -102,22 +111,72 @@ public object ExternalSources {
         parameters: Map<String, String>,
         client: HttpClient,
         userAgent: UserAgent,
-    ): List<String> =
-        titlesFromPetScan(
+    ): List<String> = withPetScanTitles(parameters, client, userAgent) { titles -> titles.toList() }
+
+    /**
+     * The titles a PetScan query returns, given to [use] one at a time.
+     *
+     * The query is sent as `format=plain` and the answer is spooled to a temporary file as it arrives, then
+     * read back a line at a time. The file is deleted before this returns.
+     *
+     * @param T whatever [use] makes of the titles, which is all that outlives this call.
+     * @param parameters PetScan's own parameters; `format` and `doit` are supplied.
+     * @param client the HTTP client to fetch with.
+     * @param userAgent who to say is asking.
+     * @param use given the titles in the order PetScan returned them. The sequence is single-pass and is not
+     *   valid once this returns.
+     */
+    public suspend fun <T> withPetScanTitles(
+        parameters: Map<String, String>,
+        client: HttpClient,
+        userAgent: UserAgent,
+        use: suspend (Sequence<String>) -> T,
+    ): T {
+        val form = Parameters.build {
+            parameters.forEach { (name, value) -> append(name, value) }
+            // One title per line.
+            append("format", "plain")
+            append("doit", "1")
+        }
+
+        return titlesFrom(client, use) {
+            method = HttpMethod.Post
+            header(HttpHeaders.UserAgent, userAgent.headerValue)
+            setBody(FormDataContent(form))
+        }
+    }
+
+    /**
+     * Asks PetScan and reads the answer back from a temporary file, a line at a time.
+     *
+     * The body goes from the socket to disk in chunks and is never held as a string. The file is deleted
+     * before this returns.
+     */
+    private suspend fun <T> titlesFrom(
+        client: HttpClient,
+        use: suspend (Sequence<String>) -> T,
+        request: HttpRequestBuilder.() -> Unit,
+    ): T {
+        val target = withContext(Dispatchers.IO) { Files.createTempFile("petscan-", ".txt") }
+
+        return try {
             client
-                .submitForm(
-                    url = PETSCAN,
-                    formParameters =
-                        Parameters.build {
-                            parameters.forEach { (name, value) -> append(name, value) }
-                            append("format", "json")
-                            append("doit", "1")
-                        },
-                ) {
-                    header(HttpHeaders.UserAgent, userAgent.headerValue)
+                .prepareRequest(PETSCAN) { request() }
+                .execute { response ->
+                    withContext(Dispatchers.IO) {
+                        response.bodyAsChannel().toInputStream().use { source ->
+                            Files.newOutputStream(target).use { sink -> source.copyTo(sink) }
+                        }
+                    }
                 }
-                .bodyAsText()
-        )
+
+            target.toFile().bufferedReader().use { reader ->
+                use(reader.lineSequence().mapNotNull { line -> line.trim().takeIf { it.isNotEmpty() } })
+            }
+        } finally {
+            withContext(Dispatchers.IO) { Files.deleteIfExists(target) }
+        }
+    }
 
     /**
      * The pages a SPARQL query names.
@@ -143,11 +202,11 @@ public object ExternalSources {
         auth: SparqlAuth = SparqlAuth.None,
     ): PageSource = PageSource { wiki ->
         flow {
-            val rows = SparqlClient(client, userAgent, endpoint, auth).select(query)
-
-            rows.forEach { row ->
-                val title = row[variable]?.value ?: return@forEach
-                emit(wiki.refOrSkip(title) ?: return@forEach)
+            SparqlClient(client, userAgent, endpoint, auth).selectStreamed(query) { rows ->
+                rows.forEach { row ->
+                    val title = row[variable]?.value
+                    if (title != null) wiki.refOrSkip(title)?.let { emit(it) }
+                }
             }
         }
     }
@@ -174,21 +233,6 @@ public object ExternalSources {
                 titlesFromPagePile(body).forEach { title -> emit(wiki.refOrSkip(title) ?: return@forEach) }
             }
         }
-
-    /** Titles out of a PetScan result. */
-    internal fun titlesFromPetScan(body: String): List<String> =
-        json
-            .parseToJsonElement(body)
-            .jsonObject["*"]
-            ?.jsonArray
-            ?.firstOrNull()
-            ?.jsonObject
-            ?.get("a")
-            ?.jsonObject
-            ?.get("*")
-            ?.jsonArray
-            ?.mapNotNull { it.jsonObject["title"]?.jsonPrimitive?.content }
-            .orEmpty()
 
     /** Titles out of a PagePile result. */
     internal fun titlesFromPagePile(body: String): List<String> =

@@ -235,6 +235,20 @@ That fails if anything got slower by more than its error bars. See
 [kwikibot-benchmarks](kwikibot-benchmarks/README.md). A baseline is only comparable to a run from
 the same machine.
 
+Memory is measured separately, because time and bytes are different questions and a benchmark that
+runs faster can still be the one that will not fit:
+
+```bash
+./gradlew :kwikibot-benchmarks:measureAllocations
+./gradlew :kwikibot-benchmarks:runRetention
+```
+
+The first counts bytes allocated per source character. It asks the JVM directly rather than going
+through JMH, since kotlinx-benchmark does not expose a profiler. Two runs of the same code agree to
+within a few bytes in eighteen million, so a change of a percent is visible. The second measures how
+much of a run is still held once it has finished, which is what decides whether a bot can sweep a
+category or runs out of memory partway through.
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Release notes are in [CHANGELOG.md](CHANGELOG.md).

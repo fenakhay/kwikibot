@@ -198,6 +198,67 @@ class FileServiceTest {
         outcome.shouldBeInstanceOf<UploadOutcome.Uploaded>()
     }
 
+    /** Each chunk carries its own part of the file, in order. */
+    @Test
+    fun `each chunk carries its own bytes, in order`() = runTest {
+        val requests = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+            } else {
+                requests += request.body.toByteArray().decodeToString()
+                if (requests.size <= CHUNKS) {
+                    respondJson("""{"upload":{"result":"Continue","filekey":"KEY${requests.size}"}}""")
+                } else {
+                    respondJson("""{"upload":{"result":"Success"}}""")
+                }
+            }
+        }
+
+        val letters = listOf("A", "B", "C")
+        val content = letters.joinToString("") { it.repeat(CHUNK_SIZE) }
+
+        service.upload(tempFile(content.toByteArray()), file, chunkSize = CHUNK_SIZE)
+
+        letters.forEachIndexed { index, letter ->
+            requests[index].contains(letter.repeat(CHUNK_SIZE)) shouldBe true
+            // And nothing from any other chunk.
+            letters
+                .filterNot { it == letter }
+                .forEach { other ->
+                    requests[index].contains(other.repeat(CHUNK_SIZE)) shouldBe false
+                }
+        }
+    }
+
+    /** A file that is not a whole number of chunks still sends all of it, with a short last chunk. */
+    @Test
+    fun `a final short chunk is sent whole rather than padded`() = runTest {
+        val requests = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+            } else {
+                requests += request.body.toByteArray().decodeToString()
+                // Eleven bytes in eight-byte chunks is two chunks, then the publish; both chunks are
+                // stashed and so both answer with a key.
+                if (requests.size <= 2) {
+                    respondJson("""{"upload":{"result":"Continue","filekey":"KEY${requests.size}"}}""")
+                } else {
+                    respondJson("""{"upload":{"result":"Success"}}""")
+                }
+            }
+        }
+
+        val tail = "XYZ"
+        service.upload(tempFile(("A".repeat(CHUNK_SIZE) + tail).toByteArray()), file, chunkSize = CHUNK_SIZE)
+
+        requests[0].contains("A".repeat(CHUNK_SIZE)) shouldBe true
+        requests[1].contains(tail) shouldBe true
+        // The short chunk is three bytes, not a chunk-sized buffer with padding on the end.
+        requests[1].contains("$tail ") shouldBe false
+    }
+
     @Test
     fun `a warning is an outcome to decide on, not a failure`() = runTest {
         val service = service { request ->

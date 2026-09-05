@@ -23,20 +23,6 @@ class ExternalSourcesTest {
     private val userAgent = UserAgent("test-bot", "1.0", "https://example.org/User:TestBot")
 
     @Test
-    fun `petscan titles are read out of its result shape`() {
-        val body =
-            """
-            {"n":"result","a":{"query":"x"},
-             "*":[{"n":"combination","a":{"*":[
-               {"id":1,"ns":0,"title":"Volcano"},
-               {"id":2,"ns":0,"title":"Mount_Etna"}]}}]}
-            """
-                .trimIndent()
-
-        ExternalSources.titlesFromPetScan(body) shouldBe listOf("Volcano", "Mount_Etna")
-    }
-
-    @Test
     fun `a pagepile is a plain list of titles`() {
         val body = """{"status":"OK","pages":["Volcano","Mount Etna"],"pages_returned":2}"""
 
@@ -45,8 +31,31 @@ class ExternalSourcesTest {
 
     @Test
     fun `an empty result is an empty list rather than a failure`() {
-        ExternalSources.titlesFromPetScan("""{"n":"result","*":[]}""") shouldBe emptyList()
         ExternalSources.titlesFromPagePile("""{"status":"OK"}""") shouldBe emptyList()
+    }
+
+    @Test
+    fun `a petscan answer is read a line at a time, whatever its size`() = runTest {
+        val many = 50_000
+        var peak = 0
+
+        val client =
+            HttpClient(
+                MockEngine {
+                    respond(
+                        (1..many).joinToString(System.lineSeparator()) { "Page$it" },
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "text/plain"),
+                    )
+                }
+            )
+
+        // Counted rather than collected, so the test never holds them all.
+        ExternalSources.withPetScanTitles(mapOf("psid" to "7"), client, userAgent) { titles ->
+            titles.forEach { peak++ }
+        }
+
+        peak shouldBe many
     }
 
     @Test
@@ -74,10 +83,7 @@ class ExternalSourcesTest {
             HttpClient(
                 MockEngine { request ->
                     asked = request.url.toString()
-                    respondJson(
-                        """{"n":"result","*":[{"n":"combination","a":{"*":[
-                           {"id":1,"ns":0,"title":"Volcano"}]}}]}"""
-                    )
+                    respondPlain("Volcano")
                 }
             )
 
@@ -112,10 +118,7 @@ class ExternalSourcesTest {
                 MockEngine { request ->
                     method = request.method.value
                     body = request.body.toByteArray().decodeToString()
-                    respondJson(
-                        """{"n":"result","*":[{"n":"combination","a":{"*":[
-                           {"id":1,"ns":0,"title":"Volcano"}]}}]}"""
-                    )
+                    respondPlain("Volcano")
                 }
             )
 
@@ -139,15 +142,7 @@ class ExternalSourcesTest {
         val client =
             HttpClient(
                 MockEngine {
-                    respondJson(
-                        """
-                        {"head":{"vars":["title"]},
-                         "results":{"bindings":[
-                           {"title":{"type":"literal","value":"Volcano"}},
-                           {"title":{"type":"literal","value":"Mount Etna"}}]}}
-                        """
-                            .trimIndent()
-                    )
+                    respondTsv("?title", "\"Volcano\"", "\"Mount Etna\"")
                 }
             )
 
@@ -165,10 +160,7 @@ class ExternalSourcesTest {
                 MockEngine { request ->
                     url = request.url.toString()
                     cookie = request.headers[HttpHeaders.Cookie]
-                    respondJson(
-                        """{"head":{"vars":["page"]},"results":{"bindings":[
-                           {"page":{"type":"literal","value":"Volcano"}}]}}"""
-                    )
+                    respondTsv("?page", "\"Volcano\"")
                 }
             )
 
@@ -186,6 +178,22 @@ class ExternalSourcesTest {
         url shouldBe SparqlClient.COMMONS
         cookie shouldBe "wcqsOauth=token"
     }
+
+    /** What PetScan answers with `format=plain`: one title per line. */
+    private fun MockRequestHandleScope.respondPlain(vararg titles: String): HttpResponseData =
+        respond(
+            titles.joinToString(System.lineSeparator()),
+            HttpStatusCode.OK,
+            headersOf(HttpHeaders.ContentType, "text/plain"),
+        )
+
+    /** What a query service answers with `format=tsv`: a header of variables, then a term per cell. */
+    private fun MockRequestHandleScope.respondTsv(vararg lines: String): HttpResponseData =
+        respond(
+            lines.joinToString(System.lineSeparator()),
+            HttpStatusCode.OK,
+            headersOf(HttpHeaders.ContentType, "text/tab-separated-values"),
+        )
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

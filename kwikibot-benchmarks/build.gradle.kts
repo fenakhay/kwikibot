@@ -8,6 +8,8 @@ plugins {
 
 dependencies {
     implementation(project(":kwikibot-wikitext"))
+    implementation(project(":kwikibot-bot"))
+    implementation(project(":kwikibot-testkit"))
     implementation(libs.benchmark.runtime)
     implementation(libs.kotlinx.serialization.json)
 }
@@ -113,6 +115,33 @@ tasks.register<JavaExec>("compareToBaseline") {
 
         listOf(baseline, report.absolutePath)
     }
+}
+
+val allocationBaseline = layout.projectDirectory.file("allocations.json").asFile.absolutePath
+
+tasks.register<JavaExec>("measureAllocations") {
+    group = "benchmark"
+    description = "Prints how many bytes each workload allocates."
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.fenakhay.kwikibot.benchmarks.AllocationsKt")
+}
+
+tasks.register<JavaExec>("runRetention") {
+    group = "benchmark"
+    description = "Prints how much a finished run still holds."
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.fenakhay.kwikibot.benchmarks.RunRetentionKt")
+}
+
+tasks.register<JavaExec>("recordAllocations") {
+    group = "benchmark"
+    description = "Writes the current allocation figures over allocations.json."
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.fenakhay.kwikibot.benchmarks.AllocationsKt")
+    args(allocationBaseline)
 }
 
 tasks.register<JavaExec>("compareFiles") {

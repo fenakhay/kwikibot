@@ -34,18 +34,24 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.util.cio.writeChannel
 import io.ktor.utils.io.copyAndClose
+import java.nio.ByteBuffer
+import java.nio.channels.SeekableByteChannel
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.fileSize
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.io.path.readBytes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -314,37 +320,56 @@ internal class ApiFileService(
         size: Long,
         chunkSize: Int,
     ): String {
-        val bytes = file.readBytes()
+        // One chunk in memory at a time.
         var offset = 0L
         var fileKey: String? = null
 
-        while (offset < size) {
-            val end = minOf(offset + chunkSize, size)
-            val chunk = bytes.copyOfRange(offset.toInt(), end.toInt())
+        val reading = withContext(Dispatchers.IO) { Files.newByteChannel(file, StandardOpenOption.READ) }
 
-            val response =
-                multipart(
-                    fields =
-                        buildMap {
-                            put("action", "upload")
-                            put("filename", fileName)
-                            put("filesize", size.toString())
-                            put("offset", offset.toString())
-                            put("stash", "1")
-                            put("ignorewarnings", "1")
-                            fileKey?.let { put("filekey", it) }
-                        },
-                    partName = "chunk",
-                    partFileName = file.name,
-                    bytes = chunk,
-                )
+        reading.use { channel ->
+            while (offset < size) {
+                val end = minOf(offset + chunkSize, size)
+                val chunk = read(channel, (end - offset).toInt())
 
-            fileKey = response.fileKeyOrFail()
-            offset = end
+                val response =
+                    multipart(
+                        fields =
+                            buildMap {
+                                put("action", "upload")
+                                put("filename", fileName)
+                                put("filesize", size.toString())
+                                put("offset", offset.toString())
+                                put("stash", "1")
+                                put("ignorewarnings", "1")
+                                fileKey?.let { put("filekey", it) }
+                            },
+                        partName = "chunk",
+                        partFileName = file.name,
+                        bytes = chunk,
+                    )
+
+                fileKey = response.fileKeyOrFail()
+                offset = end
+            }
         }
 
         return checkNotNull(fileKey) { "an empty file has no chunks" }
     }
+
+    /**
+     * The next [length] bytes of [channel].
+     *
+     * Reads in a loop until the chunk is full or the channel ends, since a channel may return fewer bytes
+     * than were asked for.
+     */
+    private suspend fun read(channel: SeekableByteChannel, length: Int): ByteArray =
+        withContext(Dispatchers.IO) {
+            val buffer = ByteBuffer.allocate(length)
+            while (buffer.hasRemaining()) {
+                if (channel.read(buffer) < 0) break
+            }
+            if (buffer.hasRemaining()) buffer.array().copyOf(buffer.position()) else buffer.array()
+        }
 
     /**
      * The key the wiki gave for a stashed chunk.

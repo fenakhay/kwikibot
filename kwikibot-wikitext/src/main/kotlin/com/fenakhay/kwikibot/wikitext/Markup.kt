@@ -26,10 +26,17 @@ import com.fenakhay.kwikibot.wikitext.node.WikiLink
  * updated.serialize()
  * ```
  */
-public class Markup(nodes: List<Node>) {
+public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
 
-    /** The nodes, in source order. */
-    public val nodes: List<Node> = nodes.toList()
+    /**
+     * The nodes, in source order.
+     *
+     * A list passed in from outside is copied; one the parser hands over is used as it is.
+     */
+    public val nodes: List<Node> = if (owned) nodes else nodes.toList()
+
+    /** Takes a copy of [nodes]. */
+    public constructor(nodes: List<Node>) : this(nodes, owned = false)
 
     /** This wikitext, byte for byte as it was parsed. */
     public fun serialize(): String = nodes.joinToString("") { it.serialize() }
@@ -136,6 +143,13 @@ public class Markup(nodes: List<Node>) {
 
         /** Empty wikicode. */
         public val EMPTY: Markup = Markup(emptyList())
+
+        /**
+         * Markup over [nodes] without copying it.
+         *
+         * The caller must not keep the list or change it after this returns.
+         */
+        internal fun owning(nodes: List<Node>): Markup = Markup(nodes, owned = true)
     }
 }
 

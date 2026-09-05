@@ -41,6 +41,7 @@ public final class com/fenakhay/kwikibot/wikitext/Isbn$Companion {
 public final class com/fenakhay/kwikibot/wikitext/Markup {
 	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/Markup$Companion;
 	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun allNodes ()Lkotlin/sequences/Sequence;
 	public final fun comments ()Ljava/util/List;
 	public fun equals (Ljava/lang/Object;)Z

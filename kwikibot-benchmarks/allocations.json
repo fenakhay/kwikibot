@@ -1,0 +1,7 @@
+[
+  {"name": "parse", "bytes": 17773240, "units": 764152},
+  {"name": "parseShort", "bytes": 1355288, "units": 37859},
+  {"name": "parseLong", "bytes": 16364936, "units": 726293},
+  {"name": "parseLarge", "bytes": 29837536, "units": 1950246},
+  {"name": "roundTrip", "bytes": 35742904, "units": 764152}
+]

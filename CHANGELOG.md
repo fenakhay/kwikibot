@@ -7,6 +7,46 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.1.0] — 2026-09-05
+
+A pass over what the library holds in memory. A bot that sweeps a category the size of German
+Wiktionary, 353,005 entries, could not finish, and the reasons were spread across the run, the
+sources it reads from and the parser. Every figure below was measured rather than reasoned about,
+using `:kwikibot-benchmarks:measureAllocations` and `runRetention`, both of which are new.
+
+Source-compatible except where noted under Changed. Not binary-compatible with 1.0.x.
+
+### Added
+
+- `SparqlClient.selectStreamed(query) { rows -> … }`, which asks for TSV and hands the rows over as
+  they are read. `select` holds the answer as text and again as a parsed tree, which a query naming
+  a million files cannot fit. It asks for TSV rather than CSV because the service escapes tabs and
+  newlines inside literals, so a line is always a row, whereas a CSV field may contain a raw
+  newline.
+- `ExternalSources.withPetScanTitles(...)`, the streamed form of `petScanTitles`. Both PetScan
+  sources and the SPARQL source now spool the answer to a file as it arrives and read it back a
+  line at a time, so none of them holds the list.
+- `BotReport.problems` and `problemsTruncated`: the refusals and failures, capped at
+  `BotReport.PROBLEM_LIMIT`.
+
+### Changed
+
+- `BotReport` carries counts rather than every outcome, and `outcomes` is gone. It held one
+  `PageOutcome` per page for the whole run, and a `Pending` holds the text it would have written as
+  well as the text that was there, so a dry run, the default, kept two full copies of every page it
+  would have changed until the run ended. Over 20,000 pages of 2 KB the report held 45,397 KB, and
+  it now holds none of it. Callers that read `outcomes` should take `BotRunBuilder.onOutcome`, which
+  has always been given every outcome as it happens.
+- PetScan is asked for `format=plain`, one title per line. For the German entry list that is 4.3 MB
+  against 37.6 MB of JSON, measured against the live service. `ExternalSources.petScanTitles` is now
+  `suspend`, and `titlesFromPetScan` is gone with the JSON path.
+- A chunked upload reads a chunk at a time. `uploadInChunks` read the whole file and then cut it up,
+  so a 2 GB video needed 2 GB of heap to be sent in 4 MB pieces, leaving it chunked on the wire
+  only.
+- Parsing allocates 23.26 bytes per source character, down from 24.72. `Markup` no longer copies a
+  node list the parser built and handed straight over, and a tokenizer `Mark` remembers the pending
+  text as a length rather than copying it. Nothing got measurably slower.
+
 ## [1.0.3] — 2026-09-03
 
 ### Added

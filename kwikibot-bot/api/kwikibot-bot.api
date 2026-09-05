@@ -382,17 +382,27 @@ public final class com/fenakhay/kwikibot/bot/fix/Unlinker {
 }
 
 public final class com/fenakhay/kwikibot/bot/run/BotReport {
-	public fun <init> (Ljava/util/List;Z)V
-	public synthetic fun <init> (Ljava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Z
-	public final fun copy (Ljava/util/List;Z)Lcom/fenakhay/kwikibot/bot/run/BotReport;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/run/BotReport;Ljava/util/List;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/run/BotReport;
+	public static final field Companion Lcom/fenakhay/kwikibot/bot/run/BotReport$Companion;
+	public static final field PROBLEM_LIMIT I
+	public fun <init> ()V
+	public fun <init> (IIIIIILjava/util/List;Z)V
+	public synthetic fun <init> (IIIIIILjava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/util/List;
+	public final fun component8 ()Z
+	public final fun copy (IIIIIILjava/util/List;Z)Lcom/fenakhay/kwikibot/bot/run/BotReport;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/bot/run/BotReport;IIIIIILjava/util/List;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/run/BotReport;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getClean ()Z
 	public final fun getFailed ()I
-	public final fun getOutcomes ()Ljava/util/List;
 	public final fun getPending ()I
+	public final fun getProblems ()Ljava/util/List;
+	public final fun getProblemsTruncated ()Z
 	public final fun getProcessed ()I
 	public final fun getRefused ()I
 	public final fun getSaved ()I
@@ -400,6 +410,9 @@ public final class com/fenakhay/kwikibot/bot/run/BotReport {
 	public final fun getStopped ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/bot/run/BotReport$Companion {
 }
 
 public final class com/fenakhay/kwikibot/bot/run/BotRunBuilder {
@@ -578,6 +591,7 @@ public final class com/fenakhay/kwikibot/bot/source/ExternalSources {
 	public final fun petScanTitles (Ljava/util/Map;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun sparql (Ljava/lang/String;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/client/model/SparqlAuth;)Lcom/fenakhay/kwikibot/bot/source/PageSource;
 	public static synthetic fun sparql$default (Lcom/fenakhay/kwikibot/bot/source/ExternalSources;Ljava/lang/String;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Ljava/lang/String;Ljava/lang/String;Lcom/fenakhay/kwikibot/client/model/SparqlAuth;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/source/PageSource;
+	public final fun withPetScanTitles (Ljava/util/Map;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/fenakhay/kwikibot/bot/source/ExternalSourcesKt {

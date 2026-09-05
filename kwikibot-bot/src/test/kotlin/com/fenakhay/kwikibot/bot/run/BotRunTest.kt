@@ -86,13 +86,17 @@ class BotRunTest {
     fun `skip records the reason it was given`() = runTest {
         val pages = FakePageService(mapOf("volcano" to "text"))
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { skip("no English section") }
+                onOutcome = { seen += it }
             }
 
-        val skipped = report.outcomes.single().shouldBeInstanceOf<PageOutcome.Skipped>()
+        report.skipped shouldBe 1
+        val skipped = seen.single().shouldBeInstanceOf<PageOutcome.Skipped>()
         skipped.reason shouldBe "no English section"
     }
 
@@ -100,14 +104,18 @@ class BotRunTest {
     fun `text identical to the page is a no-op rather than an edit`() = runTest {
         val pages = FakePageService(mapOf("volcano" to "same"))
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { Edit("same", "no real change") }
                 dryRun = false
+                onOutcome = { seen += it }
             }
 
-        report.outcomes.single().shouldBeInstanceOf<PageOutcome.Unchanged>()
+        report.processed shouldBe 1
+        seen.single().shouldBeInstanceOf<PageOutcome.Unchanged>()
         pages.edits.isEmpty() shouldBe true
     }
 
@@ -115,15 +123,18 @@ class BotRunTest {
     fun `a missing page is reported rather than failing the run`() = runTest {
         val pages = FakePageService(mapOf("volcano" to "text"))
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source(listOf(ref("volcano"), ref("nonexistent")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
+                onOutcome = { seen += it }
             }
 
         report.saved shouldBe 1
-        report.outcomes.filterIsInstance<PageOutcome.Missing>().size shouldBe 1
+        seen.filterIsInstance<PageOutcome.Missing>().size shouldBe 1
     }
 
     @Test
@@ -156,16 +167,20 @@ class BotRunTest {
                 failWith = { WikiError.Auth.NotLoggedIn("editing") },
             )
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source((1..20).map { ref("page$it") }.asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
                 readConcurrency = 1
+                onOutcome = { seen += it }
             }
 
         report.failed shouldBe 1
-        report.outcomes.count { it is PageOutcome.Skipped } shouldBe 19
+        report.skipped shouldBe 19
+        seen.count { it is PageOutcome.Skipped } shouldBe 19
     }
 
     @Test
@@ -276,19 +291,24 @@ class BotRunTest {
         val texts = (1..7).associate { "p$it" to "old text" }
         val refs = texts.keys.map { ref(it) }
 
+        val singly = mutableListOf<PageOutcome>()
+        val batched = mutableListOf<PageOutcome>()
+
         val one =
             botRun(FakePageService(texts)) {
                 source(refs.asFlow())
                 transform { Edit(it.text + "!", "adding") }
+                onOutcome = { singly += it }
             }
         val many =
             botRun(FakePageService(texts)) {
                 source(refs.asFlow())
                 transform { Edit(it.text + "!", "adding") }
                 readBatch = 3
+                onOutcome = { batched += it }
             }
 
-        many.outcomes.map { it.ref } shouldBe one.outcomes.map { it.ref }
+        batched.map { it.ref } shouldBe singly.map { it.ref }
         many.pending shouldBe one.pending
         many.processed shouldBe one.processed
     }
@@ -297,14 +317,18 @@ class BotRunTest {
     fun `a page that is not there is still reported missing when batching`() = runTest {
         val pages = FakePageService(mapOf("a" to "x"))
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source(listOf(ref("a"), ref("gone")).asFlow())
                 transform { Edit(it.text + "!", "adding") }
                 readBatch = 10
+                onOutcome = { seen += it }
             }
 
-        report.outcomes.filterIsInstance<PageOutcome.Missing>().single().ref shouldBe ref("gone")
+        report.skipped shouldBe 1
+        seen.filterIsInstance<PageOutcome.Missing>().single().ref shouldBe ref("gone")
     }
 
     @Test
@@ -330,15 +354,18 @@ class BotRunTest {
                     throw WikiError.Transport.RateLimited(null)
             }
 
+        val seen = mutableListOf<PageOutcome>()
+
         val report =
             botRun(pages) {
                 source(listOf(ref("a"), ref("b")).asFlow())
                 transform { Edit("new", "adding") }
                 readBatch = 10
+                onOutcome = { seen += it }
             }
 
         report.failed shouldBe 2
-        report.outcomes.all { it is PageOutcome.Failed } shouldBe true
+        seen.all { it is PageOutcome.Failed } shouldBe true
     }
 
     /** A page service that says how it was asked. */

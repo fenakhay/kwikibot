@@ -98,36 +98,40 @@ public sealed interface PageOutcome {
     ) : PageOutcome
 }
 
-/** What a run did. */
+/**
+ * What a run did.
+ *
+ * Counts rather than a list of every outcome: a category sweep is hundreds of thousands of pages, and one
+ * object per page would grow with the run. `Pending` is the worst of them, holding the new text *and* the
+ * old.
+ *
+ * A caller that wants every outcome takes [BotRunBuilder.onOutcome], which is given each one as it happens.
+ */
 public data class BotReport(
-    /** What became of each page, in the order handled. */
-    val outcomes: List<PageOutcome>,
+    /** How many pages were handled. */
+    val processed: Int = 0,
+    /** How many edits were saved. */
+    val saved: Int = 0,
+    /** How many edits were computed but not sent, which is every edit in a dry run. */
+    val pending: Int = 0,
+    /** How many were left alone, whether deliberately or because they did not exist. */
+    val skipped: Int = 0,
+    /** How many the wiki refused. */
+    val refused: Int = 0,
+    /** How many failed for a reason that was not about the page. */
+    val failed: Int = 0,
+    /**
+     * The refusals and failures, up to [PROBLEM_LIMIT] of them.
+     *
+     * The counts above stay exact however many are kept here; [problemsTruncated] says when this list is not.
+     */
+    val problems: List<PageOutcome> = emptyList(),
     /** Whether the run ended early because a stop policy said so. */
     val stopped: Boolean = false,
 ) {
-    /** How many pages were handled. */
-    val processed: Int
-        get() = outcomes.size
-
-    /** How many edits were saved. */
-    val saved: Int
-        get() = outcomes.count { it is PageOutcome.Saved }
-
-    /** How many edits were computed but not sent, which is every edit in a dry run. */
-    val pending: Int
-        get() = outcomes.count { it is PageOutcome.Pending }
-
-    /** How many were left alone, whether deliberately or because they did not exist. */
-    val skipped: Int
-        get() = outcomes.count { it is PageOutcome.Skipped || it is PageOutcome.Missing }
-
-    /** How many the wiki refused. */
-    val refused: Int
-        get() = outcomes.count { it is PageOutcome.Refused }
-
-    /** How many failed for a reason that was not about the page. */
-    val failed: Int
-        get() = outcomes.count { it is PageOutcome.Failed }
+    /** Whether there were more refusals and failures than [problems] holds. */
+    val problemsTruncated: Boolean
+        get() = refused + failed > problems.size
 
     /** Whether every page was handled without a refusal or a failure. */
     val clean: Boolean
@@ -137,6 +141,12 @@ public data class BotReport(
         "processed=$processed saved=$saved pending=$pending skipped=$skipped " +
             "refused=$refused failed=$failed" +
             if (stopped) " (stopped early)" else ""
+
+    /** How many refusals and failures a report keeps. */
+    public companion object {
+        /** The cap on [problems]. */
+        public const val PROBLEM_LIMIT: Int = 100
+    }
 }
 
 /**
@@ -328,7 +338,14 @@ private class Runner(
     private val reads = Semaphore(config.readConcurrency)
     private val writes = Semaphore(config.writeConcurrency)
     private val lock = Mutex()
-    private val outcomes = mutableListOf<PageOutcome>()
+
+    private var processed = 0
+    private var saved = 0
+    private var pending = 0
+    private var skipped = 0
+    private var refused = 0
+    private var failed = 0
+    private val problems = mutableListOf<PageOutcome>()
 
     @Volatile private var stopped = false
 
@@ -344,7 +361,16 @@ private class Runner(
                 .map { it.await() }
                 .collect { batch -> batch.forEach { record(it) } }
         }
-        return BotReport(outcomes.toList(), stopped)
+        return BotReport(
+            processed = processed,
+            saved = saved,
+            pending = pending,
+            skipped = skipped,
+            refused = refused,
+            failed = failed,
+            problems = problems.toList(),
+            stopped = stopped,
+        )
     }
 
     /**
@@ -492,8 +518,26 @@ private class Runner(
         }
     }
 
+    /** Counts one outcome, keeps it if it is a refusal or a failure, and hands it to `onOutcome`. */
     private suspend fun record(outcome: PageOutcome) {
-        lock.withLock { outcomes += outcome }
+        lock.withLock {
+            processed++
+            when (outcome) {
+                is PageOutcome.Saved -> saved++
+                is PageOutcome.Pending -> pending++
+                is PageOutcome.Skipped,
+                is PageOutcome.Missing -> skipped++
+                is PageOutcome.Refused -> refused++
+                is PageOutcome.Failed -> failed++
+                is PageOutcome.Unchanged -> Unit
+            }
+
+            val wentWrong = outcome is PageOutcome.Refused || outcome is PageOutcome.Failed
+            if (wentWrong && problems.size < BotReport.PROBLEM_LIMIT) {
+                problems += outcome
+            }
+        }
+
         config.onOutcome?.invoke(outcome)
     }
 }

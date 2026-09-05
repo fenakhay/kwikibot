@@ -3,8 +3,10 @@ package com.fenakhay.kwikibot.client.model
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.UserAgent
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -18,6 +20,7 @@ import io.ktor.http.headersOf
 import javax.xml.stream.XMLStreamException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.currentTime
@@ -277,6 +280,155 @@ class SparqlClientTest {
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+}
+
+/**
+ * The streaming form of the same queries.
+ *
+ * These check that the streamed form reads the same things out of the TSV the service writes for
+ * `format=tsv`, where a term is written the way Turtle writes it.
+ */
+class SparqlStreamingTest {
+
+    private val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
+
+    private val tab = "\t"
+
+    private fun rows(vararg lines: String) = lines.joinToString(System.lineSeparator())
+
+    private fun client(
+        retry: RetryPolicy = RetryPolicy(),
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
+    ) =
+        SparqlClient(
+            HttpClient(MockEngine(handler)),
+            userAgent,
+            SparqlClient.WIKIDATA,
+            SparqlAuth.None,
+            retry,
+        )
+
+    private fun MockRequestHandleScope.respondTsv(body: String): HttpResponseData =
+        respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/tab-separated-values"))
+
+    private suspend fun read(body: String): List<SparqlRow> = client {
+        respondTsv(body)
+    }
+        .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
+
+    @Test
+    fun `a URI comes back as one, and reduces to its entity id`() = runTest {
+        val read = read(rows("?item", "<http://www.wikidata.org/entity/Q7889>"))
+
+        read.single().getValue("item").type shouldBe "uri"
+        read.single().getValue("item").entityId shouldBe "Q7889"
+    }
+
+    @Test
+    fun `a literal with a language keeps the language`() = runTest {
+        val read = read(rows("?item${tab}?label", "<http://www.wikidata.org/entity/Q1>$tab\"video game\"@en"))
+
+        read.single().getValue("label").value shouldBe "video game"
+        read.single().getValue("label").language shouldBe "en"
+        read.single().getValue("label").type shouldBe "literal"
+    }
+
+    @Test
+    fun `a typed literal keeps its datatype`() = runTest {
+        val typed = """"42"^^<http://www.w3.org/2001/XMLSchema#integer>"""
+        val read = read(rows("?count", typed))
+
+        read.single().getValue("count").value shouldBe "42"
+        read.single().getValue("count").dataType shouldBe "http://www.w3.org/2001/XMLSchema#integer"
+    }
+
+    @Test
+    fun `a blank node is recognised rather than read as a literal`() = runTest {
+        read(rows("?node", "_:b0")).single().getValue("node").type shouldBe "bnode"
+    }
+
+    /** An unbound variable is absent, the same as the JSON form leaves it out of the binding. */
+    @Test
+    fun `an unbound variable is absent rather than empty`() = runTest {
+        val read = read(rows("?item${tab}?label", "<http://www.wikidata.org/entity/Q1>$tab"))
+
+        read.single().containsKey("label") shouldBe false
+        read.single().getValue("item").entityId shouldBe "Q1"
+    }
+
+    /** The service escapes a tab and a newline inside a literal, so neither ends the cell or the row. */
+    @Test
+    fun `an escaped tab or newline inside a literal does not end the cell or the row`() = runTest {
+        val read = read(rows("?text", """"one\ttwo\nthree""""))
+
+        read.single().getValue("text").value shouldBe "one\ttwo\nthree"
+    }
+
+    @Test
+    fun `an empty answer is no rows rather than a failure`() = runTest {
+        read(rows("?item")) shouldBe emptyList()
+        read("") shouldBe emptyList()
+    }
+
+    @Test
+    fun `every row is read, not only the first`() = runTest {
+        val read =
+            read(
+                rows(
+                    "?item",
+                    "<http://www.wikidata.org/entity/Q1>",
+                    "<http://www.wikidata.org/entity/Q2>",
+                    "<http://www.wikidata.org/entity/Q3>",
+                )
+            )
+
+        read.mapNotNull { it["item"]?.entityId } shouldBe listOf("Q1", "Q2", "Q3")
+    }
+
+    @Test
+    fun `the query is asked for as tsv`() = runTest {
+        var asked = ""
+
+        client {
+                asked = it.body.toByteArray().decodeToString()
+                respondTsv(rows("?item"))
+            }
+            .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
+
+        asked shouldContain "format=tsv"
+    }
+
+    @Test
+    fun `a service that says it is busy is asked again`() = runTest {
+        var attempts = 0
+
+        val read =
+            client(RetryPolicy(maxRetries = 2, initialDelay = Duration.ZERO)) {
+                    attempts++
+                    if (attempts == 1) {
+                        respond("", HttpStatusCode.TooManyRequests)
+                    } else {
+                        respondTsv(rows("?item", "<http://www.wikidata.org/entity/Q1>"))
+                    }
+                }
+                .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
+
+        attempts shouldBe 2
+        read.single().getValue("item").entityId shouldBe "Q1"
+    }
+
+    @Test
+    fun `a service that stays busy gives up and says so`() = runTest {
+        val refusal =
+            shouldThrow<WikiError.Api> {
+                client(RetryPolicy(maxRetries = 1, initialDelay = Duration.ZERO)) {
+                        respond("", HttpStatusCode.TooManyRequests)
+                    }
+                    .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
+            }
+
+        refusal.message shouldContain "busy"
+    }
 }
 
 class XmlDumpTest {

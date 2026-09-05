@@ -227,7 +227,7 @@ internal class Builder(private val tokens: List<Token>) {
         }
     }
 
-    private inline fun code(stop: (Token) -> Boolean): Markup = Markup(buildNodes(stop))
+    private inline fun code(stop: (Token) -> Boolean): Markup = Markup.owning(buildNodes(stop))
 
     private fun expect(token: Token) {
         val actual = next()
