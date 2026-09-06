@@ -301,15 +301,12 @@ public class SparqlClient(
                     .preparePost(endpoint) {
                         header(HttpHeaders.UserAgent, userAgent.headerValue)
                         // The service escapes tabs and newlines inside a literal, so a line is one row.
+                        //
+                        // Asked for by header and by header only. A `format` parameter the service does not
+                        // recognise is not an error there: it stops honouring the header and answers in its
+                        // own default, which is XML, and a line-oriented reader takes that for rows.
                         header(HttpHeaders.Accept, "text/tab-separated-values")
-                        setBody(
-                            FormDataContent(
-                                Parameters.build {
-                                    append("query", query)
-                                    append("format", "tsv")
-                                }
-                            )
-                        )
+                        setBody(FormDataContent(Parameters.build { append("query", query) }))
                     }
                     .execute { response ->
                         if (response.isBusy()) {

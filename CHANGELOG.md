@@ -7,6 +7,12 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.1.1] — 2026-09-06
+
+### Fixed
+
+- `selectStreamed` returned nothing: its `format` parameter made the service answer XML, not TSV.
+
 ## [1.1.0] — 2026-09-05
 
 A pass over what the library holds in memory. A bot that sweeps a category the size of German

@@ -7,6 +7,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -316,6 +317,27 @@ class SparqlStreamingTest {
     }
         .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
 
+    /**
+     * TSV is asked for by header alone.
+     *
+     * A `format` parameter the service does not recognise is not refused: it stops honouring the Accept
+     * header and answers in its own default, which is XML. A reader that takes lines for rows then finds one
+     * variable called `<?xml version='1.0'?>` and no bindings at all, so a query that works returns nothing.
+     */
+    @Test
+    fun `the query is sent without a format parameter`() = runTest {
+        var body = ""
+
+        client {
+                body = it.body.toByteArray().decodeToString()
+                respondTsv(rows("?item", "<http://www.wikidata.org/entity/Q1>"))
+            }
+            .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
+
+        body shouldContain "query="
+        body shouldNotContain "format="
+    }
+
     @Test
     fun `a URI comes back as one, and reduces to its entity id`() = runTest {
         val read = read(rows("?item", "<http://www.wikidata.org/entity/Q7889>"))
@@ -386,16 +408,16 @@ class SparqlStreamingTest {
     }
 
     @Test
-    fun `the query is asked for as tsv`() = runTest {
-        var asked = ""
+    fun `the query is asked for as tsv by header`() = runTest {
+        var accept = ""
 
         client {
-                asked = it.body.toByteArray().decodeToString()
+                accept = it.headers[HttpHeaders.Accept].orEmpty()
                 respondTsv(rows("?item"))
             }
             .selectStreamed("SELECT ?item WHERE {}") { it.toList() }
 
-        asked shouldContain "format=tsv"
+        accept shouldContain "text/tab-separated-values"
     }
 
     @Test
