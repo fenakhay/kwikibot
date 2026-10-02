@@ -1,7 +1,9 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.EditBuilder
+import com.fenakhay.kwikibot.client.service.ExpandedText
 import com.fenakhay.kwikibot.client.service.PageService
 import com.fenakhay.kwikibot.client.service.WatchMode
 import com.fenakhay.kwikibot.client.service.applyTo
@@ -16,6 +18,7 @@ import com.fenakhay.kwikibot.model.edit.Protection
 import com.fenakhay.kwikibot.model.page.CategoryInfo
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
 import com.fenakhay.kwikibot.model.user.Contributor
@@ -29,6 +32,7 @@ import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
 import com.fenakhay.kwikibot.protocol.decode.PageResult
 import com.fenakhay.kwikibot.protocol.throwOnError
+import java.util.UUID
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.JsonArray
@@ -52,7 +56,13 @@ internal class ApiPageService(
 
     override suspend fun content(ref: PageRef): PageContent? = contents(listOf(ref))[ref]
 
-    override suspend fun contents(refs: Collection<PageRef>): Map<PageRef, PageContent> {
+    override suspend fun contents(refs: Collection<PageRef>): Map<PageRef, PageContent> =
+        read(refs, cacheable = true)
+
+    override suspend fun freshContents(refs: Collection<PageRef>): Map<PageRef, PageContent> =
+        read(refs, cacheable = false)
+
+    private suspend fun read(refs: Collection<PageRef>, cacheable: Boolean): Map<PageRef, PageContent> {
         if (refs.isEmpty()) return emptyMap()
 
         val found = mutableMapOf<Title.Local, PageContent>()
@@ -60,14 +70,16 @@ internal class ApiPageService(
         for (batch in refs.map { it.title }.distinct().chunked(batchSize)) {
             val request =
                 ApiRequest.of(
-                    "query",
-                    "prop" to "revisions",
-                    "rvprop" to "ids|timestamp|user|comment|size|flags|content",
-                    "rvslots" to "main",
-                    // Redirects are deliberately not followed: a bot editing a redirect needs the
-                    // redirect's own text, not its target's.
-                    "titles" to batch.joinToString("|") { namespaces.format(it) },
-                )
+                        "query",
+                        // info says whether a page is a redirect; without it the target is never read.
+                        "prop" to "info|revisions",
+                        "rvprop" to Registry.PAGE_CONTENT.joined,
+                        "rvslots" to "main",
+                        // Redirects are not followed: a bot editing a redirect needs the redirect's own
+                        // text.
+                        "titles" to batch.joinToString("|") { namespaces.format(it) },
+                    )
+                    .copy(cacheable = cacheable)
 
             continuation.pages(request).toList().forEach { entry ->
                 val decoded = decoder.decode(entry) as? PageResult.Existing ?: return@forEach
@@ -330,17 +342,52 @@ internal class ApiPageService(
     override suspend fun fileUsageOf(refs: Collection<PageRef>): Map<PageRef, List<PageRef>> =
         related(refs, "fileusage", "fu")
 
-    /** The three "what points at this" modules differ only in their name and prefix. */
+    override suspend fun redirectsTo(
+        refs: Collection<PageRef>,
+        namespaces: Set<Namespace>,
+    ): Map<PageRef, List<PageRef>> =
+        related(
+            refs,
+            "redirects",
+            "rd",
+            "rdnamespace" to namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
+        )
+
+    /**
+     * The "what points at this" modules, which differ only in their name, prefix and filters.
+     *
+     * A page with more entries than one answer holds has them split across continued answers, and each part
+     * is added to what came before rather than put in its place.
+     */
     private suspend fun related(
         refs: Collection<PageRef>,
         module: String,
         prefix: String,
-    ): Map<PageRef, List<PageRef>> =
-        byPage(refs, module, "${prefix}limit" to "max") { entry ->
-            (entry[module] as? JsonArray)
-                ?.mapNotNull { decoder.refOf(it.jsonObject) }
-                ?.takeIf { it.isNotEmpty() }
+        vararg filters: Pair<String, String?>,
+    ): Map<PageRef, List<PageRef>> {
+        if (refs.isEmpty()) return emptyMap()
+
+        val found = mutableMapOf<Title.Local, MutableList<PageRef>>()
+        for (batch in refs.map { it.title }.distinct().chunked(batchSize)) {
+            val request =
+                ApiRequest.of(
+                    "query",
+                    "prop" to module,
+                    "titles" to batch.joinToString("|") { namespaces.format(it) },
+                    "${prefix}limit" to "max",
+                    *filters,
+                )
+
+            continuation.pages(request).toList().forEach { entry ->
+                val ref = decoder.refOf(entry) ?: return@forEach
+                val listed =
+                    (entry[module] as? JsonArray)?.mapNotNull { decoder.refOf(it.jsonObject) }.orEmpty()
+                if (listed.isNotEmpty()) found.getOrPut(ref.title) { mutableListOf() } += listed
+            }
         }
+
+        return refs.mapNotNull { ref -> found[ref.title]?.let { ref to it.toList() } }.toMap()
+    }
 
     /**
      * Reads one `prop=` module for a collection of pages, in batches.
@@ -572,7 +619,74 @@ internal class ApiPageService(
         }
     }
 
-    override suspend fun expandText(wikitext: String, title: PageRef?): String {
+    override suspend fun expandText(wikitext: String, title: PageRef?): String =
+        expand(wikitext, title, categories = false).text
+
+    /**
+     * Expands many texts in few requests.
+     *
+     * Without categories, the texts are joined between markers the expansion leaves alone, up to
+     * [EXPANSION_BATCH] texts or [EXPANSION_CHARACTERS] characters a request, and split again afterwards.
+     * Each marker sits on a line of its own, so every text still starts at a line start, which decides how a
+     * template's output beginning with `*` or `{|` is laid out. If the markers do not come back intact, as
+     * when an unclosed comment in one text swallows the next, that batch is expanded a text at a time.
+     *
+     * Categories belong to a whole expansion and cannot be split between texts, so asking for them expands
+     * each text alone.
+     */
+    override suspend fun expandTexts(
+        texts: List<String>,
+        title: PageRef?,
+        categories: Boolean,
+    ): List<ExpandedText> {
+        if (categories) return texts.map { expand(it, title, categories = true) }
+
+        val expanded = ArrayList<ExpandedText>(texts.size)
+        var batch = mutableListOf<String>()
+        var characters = 0
+        for (text in texts) {
+            if (
+                batch.isNotEmpty() &&
+                    (batch.size == EXPANSION_BATCH || characters + text.length > EXPANSION_CHARACTERS)
+            ) {
+                expanded += expandBatch(batch, title)
+                batch = mutableListOf()
+                characters = 0
+            }
+            batch += text
+            characters += text.length
+        }
+        if (batch.isNotEmpty()) expanded += expandBatch(batch, title)
+        return expanded
+    }
+
+    private suspend fun expandBatch(texts: List<String>, title: PageRef?): List<ExpandedText> {
+        if (texts.size == 1) return listOf(expand(texts.single(), title, categories = false))
+
+        val marker = "kwikibot:${UUID.randomUUID()}"
+        fun separator(index: Int) = "\n<nowiki>@@$marker:$index@@</nowiki>\n"
+
+        val joined = buildString {
+            texts.forEachIndexed { index, text ->
+                if (index > 0) append(separator(index))
+                append(text)
+            }
+        }
+        val result = expand(joined, title, categories = false).text
+
+        val parts = ArrayList<ExpandedText>(texts.size)
+        var from = 0
+        for (index in 1 until texts.size) {
+            val at = result.indexOf(separator(index), from)
+            if (at < 0) return texts.map { expand(it, title, categories = false) }
+            parts += ExpandedText(result.substring(from, at))
+            from = at + separator(index).length
+        }
+        parts += ExpandedText(result.substring(from))
+        return parts
+    }
+
+    private suspend fun expand(wikitext: String, title: PageRef?, categories: Boolean): ExpandedText {
         val response =
             transport
                 .call(
@@ -580,19 +694,25 @@ internal class ApiPageService(
                         "expandtemplates",
                         "text" to wikitext,
                         "title" to title?.let { namespaces.format(it.title) },
-                        "prop" to "wikitext",
+                        "prop" to
+                            if (categories) Registry.EXPANSION.joined else Registry.EXPANSION.values.first(),
                         // Expanding changes nothing on the wiki, so it is paced as a read.
                         kind = RequestKind.READ,
                     )
                 )
                 .throwOnError()
 
-        return response["expandtemplates"]?.jsonObject?.get("wikitext")?.jsonPrimitive?.content
-            ?: throw WikiError.Api(
-                "noexpansion",
-                "the wiki returned no expanded text",
-                "expandtemplates",
-            )
+        val result = response["expandtemplates"]?.jsonObject
+        val text =
+            result?.get("wikitext")?.jsonPrimitive?.content
+                ?: throw WikiError.Api("noexpansion", "the wiki returned no expanded text", "expandtemplates")
+        val names =
+            (result["categories"] as? JsonArray)
+                ?.mapNotNull {
+                    (it as? JsonObject)?.get("category")?.jsonPrimitive?.content?.replace('_', ' ')
+                }
+                .orEmpty()
+        return ExpandedText(text, names)
     }
 
     /** The protection entries on a page-info result. */
@@ -627,7 +747,13 @@ internal class ApiPageService(
     }
 
     private companion object {
-        /** What the API allows a bot account to request in one query. */
+        /** How many titles any account may name in one query; one with `apihighlimits` may name 500. */
         const val DEFAULT_BATCH = 50
+
+        /** The most texts one expansion request carries. */
+        const val EXPANSION_BATCH = 50
+
+        /** The most characters of text one expansion request carries. */
+        const val EXPANSION_CHARACTERS = 1_000_000
     }
 }

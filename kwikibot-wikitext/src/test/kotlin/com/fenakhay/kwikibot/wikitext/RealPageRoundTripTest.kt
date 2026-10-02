@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.ops.outline
 import java.util.zip.GZIPInputStream
 import kotlin.test.Test
 import kotlin.test.fail
@@ -28,7 +29,9 @@ class RealPageRoundTripTest {
             val text = page["text"]!!.jsonPrimitive.content
 
             val output = runCatching {
-                Wikitext.parse(text).serialize()
+                val parsed = Wikitext.parse(text)
+                check(parsed.outline().serialize() == text) { "the outline did not write the page back" }
+                parsed.serialize()
             }
                 .getOrElse { thrown ->
                     return@mapNotNull "  $where — threw ${thrown::class.simpleName}: ${thrown.message}"

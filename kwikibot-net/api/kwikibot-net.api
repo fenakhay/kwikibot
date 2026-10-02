@@ -18,6 +18,7 @@ public final class com/fenakhay/kwikibot/net/RequestKind : java/lang/Enum {
 
 public final class com/fenakhay/kwikibot/net/RetryPolicy {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/RetryPolicy$Companion;
+	public fun <init> ()V
 	public synthetic fun <init> (IJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (IJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
@@ -41,6 +42,7 @@ public final class com/fenakhay/kwikibot/net/RetryPolicy$Companion {
 
 public final class com/fenakhay/kwikibot/net/Throttle {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/Throttle$Companion;
+	public fun <init> ()V
 	public synthetic fun <init> (JJLkotlin/time/TimeSource;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JJLkotlin/time/TimeSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun acquire (Lcom/fenakhay/kwikibot/net/RequestKind;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -78,6 +80,7 @@ public final class com/fenakhay/kwikibot/net/UserAgent$Companion {
 }
 
 public abstract interface class com/fenakhay/kwikibot/net/auth/Credentials {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/auth/Credentials$Companion;
 	public abstract fun getUsername ()Ljava/lang/String;
 }
 
@@ -106,6 +109,11 @@ public final class com/fenakhay/kwikibot/net/auth/Credentials$BotPassword : com/
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/fenakhay/kwikibot/net/auth/Credentials$Companion {
+	public final fun fromEnvironment (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/fenakhay/kwikibot/net/auth/Credentials;
+	public static synthetic fun fromEnvironment$default (Lcom/fenakhay/kwikibot/net/auth/Credentials$Companion;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/auth/Credentials;
+}
+
 public final class com/fenakhay/kwikibot/net/auth/Credentials$OAuth2 : com/fenakhay/kwikibot/net/auth/Credentials {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -131,6 +139,7 @@ public final class com/fenakhay/kwikibot/net/auth/Identity {
 	public final fun copy (Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;)Lcom/fenakhay/kwikibot/net/auth/Identity;
 	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/auth/Identity;Ljava/lang/String;JLjava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/auth/Identity;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBatchLimit ()I
 	public final fun getGroups ()Ljava/util/Set;
 	public final fun getId ()J
 	public final fun getName ()Ljava/lang/String;
@@ -147,6 +156,7 @@ public final class com/fenakhay/kwikibot/net/auth/LoginManager {
 	public final fun getCurrentIdentity ()Lcom/fenakhay/kwikibot/net/auth/Identity;
 	public final fun login (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun logout (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun relogin (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun whoAmI (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -221,14 +231,18 @@ public final class com/fenakhay/kwikibot/net/transport/ApiEndpoint$Companion {
 
 public final class com/fenakhay/kwikibot/net/transport/ApiRequest {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/ApiRequest$Companion;
-	public fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)V
+	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)V
 	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;Z)V
+	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/Map;
 	public final fun component2 ()Lcom/fenakhay/kwikibot/net/RequestKind;
-	public final fun copy (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;Z)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAction ()Ljava/lang/String;
+	public final fun getCacheable ()Z
 	public final fun getKind ()Lcom/fenakhay/kwikibot/net/RequestKind;
 	public final fun getParams ()Ljava/util/Map;
 	public final fun getRequiresPost ()Z
@@ -243,17 +257,42 @@ public final class com/fenakhay/kwikibot/net/transport/ApiRequest$Companion {
 	public static synthetic fun of$default (Lcom/fenakhay/kwikibot/net/transport/ApiRequest$Companion;Ljava/lang/String;[Lkotlin/Pair;Lcom/fenakhay/kwikibot/net/RequestKind;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
 }
 
+public final class com/fenakhay/kwikibot/net/transport/HttpSettings {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/HttpSettings$Companion;
+	public static final field DEFAULT_CONNECTIONS I
+	public fun <init> ()V
+	public synthetic fun <init> (IIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IIJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3-UwyO8pc ()J
+	public final fun copy-SxA4cEA (IIJ)Lcom/fenakhay/kwikibot/net/transport/HttpSettings;
+	public static synthetic fun copy-SxA4cEA$default (Lcom/fenakhay/kwikibot/net/transport/HttpSettings;IIJILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/HttpSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxIdleConnections ()I
+	public final fun getMaxRequestsPerHost ()I
+	public final fun getTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/transport/HttpSettings$Companion {
+}
+
 public final class com/fenakhay/kwikibot/net/transport/KtorTransport : com/fenakhay/kwikibot/net/transport/MediaWikiTransport {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/KtorTransport$Companion;
 	public static final field DEFAULT_MAXLAG I
 	public static final field MAX_GET_LENGTH I
-	public fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;)V
+	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;)V
 	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/net/transport/TransportListener;)V
+	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/net/transport/TransportListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun call (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getEndpoint ()Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;
 }
 
 public final class com/fenakhay/kwikibot/net/transport/KtorTransport$Companion {
+	public final fun getDEFAULT_PARAMS ()Ljava/util/Map;
 }
 
 public abstract interface class com/fenakhay/kwikibot/net/transport/MediaWikiTransport {
@@ -261,8 +300,30 @@ public abstract interface class com/fenakhay/kwikibot/net/transport/MediaWikiTra
 	public abstract fun getEndpoint ()Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;
 }
 
+public abstract interface class com/fenakhay/kwikibot/net/transport/TransportListener {
+	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/TransportListener$Companion;
+	public fun onPenalty-LRDsOJo (J)V
+	public fun onRelogin (Lcom/fenakhay/kwikibot/net/auth/Identity;)V
+	public fun onResponse (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlinx/serialization/json/JsonObject;)V
+	public fun onRetry-exY8QGI (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;IJLjava/lang/String;)V
+}
+
+public final class com/fenakhay/kwikibot/net/transport/TransportListener$Companion {
+	public final fun getNONE ()Lcom/fenakhay/kwikibot/net/transport/TransportListener;
+	public final fun of ([Lcom/fenakhay/kwikibot/net/transport/TransportListener;)Lcom/fenakhay/kwikibot/net/transport/TransportListener;
+}
+
+public final class com/fenakhay/kwikibot/net/transport/TransportListener$DefaultImpls {
+	public static fun onPenalty-LRDsOJo (Lcom/fenakhay/kwikibot/net/transport/TransportListener;J)V
+	public static fun onRelogin (Lcom/fenakhay/kwikibot/net/transport/TransportListener;Lcom/fenakhay/kwikibot/net/auth/Identity;)V
+	public static fun onResponse (Lcom/fenakhay/kwikibot/net/transport/TransportListener;Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlinx/serialization/json/JsonObject;)V
+	public static fun onRetry-exY8QGI (Lcom/fenakhay/kwikibot/net/transport/TransportListener;Lcom/fenakhay/kwikibot/net/transport/ApiRequest;IJLjava/lang/String;)V
+}
+
 public final class com/fenakhay/kwikibot/net/transport/WikiHttpClient {
 	public static final field INSTANCE Lcom/fenakhay/kwikibot/net/transport/WikiHttpClient;
+	public final fun create (Lcom/fenakhay/kwikibot/net/transport/HttpSettings;Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;)Lio/ktor/client/HttpClient;
+	public static synthetic fun create$default (Lcom/fenakhay/kwikibot/net/transport/WikiHttpClient;Lcom/fenakhay/kwikibot/net/transport/HttpSettings;Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;ILjava/lang/Object;)Lio/ktor/client/HttpClient;
 	public final fun create-SxA4cEA (Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;J)Lio/ktor/client/HttpClient;
 	public static synthetic fun create-SxA4cEA$default (Lcom/fenakhay/kwikibot/net/transport/WikiHttpClient;Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;JILjava/lang/Object;)Lio/ktor/client/HttpClient;
 	public final fun getDEFAULT_TIMEOUT-UwyO8pc ()J

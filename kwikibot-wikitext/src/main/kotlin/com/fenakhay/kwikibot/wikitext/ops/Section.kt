@@ -1,7 +1,9 @@
 package com.fenakhay.kwikibot.wikitext.ops
 
 import com.fenakhay.kwikibot.wikitext.Markup
+import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.Wikitext
+import com.fenakhay.kwikibot.wikitext.internal.sectionNodes
 import com.fenakhay.kwikibot.wikitext.node.Heading
 import com.fenakhay.kwikibot.wikitext.node.Node
 
@@ -105,12 +107,16 @@ public data class Section(
  * The root is the lead — everything before the first heading — with the top-level sections beneath it. A
  * heading deeper than the one before it opens a subsection; one at the same level or shallower closes as many
  * as it needs to.
+ *
+ * A heading inside an HTML tag, such as a `<div>`, is a section as MediaWiki counts them, so the tag is cut
+ * at it: its opening tag stays in the section before, its closing tag lands in the section where it was
+ * written, and the sections still write back as the page.
  */
 public fun Markup.outline(): Section {
     val root = SectionBuilder(null)
     var stack = listOf(root)
 
-    for (node in nodes) {
+    for (node in nodes.sectionNodes()) {
         if (node !is Heading) {
             stack.last().nodes += node
             continue
@@ -136,9 +142,16 @@ public fun Markup.outline(): Section {
 }
 
 /** Replaces a section anywhere in the page, keeping everything else exactly as it was. */
-public fun Markup.replaceSection(target: Section, replacement: Section): Markup {
+public fun Markup.replaceSection(target: Section, replacement: Section): Markup =
+    replaceSection(target, replacement, ParseOptions.DEFAULT)
+
+/**
+ * Replaces a section anywhere in the page, and reads the result back with [options], which should be the
+ * wiki's own: the page is parsed again so the sections it has afterwards are the sections it shows.
+ */
+public fun Markup.replaceSection(target: Section, replacement: Section, options: ParseOptions): Markup {
     val updated = outline().replace(target, replacement)
-    return Wikitext.parse(updated.serialize())
+    return Wikitext.parse(updated.serialize(), options)
 }
 
 /** Accumulates a section while the outline is being walked. */

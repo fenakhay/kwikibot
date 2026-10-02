@@ -34,9 +34,20 @@ public data class Identity(
     val isAnonymous: Boolean
         get() = id == 0L
 
+    /**
+     * How many titles, page ids, revision ids or user names one query may name for this account: 500 with
+     * `apihighlimits`, which bots and administrators hold, and 50 otherwise. The wiki refuses more.
+     */
+    val batchLimit: Int
+        get() = if (HIGH_LIMITS in rights) HIGH_BATCH else DEFAULT_BATCH
+
     /** Whether the account holds [right]. */
     public operator fun contains(right: String): Boolean = right in rights
 }
+
+private const val HIGH_LIMITS = "apihighlimits"
+private const val DEFAULT_BATCH = 50
+private const val HIGH_BATCH = 500
 
 /**
  * Establishes and verifies a session.
@@ -73,6 +84,25 @@ public class LoginManager(
         return mutex.withLock {
             identity ?: performLogin().also { identity = it }
         }
+    }
+
+    /**
+     * Logs in again, for a session the wiki has dropped.
+     *
+     * A session can end before the client is done with it: after long enough without requests, when the bot
+     * password is reset or deleted, or when the wiki's session store loses it. Every request after that is
+     * made anonymously, or refused if it asserts a user. Unlike [logout] this tells the wiki nothing, since
+     * there is no session left to end: it forgets the old session and its tokens and starts another. For
+     * OAuth 2.0 there is no session to restore: an owner-only token never expires, though it can be revoked,
+     * so this only checks that the token is still accepted.
+     *
+     * @throws WikiError.Auth if the wiki refuses the credentials this time.
+     */
+    public suspend fun relogin(): Identity = mutex.withLock {
+        identity = null
+        // Tokens belong to the session that issued them, so the cached ones ended with it.
+        tokens.clear()
+        performLogin().also { identity = it }
     }
 
     /** Forgets the session, so the next [login] starts a new one. */

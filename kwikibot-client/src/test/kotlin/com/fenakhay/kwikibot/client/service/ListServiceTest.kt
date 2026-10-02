@@ -127,6 +127,24 @@ class ListServiceTest {
     }
 
     @Test
+    fun `a page that links through a redirect is listed beside the redirect, not lost under it`() = runTest {
+        val lists = lists {
+            respondJson(
+                """{"query":{"backlinks":[
+                   {"pageid":1,"ns":0,"title":"Volcanoes","redirect":true,"redirlinks":[
+                     {"pageid":2,"ns":0,"title":"Etna"},{"pageid":3,"ns":0,"title":"Vesuvius"}]},
+                   {"pageid":4,"ns":0,"title":"Lava"}]}}"""
+            )
+        }
+
+        val links = lists.backlinks(ref("volcano")).toList().map { it.title.text }
+
+        links shouldBe listOf("Volcanoes", "Etna", "Vesuvius", "Lava")
+        lists.backlinks(ref("volcano"), limit = 2).toList().map { it.title.text } shouldBe
+            listOf("Volcanoes", "Etna")
+    }
+
+    @Test
     fun `transclusions of a template are listed`() = runTest {
         var params = emptyMap<String, String>()
         val lists = lists { request ->

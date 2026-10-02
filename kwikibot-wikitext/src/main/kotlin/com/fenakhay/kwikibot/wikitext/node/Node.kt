@@ -1,6 +1,10 @@
 package com.fenakhay.kwikibot.wikitext.node
 
 import com.fenakhay.kwikibot.wikitext.Markup
+import com.fenakhay.kwikibot.wikitext.TitleRules
+import com.fenakhay.kwikibot.wikitext.internal.ParameterValue
+import com.fenakhay.kwikibot.wikitext.internal.Writer
+import com.fenakhay.kwikibot.wikitext.internal.templateKey
 
 /**
  * One piece of parsed wikitext.
@@ -23,12 +27,20 @@ public data class TextNode(
     override fun serialize(): String = text
 }
 
-/** `<!-- … -->` */
-public data class Comment(
-    /** What sits between the markers, without them. */
-    val contents: String
-) : Node {
-    override fun serialize(): String = "<!--$contents-->"
+/**
+ * `<!-- … -->`
+ *
+ * @param contents what sits between the markers, without them.
+ * @param closed whether the comment ends with `-->`. One that does not runs to the end of the page, which is
+ *   how MediaWiki reads it: everything after an unclosed `<!--` is hidden.
+ */
+public data class Comment(val contents: String, val closed: Boolean = true) : Node {
+
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(contents: String) : this(contents, closed = true)
+
+    override fun serialize(): String = if (closed) "<!--$contents-->" else "<!--$contents"
 }
 
 /**
@@ -46,13 +58,24 @@ public data class Parameter(
     val value: Markup,
     val showKey: Boolean,
 ) {
-    /** The parameter name as plain text, trimmed — what a caller means by "the second one". */
+    /**
+     * The parameter's name as MediaWiki reads it, comments removed and whitespace trimmed, except that a
+     * nested template is kept as written where MediaWiki would expand it. For a positional parameter, its
+     * number.
+     */
     val key: String
-        get() = name.text.trim()
+        get() = name.withoutComments().trim()
+
+    /** The name as written, or `null` for a positional parameter, which has none written. */
+    val rawKey: String?
+        get() = if (showKey) name.serialize() else null
+
+    /** The value as written, whitespace, comments and markup included. */
+    val rawValue: String
+        get() = value.serialize()
 
     /** This parameter as wikitext, positional or named as it was written. */
-    public fun serialize(): String =
-        if (showKey) "${name.serialize()}=${value.serialize()}" else value.serialize()
+    public fun serialize(): String = Writer.write(this)
 }
 
 /** `{{name|params}}` */
@@ -63,21 +86,63 @@ public data class Template(
     val parameters: List<Parameter> = emptyList(),
 ) : Node {
 
-    /** The template name as plain text, trimmed and with the first letter left as written. */
+    /**
+     * The name as MediaWiki reads it before expanding anything: comments removed, whitespace trimmed, the
+     * first letter as written. A template inside the name is kept, so `{{ {{lang}}-noun }}` is
+     * `{{lang}}-noun` rather than `-noun`. [key] is the name normalised for comparing.
+     */
     val title: String
-        get() = name.text.trim()
+        get() = name.withoutComments().trim()
 
-    override fun serialize(): String = buildString {
-        append("{{").append(name.serialize())
-        parameters.forEach { append('|').append(it.serialize()) }
-        append("}}")
-    }
+    /** The name as written, comments and whitespace included. */
+    val rawName: String
+        get() = name.serialize()
+
+    /**
+     * The page this template transcludes, normalised the way MediaWiki normalises it, under
+     * [TitleRules.DEFAULT]; `null` for a parser function, a variable, or a name that is itself built from a
+     * template. See [key] with rules for what is done to the name.
+     */
+    val key: String?
+        get() = key(TitleRules.DEFAULT)
+
+    /**
+     * The page this template transcludes, normalised under [rules], or `null` when it transcludes none.
+     *
+     * `subst:`, `safesubst:` and the other modifiers are dropped, spaces and underscores collapse to one
+     * space, and the first letter is upper-cased unless [rules] say the namespace keeps case. A template in
+     * the Template namespace is keyed by its name alone, `{{Template:Foo}}` and `{{foo}}` both as `Foo`; one
+     * elsewhere keeps its prefix, and one in the main namespace, `{{:Foo}}`, keeps its colon so it never
+     * collides with the template of the same name.
+     */
+    public fun key(rules: TitleRules): String? = templateKey(this, rules)
+
+    /** Whether this is a parser function or a variable, such as `{{#if:…}}` or `{{PAGENAME}}`. */
+    val isParserFunction: Boolean
+        get() = isParserFunction(TitleRules.DEFAULT)
+
+    /**
+     * Whether this is a parser function or a variable under [rules]. A variable's name with parameters, such
+     * as `{{PAGENAME|x}}`, is neither: MediaWiki transcludes the page of that name.
+     */
+    public fun isParserFunction(rules: TitleRules): Boolean =
+        rules.isParserFunction(title, hasArguments = parameters.isNotEmpty())
+
+    override fun serialize(): String = Writer.write(this)
 
     /** The parameter called [key], or `null` if the template does not have one. */
     public fun parameter(key: String): Parameter? = parameters.lastOrNull { it.key == key }
 
-    /** The value of parameter [key] as plain text, or `null`. */
+    /**
+     * The value of parameter [key] as visible text, or `null`.
+     *
+     * Visible text drops templates and comments, which is what a reader sees and what most comparisons want;
+     * [rawValue] is the value as written.
+     */
     public fun value(key: String): String? = parameter(key)?.value?.text?.trim()
+
+    /** The value of parameter [key] as written, or `null`. */
+    public fun rawValue(key: String): String? = parameter(key)?.rawValue
 
     /** Whether the template has a parameter called [key]. */
     public operator fun contains(key: String): Boolean = parameter(key) != null
@@ -91,14 +156,25 @@ public data class Template(
      * values.
      *
      * A key that is a number produces a positional parameter, matching how templates are usually written.
+     *
+     * [value] is wikitext, and is written so that it stays one parameter when the wiki reads it back. A `|`
+     * that would split the template there, one inside an external link or plain text, is written `{{!}}`,
+     * which the wiki turns back into a `|` after splitting. A positional value whose `=` would make it a
+     * named one is written with its position as the name, `2=a=b`.
+     *
+     * @throws IllegalArgumentException if [value] opens or closes a template or link it does not also close
+     *   or open, which would change the template it is put into rather than one of its parameters.
      */
     public fun withParameter(key: String, value: String): Template {
         val existing = parameter(key)
+        val safe = ParameterValue.of(value)
+        val positional = existing?.let { !it.showKey } ?: (key.toIntOrNull() != null)
+        val named = !positional || safe.splitsAtEquals
         val replacement =
             Parameter(
-                name = existing?.name ?: Markup.of(key),
-                value = Markup.of(existing?.value?.spacedLike(value) ?: value),
-                showKey = existing?.showKey ?: (key.toIntOrNull() == null),
+                name = existing?.name?.takeIf { existing.showKey == named } ?: Markup.of(key),
+                value = Markup.of(existing?.value?.spacedLike(safe.text) ?: safe.text),
+                showKey = named,
             )
         return if (existing == null) {
             copy(parameters = parameters + replacement)
@@ -129,11 +205,7 @@ public data class Argument(
     /** What to use when the argument is not supplied, if the markup names one. */
     val default: Markup? = null,
 ) : Node {
-    override fun serialize(): String = buildString {
-        append("{{{").append(name.serialize())
-        default?.let { append('|').append(it.serialize()) }
-        append("}}}")
-    }
+    override fun serialize(): String = Writer.write(this)
 }
 
 /** `[[target|text]]` */
@@ -148,31 +220,34 @@ public data class WikiLink(
     val title: String
         get() = target.text.trim()
 
-    override fun serialize(): String = buildString {
-        append("[[").append(target.serialize())
-        text?.let { append('|').append(it.serialize()) }
-        append("]]")
-    }
+    override fun serialize(): String = Writer.write(this)
 }
 
-/** `[url title]`, or a bare URL in running text. */
+/**
+ * `[url title]`, or a bare URL in running text.
+ *
+ * @param url the URL itself, which may hold a template its expansion completes.
+ * @param title the label after the URL, when the link has one.
+ * @param brackets whether it was bracketed. A bare URL in running text was not.
+ * @param separator what was written between the URL and the label: usually one space, but any run of spaces,
+ *   a full-width one included, or nothing at all when the URL ends at a character no URL may hold.
+ */
 public data class ExternalLink(
-    /** The URL itself. */
     val url: Markup,
-    /** The label after the URL, when the link has one. */
     val title: Markup? = null,
-    /** Whether it was bracketed. A bare URL in running text was not. */
     val brackets: Boolean = true,
+    val separator: String = " ",
 ) : Node {
-    override fun serialize(): String = buildString {
-        if (!brackets) {
-            append(url.serialize())
-            return@buildString
-        }
-        append('[').append(url.serialize())
-        title?.let { append(' ').append(it.serialize()) }
-        append(']')
-    }
+
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        url: Markup,
+        title: Markup? = null,
+        brackets: Boolean = true,
+    ) : this(url, title, brackets, " ")
+
+    override fun serialize(): String = Writer.write(this)
 }
 
 /** `== Heading ==` */
@@ -182,10 +257,7 @@ public data class Heading(
     /** How many equals signs on each side: 2 for a top-level section. */
     val level: Int,
 ) : Node {
-    override fun serialize(): String {
-        val marker = "=".repeat(level)
-        return "$marker${title.serialize()}$marker"
-    }
+    override fun serialize(): String = Writer.write(this)
 }
 
 /**
@@ -200,12 +272,7 @@ public data class HtmlEntity(
     val numeric: Boolean = false,
     val hexChar: String? = null,
 ) : Node {
-    override fun serialize(): String = buildString {
-        append('&')
-        if (numeric) append('#')
-        hexChar?.let { append(it) }
-        append(value).append(';')
-    }
+    override fun serialize(): String = Writer.write(this)
 }
 
 /** One attribute of a tag, with the whitespace that surrounded it. */
@@ -224,20 +291,13 @@ public data class Attribute(
     val padAfterEq: String = "",
 ) {
     /** This attribute as it was written, whitespace and quoting included. */
-    public fun serialize(): String = buildString {
-        append(padFirst).append(name.serialize())
-        if (value == null) return@buildString
-        append(padBeforeEq).append('=').append(padAfterEq)
-        quote?.let { append(it) }
-        append(value.serialize())
-        quote?.let { append(it) }
-    }
+    public fun serialize(): String = Writer.write(this)
 }
 
 /**
  * A tag: `<ref>…</ref>`, `<br />`, or the wiki markup that stands in for one.
  *
- * @param name the tag name, lowercased as MediaWiki treats it.
+ * @param name the tag name as written; MediaWiki compares it ignoring case.
  * @param contents what sits between the opening and closing tags, absent when there is nothing or the tag is
  *   self-closing.
  * @param attributes its attributes, in the order written.
@@ -245,7 +305,13 @@ public data class Attribute(
  * @param wikiMarkup the markup that produced the tag when it was not written as HTML — `'''` for bold, `*`
  *   for a list item. Present means the tag must be written back as that markup, not as `<b>`.
  * @param padding the whitespace before the closing `>`, kept so the tag rebuilds exactly.
- * @param implicitClose whether the closing tag was absent and MediaWiki inferred it.
+ * @param implicitClose whether the closing tag was absent: a `<br>`, or an opening tag MediaWiki ends
+ *   somewhere other than at a closing tag, such as a `<span>` at a paragraph break, or that nothing in its
+ *   segment closes.
+ * @param closing the closing tag as written when it differs from `</name>`, such as `</i >` or `</REF>`. It
+ *   is written back only while it still names the tag, so renaming the tag rewrites it.
+ * @param verbatim whether [contents] is the body as written rather than parsed wikitext, which is how the
+ *   body of `<nowiki>`, `<pre>`, `<math>` and most other extension tags is kept.
  */
 public data class Tag(
     val name: String,
@@ -255,26 +321,33 @@ public data class Tag(
     val wikiMarkup: String? = null,
     val padding: String = "",
     val implicitClose: Boolean = false,
+    val closing: String? = null,
+    val verbatim: Boolean = false,
 ) : Node {
 
-    override fun serialize(): String = if (wikiMarkup != null) serializeWikiMarkup() else serializeHtml()
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        name: String,
+        contents: Markup? = null,
+        attributes: List<Attribute> = emptyList(),
+        selfClosing: Boolean = false,
+        wikiMarkup: String? = null,
+        padding: String = "",
+        implicitClose: Boolean = false,
+    ) : this(name, contents, attributes, selfClosing, wikiMarkup, padding, implicitClose, null, false)
 
-    private fun serializeWikiMarkup(): String =
-        if (selfClosing) wikiMarkup.orEmpty() else "$wikiMarkup${contents?.serialize().orEmpty()}$wikiMarkup"
+    /** The closing tag to write: as written while it still names this tag, `</name>` otherwise. */
+    internal val closingTag: String
+        get() = closing?.takeIf { namesThisTag(it) } ?: "</$name>"
 
-    private fun serializeHtml(): String = buildString {
-        append('<').append(name)
-        attributes.forEach { append(it.serialize()) }
-        append(padding)
-
-        if (selfClosing) {
-            // "<br>" and "<br/>" are both self-closing, and a bot must not turn one into the
-            // other, so which was written is remembered rather than inferred from the name.
-            append(if (implicitClose) ">" else "/>")
-            return@buildString
-        }
-
-        append('>').append(contents?.serialize().orEmpty())
-        append("</").append(name).append('>')
+    private fun namesThisTag(closer: String): Boolean {
+        val after = 2 + name.length
+        if (closer.length < after + 1 || !closer.startsWith("</")) return false
+        if (!closer.regionMatches(2, name, 0, name.length, ignoreCase = true)) return false
+        val next = closer[after]
+        return next == '>' || next == '/' || next.isWhitespace()
     }
+
+    override fun serialize(): String = Writer.write(this)
 }

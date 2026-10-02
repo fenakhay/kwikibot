@@ -125,6 +125,20 @@ class ActivityDecoderTest {
     }
 
     @Test
+    fun `an unpatrolled change is told apart from one nobody asked about`() {
+        val asked =
+            Json.parseToJsonElement(
+                    """{"type":"edit","rcid":1,"ns":0,"title":"volcano","timestamp":"2026-08-01T00:00:00Z",
+                       "patrolled":false}"""
+                )
+                .jsonObject
+
+        decoder.decodeRecentChange(asked).patrolled shouldBe false
+        // The recorded queries did not ask for the flag.
+        recentChanges("recentchanges").all { it.patrolled == null && !it.isPatrolled } shouldBe true
+    }
+
+    @Test
     fun `a contribution carries its page and its revision`() {
         val contributions =
             entries("usercontribs", "usercontribs").mapNotNull { decoder.decodeContribution(it) }

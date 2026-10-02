@@ -99,6 +99,24 @@ class PageServiceTest {
     }
 
     @Test
+    fun `a redirect read with its text says where it goes, and a fresh read bypasses the cache`() = runTest {
+        val sent = mutableListOf<String>()
+        val service = service { request ->
+            sent += request.url.parameters["prop"].orEmpty()
+            respondJson(
+                """{"query":{"pages":[{"pageid":1,"ns":0,"title":"Colour","redirect":true,
+                   "contentmodel":"wikitext","revisions":[{"revid":1,"timestamp":"2026-01-01T00:00:00Z",
+                   "slots":{"main":{"content":"#WEITERLEITUNG [[Color]]"}}}]}]}}"""
+            )
+        }
+
+        val page = checkNotNull(service.freshContents(listOf(ref("Colour")))[ref("Colour")])
+
+        page.redirectTarget?.toString() shouldBe "Color"
+        sent.single() shouldBe "info|revisions"
+    }
+
+    @Test
     fun `a namespace prefix survives the round trip`() = runTest {
         var sentTitle: String? = null
         val service = service { request ->

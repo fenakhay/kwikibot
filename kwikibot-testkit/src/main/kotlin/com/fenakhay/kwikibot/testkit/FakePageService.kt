@@ -25,29 +25,57 @@ import kotlin.time.Instant
  * decided and what the page ended up saying. Refusals and failures are injectable, because the paths worth
  * testing in a bot are the ones where the wiki says no.
  *
+ * The fake refuses an edit for reasons a wiki has: a stale `baseRevision` is a conflict, though a wiki first
+ * tries to merge the two edits and refuses only if it cannot; `createOnly` on a page that exists and
+ * `noCreate` on one that does not are refused; and a contradictory builder is rejected before anything
+ * changes. Each page has its own revision, which every saved edit advances, so a bot that reads, waits and
+ * saves can be tested against a page that changed in between.
+ *
+ * Titles are seeded as a wiki writes them, prefix included: `"Template:foo"` is a page in the Template
+ * namespace, and a different page from `"foo"`.
+ *
  * ```
  * val pages = FakePageService("volcano" to "==English==")
  * botRun(pages) { … }
  * pages.text("volcano") shouldBe "…"
  * ```
+ *
+ * @param texts the pages the fake starts with, by title.
+ * @param wiki the wiki the refs it hands out belong to.
+ * @param refuse a refusal to return instead of applying an edit, or `null` to apply it.
+ * @param failWith an error to throw from every edit, for testing a bot's failure path.
+ * @param expander what [expandText] makes of wikitext. The identity by default: a fake has no templates to
+ *   expand, and a test that cares says what expansion should produce.
  */
 public class FakePageService(
     texts: Map<String, String> = emptyMap(),
     private val wiki: WikiId = WikiId("testwiki"),
     private val refuse: (PageRef) -> EditOutcome.Refused? = { null },
     private val failWith: (() -> WikiError)? = null,
+    private val expander: (String, PageRef?) -> String = { text, _ -> text },
 ) : PageService {
 
     public constructor(vararg texts: Pair<String, String>) : this(texts.toMap())
 
-    private val texts: MutableMap<String, String> = texts.mapKeys { key(it.key) }.toMutableMap()
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        texts: Map<String, String> = emptyMap(),
+        wiki: WikiId = WikiId("testwiki"),
+        refuse: (PageRef) -> EditOutcome.Refused? = { null },
+        failWith: (() -> WikiError)? = null,
+    ) : this(texts, wiki, refuse, failWith, { text, _ -> text })
+
+    private val texts: MutableMap<Key, String> = texts.mapKeys { key(it.key) }.toMutableMap()
 
     /** What each page said before anything edited it, so a rollback has something to go back to. */
-    private val originals: Map<String, String> = texts.mapKeys { key(it.key) }
-    private val protections: MutableMap<String, List<Protection>> = mutableMapOf()
-    private val deleted: MutableMap<String, String> = mutableMapOf()
-    private val watched: MutableSet<String> = mutableSetOf()
-    private var nextRevision = INITIAL_REVISION
+    private val originals: Map<Key, String> = this.texts.toMap()
+    private val revisions: MutableMap<Key, Long> =
+        this.texts.keys.associateWith { INITIAL_REVISION }.toMutableMap()
+    private val protections: MutableMap<Key, List<Protection>> = mutableMapOf()
+    private val deleted: MutableMap<Key, String> = mutableMapOf()
+    private val watched: MutableSet<Key> = mutableSetOf()
+    private var lastRevision = INITIAL_REVISION
 
     /** Every edit that was applied, in order, with the builder the bot filled in. */
     public val edits: MutableList<Pair<PageRef, EditBuilder>> = mutableListOf()
@@ -55,13 +83,20 @@ public class FakePageService(
     /** The current text of a page, or `null` if it does not exist. */
     public fun text(title: String): String? = texts[key(title)]
 
+    /** The revision a page is at, or `null` if it does not exist. */
+    public fun revision(title: String): RevisionId? {
+        val key = key(title)
+        return if (key in texts) revisions[key]?.let(::RevisionId) else null
+    }
+
     /** A reference to a page on this fake wiki. */
     public fun ref(title: String, namespace: Namespace = Namespace.MAIN): PageRef =
         PageRef(wiki, Title.Local(namespace, title))
 
     override suspend fun content(ref: PageRef): PageContent? {
-        val text = texts[key(ref)] ?: return null
-        return PageContent(ref, RevisionId(INITIAL_REVISION), text)
+        val key = key(ref)
+        val text = texts[key] ?: return null
+        return PageContent(ref, RevisionId(revisions.getValue(key)), text)
     }
 
     override suspend fun contents(refs: Collection<PageRef>): Map<PageRef, PageContent> =
@@ -76,13 +111,76 @@ public class FakePageService(
         }
 
         val builder = EditBuilder().apply(block)
-        val updated = builder.text ?: (texts[key(ref)].orEmpty() + builder.appendText.orEmpty())
+        builder.validate()
 
-        if (updated == texts[key(ref)]) return EditOutcome.NoChange(ref, RevisionId(nextRevision))
+        val key = key(ref)
+        val current = texts[key]
+        refusal(ref, builder, current, revisions[key])?.let {
+            return it
+        }
 
+        val updated = updated(current, builder)
+        if (updated == current) return EditOutcome.NoChange(ref, revisions[key]?.let(::RevisionId))
+
+        val previous = revisions[key]?.takeIf { current != null }?.let(::RevisionId)
         edits += ref to builder
-        texts[key(ref)] = updated
-        return EditOutcome.Saved(ref, RevisionId(++nextRevision), RevisionId(nextRevision - 1))
+        texts[key] = updated
+        return EditOutcome.Saved(ref, advance(key), previous)
+    }
+
+    /** What a wiki would refuse this edit for, given what the page is now. */
+    private fun refusal(
+        ref: PageRef,
+        builder: EditBuilder,
+        current: String?,
+        revision: Long?,
+    ): EditOutcome.Refused? {
+        val base = builder.baseRevision
+        return when {
+            current == null && builder.noCreate ->
+                EditOutcome.Rejected(ref, "The page you specified doesn't exist.", "missingtitle")
+
+            current != null && builder.createOnly ->
+                EditOutcome.PageStateChanged(
+                    ref,
+                    "The page you tried to create has been created already.",
+                    false,
+                )
+
+            // A page deleted since it was read is recreated, as a wiki does, unless the edit says noCreate.
+            current != null && base != null && base.value != revision ->
+                EditOutcome.Conflict(ref, "Edit conflict.", revision?.let(::RevisionId))
+
+            else -> null
+        }
+    }
+
+    private fun updated(current: String?, builder: EditBuilder): String {
+        val text = builder.text
+        return when {
+            builder.section == NEW_SECTION -> {
+                // Without a section title, a wiki uses the summary as the heading.
+                val title = builder.sectionTitle ?: builder.summary
+                val heading = if (title.isEmpty()) "" else "== $title ==\n"
+                val body = heading + (text ?: builder.appendText.orEmpty())
+                if (current.isNullOrEmpty()) body else "$current\n\n$body"
+            }
+
+            builder.section != null ->
+                throw NotImplementedError(
+                    "FakePageService does not edit numbered sections; replace the whole text instead"
+                )
+
+            text != null -> text
+            else -> builder.prependText.orEmpty() + current.orEmpty() + builder.appendText.orEmpty()
+        }
+    }
+
+    /** Gives a page the next revision and returns it. */
+    private fun advance(key: Key): RevisionId {
+        val revision = ++lastRevision
+        revisions[key] = revision
+        return RevisionId(revision)
     }
 
     override suspend fun move(
@@ -94,7 +192,10 @@ public class FakePageService(
         moveSubpages: Boolean,
         watchlist: WatchMode,
     ): PageRef {
-        texts.remove(key(from))?.let { texts[key(to)] = it }
+        texts.remove(key(from))?.let {
+            texts[key(to)] = it
+            advance(key(to))
+        }
         return to
     }
 
@@ -187,13 +288,13 @@ public class FakePageService(
         markBot: Boolean,
         watchlist: WatchMode,
     ): EditOutcome {
-        val original = originals[key(ref)] ?: return EditOutcome.NoChange(ref, RevisionId(nextRevision))
-        if (texts[key(ref)] == original) {
-            return EditOutcome.NoChange(ref, RevisionId(nextRevision))
-        }
+        val key = key(ref)
+        val current = revisions[key]?.let(::RevisionId)
+        val original = originals[key] ?: return EditOutcome.NoChange(ref, current)
+        if (texts[key] == original) return EditOutcome.NoChange(ref, current)
 
-        texts[key(ref)] = original
-        return EditOutcome.Saved(ref, RevisionId(++nextRevision), RevisionId(nextRevision - 1))
+        texts[key] = original
+        return EditOutcome.Saved(ref, advance(key), current)
     }
 
     /** Deleted pages are kept, so undeleting one puts it back where it was. */
@@ -215,12 +316,33 @@ public class FakePageService(
     public fun isWatched(title: String): Boolean = key(title) in watched
 
     /**
-     * Returns the text unchanged.
+     * What the fake's expander makes of the text: the text itself unless the test said otherwise.
      *
      * Expanding a template means running the wiki's parser, which a fake cannot do and must not pretend to: a
-     * test that needs expansion needs a wiki.
+     * test that needs expansion either says what it should produce, through `expander`, or needs a wiki.
      */
-    override suspend fun expandText(wikitext: String, title: PageRef?): String = wikitext
+    override suspend fun expandText(wikitext: String, title: PageRef?): String = expander(wikitext, title)
+
+    /** The pages whose text redirects to each of [refs], read from what the fake holds. */
+    override suspend fun redirectsTo(
+        refs: Collection<PageRef>,
+        namespaces: Set<Namespace>,
+    ): Map<PageRef, List<PageRef>> {
+        val redirects = texts.mapNotNull { (key, text) ->
+            val target = REDIRECT.find(text)?.groupValues?.get(1)?.trim() ?: return@mapNotNull null
+            val from = PageRef(wiki, Title.Local(Namespace(key.namespace), key.text))
+            key(target) to from
+        }
+        return refs
+            .associateWith { ref ->
+                redirects
+                    .filter { (target, from) ->
+                        target == key(ref) && (namespaces.isEmpty() || from.title.namespace in namespaces)
+                    }
+                    .map { it.second }
+            }
+            .filterValues { it.isNotEmpty() }
+    }
 
     /** Undoing has no meaning without a history, so it reverts the same way a rollback does. */
     override suspend fun undo(
@@ -230,18 +352,35 @@ public class FakePageService(
         through: RevisionId?,
     ): EditOutcome = rollback(ref, user = "")
 
+    /** Where a page is kept: its namespace and its text, so `Template:X` and `X` are different pages. */
+    private data class Key(val namespace: Int, val text: String)
+
     /**
-     * The key a title is stored under.
+     * The key a title is stored under, read the way a wiki reads one.
      *
-     * A wiki capitalises the first letter of a title, and [Wiki.ref] does the same before this fake ever sees
-     * it. Storing what the test typed would leave a page seeded as "volcano" unreachable through
-     * `wiki.ref("volcano")`, which reads as a bot finding nothing.
+     * A wiki capitalises the first letter of a title, and [com.fenakhay.kwikibot.client.Wiki.ref] does the
+     * same before this fake ever sees it. Storing what the test typed would leave a page seeded as "volcano"
+     * unreachable through `wiki.ref("volcano")`, which reads as a bot finding nothing.
      */
-    private fun key(title: String): String = title.replaceFirstChar { it.uppercaseChar() }
+    private fun key(title: String): Key =
+        when (val parsed = Title.parse(title)) {
+            is Title.Local -> key(parsed.namespace, parsed.text)
+            else -> key(Namespace.MAIN, title)
+        }
 
-    private fun key(ref: PageRef): String = key(ref.title.text)
+    private fun key(ref: PageRef): Key = key(ref.title.namespace, ref.title.text)
 
-    private companion object {
-        const val INITIAL_REVISION = 1L
+    private fun key(namespace: Namespace, text: String): Key =
+        Key(namespace.id, text.replaceFirstChar { it.uppercaseChar() })
+
+    /** Values a test can compare against. */
+    public companion object {
+        /** The revision every seeded page is at before anything edits it. */
+        public const val INITIAL_REVISION: Long = 1L
+
+        private const val NEW_SECTION = "new"
+
+        /** A redirect in any language: `#` and a magic word, then the target. */
+        private val REDIRECT = Regex("""^\s*#[^\s\[]+\s*:?\s*\[\[([^\]|#\n]+)""")
     }
 }

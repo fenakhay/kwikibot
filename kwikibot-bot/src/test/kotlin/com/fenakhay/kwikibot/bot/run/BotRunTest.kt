@@ -15,6 +15,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.runTest
 
 class BotRunTest {
@@ -168,10 +169,11 @@ class BotRunTest {
             )
 
         val seen = mutableListOf<PageOutcome>()
+        var pulled = 0
 
         val report =
             botRun(pages) {
-                source((1..20).map { ref("page$it") }.asFlow())
+                source((1..20).map { ref("page$it") }.asFlow().onEach { pulled++ })
                 transform { Edit("new", "s") }
                 dryRun = false
                 readConcurrency = 1
@@ -179,8 +181,12 @@ class BotRunTest {
             }
 
         report.failed shouldBe 1
-        report.skipped shouldBe 19
-        seen.count { it is PageOutcome.Skipped } shouldBe 19
+        report.skipped shouldBe 0
+        report.stopReason shouldBe StopReason.AUTH
+        // Only what was already in hand is reported, and the source is not drained to report the rest.
+        (report.notAttempted <= 1) shouldBe true
+        seen.count { it is PageOutcome.NotAttempted } shouldBe report.notAttempted
+        (pulled <= 3) shouldBe true
     }
 
     @Test
@@ -308,7 +314,9 @@ class BotRunTest {
                 onOutcome = { batched += it }
             }
 
-        batched.map { it.ref } shouldBe singly.map { it.ref }
+        // Pages in a batch are worked on side by side, so they are reported as they finish.
+        batched.map { it.ref }.toSet() shouldBe singly.map { it.ref }.toSet()
+        batched.size shouldBe singly.size
         many.pending shouldBe one.pending
         many.processed shouldBe one.processed
     }

@@ -44,6 +44,15 @@ class GuardsTest {
     }
 
     @Test
+    fun `a group the account is in passes, and one it is not stops the run without a request`() = runTest {
+        val wiki = wiki()
+
+        wiki.requireGroup("bot")
+        val refused = assertFailsWith<WikiError.Auth.PermissionDenied> { wiki.requireGroup("sysop") }
+        refused.message.orEmpty().contains("sysop") shouldBe true
+    }
+
+    @Test
     fun `an installed extension passes, and a missing one stops the run`() = runTest {
         val wiki = wiki(extensions = listOf("ProofreadPage"))
 
@@ -69,9 +78,22 @@ class GuardsTest {
         wiki.requireVersion(MediaWikiVersion.parse("1.43.0"))
 
         wiki.hasVersion(MediaWikiVersion.parse("1.50.0")) shouldBe false
-        assertFailsWith<WikiError.Configuration.VersionTooOld> {
-            wiki.requireVersion(MediaWikiVersion.parse("1.50.0"))
-        }
+        val error =
+            assertFailsWith<WikiError.Configuration.VersionTooOld> {
+                wiki.requireVersion(MediaWikiVersion.parse("1.50.0"))
+            }
+
+        // The other way round, the message tells the operator to downgrade.
+        error.required shouldBe "1.50.0"
+        error.actual shouldBe "1.47.0"
+    }
+
+    @Test
+    fun `site info answers the same version question as the wiki holding it`() = runTest {
+        val wiki = wiki(generator = "MediaWiki 1.43.2")
+
+        wiki.info.hasVersion(MediaWikiVersion.parse("1.43.0")) shouldBe true
+        wiki.info.hasVersion(MediaWikiVersion.parse("1.44.0")) shouldBe false
     }
 
     @Test

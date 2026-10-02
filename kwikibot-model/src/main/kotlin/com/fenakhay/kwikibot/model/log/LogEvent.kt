@@ -163,13 +163,61 @@ public data class RecentChange(
     val isBot: Boolean = false,
     /** Whether the edit created the page. */
     val isNew: Boolean = false,
-    /** Whether somebody has reviewed it. Always false on a wiki without patrolling. */
+    /**
+     * Whether somebody has reviewed it.
+     *
+     * Also false where that is not known, which [patrolled] tells apart.
+     */
     val isPatrolled: Boolean = false,
     /** The log entry, when this stream position is a log action rather than an edit. */
     val logEvent: LogEvent? = null,
     /** Change tags on the entry. */
     val tags: List<String> = emptyList(),
+    /**
+     * Whether somebody has reviewed it, or `null` where the wiki did not say.
+     *
+     * MediaWiki reports it only to a session with the `patrol` or `patrolmarks` right, and only on a wiki
+     * that patrols. Elsewhere this is `null` while [isPatrolled] is false.
+     */
+    val patrolled: Boolean? = null,
 ) {
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        id: Long,
+        type: String,
+        page: PageRef?,
+        user: String?,
+        timestamp: Instant,
+        comment: String?,
+        revisionId: RevisionId? = null,
+        previousRevisionId: RevisionId? = null,
+        sizeChange: Int = 0,
+        isMinor: Boolean = false,
+        isBot: Boolean = false,
+        isNew: Boolean = false,
+        isPatrolled: Boolean = false,
+        logEvent: LogEvent? = null,
+        tags: List<String> = emptyList(),
+    ) : this(
+        id,
+        type,
+        page,
+        user,
+        timestamp,
+        comment,
+        revisionId,
+        previousRevisionId,
+        sizeChange,
+        isMinor,
+        isBot,
+        isNew,
+        isPatrolled,
+        logEvent,
+        tags,
+        patrolled = null,
+    )
+
     /** Whether this entry is a log action rather than an edit. */
     val isLogEntry: Boolean
         get() = logEvent != null

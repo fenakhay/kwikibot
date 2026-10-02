@@ -69,9 +69,13 @@ public class EditBuilder {
      * Checks the builder describes an edit the wiki could accept.
      *
      * Called before a token is fetched: a contradictory edit is a mistake in the calling code, and finding it
-     * should not cost a request.
+     * should not cost a request. Public so that a [PageService] written outside this library, such as a test
+     * double, refuses the same edits a wiki would.
+     *
+     * @throws IllegalArgumentException if the edit has no text, more than one kind of text, both `noCreate`
+     *   and `createOnly`, or a section title on anything but a new section.
      */
-    internal fun validate() {
+    public fun validate() {
         require(body().isNotEmpty()) { "an edit needs text, appendText or prependText" }
         require(body().size == 1) { "set only one of text, appendText and prependText" }
         require(!(noCreate && createOnly)) { "noCreate and createOnly contradict each other" }

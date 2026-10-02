@@ -1,5 +1,7 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
+
 /**
  * What a write should do to the account's watchlist.
  *
@@ -7,6 +9,12 @@ package com.fenakhay.kwikibot.client.service
  * edits builds a watchlist no one can read. A bot usually wants [NO_CHANGE]: it is not a person, and nothing
  * reads its watchlist.
  */
+@MediaWikiParameter("edit", "watchlist")
+@MediaWikiParameter("move", "watchlist")
+@MediaWikiParameter("delete", "watchlist")
+@MediaWikiParameter("protect", "watchlist")
+@MediaWikiParameter("rollback", "watchlist")
+@MediaWikiParameter("undelete", "watchlist")
 public enum class WatchMode(internal val apiValue: String) {
     /** Leave the watchlist exactly as it is. */
     NO_CHANGE("nochange"),

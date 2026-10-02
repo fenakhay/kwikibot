@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.edit.Protection
+import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -218,6 +219,184 @@ class FakeWikiTest {
         val pages = FakePageService("volcano" to "x")
 
         pages.expandText("{{lang|en}}") shouldBe "{{lang|en}}"
+    }
+
+    @Test
+    fun `a test can say what expansion produces`() = runTest {
+        val pages =
+            FakePageService(
+                texts = mapOf("volcano" to "x"),
+                expander = { text, title -> "${title?.title?.text}: ${text.removeSurrounding("{{", "}}")}" },
+            )
+
+        pages.expandText("{{lang|en}}", pages.ref("volcano")) shouldBe "volcano: lang|en"
+    }
+
+    @Test
+    fun `a page in another namespace is a different page`() = runTest {
+        val pages = FakePageService("foo" to "main", "Template:foo" to "template")
+
+        pages.text("foo") shouldBe "main"
+        pages.text("Template:Foo") shouldBe "template"
+        pages.content(pages.ref("foo", Namespace.TEMPLATE))?.text shouldBe "template"
+        pages.content(pages.ref("foo"))?.text shouldBe "main"
+    }
+
+    @Test
+    fun `each saved edit gives the page a new revision, which a read then reports`() = runTest {
+        val pages = FakePageService("volcano" to "a", "vulcan" to "b")
+        val ref = pages.ref("volcano")
+
+        val first = pages.edit(ref) { text = "a2" }.shouldBeInstanceOf<EditOutcome.Saved>()
+        val second = pages.edit(ref) { text = "a3" }.shouldBeInstanceOf<EditOutcome.Saved>()
+
+        first.previousRevision shouldBe RevisionId(FakePageService.INITIAL_REVISION)
+        second.previousRevision shouldBe first.revision
+        pages.content(ref)?.revisionId shouldBe second.revision
+        pages.revision("volcano") shouldBe second.revision
+        pages.revision("vulcan") shouldBe RevisionId(FakePageService.INITIAL_REVISION)
+        pages.revision("Nope").shouldBeNull()
+    }
+
+    @Test
+    fun `an edit based on a revision the page has moved past is a conflict`() = runTest {
+        val pages = FakePageService("volcano" to "a")
+        val ref = pages.ref("volcano")
+        val read = checkNotNull(pages.content(ref))
+
+        pages.edit(ref) { text = "someone else" }
+        val outcome =
+            pages.edit(ref) {
+                text = "mine"
+                baseRevision = read.revisionId
+            }
+
+        outcome.shouldBeInstanceOf<EditOutcome.Conflict>()
+        pages.text("volcano") shouldBe "someone else"
+    }
+
+    @Test
+    fun `an edit to a page deleted since it was read recreates it unless it says noCreate`() = runTest {
+        val pages = FakePageService("volcano" to "a")
+        val ref = pages.ref("volcano")
+        val read = checkNotNull(pages.content(ref))
+
+        pages.delete(ref, reason = "")
+        pages
+            .edit(ref) {
+                text = "b"
+                baseRevision = read.revisionId
+                noCreate = true
+            }
+            .shouldBeInstanceOf<EditOutcome.Rejected>()
+            .code shouldBe "missingtitle"
+        pages.exists(ref) shouldBe false
+
+        pages
+            .edit(ref) {
+                text = "b"
+                baseRevision = read.revisionId
+            }
+            .shouldBeInstanceOf<EditOutcome.Saved>()
+        pages.text("volcano") shouldBe "b"
+    }
+
+    @Test
+    fun `noCreate refuses a missing page and createOnly an existing one`() = runTest {
+        val pages = FakePageService("volcano" to "a")
+
+        pages
+            .edit(pages.ref("Nope")) {
+                text = "b"
+                noCreate = true
+            }
+            .shouldBeInstanceOf<EditOutcome.Rejected>()
+            .code shouldBe "missingtitle"
+        pages
+            .edit(pages.ref("volcano")) {
+                text = "b"
+                createOnly = true
+            }
+            .shouldBeInstanceOf<EditOutcome.PageStateChanged>()
+            .wasDeleted shouldBe false
+        pages.edit(pages.ref("Fresh")) {
+            text = "new"
+            createOnly = true
+        }
+
+        pages.exists(pages.ref("Nope")) shouldBe false
+        pages.text("Fresh") shouldBe "new"
+        pages.text("volcano") shouldBe "a"
+    }
+
+    @Test
+    fun `an edit a wiki would reject as contradictory is rejected before anything changes`() = runTest {
+        val pages = FakePageService("volcano" to "a")
+
+        assertFailsWith<IllegalArgumentException> {
+            pages.edit(pages.ref("volcano")) {
+                text = "b"
+                noCreate = true
+                createOnly = true
+            }
+        }
+        assertFailsWith<IllegalArgumentException> { pages.edit(pages.ref("volcano")) { summary = "nothing" } }
+        pages.text("volcano") shouldBe "a"
+    }
+
+    @Test
+    fun `text can be added before or after what is there, or as a new section`() = runTest {
+        val pages = FakePageService("volcano" to "body", "talk" to "")
+
+        pages.edit(pages.ref("volcano")) { prependText = "top\n" }
+        pages.edit(pages.ref("volcano")) { appendText = "\nend" }
+        pages.edit(pages.ref("volcano")) {
+            section = "new"
+            sectionTitle = "Note"
+            text = "Hello."
+        }
+        pages.edit(pages.ref("talk")) {
+            section = "new"
+            sectionTitle = "First"
+            text = "Hi."
+        }
+        pages.edit(pages.ref("talk")) {
+            section = "new"
+            summary = "Second"
+            text = "Again."
+        }
+
+        pages.text("volcano") shouldBe "top\nbody\nend\n\n== Note ==\nHello."
+        pages.text("talk") shouldBe "== First ==\nHi.\n\n== Second ==\nAgain."
+    }
+
+    @Test
+    fun `a numbered section edit is not something the fake can do, so it says so`() = runTest {
+        val pages = FakePageService("volcano" to "== a ==\nx")
+
+        assertFailsWith<NotImplementedError> {
+            pages.edit(pages.ref("volcano")) {
+                section = "1"
+                text = "== a ==\ny"
+            }
+        }
+    }
+
+    @Test
+    fun `a transport handed in is the one the fake wiki and its tokens talk to`() = runTest {
+        val transport = MockTransport { request ->
+            MockTransport.json("""{"query":{"tokens":{"csrftoken":"abc+\\"}},"asked":"${request.action}"}""")
+        }
+        val pages = FakePageService("volcano" to "x")
+        val wiki = FakeWiki(pages = pages, transport = transport)
+
+        wiki.transport.call(ApiRequest.of("query", "meta" to "siteinfo"))["asked"].toString() shouldBe
+            "\"query\""
+        wiki.tokens.token() shouldBe "abc+\\"
+        transport.requests.map { it.params["meta"] } shouldBe listOf("siteinfo", "tokens")
+        wiki.pages shouldBe pages
+        // What was not handed in still refuses, rather than answering with nothing.
+        assertFailsWith<NotImplementedError> { wiki.lists }
     }
 
     @Test

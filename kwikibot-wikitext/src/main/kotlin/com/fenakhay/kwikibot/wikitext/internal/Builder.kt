@@ -117,16 +117,18 @@ internal class Builder(private val tokens: List<Token>) {
     }
 
     private fun buildExternalLink(open: Token.ExternalLinkOpen): ExternalLink {
-        val url = code { it == Token.ExternalLinkSeparator || it == Token.ExternalLinkClose }
+        val url = code { it is Token.ExternalLinkSeparator || it == Token.ExternalLinkClose }
         var title: Markup? = null
+        var separator = " "
 
-        if (peek() == Token.ExternalLinkSeparator) {
+        (peek() as? Token.ExternalLinkSeparator)?.let {
             next()
-            title = code { it == Token.ExternalLinkClose }
+            separator = it.separator
+            title = code { token -> token == Token.ExternalLinkClose }
         }
 
         expect(Token.ExternalLinkClose)
-        return ExternalLink(url, title, open.brackets)
+        return ExternalLink(url, title, open.brackets, separator)
     }
 
     private fun buildHeading(start: Token.HeadingStart): Heading {
@@ -137,8 +139,8 @@ internal class Builder(private val tokens: List<Token>) {
 
     private fun buildComment(): Comment {
         val contents = (peek() as? Token.Text)?.also { next() }?.text.orEmpty()
-        expect(Token.CommentEnd)
-        return Comment(contents)
+        val end = next() as? Token.CommentEnd ?: malformed("comment was never closed")
+        return Comment(contents, end.closed)
     }
 
     private fun buildEntity(): HtmlEntity {
@@ -178,8 +180,8 @@ internal class Builder(private val tokens: List<Token>) {
         val closeOpen = next() as? Token.OpeningTagEnd ?: malformed("tag was never closed")
         val contents = code { it == Token.ClosingTagStart }
         expect(Token.ClosingTagStart)
-        // The closing tag repeats the name, which serialization regenerates.
-        if (peek() is Token.Text) next()
+        // The closing tag as written, kept only where it is not `</name>`.
+        val closer = (peek() as? Token.Text)?.also { next() }?.text.orEmpty()
         expect(Token.ClosingTagEnd)
 
         return Tag(
@@ -188,6 +190,8 @@ internal class Builder(private val tokens: List<Token>) {
             attributes = attributes,
             wikiMarkup = open.wikiMarkup,
             padding = closeOpen.padding.orEmpty(),
+            closing = "</$closer>".takeIf { open.wikiMarkup == null && closer != name },
+            verbatim = closeOpen.verbatim,
         )
     }
 

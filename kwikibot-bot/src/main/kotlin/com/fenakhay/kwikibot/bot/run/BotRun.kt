@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.bot.run
 
 import com.fenakhay.kwikibot.bot.BotPolicy
 import com.fenakhay.kwikibot.bot.EditPermission
+import com.fenakhay.kwikibot.bot.source.chunked
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.service.EditBuilder
 import com.fenakhay.kwikibot.client.service.KwikibotDsl
@@ -11,16 +12,17 @@ import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -29,13 +31,59 @@ import kotlinx.coroutines.withContext
 
 /** The edit a bot decided to make to one page. */
 public data class Edit(
-    /** The whole new page text. */
+    /** The new text: of the whole page, or of [section] when one is named. */
     val text: String,
     /** The edit summary, which is what a watchlist reader sees. */
     val summary: String,
     /** Whether to mark it minor. */
     val minor: Boolean = false,
-)
+    /**
+     * Change tags to mark the edit with. Each must be one the wiki has defined for manual use, through
+     * Special:Tags or `action=managetags`.
+     */
+    val tags: List<String> = emptyList(),
+    /**
+     * The section [text] replaces, by the index `RenderService.sections` reports, or `"new"` to add one with
+     * the summary as its heading. `null`, the default, replaces the whole page.
+     *
+     * A section edit is always sent, since only the wiki can say whether it changes the page.
+     */
+    val section: String? = null,
+    /**
+     * Whether the page must not exist yet, so the edit is refused rather than overwriting one created in the
+     * meantime. Set on every edit [BotRunBuilder.createMissing] makes.
+     */
+    val createOnly: Boolean = false,
+) {
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        text: String,
+        summary: String,
+        minor: Boolean = false,
+    ) : this(text, summary, minor, emptyList())
+}
+
+/** Why a run stopped before it had worked through every page. */
+public enum class StopReason {
+    /** The stop policy said to stop, as when someone edits the stop page. */
+    POLICY,
+
+    /** The stop policy could not be checked, which a run treats as a stop. */
+    POLICY_UNREACHABLE,
+
+    /**
+     * The wiki refused the account: logged out with the session beyond restoring, blocked, or lacking a
+     * right.
+     */
+    AUTH,
+
+    /** The wiki went read-only. */
+    READ_ONLY,
+
+    /** The wiki or the library is set up in a way the run cannot work with. */
+    CONFIGURATION,
+}
 
 /** What became of one page in a run. */
 public sealed interface PageOutcome {
@@ -69,9 +117,19 @@ public sealed interface PageOutcome {
         override val ref: PageRef,
         /** What would have been saved. */
         val edit: Edit,
-        /** The text as it stands, so a caller can show the difference. */
+        /** The text as it stands, so a caller can show the difference. Empty for a page not yet created. */
         val before: String,
-    ) : PageOutcome
+        /**
+         * The revision the edit was computed from, `null` for a page not yet created.
+         *
+         * Lets a reviewed dry run be saved later only if the page has not changed since.
+         */
+        val baseRevision: RevisionId? = null,
+    ) : PageOutcome {
+        /** The constructor 1.1 compiled against, kept so code built then still links. */
+        @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+        public constructor(ref: PageRef, edit: Edit, before: String) : this(ref, edit, before, null)
+    }
 
     /** The edit was saved. */
     public data class Saved(
@@ -79,7 +137,19 @@ public sealed interface PageOutcome {
         override val ref: PageRef,
         /** The revision the edit produced. */
         val revision: RevisionId,
-    ) : PageOutcome
+        /** The revision it replaced, `null` for a page the edit created. */
+        val previousRevision: RevisionId? = null,
+        /** What was saved, so a log can show it. */
+        val edit: Edit? = null,
+        /**
+         * The text the edit replaced, so a log can show the difference. Empty for a page the edit created.
+         */
+        val before: String? = null,
+    ) : PageOutcome {
+        /** The constructor 1.1 compiled against, kept so code built then still links. */
+        @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+        public constructor(ref: PageRef, revision: RevisionId) : this(ref, revision, null)
+    }
 
     /** The wiki refused the edit. */
     public data class Refused(
@@ -95,6 +165,19 @@ public sealed interface PageOutcome {
         override val ref: PageRef,
         /** What went wrong, which is not about the page's content. */
         val error: Throwable,
+    ) : PageOutcome
+
+    /**
+     * The run stopped before this page was worked on.
+     *
+     * Only for pages already taken from the source when the run stopped. A stopped run asks the source for no
+     * more, so a stopped sweep of a large category reports a handful of these, not one per page.
+     */
+    public data class NotAttempted(
+        /** The page left as it was. */
+        override val ref: PageRef,
+        /** Why the run stopped. */
+        val reason: StopReason,
     ) : PageOutcome
 }
 
@@ -126,9 +209,26 @@ public data class BotReport(
      * The counts above stay exact however many are kept here; [problemsTruncated] says when this list is not.
      */
     val problems: List<PageOutcome> = emptyList(),
-    /** Whether the run ended early because a stop policy said so. */
+    /** Whether the run ended early; [stopReason] says why. */
     val stopped: Boolean = false,
+    /** How many pages taken from the source were not worked on because the run had stopped. */
+    val notAttempted: Int = 0,
+    /** Why the run stopped, or `null` if it did not. */
+    val stopReason: StopReason? = null,
 ) {
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        processed: Int = 0,
+        saved: Int = 0,
+        pending: Int = 0,
+        skipped: Int = 0,
+        refused: Int = 0,
+        failed: Int = 0,
+        problems: List<PageOutcome> = emptyList(),
+        stopped: Boolean = false,
+    ) : this(processed, saved, pending, skipped, refused, failed, problems, stopped, notAttempted = 0)
+
     /** Whether there were more refusals and failures than [problems] holds. */
     val problemsTruncated: Boolean
         get() = refused + failed > problems.size
@@ -140,7 +240,8 @@ public data class BotReport(
     override fun toString(): String =
         "processed=$processed saved=$saved pending=$pending skipped=$skipped " +
             "refused=$refused failed=$failed" +
-            if (stopped) " (stopped early)" else ""
+            if (stopped) " (stopped early: ${stopReason?.name?.lowercase()}, $notAttempted not attempted)"
+            else ""
 
     /** How many refusals and failures a report keeps. */
     public companion object {
@@ -160,6 +261,22 @@ public fun interface StopPolicy {
     /** Returns `true` when the bot may continue. Throwing is treated as "stop". */
     public suspend fun mayContinue(): Boolean
 
+    /**
+     * Fails if the policy already says stop, for a bot to call before it starts work.
+     *
+     * A run checks before every save on its own. This is for the work before a run, such as building a list
+     * of pages or reading a dump, that a stopped bot should not do either.
+     *
+     * @throws IllegalStateException if the bot may not continue, or the policy could not be read.
+     */
+    public suspend fun check() {
+        val allowed = runCatching {
+            mayContinue()
+        }
+            .getOrElse { if (it is CancellationException) throw it else false }
+        if (!allowed) throw IllegalStateException("the stop policy says the bot must not run")
+    }
+
     /** The defaults a run uses when a caller sets nothing. */
     public companion object {
         /** No stop check. Only for dry runs and for wikis you own. */
@@ -169,10 +286,10 @@ public fun interface StopPolicy {
          * Stops when a page on the wiki says anything other than `false`.
          *
          * The convention `User:MyBot/Stop` uses: an administrator empties or edits that page and the bot
-         * halts within one edit.
+         * halts within one edit. Read fresh every time, never from a response cache, which may be hours old.
          */
         public fun page(pages: PageService, ref: PageRef): StopPolicy = StopPolicy {
-            pages.content(ref)?.text?.trim().equals("false", ignoreCase = true)
+            pages.freshContents(listOf(ref))[ref]?.text?.trim().equals("false", ignoreCase = true)
         }
     }
 }
@@ -183,6 +300,7 @@ public class BotRunBuilder internal constructor() {
 
     internal var source: Flow<PageRef>? = null
     internal var transform: (suspend (PageContent) -> Edit?)? = null
+    internal var create: (suspend (PageRef) -> Edit?)? = null
 
     /**
      * Whether to compute edits without sending them.
@@ -193,7 +311,7 @@ public class BotRunBuilder internal constructor() {
     public var dryRun: Boolean = true
 
     /**
-     * How many pages to work on at once.
+     * How many pages, or batches of [readBatch] pages, to work on at once.
      *
      * This bounds the reads and, with them, the transforms: computing an edit runs on `Dispatchers.Default`
      * rather than on the thread the run was started from, so this many pages may genuinely be parsed at the
@@ -210,13 +328,14 @@ public class BotRunBuilder internal constructor() {
      *
      * One by default, which asks the wiki for a page at a time. Raising it fetches that many together, and
      * for a run that reads far more pages than it edits the difference is the whole cost of the run: a sweep
-     * of 283,000 entries is 5,660 requests at fifty rather than 283,000 at one. The wiki's own cap still
-     * applies underneath — [PageService.contents] splits a larger batch itself — so this is about how many
-     * round trips a run makes, not how large a request is allowed to be.
+     * of 283,000 entries is 5,660 requests at fifty rather than 283,000 at one. The account's own cap still
+     * applies: [PageService.contents] splits a batch larger than the 500 titles an account with
+     * `apihighlimits` may name, such as a bot, or the 50 any other may. This setting is about how many round
+     * trips a run makes, not how large a request may be.
      *
-     * The cost is granularity. A whole batch is fetched under one read permit, so a failure to fetch fails
-     * the batch rather than a page, and the transforms for one batch run one after another rather than spread
-     * across cores. Worth raising for a bot that reads a lot and thinks little, which is most of them.
+     * A batch is fetched together, so a failure to fetch fails the batch rather than a page. Once fetched,
+     * its pages are worked on side by side and each is reported when done, so outcomes arrive in the order
+     * pages finish, not the order the source gave them.
      */
     public var readBatch: Int = 1
 
@@ -246,6 +365,17 @@ public class BotRunBuilder internal constructor() {
     /** Called as each page is finished, for progress and logging. */
     public var onOutcome: ((PageOutcome) -> Unit)? = null
 
+    /** Where the run records each outcome as it happens, so it can be resumed; see [RunState]. */
+    public var state: RunState? = null
+
+    /**
+     * Whether to carry on from where a run into the same [state] stopped.
+     *
+     * Pages it finished are skipped before they are read, and a page read at the revision its outcome was
+     * decided on is left alone without running the transform. [limit] counts only the pages left.
+     */
+    public var resume: Boolean = false
+
     /** The pages to work through. */
     public fun source(pages: Flow<PageRef>) {
         source = pages
@@ -261,6 +391,18 @@ public class BotRunBuilder internal constructor() {
      */
     public fun transform(block: suspend (PageContent) -> Edit?) {
         transform = block
+    }
+
+    /**
+     * Computes the page to create where the source names one that does not exist, or returns `null` to leave
+     * it missing.
+     *
+     * Without this, a missing page is reported as [PageOutcome.Missing]. An edit to an existing page is sent
+     * so that the wiki refuses it if the page was deleted after it was read. An edit from here is the
+     * reverse: the wiki refuses it if somebody created the page in the meantime.
+     */
+    public fun createMissing(block: suspend (PageRef) -> Edit?) {
+        create = block
     }
 
     /** Skips a page with a reason, which is recorded in the report. */
@@ -281,8 +423,12 @@ internal class SkipPage(val reason: String) : Exception(null, null, false, false
  * [BotRunBuilder.readConcurrency]; writes are bounded separately and paced by the wiki's throttle, so a run
  * overlaps its reads without ever hammering the wiki with edits.
  *
- * The run stops at the first refusal it cannot attribute to the page — a dead session, a wiki in read-only
- * mode — rather than grinding through thousands of pages failing the same way.
+ * A run that saves reads every page fresh, never from a response cache: an edit is computed from the text it
+ * replaces, and that has to be the text the wiki has now.
+ *
+ * The run stops at the first refusal it cannot attribute to the page, such as a session that cannot be
+ * restored or a wiki in read-only mode, rather than grinding through thousands of pages failing the same way.
+ * Once stopped, it takes no more pages from the source.
  */
 public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport {
     val config = BotRunBuilder().apply(block)
@@ -291,7 +437,7 @@ public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): 
 
     // Fail-closed before anything is read, so a stopped bot does not even start.
     if (!config.dryRun) {
-        check(stopAllows(config.stopPolicy)) { "the stop policy refused; not starting" }
+        check(stopCheck(config.stopPolicy) == null) { "the stop policy refused; not starting" }
     }
 
     val runner = Runner(pages, config, transform)
@@ -301,41 +447,18 @@ public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): 
 /** Runs a bot over the pages of a wiki. */
 public suspend fun Wiki.botRun(block: BotRunBuilder.() -> Unit): BotReport = botRun(pages, block)
 
-private suspend fun stopAllows(policy: StopPolicy): Boolean = runCatching {
+/** Why [policy] says to stop, or `null` if it says to go on. A check that throws is a reason to stop. */
+private suspend fun stopCheck(policy: StopPolicy): StopReason? = runCatching {
     policy.mayContinue()
 }
-    .getOrDefault(false)
-
-/**
- * This flow in lists of at most [size], the last one shorter if the flow ends mid-batch.
- *
- * A size of one emits singletons, which keeps the caller's shape the same whether or not batching was asked
- * for.
- */
-private fun <T> Flow<T>.chunked(size: Int): Flow<List<T>> {
-    require(size >= 1) { "a batch holds at least one page" }
-
-    return flow {
-        val batch = ArrayList<T>(size)
-
-        collect { item ->
-            batch += item
-            if (batch.size == size) {
-                emit(batch.toList())
-                batch.clear()
-            }
-        }
-
-        if (batch.isNotEmpty()) emit(batch.toList())
-    }
-}
+    .fold(onSuccess = { if (it) null else StopReason.POLICY }, onFailure = { StopReason.POLICY_UNREACHABLE })
 
 private class Runner(
     private val pages: PageService,
     private val config: BotRunBuilder,
     private val transform: suspend (PageContent) -> Edit?,
 ) {
-    private val reads = Semaphore(config.readConcurrency)
+    private val batches = Semaphore(config.readConcurrency)
     private val writes = Semaphore(config.writeConcurrency)
     private val lock = Mutex()
 
@@ -345,22 +468,40 @@ private class Runner(
     private var skipped = 0
     private var refused = 0
     private var failed = 0
+    private var notAttempted = 0
     private val problems = mutableListOf<PageOutcome>()
 
-    @Volatile private var stopped = false
+    /** Why the run stopped; the first reason found wins. */
+    private val stopReason = AtomicReference<StopReason?>(null)
+
+    private val stopped: Boolean
+        get() = stopReason.get() != null
 
     suspend fun run(source: Flow<PageRef>): BotReport {
-        val limited = config.limit?.let { source.take(it) } ?: source
+        val state = config.state
+        val remaining =
+            if (config.resume && state != null) source.filter { !state.isFinished(it) } else source
+        val limited = config.limit?.let { remaining.take(it) } ?: remaining
 
-        coroutineScope {
+        channelFlow {
             limited
+                // A stopped run asks the source for no more pages, so it does not go on listing a
+                // category it will never edit.
+                .takeWhile { !stopped }
                 .chunked(config.readBatch)
-                .map { batch -> async { handle(batch) } }
-                // Bounds how far ahead of the collector the reads may run.
-                .buffer(config.readConcurrency)
-                .map { it.await() }
-                .collect { batch -> batch.forEach { record(it) } }
+                .collect { batch ->
+                    batches.acquire()
+                    launch {
+                        try {
+                            work(batch) { send(it) }
+                        } finally {
+                            batches.release()
+                        }
+                    }
+                }
         }
+            .collect { record(it) }
+
         return BotReport(
             processed = processed,
             saved = saved,
@@ -370,65 +511,73 @@ private class Runner(
             failed = failed,
             problems = problems.toList(),
             stopped = stopped,
+            notAttempted = notAttempted,
+            stopReason = stopReason.get(),
         )
     }
 
     /**
-     * One batch of pages: read them together, then work through them.
+     * One batch: read it, then work on its pages side by side, reporting each as it is done.
      *
-     * A batch of one takes the single-page path, so a run that has not asked for batching behaves exactly as
-     * it did before this existed — including asking for the page the same way.
+     * A batch of one is read as a single page, so a run that has not asked for batching asks the wiki for one
+     * page at a time.
      */
-    private suspend fun handle(batch: List<PageRef>): List<PageOutcome> {
-        if (batch.size == 1) return listOf(handle(batch.single()))
-        if (stopped) return batch.map { PageOutcome.Skipped(it, "run stopped") }
+    private suspend fun work(batch: List<PageRef>, send: suspend (PageOutcome) -> Unit) {
+        if (stopped) return batch.forEach { send(notAttempted(it)) }
 
         val contents =
             try {
-                reads.withPermit { pages.contents(batch) }
+                read(batch)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: WikiError) {
                 // The batch is one request, so a failure to fetch is a failure for all of it.
-                if (e.stopsRun()) stopped = true
-                return batch.map { PageOutcome.Failed(it, e) }
+                stopOn(e)
+                return batch.forEach { send(PageOutcome.Failed(it, e)) }
             }
 
-        return batch.map { ref ->
-            val content = contents[ref]
+        if (batch.size == 1) return send(recorded(batch.single(), contents[batch.single()]))
 
-            when {
-                content == null -> PageOutcome.Missing(ref)
-                stopped -> PageOutcome.Skipped(ref, "run stopped")
-                else -> handle(ref, content)
-            }
-        }
+        coroutineScope { batch.forEach { ref -> launch { send(recorded(ref, contents[ref])) } } }
     }
 
-    /** One page whose content is already in hand. */
-    private suspend fun handle(ref: PageRef, content: PageContent): PageOutcome =
-        try {
-            decide(ref, content)
-        } catch (skip: SkipPage) {
-            PageOutcome.Skipped(ref, skip.reason)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: WikiError) {
-            if (e.stopsRun()) stopped = true
-            PageOutcome.Failed(ref, e)
+    /** One page, written to the run's [RunState] before it is reported, with the revision it was read at. */
+    private suspend fun recorded(ref: PageRef, content: PageContent?): PageOutcome =
+        page(ref, content).also { config.state?.record(it, content?.revisionId) }
+
+    /**
+     * The batch's pages as the wiki has them.
+     *
+     * A run that saves reads past any response cache, since an edit replaces the text it was computed from
+     * and a cache can be hours behind. A dry run may use one, which is what a cache is for while a bot is
+     * being written.
+     */
+    private suspend fun read(batch: List<PageRef>): Map<PageRef, PageContent> =
+        when {
+            !config.dryRun -> pages.freshContents(batch)
+            batch.size == 1 -> {
+                val ref = batch.single()
+                pages.content(ref)?.let { mapOf(ref to it) }.orEmpty()
+            }
+            else -> pages.contents(batch)
         }
 
-    private suspend fun handle(ref: PageRef): PageOutcome {
-        if (stopped) return PageOutcome.Skipped(ref, "run stopped")
-
+    /** One page, from what was read of it. */
+    private suspend fun page(ref: PageRef, content: PageContent?): PageOutcome {
+        val create = config.create
         return try {
-            process(ref)
+            when {
+                stopped -> notAttempted(ref)
+                content != null -> decide(ref, content)
+                create != null -> create(ref, create)
+                else -> PageOutcome.Missing(ref)
+            }
         } catch (skip: SkipPage) {
             PageOutcome.Skipped(ref, skip.reason)
         } catch (e: CancellationException) {
             throw e
         } catch (e: WikiError) {
-            if (e.stopsRun()) stopped = true
+            stopOn(e)
             PageOutcome.Failed(ref, e)
         }
     }
@@ -436,14 +585,11 @@ private class Runner(
     /** Why a policy refused a page, carried back out of the dispatched block. */
     private class Refusal(val reason: String)
 
-    private suspend fun process(ref: PageRef): PageOutcome {
-        val content = reads.withPermit { pages.content(ref) } ?: return PageOutcome.Missing(ref)
-
-        return decide(ref, content)
-    }
-
     /** What to do with a page whose content has been read. */
     private suspend fun decide(ref: PageRef, content: PageContent): PageOutcome {
+        // Already decided at this revision, and the transform would decide the same again.
+        if (config.resume && config.state?.pin(ref) == content.revisionId) return PageOutcome.Unchanged(ref)
+
         // Parsing a page and working out an edit is the one part of a run that is real work for
         // the processor rather than waiting on a wiki, and `suspend fun main` gives a bot a
         // single thread. Left where it lands, every page's parse would queue behind the last -
@@ -464,35 +610,52 @@ private class Runner(
         if (edit !is Edit) return PageOutcome.Skipped(ref, "no change needed")
 
         return when {
-            edit.text == content.text -> PageOutcome.Unchanged(ref)
-            config.dryRun -> PageOutcome.Pending(ref, edit, content.text)
+            edit.section == null && edit.text == content.text -> PageOutcome.Unchanged(ref)
+            config.dryRun -> PageOutcome.Pending(ref, edit, content.text, content.revisionId)
             else -> save(ref, content, edit)
         }
     }
 
-    /**
-     * Whether a failure means the whole run should stop.
-     *
-     * A dead session, a read-only wiki or a misconfiguration will fail every remaining page the same way, so
-     * continuing through thousands of them serves no purpose. A transport hiccup or an error about this
-     * particular page is worth recording and moving on from.
-     */
-    private fun WikiError.stopsRun(): Boolean =
-        when (this) {
-            is WikiError.Auth,
-            is WikiError.ReadOnly,
-            is WikiError.Configuration -> true
-            is WikiError.Transport,
-            is WikiError.Api,
-            is WikiError.Page -> false
-        }
+    /** A page the source named that does not exist, offered to [BotRunBuilder.createMissing]. */
+    private suspend fun create(ref: PageRef, create: suspend (PageRef) -> Edit?): PageOutcome {
+        val edit = withContext(Dispatchers.Default) { create(ref) } ?: return PageOutcome.Missing(ref)
+        val creation = edit.copy(createOnly = true)
 
-    private suspend fun save(ref: PageRef, content: PageContent, edit: Edit): PageOutcome {
+        return if (config.dryRun) PageOutcome.Pending(ref, creation, before = "")
+        else save(ref, null, creation)
+    }
+
+    /** Records that the run must stop, if [error] means it must. */
+    private fun stopOn(error: WikiError) {
+        val reason =
+            when (error) {
+                is WikiError.Auth -> StopReason.AUTH
+                is WikiError.ReadOnly -> StopReason.READ_ONLY
+                is WikiError.Configuration -> StopReason.CONFIGURATION
+                // A transport hiccup or an error about this page is worth recording and moving on from.
+                is WikiError.Transport,
+                is WikiError.Api,
+                is WikiError.Page -> null
+            }
+        reason?.let { stopReason.compareAndSet(null, it) }
+    }
+
+    private fun notAttempted(ref: PageRef): PageOutcome =
+        PageOutcome.NotAttempted(ref, stopReason.get() ?: StopReason.POLICY)
+
+    /**
+     * Saves [edit], as an update to [content] or, with no content, as a page that must not exist yet.
+     *
+     * An update is sent with the revision it was computed from and with `nocreate`. The wiki merges an edit
+     * to a page changed since with the change made in between if it can, and refuses it as a conflict if it
+     * cannot; a page deleted since is refused, not recreated.
+     */
+    private suspend fun save(ref: PageRef, content: PageContent?, edit: Edit): PageOutcome {
         // Checked before every save, not once at the start: a run can last hours, and an
         // administrator stopping the bot expects it to stop within one edit.
-        if (!stopAllows(config.stopPolicy)) {
-            stopped = true
-            return PageOutcome.Skipped(ref, "stopped by policy")
+        stopCheck(config.stopPolicy)?.let { reason ->
+            stopReason.compareAndSet(null, reason)
+            return notAttempted(ref)
         }
 
         return writes.withPermit {
@@ -500,18 +663,26 @@ private class Runner(
             // Pages are worked on in parallel, so by the time this one reaches the front of the
             // queue another may have found the session dead - and the whole point of stopping a
             // run is not to make the next edit after the reason to stop is known.
-            if (stopped) return@withPermit PageOutcome.Skipped(ref, "run stopped")
+            if (stopped) return@withPermit notAttempted(ref)
 
-            when (
-                val outcome =
-                    pages.edit(ref) {
-                        text = edit.text
-                        summary = edit.summary
-                        minor = edit.minor
+            val outcome =
+                pages.edit(ref) {
+                    fill(edit)
+                    if (content != null) {
                         baseRevision = content.revisionId
+                        noCreate = !edit.createOnly
                     }
-            ) {
-                is EditOutcome.Saved -> PageOutcome.Saved(ref, outcome.revision)
+                }
+
+            when (outcome) {
+                is EditOutcome.Saved ->
+                    PageOutcome.Saved(
+                        ref,
+                        outcome.revision,
+                        outcome.previousRevision ?: content?.revisionId,
+                        edit,
+                        content?.text.orEmpty(),
+                    )
                 is EditOutcome.NoChange -> PageOutcome.Unchanged(ref)
                 is EditOutcome.Refused -> PageOutcome.Refused(ref, outcome)
             }
@@ -521,7 +692,7 @@ private class Runner(
     /** Counts one outcome, keeps it if it is a refusal or a failure, and hands it to `onOutcome`. */
     private suspend fun record(outcome: PageOutcome) {
         lock.withLock {
-            processed++
+            if (outcome !is PageOutcome.NotAttempted) processed++
             when (outcome) {
                 is PageOutcome.Saved -> saved++
                 is PageOutcome.Pending -> pending++
@@ -529,6 +700,7 @@ private class Runner(
                 is PageOutcome.Missing -> skipped++
                 is PageOutcome.Refused -> refused++
                 is PageOutcome.Failed -> failed++
+                is PageOutcome.NotAttempted -> notAttempted++
                 is PageOutcome.Unchanged -> Unit
             }
 
@@ -542,9 +714,12 @@ private class Runner(
     }
 }
 
-/** Applies the builder's edit fields to a page edit. */
-internal fun EditBuilder.apply(edit: Edit) {
+/** Applies an [Edit]'s fields to a page edit. */
+internal fun EditBuilder.fill(edit: Edit) {
     text = edit.text
     summary = edit.summary
     minor = edit.minor
+    tags = edit.tags
+    section = edit.section
+    createOnly = edit.createOnly
 }

@@ -46,6 +46,13 @@ class CosmeticChangesTest {
     }
 
     @Test
+    fun `a bold tag over more than one line is left alone, since wiki markup would end at the line's end`() {
+        val before = "<b>loud\n\nstill loud</b>"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+    }
+
+    @Test
     fun `strong and em are left alone, because they say something bold and italic do not`() {
         val before = "<strong>warning</strong> <em>stress</em>"
 
@@ -94,6 +101,11 @@ class CosmeticChangesTest {
         val before = "==English==\nA word.\n\n==Etymology==\n\n==French==\nUn mot.\n"
 
         tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==English==\nA word.\n\n==French==\nUn mot.\n"
+    }
+
+    @Test
+    fun `dropping a heading keeps the next one at the start of its line`() {
+        tidy(CosmeticChanges.EMPTY_SECTIONS, "{{t}}\n== a ==\n== b ==\nx") shouldBe "{{t}}\n== b ==\nx"
     }
 
     @Test

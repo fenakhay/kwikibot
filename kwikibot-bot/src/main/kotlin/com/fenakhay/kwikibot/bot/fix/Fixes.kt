@@ -1,7 +1,7 @@
 package com.fenakhay.kwikibot.bot.fix
 
-import com.fenakhay.kwikibot.bot.run.apply
 import com.fenakhay.kwikibot.wikitext.Markup
+import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.TextScope
 import com.fenakhay.kwikibot.wikitext.Wikitext
 import com.fenakhay.kwikibot.wikitext.ops.replaceText
@@ -41,10 +41,18 @@ public data class Fix(
         }
 
     /** The wikitext with this fix applied. */
-    public fun apply(wikitext: String): String = apply(Wikitext.parse(wikitext)).serialize()
+    public fun apply(wikitext: String): String = apply(wikitext, ParseOptions.DEFAULT)
+
+    /** The wikitext with this fix applied, parsed the way a wiki with [options] parses it. */
+    public fun apply(wikitext: String, options: ParseOptions): String =
+        apply(Wikitext.parse(wikitext, options)).serialize()
 
     /** Whether this fix would change the page. */
     public fun wouldChange(wikitext: String): Boolean = apply(wikitext) != wikitext
+
+    /** Whether this fix would change the page, parsed the way a wiki with [options] parses it. */
+    public fun wouldChange(wikitext: String, options: ParseOptions): Boolean =
+        apply(wikitext, options) != wikitext
 }
 
 /**

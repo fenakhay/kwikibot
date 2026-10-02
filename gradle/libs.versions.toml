@@ -1,26 +1,28 @@
 [versions]
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
-ktor = "3.5.2"
+ktor = "3.6.0"
 clikt = "5.1.0"
 kotlinLogging = "8.0.4"
-slf4j = "2.0.18"
+slf4j = "2.0.20"
 ktoml = "0.7.1"
 diffUtils = "4.17"
+commonsCompress = "1.28.0"
 junit = "6.1.3"
-kotest = "6.2.4"
+kotest = "6.2.5"
 turbine = "1.2.1"
 
 nmcp = "1.6.2"
-kover = "0.9.9"
-graalvm = "1.1.11"
+kover = "0.9.11"
+graalvm = "1.1.14"
 ktfmt = "0.64"
-spotless = "8.10.1"
-benchmark = "0.4.14"
+spotless = "8.10.3"
+benchmark = "0.5.0"
 
 [libraries]
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.6" }
 spotless-plugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
@@ -55,7 +57,7 @@ kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref =
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
-binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.2" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }

@@ -59,7 +59,12 @@ public interface EntityService {
      */
     public suspend fun forPages(site: String, titles: Collection<String>): Map<String, Entity>
 
-    /** Searches entities by label and alias. */
+    /**
+     * Searches entities by label and alias.
+     *
+     * @throws IllegalArgumentException for [EntityId.Kind.MEDIA_INFO], which `wbsearchentities` does not
+     *   offer as a type, and for [EntityId.Kind.UNKNOWN].
+     */
     public suspend fun search(
         query: String,
         language: String = "en",
@@ -299,6 +304,12 @@ internal class ApiEntityService(
         kind: EntityId.Kind,
         limit: Int,
     ): List<EntityMatch> {
+        // wbsearchentities does not list mediainfo among the types it takes: Commons answers
+        // type=mediainfo with a badvalue error rather than an empty list.
+        require(kind != EntityId.Kind.MEDIA_INFO && kind != EntityId.Kind.UNKNOWN) {
+            "wbsearchentities cannot search for $kind entities; search the File namespace with list=search"
+        }
+
         val response =
             transport
                 .call(

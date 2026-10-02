@@ -8,7 +8,10 @@ import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.throwOnError
+import java.nio.file.Path
 import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
@@ -43,23 +46,43 @@ import kotlinx.serialization.json.putJsonObject
  */
 private const val WIKI = "en.wiktionary.org"
 
-/** The properties that together say what MediaWiki made of a fragment. */
-private const val PROPERTIES = "text|templates|links|sections|externallinks"
+/**
+ * The properties that together say what MediaWiki made of a fragment.
+ *
+ * `tocdata` rather than `sections`: MediaWiki 1.43 added `tocdata` to replace it (T328605), and 1.46
+ * deprecated `sections` (T319141). Both list the same headings.
+ *
+ * `parsetree` is the preprocessor's own reading: which braces are templates, where each `|` and `=` falls,
+ * which headings are sections. It is what the parser follows, so it is the closest thing to a specification.
+ */
+private const val PROPERTIES = "text|templates|links|tocdata|externallinks|parsetree"
 
 /**
  * Records the corpus and writes it as JSON.
  *
- * The first argument is the file to write.
+ * The first argument is the file to write. A case already in that file with the same input is kept as it was
+ * recorded, so adding cases does not re-record the rest; `--all` records every case again.
  */
 public fun main(args: Array<String>) {
     val target = Path(args.firstOrNull() ?: "wikitext-cases.json")
-    val recorded = runBlocking { record() }
+    val known = if ("--all" in args || !target.exists()) emptyMap() else recorded(target)
+    val document = runBlocking { record(known) }
 
-    target.writeText(recorded)
-    println("wrote $target: ${WikitextCases.ALL.size} cases")
+    target.writeText(document)
+    val added = WikitextCases.ALL.count { (it.name to it.input) !in known }
+    println("wrote $target: ${WikitextCases.ALL.size} cases, $added recorded now")
 }
 
-private suspend fun record(): String {
+/** The cases [target] already holds, by name and input. */
+private fun recorded(target: Path): Map<Pair<String, String>, JsonObject> =
+    (Json.parseToJsonElement(target.readText()).jsonObject["cases"] as? JsonArray)
+        .orEmpty()
+        .map { it.jsonObject }
+        .associateBy { it.text("name") to it.text("input") }
+
+private fun JsonObject.text(key: String): String = this[key]?.jsonPrimitive?.content.orEmpty()
+
+private suspend fun record(known: Map<Pair<String, String>, JsonObject>): String {
     val userAgent =
         UserAgent(
             "kwikibot-wikitext-corpus",
@@ -83,7 +106,7 @@ private suspend fun record(): String {
 
         val cases = buildJsonArray {
             WikitextCases.ALL.forEachIndexed { index, case ->
-                add(record(transport, case))
+                add(known[case.name to case.input] ?: record(transport, case))
                 if ((index + 1) % PROGRESS_EVERY == 0) {
                     System.err.println("  ${index + 1}/${WikitextCases.ALL.size}")
                 }
@@ -134,6 +157,7 @@ private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Ca
             putJsonArray("links") { parsed.titles("links").forEach { add(it) } }
             putJsonArray("sections") { parsed.headings().forEach { add(it) } }
             putJsonArray("externallinks") { parsed.strings("externallinks").forEach { add(it) } }
+            put("parsetree", parsed["parsetree"]?.jsonPrimitive?.content.orEmpty())
         }
     }
 }
@@ -153,13 +177,19 @@ private fun JsonObject.titles(key: String): List<String> =
         .map { it.jsonObject }
         .mapNotNull { it["title"]?.jsonPrimitive?.content }
 
+/**
+ * The headings as `level:text`, the form the corpus records.
+ *
+ * `tocdata` leaves out a key whose value is the default, -1 for the level and empty for the text, and a
+ * heading missing either is skipped.
+ */
 private fun JsonObject.headings(): List<String> =
-    (this["sections"] as? JsonArray)
+    ((this["tocdata"] as? JsonObject)?.get("sections") as? JsonArray)
         .orEmpty()
         .map { it.jsonObject }
         .mapNotNull { entry ->
             val line = entry["line"]?.jsonPrimitive?.content ?: return@mapNotNull null
-            val level = entry["level"]?.jsonPrimitive?.content ?: return@mapNotNull null
+            val level = entry["hLevel"]?.jsonPrimitive?.content ?: return@mapNotNull null
             "$level:$line"
         }
 

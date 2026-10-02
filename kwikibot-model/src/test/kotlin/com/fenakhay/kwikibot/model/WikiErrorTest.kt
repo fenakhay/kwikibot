@@ -24,5 +24,13 @@ class WikiErrorTest {
         WikiError.Page.UnresolvableRedirect(title, "loops").isTransient shouldBe false
         WikiError.Auth.NotLoggedIn("editing").isTransient shouldBe false
         WikiError.Configuration.MissingExtension("ProofreadPage").isTransient shouldBe false
+        WikiError.Configuration.Unsupported("parse prop", listOf("tocdata")).isTransient shouldBe false
+    }
+
+    @Test
+    fun `a wiki that takes none of the spellings says which were tried`() {
+        val error = WikiError.Configuration.Unsupported("parse prop", listOf("tocdata", "sections"))
+
+        error.message shouldBe "wiki accepts none of tocdata, sections for parse prop"
     }
 }

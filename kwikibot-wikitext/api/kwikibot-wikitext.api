@@ -3,7 +3,9 @@ public final class com/fenakhay/kwikibot/wikitext/CosmeticChanges {
 	public fun <init> (Ljava/util/List;)V
 	public final fun apply (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun apply (Ljava/lang/String;)Ljava/lang/String;
+	public final fun apply (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Ljava/lang/String;
 	public final fun wouldChange (Ljava/lang/String;)Z
+	public final fun wouldChange (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Z
 }
 
 public final class com/fenakhay/kwikibot/wikitext/CosmeticChanges$Companion {
@@ -38,6 +40,22 @@ public final class com/fenakhay/kwikibot/wikitext/Isbn$Companion {
 	public final fun parse (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Isbn;
 }
 
+public final class com/fenakhay/kwikibot/wikitext/MagicWords {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun contains (Ljava/lang/String;)Z
+	public final fun copy (Ljava/util/Set;Ljava/util/Set;)Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/MagicWords;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCaseInsensitive ()Ljava/util/Set;
+	public final fun getCaseSensitive ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/fenakhay/kwikibot/wikitext/Markup {
 	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/Markup$Companion;
 	public fun <init> (Ljava/util/List;)V
@@ -50,15 +68,20 @@ public final class com/fenakhay/kwikibot/wikitext/Markup {
 	public fun hashCode ()I
 	public final fun headings ()Ljava/util/List;
 	public final fun mapTemplates (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun mapTemplates (Ljava/util/Collection;Lcom/fenakhay/kwikibot/wikitext/TitleRules;Lkotlin/jvm/functions/Function1;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public static synthetic fun mapTemplates$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public static synthetic fun mapTemplates$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/Collection;Lcom/fenakhay/kwikibot/wikitext/TitleRules;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun plus (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun ranges ()Lcom/fenakhay/kwikibot/wikitext/SourceRanges;
 	public final fun remove (Lcom/fenakhay/kwikibot/wikitext/node/Node;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun replace (Lcom/fenakhay/kwikibot/wikitext/node/Node;Lcom/fenakhay/kwikibot/wikitext/node/Node;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun serialize ()Ljava/lang/String;
 	public final fun tags (Ljava/lang/String;)Ljava/util/List;
 	public static synthetic fun tags$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
 	public final fun templates (Ljava/lang/String;)Ljava/util/List;
+	public final fun templates (Ljava/util/Collection;Lcom/fenakhay/kwikibot/wikitext/TitleRules;)Ljava/util/List;
 	public static synthetic fun templates$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun templates$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/Collection;Lcom/fenakhay/kwikibot/wikitext/TitleRules;ILjava/lang/Object;)Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 	public final fun wikilinks ()Ljava/util/List;
 }
@@ -68,11 +91,53 @@ public final class com/fenakhay/kwikibot/wikitext/Markup$Companion {
 	public final fun of (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 }
 
+public final class com/fenakhay/kwikibot/wikitext/ParseOptions {
+	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/ParseOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/List;ZLjava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/List;ZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun component3 ()Ljava/util/Set;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/List;ZLjava/util/Set;)Lcom/fenakhay/kwikibot/wikitext/ParseOptions;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/ParseOptions;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/List;ZLjava/util/Set;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/ParseOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExtensionTags ()Ljava/util/Set;
+	public final fun getFileNamespaces ()Ljava/util/Set;
+	public final fun getHtmlTags ()Ljava/util/Set;
+	public final fun getLanguageConversion ()Z
+	public final fun getParsedTags ()Ljava/util/Set;
+	public final fun getPreprocessedTags ()Ljava/util/Set;
+	public final fun getProtocols ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ParseOptions$Companion {
+	public final fun getDEFAULT ()Lcom/fenakhay/kwikibot/wikitext/ParseOptions;
+	public final fun getHTML_TAGS ()Ljava/util/Set;
+	public final fun getPREPROCESSED_TAGS ()Ljava/util/Set;
+	public final fun getWIKIMEDIA_EXTENSION_TAGS ()Ljava/util/Set;
+	public final fun getWIKIMEDIA_PROTOCOLS ()Ljava/util/List;
+	public final fun getWIKITEXT_BODIED_TAGS ()Ljava/util/Set;
+}
+
 public final class com/fenakhay/kwikibot/wikitext/ReformatIsbns : com/fenakhay/kwikibot/wikitext/CosmeticPass {
 	public fun <init> ()V
 	public fun <init> (Z)V
 	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun apply (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/SourceRanges {
+	public final fun get (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lkotlin/ranges/IntRange;
+	public final fun get (Lcom/fenakhay/kwikibot/wikitext/node/Attribute;)Lkotlin/ranges/IntRange;
+	public final fun get (Lcom/fenakhay/kwikibot/wikitext/node/Node;)Lkotlin/ranges/IntRange;
+	public final fun get (Lcom/fenakhay/kwikibot/wikitext/node/Parameter;)Lkotlin/ranges/IntRange;
 }
 
 public final class com/fenakhay/kwikibot/wikitext/TextScope {
@@ -104,9 +169,60 @@ public final class com/fenakhay/kwikibot/wikitext/TextScope$Companion {
 	public final fun getPROSE ()Lcom/fenakhay/kwikibot/wikitext/TextScope;
 }
 
+public final class com/fenakhay/kwikibot/wikitext/TitleRules {
+	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/TitleRules$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Ljava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/util/Set;
+	public final fun component4 ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public final fun component5 ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public final fun component6 ()Ljava/util/Set;
+	public final fun component7 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Ljava/util/Set;Ljava/util/Set;)Lcom/fenakhay/kwikibot/wikitext/TitleRules;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/TitleRules;Ljava/util/Map;Ljava/util/Map;Ljava/util/Set;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Lcom/fenakhay/kwikibot/wikitext/MagicWords;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/TitleRules;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanonicalNames ()Ljava/util/Map;
+	public final fun getCaseSensitive ()Ljava/util/Set;
+	public final fun getFunctions ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public final fun getModifiers ()Ljava/util/Set;
+	public final fun getNamespaces ()Ljava/util/Map;
+	public final fun getSubstitutions ()Ljava/util/Set;
+	public final fun getVariables ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public fun hashCode ()I
+	public final fun isParserFunction (Ljava/lang/String;)Z
+	public final fun isParserFunction (Ljava/lang/String;Z)Z
+	public final fun key (Ljava/lang/String;)Ljava/lang/String;
+	public final fun key (Ljava/lang/String;Z)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/TitleRules$Companion {
+	public final fun getCANONICAL_NAMES ()Ljava/util/Map;
+	public final fun getCANONICAL_NAMESPACES ()Ljava/util/Map;
+	public final fun getCORE_FUNCTIONS ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public final fun getCORE_FUNCTION_IDS ()Ljava/util/Set;
+	public final fun getCORE_VARIABLES ()Lcom/fenakhay/kwikibot/wikitext/MagicWords;
+	public final fun getDEFAULT ()Lcom/fenakhay/kwikibot/wikitext/TitleRules;
+	public final fun getMODIFIERS ()Ljava/util/Set;
+	public final fun getSUBSTITUTIONS ()Ljava/util/Set;
+}
+
 public final class com/fenakhay/kwikibot/wikitext/Wikitext {
 	public static final field INSTANCE Lcom/fenakhay/kwikibot/wikitext/Wikitext;
 	public final fun parse (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun parse (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun parseExact (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public static synthetic fun parseExact$default (Lcom/fenakhay/kwikibot/wikitext/Wikitext;Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun roundTrips (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Z
+	public static synthetic fun roundTrips$default (Lcom/fenakhay/kwikibot/wikitext/Wikitext;Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;ILjava/lang/Object;)Z
+}
+
+public final class com/fenakhay/kwikibot/wikitext/WikitextRoundTripException : java/lang/IllegalStateException {
+	public fun <init> (ILjava/lang/String;)V
+	public final fun getOffset ()I
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/Argument : com/fenakhay/kwikibot/wikitext/node/Node {
@@ -148,11 +264,15 @@ public final class com/fenakhay/kwikibot/wikitext/node/Attribute {
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/Comment : com/fenakhay/kwikibot/wikitext/node/Node {
-	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/node/Comment;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Comment;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Comment;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/wikitext/node/Comment;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Comment;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Comment;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClosed ()Z
 	public final fun getContents ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun serialize ()Ljava/lang/String;
@@ -160,15 +280,19 @@ public final class com/fenakhay/kwikibot/wikitext/node/Comment : com/fenakhay/kw
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/ExternalLink : com/fenakhay/kwikibot/wikitext/node/Node {
-	public fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;Z)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;Z)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun component2 ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun component3 ()Z
-	public final fun copy (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;Z)Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/ExternalLink;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBrackets ()Z
+	public final fun getSeparator ()Ljava/lang/String;
 	public final fun getTitle ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun getUrl ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public fun hashCode ()I
@@ -221,6 +345,8 @@ public final class com/fenakhay/kwikibot/wikitext/node/Parameter {
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getKey ()Ljava/lang/String;
 	public final fun getName ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun getRawKey ()Ljava/lang/String;
+	public final fun getRawValue ()Ljava/lang/String;
 	public final fun getShowKey ()Z
 	public final fun getValue ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public fun hashCode ()I
@@ -229,8 +355,10 @@ public final class com/fenakhay/kwikibot/wikitext/node/Parameter {
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/Tag : com/fenakhay/kwikibot/wikitext/node/Node {
-	public fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Z)V
 	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun component3 ()Ljava/util/List;
@@ -238,15 +366,19 @@ public final class com/fenakhay/kwikibot/wikitext/node/Tag : com/fenakhay/kwikib
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Z
-	public final fun copy (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Z)Lcom/fenakhay/kwikibot/wikitext/node/Tag;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Tag;Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Tag;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;Z)Lcom/fenakhay/kwikibot/wikitext/node/Tag;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Tag;Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Tag;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAttributes ()Ljava/util/List;
+	public final fun getClosing ()Ljava/lang/String;
 	public final fun getContents ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun getImplicitClose ()Z
 	public final fun getName ()Ljava/lang/String;
 	public final fun getPadding ()Ljava/lang/String;
 	public final fun getSelfClosing ()Z
+	public final fun getVerbatim ()Z
 	public final fun getWikiMarkup ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun serialize ()Ljava/lang/String;
@@ -262,11 +394,17 @@ public final class com/fenakhay/kwikibot/wikitext/node/Template : com/fenakhay/k
 	public final fun copy (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;)Lcom/fenakhay/kwikibot/wikitext/node/Template;
 	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Template;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Template;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
 	public final fun getName ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun getParameters ()Ljava/util/List;
+	public final fun getRawName ()Ljava/lang/String;
 	public final fun getTitle ()Ljava/lang/String;
 	public fun hashCode ()I
+	public final fun isParserFunction ()Z
+	public final fun isParserFunction (Lcom/fenakhay/kwikibot/wikitext/TitleRules;)Z
+	public final fun key (Lcom/fenakhay/kwikibot/wikitext/TitleRules;)Ljava/lang/String;
 	public final fun parameter (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/node/Parameter;
+	public final fun rawValue (Ljava/lang/String;)Ljava/lang/String;
 	public fun serialize ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
 	public final fun value (Ljava/lang/String;)Ljava/lang/String;
@@ -352,6 +490,7 @@ public final class com/fenakhay/kwikibot/wikitext/ops/Section {
 public final class com/fenakhay/kwikibot/wikitext/ops/SectionKt {
 	public static final fun outline (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/ops/Section;
 	public static final fun replaceSection (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/ops/Section;Lcom/fenakhay/kwikibot/wikitext/ops/Section;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public static final fun replaceSection (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/ops/Section;Lcom/fenakhay/kwikibot/wikitext/ops/Section;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 }
 
 public final class com/fenakhay/kwikibot/wikitext/ops/TextOpsKt {

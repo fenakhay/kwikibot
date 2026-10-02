@@ -141,7 +141,8 @@ private suspend fun run(wiki: Wiki, options: Options) =
                     // Fail-closed: if the stop page cannot be read, the bot does not edit.
                     stopPolicy = StopPolicy.page(wiki.pages, wiki.ref(options.stopPage))
 
-                    onOutcome = reportTo(RunLog(diffs = diffs, skips = skips), progress)
+                    onOutcome =
+                        reportTo(RunLog(diffs = diffs, skips = skips, namespaces = wiki.namespaces), progress)
                 }
                 .also { progress.finish() }
         }

@@ -9,6 +9,7 @@ import com.fenakhay.kwikibot.model.edit.Protection
 import com.fenakhay.kwikibot.model.page.CategoryInfo
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.user.Contributors
 import kotlin.time.Instant
 
@@ -37,6 +38,17 @@ public interface PageService {
      * such page" for "empty page".
      */
     public suspend fun contents(refs: Collection<PageRef>): Map<PageRef, PageContent>
+
+    /**
+     * Fetches many pages as they are now, never from a response cache.
+     *
+     * For reads whose answer must be current: a stop page, or the text an edit about to be saved is computed
+     * from. With [com.fenakhay.kwikibot.client.WikiConfig.cache] on, [contents] may answer from hours ago.
+     * That suits a bot being developed, but must not decide a real edit.
+     *
+     * An implementation without a cache has nothing to bypass, which is why this defaults to [contents].
+     */
+    public suspend fun freshContents(refs: Collection<PageRef>): Map<PageRef, PageContent> = contents(refs)
 
     /** Whether a page exists, in one request and without fetching its text. */
     public suspend fun exists(ref: PageRef): Boolean
@@ -278,4 +290,46 @@ public interface PageService {
      * @param title the page to expand as, which decides what `{{PAGENAME}}` and relative transclusions mean.
      */
     public suspend fun expandText(wikitext: String, title: PageRef? = null): String
+
+    /**
+     * Expands many texts as [expandText] does, in as few requests as it can, and returns them in order.
+     *
+     * For a bot checking how thousands of entries render, one request per text is most of the run. A wiki
+     * opened through this library is sent the texts many to a request.
+     *
+     * @param texts the texts to expand.
+     * @param title the page to expand them as.
+     * @param categories whether to report the categories each text would put a page in. Each text is then
+     *   sent alone, since a wiki reports categories for a whole expansion. An implementation that does not
+     *   override this expands each text with [expandText] and reports none.
+     */
+    public suspend fun expandTexts(
+        texts: List<String>,
+        title: PageRef? = null,
+        categories: Boolean = false,
+    ): List<ExpandedText> = texts.map { ExpandedText(expandText(it, title)) }
+
+    /**
+     * The redirects to each of [refs], optionally only those in [namespaces]: every other name a page is
+     * known by.
+     *
+     * A page no redirect points to is left out. Read in batches, as many pages to a request as the account
+     * may ask for.
+     *
+     * @throws UnsupportedOperationException from an implementation that cannot list redirects.
+     */
+    public suspend fun redirectsTo(
+        refs: Collection<PageRef>,
+        namespaces: Set<Namespace> = emptySet(),
+    ): Map<PageRef, List<PageRef>> =
+        throw UnsupportedOperationException("this PageService cannot list redirects")
 }
+
+/**
+ * What [PageService.expandTexts] made of one text.
+ *
+ * @param text the expanded wikitext.
+ * @param categories the categories the text would put a page in, without their namespace prefix; empty when
+ *   they were not asked for.
+ */
+public data class ExpandedText(val text: String, val categories: List<String> = emptyList())

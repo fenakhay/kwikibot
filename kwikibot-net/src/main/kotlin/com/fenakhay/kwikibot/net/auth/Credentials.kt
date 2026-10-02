@@ -69,4 +69,37 @@ public sealed interface Credentials {
 
         override fun toString(): String = "OAuth2(username=$username, token=***)"
     }
+
+    /** Reading credentials from somewhere other than code. */
+    public companion object {
+        /**
+         * The credentials the environment holds under [prefix]: an OAuth 2.0 token in `KWIKIBOT_OAUTH_TOKEN`,
+         * or a bot password in `KWIKIBOT_ACCOUNT`, `KWIKIBOT_BOT_NAME` and `KWIKIBOT_PASSWORD`. [Anonymous]
+         * when neither is set, which a bot that must log in can check for.
+         *
+         * @param prefix what the variable names start with, for running two bots from one environment.
+         * @param environment where to read them; the process environment by default.
+         * @throws IllegalStateException if a bot password is only partly set, which is a mistake rather than
+         *   a choice to run anonymously.
+         */
+        public fun fromEnvironment(
+            prefix: String = "KWIKIBOT",
+            environment: (String) -> String? = System::getenv,
+        ): Credentials {
+            fun read(name: String) = environment("${prefix}_$name")?.takeIf { it.isNotBlank() }
+
+            val token = read("OAUTH_TOKEN")
+            if (token != null) return OAuth2(token, read("ACCOUNT"))
+
+            val account = read("ACCOUNT")
+            val botName = read("BOT_NAME")
+            val password = read("PASSWORD")
+            val given = listOf(account, botName, password).count { it != null }
+            if (given == 0) return Anonymous
+            check(account != null && botName != null && password != null) {
+                "${prefix}_ACCOUNT, ${prefix}_BOT_NAME and ${prefix}_PASSWORD are set only in part"
+            }
+            return BotPassword(account, botName, password)
+        }
+    }
 }

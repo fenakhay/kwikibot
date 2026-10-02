@@ -1,6 +1,8 @@
 package com.fenakhay.kwikibot.bot
 
+import com.fenakhay.kwikibot.bot.run.BotRunBuilder
 import com.fenakhay.kwikibot.net.auth.Credentials
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -10,6 +12,7 @@ import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class BotConfigTest {
@@ -98,18 +101,113 @@ class BotConfigTest {
     }
 
     @Test
-    fun `a key nobody recognises is an error rather than a silent no-op`() {
-        assertFailsWith<Exception> {
+    fun `a key nobody recognises is passed over with a warning, so a newer file still runs`() {
+        val config =
             BotConfig.parse(
                 """
                 $minimal
 
                 [throttle]
                 reed = "250ms"
+                write = "30s"
                 """
                     .trimIndent()
             )
-        }
+
+        config.throttle.read shouldBe "100ms"
+        config.throttle.write shouldBe "30s"
+    }
+
+    @Test
+    fun `a file that is not TOML is still an error`() {
+        assertFailsWith<Exception> { BotConfig.parse("[bot\nname = ") }
+    }
+
+    @Test
+    fun `an OAuth token is used when it is set, and wins over a bot password`() {
+        val config =
+            BotConfig.parse(
+                """
+                $minimal
+
+                [oauth]
+                tokenEnv = "TOKEN"
+                username = "FenaBot"
+
+                [login]
+                account = "FenaBot"
+                botName = "compounds"
+                """
+                    .trimIndent()
+            )
+
+        val token = config.credentials { if (it == "TOKEN") "secret" else "password" }
+        token.shouldBeInstanceOf<Credentials.OAuth2>().username shouldBe "FenaBot"
+
+        // Without the token, the bot password configured beside it is used.
+        config
+            .credentials { if (it == "KWIKIBOT_PASSWORD") "password" else null }
+            .shouldBeInstanceOf<Credentials.BotPassword>()
+    }
+
+    @Test
+    fun `a missing secret stops the run unless the login is optional`() {
+        val oauth = BotConfig.parse("$minimal\n\n[oauth]\ntokenEnv = \"TOKEN\"\n")
+        assertFailsWith<IllegalStateException> { oauth.credentials { null } }
+
+        val optional = BotConfig.parse("$minimal\n\n[oauth]\noptional = true\n")
+        optional.credentials { null } shouldBe Credentials.Anonymous
+
+        val login =
+            BotConfig.parse("$minimal\n\n[login]\naccount = \"FenaBot\"\nbotName = \"x\"\noptional = true\n")
+        login.credentials { null } shouldBe Credentials.Anonymous
+    }
+
+    @Test
+    fun `run settings apply to a run, leaving what the file does not set alone`() {
+        val config = BotConfig.parse("$minimal\n\n[run]\nreadConcurrency = 8\nreadBatch = 50\n")
+        val builder = BotRunBuilder()
+
+        config.applyTo(builder)
+
+        builder.readConcurrency shouldBe 8
+        builder.readBatch shouldBe 50
+        builder.writeConcurrency shouldBe 1
+    }
+
+    @Test
+    fun `connections, timeouts, retries and relogins reach the client`() {
+        val config =
+            BotConfig.parse(
+                    """
+                $minimal
+
+                [http]
+                maxRequestsPerHost = 64
+                timeout = "2m"
+
+                [retry]
+                maxRetries = 2
+                initialDelay = "500ms"
+                relogins = 0
+                """
+                        .trimIndent()
+                )
+                .toWikiConfig()
+
+        config.http.maxRequestsPerHost shouldBe 64
+        config.http.timeout shouldBe 2.minutes
+        config.retry.maxRetries shouldBe 2
+        config.retry.initialDelay shouldBe 500.milliseconds
+        config.relogins shouldBe 0
+    }
+
+    @Test
+    fun `a wiki of one's own is named by its server`() {
+        val config = BotConfig.parse("$minimal\n\n[wiki]\nserver = \"wiki.example.org\"\nscriptPath = \"\"\n")
+
+        config.endpoint() shouldBe ApiEndpoint("wiki.example.org", scriptPath = "")
+        BotConfig.parse(minimal).endpoint() shouldBe ApiEndpoint("en.wiktionary.org")
     }
 
     @Test
@@ -219,6 +317,21 @@ class BotConfigTest {
 
         path.first().toString() shouldBe BotConfig.FILE_NAME
         path.size shouldBe path.distinct().size
+    }
+
+    @Test
+    fun `the home directory comes right after the working directory, and Windows has its own place`() {
+        val environment = mapOf("APPDATA" to "C:/Users/a/AppData/Roaming", "KWIKIBOT_CONFIG" to "/etc/k.toml")
+        val path = BotConfig.searchPath(environment::get, "/home/a")
+
+        path.map { it.toString().replace('\\', '/') } shouldBe
+            listOf(
+                "kwikibot.toml",
+                "/home/a/kwikibot.toml",
+                "/etc/k.toml",
+                "/home/a/.config/kwikibot/kwikibot.toml",
+                "C:/Users/a/AppData/Roaming/kwikibot/kwikibot.toml",
+            )
     }
 
     @Test

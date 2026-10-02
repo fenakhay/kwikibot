@@ -4,6 +4,7 @@ import com.fenakhay.kwikibot.wikitext.node.WikiLink
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class MarkupTest {
 
@@ -119,6 +120,29 @@ class MarkupTest {
 
         code.comments().single().contents shouldBe " keep sorted "
         code.serialize() shouldBe "{{col|en<!-- keep sorted -->}}"
+    }
+
+    @Test
+    fun `a value set on a template stays one parameter when the wiki reads it back`() {
+        val template = Wikitext.parse("{{t|a|key=old}}").templates().single()
+
+        val piped = template.withParameter("key", "[https://example.org/?a=b label|more]")
+        val equals = template.withParameter("1", "x=y")
+        val linked = template.withParameter("1", "[[page|text]] and {{tpl|z}}")
+
+        piped.serialize() shouldBe "{{t|a|key=[https://example.org/?a=b label{{!}}more]}}"
+        equals.serialize() shouldBe "{{t|1=x=y|key=old}}"
+        linked.serialize() shouldBe "{{t|[[page|text]] and {{tpl|z}}|key=old}}"
+        Wikitext.parse(linked.serialize()).templates().first().parameters.size shouldBe 2
+    }
+
+    @Test
+    fun `a value that would close the template it goes into is refused`() {
+        val template = Wikitext.parse("{{t|a}}").templates().single()
+
+        listOf("x}}y", "{{open", "[[unclosed").forEach { value ->
+            assertFailsWith<IllegalArgumentException> { template.withParameter("1", value) }
+        }
     }
 
     @Test

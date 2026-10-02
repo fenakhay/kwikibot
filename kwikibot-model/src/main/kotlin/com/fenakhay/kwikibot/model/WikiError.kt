@@ -248,5 +248,18 @@ public sealed class WikiError(
             /** What the wiki actually runs. */
             public val actual: String,
         ) : Configuration("feature needs MediaWiki $required, wiki runs $actual")
+
+        /**
+         * The wiki accepts none of the spellings this library knows for something it was asked to send.
+         *
+         * Raised only when the wiki lists the values a parameter takes and none is among the alternatives: a
+         * wiki older than every known spelling, or one that has removed them all.
+         */
+        public class Unsupported(
+            /** The module and parameter, such as `parse prop`. */
+            public val parameter: String,
+            /** What the library would have sent, most preferred first. */
+            public val alternatives: List<String>,
+        ) : Configuration("wiki accepts none of ${alternatives.joinToString(", ")} for $parameter")
     }
 }

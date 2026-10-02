@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.model.page.InterwikiLink
 import com.fenakhay.kwikibot.model.page.LanguageLink
 import com.fenakhay.kwikibot.model.page.PageRef
@@ -7,6 +8,7 @@ import com.fenakhay.kwikibot.model.title.Namespace
 import kotlinx.coroutines.flow.Flow
 
 /** What a category query should return. */
+@MediaWikiParameter("query+categorymembers", "cmtype")
 public enum class CategoryMemberType(internal val apiValue: String) {
     /** Ordinary pages, which is what a category usually means. */
     PAGE("page"),
@@ -19,6 +21,7 @@ public enum class CategoryMemberType(internal val apiValue: String) {
 }
 
 /** The order a category's members come back in. */
+@MediaWikiParameter("query+categorymembers", "cmsort")
 public enum class CategorySort(internal val apiValue: String) {
     /** By the sortkey the page was filed under, which is the order a reader sees. */
     SORTKEY("sortkey"),
@@ -28,6 +31,7 @@ public enum class CategorySort(internal val apiValue: String) {
 }
 
 /** Whether an enumeration should include redirects, exclude them, or not care. */
+@MediaWikiParameter("query+allpages", "apfilterredir")
 public enum class RedirectFilter(internal val apiValue: String) {
     /** Both, which is what the wiki does unasked. */
     ALL("all"),
@@ -40,6 +44,7 @@ public enum class RedirectFilter(internal val apiValue: String) {
 }
 
 /** How search results should be ordered. */
+@MediaWikiParameter("query+search", "srsort")
 public enum class SearchSort(internal val apiValue: String) {
     /** What the search engine thinks is the best match. */
     RELEVANCE("relevance"),
@@ -61,6 +66,7 @@ public enum class SearchSort(internal val apiValue: String) {
 }
 
 /** Which part of a page a search should look at. */
+@MediaWikiParameter("query+search", "srwhat")
 public enum class SearchScope(internal val apiValue: String) {
     /** Full-text search, the default a reader gets. */
     TEXT("text"),

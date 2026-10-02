@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.wikitext.ops
 import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.TextScope
 import com.fenakhay.kwikibot.wikitext.children
+import com.fenakhay.kwikibot.wikitext.internal.TagNames
 import com.fenakhay.kwikibot.wikitext.node.Argument
 import com.fenakhay.kwikibot.wikitext.node.Comment
 import com.fenakhay.kwikibot.wikitext.node.ExternalLink
@@ -70,12 +71,7 @@ private fun Node.replaceTextIn(
         is Heading ->
             if (scope.headings) copy(title = title.replaceText(pattern, scope, replacement)) else this
 
-        is Tag ->
-            if (isRaw && !scope.rawTags) {
-                this
-            } else {
-                copy(contents = contents?.replaceText(pattern, scope, replacement))
-            }
+        is Tag -> replaceInTag(pattern, scope, replacement)
 
         is Comment -> if (scope.comments) Comment(pattern.replace(contents, replacement)) else this
 
@@ -87,6 +83,28 @@ private fun Node.replaceTextIn(
 
         is HtmlEntity -> this
     }
+
+private fun Tag.replaceInTag(
+    pattern: Regex,
+    scope: TextScope,
+    replacement: (MatchResult) -> String,
+): Tag {
+    if (isRaw && !scope.rawTags) return this
+    return copy(
+        contents = contents?.replaceText(pattern, scope, replacement),
+        attributes =
+            if (scope.tagAttributes) {
+                attributes.map {
+                    it.copy(
+                        name = it.name.replaceText(pattern, scope, replacement),
+                        value = it.value?.replaceText(pattern, scope, replacement),
+                    )
+                }
+            } else {
+                attributes
+            },
+    )
+}
 
 private fun WikiLink.replaceInLink(
     pattern: Regex,
@@ -134,6 +152,8 @@ private fun Node.scoped(scope: TextScope): List<Markup> =
         else -> children()
     }
 
-/** Whether this tag's contents are taken verbatim by MediaWiki. */
+/**
+ * Whether this tag's contents are not prose for a text operation, as the parser found or a caller built it.
+ */
 private val Tag.isRaw: Boolean
-    get() = name.lowercase() in setOf("nowiki", "pre", "syntaxhighlight", "source", "math", "score")
+    get() = TagNames.isRaw(this)

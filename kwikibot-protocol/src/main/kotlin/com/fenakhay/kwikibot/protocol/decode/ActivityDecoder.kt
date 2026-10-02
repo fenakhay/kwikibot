@@ -71,6 +71,9 @@ public class ActivityDecoder(private val pages: PageDecoder) {
             // spares callers a second query, and spares them that trap.
             logEvent = if (type == "log") logEventOf(entry) else null,
             tags = entry.strings("tags"),
+            // Present, true or false, when the query asked for it, which the wiki refuses to a session
+            // that may not patrol. Absent otherwise, which is not the same as unpatrolled.
+            patrolled = entry.flagOrNull("patrolled"),
         )
     }
 
@@ -318,6 +321,9 @@ public class ActivityDecoder(private val pages: PageDecoder) {
         val primitive = value as? JsonPrimitive ?: return true
         return primitive.booleanOrNull ?: true
     }
+
+    /** [flag], or `null` where the field is absent. */
+    private fun JsonObject.flagOrNull(key: String): Boolean? = if (containsKey(key)) flag(key) else null
 
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"

@@ -58,6 +58,90 @@ class RenderServiceTest {
     }
 
     @Test
+    fun `a current wiki is asked for its table of contents, and the headings read the same`() = runTest {
+        val sent = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["action"] == "paraminfo") {
+                respondJson(paramInfo("""["sections","text","tocdata"]""", deprecated = """["sections"]"""))
+            } else {
+                sent += request.url.parameters["prop"].orEmpty()
+                // tocdata leaves out every key at its default: no offset for a heading a template
+                // produced, and no linkAnchor when it equals the anchor. The third heading leaves out
+                // more than a wiki would, to check the defaults.
+                respondJson(
+                    """{"parse":{"title":"volcano","tocdata":{"sections":[
+                       {"tocLevel":1,"hLevel":2,"line":"English","number":"1","index":"1",
+                        "fromTitle":"Volcano","codepointOffset":17,"anchor":"English"},
+                       {"tocLevel":2,"hLevel":3,"line":"Etymology","number":"1.2","index":"3",
+                        "fromTitle":"Volcano","codepointOffset":196,"anchor":"Etymology",
+                        "linkAnchor":"Etymology_2"},
+                       {"line":"From a template","number":"1.3","index":"T-1","anchor":"From_a_template"}],
+                       "extensionData":{}}}}"""
+                )
+            }
+        }
+
+        val sections = service.sections(ref("volcano"))
+
+        sent shouldBe listOf("tocdata")
+        sections[1].index shouldBe "3"
+        sections[1].heading shouldBe "Etymology"
+        sections[1].level shouldBe 3
+        sections[1].tocLevel shouldBe 2
+        sections[0].byteOffset shouldBe 17
+        sections[2].index shouldBe "T-1"
+        sections[2].level shouldBe 0
+        sections[2].byteOffset shouldBe null
+    }
+
+    @Test
+    fun `a wiki too old for the table of contents is asked for sections instead`() = runTest {
+        val sent = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["action"] == "paraminfo") {
+                respondJson(paramInfo("""["sections","text"]"""))
+            } else {
+                sent += request.url.parameters["prop"].orEmpty()
+                respondJson(
+                    """{"parse":{"sections":[{"toclevel":1,"level":"2","line":"English","number":"1",
+                       "index":"1","byteoffset":17,"anchor":"English"}]}}"""
+                )
+            }
+        }
+
+        service.sections(ref("volcano")).single().heading shouldBe "English"
+        sent shouldBe listOf("sections")
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun `the deprecated entry is sent the way its replacement is, and only once beside it`() = runTest {
+        val sent = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["action"] == "paraminfo") {
+                respondJson(paramInfo("""["links","sections","tocdata"]""", deprecated = """["sections"]"""))
+            } else {
+                sent += request.url.parameters["prop"].orEmpty()
+                respondJson("""{"parse":{}}""")
+            }
+        }
+
+        service.resolve(
+            ref("volcano"),
+            setOf(ParseProperty.SECTIONS, ParseProperty.TOC_DATA, ParseProperty.LINKS),
+        )
+
+        sent shouldBe listOf("tocdata|links")
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun `everything the service models leaves out what is kept only for compatibility`() {
+        (ParseProperty.SECTIONS in ParseProperty.ALL) shouldBe false
+        (ParseProperty.TOC_DATA in ParseProperty.ALL) shouldBe true
+    }
+
+    @Test
     fun `a link that does not exist is reported as red`() = runTest {
         val service = service {
             respondJson(
@@ -121,6 +205,10 @@ class RenderServiceTest {
 
         service.resolve(ref("volcano")).links shouldBe emptyList()
     }
+
+    private fun paramInfo(values: String, deprecated: String = "[]"): String =
+        """{"paraminfo":{"modules":[{"name":"parse","path":"parse","prefix":"","source":"MediaWiki",
+           "parameters":[{"name":"prop","type":$values,"multi":true,"deprecatedvalues":$deprecated}]}]}}"""
 
     private fun TestScope.service(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData

@@ -11,8 +11,11 @@ import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
 
 /**
  * Builds the HTTP client a transport should be given.
@@ -40,7 +43,24 @@ public object WikiHttpClient {
         credentials: Credentials = Credentials.Anonymous,
         engine: HttpClientEngine? = null,
         timeout: Duration = DEFAULT_TIMEOUT,
+    ): HttpClient = create(HttpSettings(timeout = timeout), credentials, engine)
+
+    /**
+     * Builds a client configured the way a wiki expects, with [settings] for its connections.
+     *
+     * @param settings how many requests may be in flight to one host, how many idle connections are kept, and
+     *   the timeout. The connection limits apply to the built-in engine; one passed as [engine] keeps its
+     *   own.
+     * @param credentials decide whether a bearer header is set; a bot password logs in later, through
+     *   [LoginManager], and needs the cookie jar this installs.
+     * @param engine the Ktor engine to use, or `null` for the one on the classpath.
+     */
+    public fun create(
+        settings: HttpSettings,
+        credentials: Credentials = Credentials.Anonymous,
+        engine: HttpClientEngine? = null,
     ): HttpClient {
+        val timeout = settings.timeout
         val configure: HttpClientConfig<*>.() -> Unit = {
             install(HttpCookies)
 
@@ -60,6 +80,27 @@ public object WikiHttpClient {
             expectSuccess = false
         }
 
-        return if (engine == null) HttpClient(OkHttp, configure) else HttpClient(engine, configure)
+        if (engine != null) return HttpClient(engine, configure)
+
+        return HttpClient(OkHttp) {
+            engine {
+                config {
+                    // OkHttp allows five requests to one host at once by default. Every request of a run
+                    // goes to one host, so that would cap the run whatever concurrency it asks for.
+                    dispatcher(
+                        Dispatcher().apply {
+                            maxRequests = settings.maxRequestsPerHost
+                            maxRequestsPerHost = settings.maxRequestsPerHost
+                        }
+                    )
+                    connectionPool(
+                        ConnectionPool(settings.maxIdleConnections, KEEP_ALIVE_MINUTES, TimeUnit.MINUTES)
+                    )
+                }
+            }
+            configure()
+        }
     }
+
+    private const val KEEP_ALIVE_MINUTES = 5L
 }

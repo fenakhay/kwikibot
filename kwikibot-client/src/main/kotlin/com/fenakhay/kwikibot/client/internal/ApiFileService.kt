@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.FileService
 import com.fenakhay.kwikibot.model.MwTimestamp
@@ -12,11 +13,14 @@ import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.net.transport.TransportListener
 import com.fenakhay.kwikibot.protocol.ApiFailure
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
@@ -70,6 +74,9 @@ internal class ApiFileService(
     private val endpoint: ApiEndpoint,
     private val userAgent: UserAgent,
     private val batchSize: Int = DEFAULT_BATCH,
+    private val onWarning: TransportListener = TransportListener.NONE,
+    // Uploads skip the session transport, so they assert the account themselves.
+    private val assertion: String? = null,
 ) : FileService {
 
     private val continuation = Continuation(transport)
@@ -88,7 +95,7 @@ internal class ApiFileService(
                     ApiRequest.of(
                         "query",
                         "prop" to "imageinfo",
-                        "iiprop" to IMAGE_PROPS,
+                        "iiprop" to Registry.IMAGE_INFO.joined,
                         "iilimit" to versions.toString(),
                         "titles" to batch.joinToString("|") { namespaces.format(it) },
                     )
@@ -422,9 +429,8 @@ internal class ApiFileService(
             MultiPartFormDataContent(
                 formData {
                     fields.forEach { (key, value) -> append(key, value) }
-                    append("format", "json")
-                    append("formatversion", "2")
-                    append("errorformat", "plaintext")
+                    KtorTransport.DEFAULT_PARAMS.forEach { (key, value) -> append(key, value) }
+                    if (assertion != null && "assert" !in fields) append("assert", assertion)
                     if (partName != null && bytes != null) {
                         append(
                             partName,
@@ -457,6 +463,8 @@ internal class ApiFileService(
                 throw WikiError.Api("badresponse", "upload returned a non-JSON body", "upload")
             }
 
+        // Uploads skip the transport, so they are shown to the listener here instead.
+        onWarning.onResponse(ApiRequest(fields, RequestKind.WRITE), response)
         response.raiseBadToken()
         response
     }
@@ -519,6 +527,5 @@ internal class ApiFileService(
         const val MAX_ARCHIVE = 500
         const val DEFAULT_BATCH = 50
         const val MAX_BATCH = 500
-        const val IMAGE_PROPS = "timestamp|user|comment|url|size|dimensions|sha1|mime|mediatype"
     }
 }

@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.UserService
 import com.fenakhay.kwikibot.model.MwTimestamp
@@ -43,7 +44,7 @@ internal class ApiUserService(
                         "query",
                         "list" to "users",
                         "ususers" to batch.joinToString("|"),
-                        "usprop" to USER_PROPS,
+                        "usprop" to Registry.USERS.joined,
                     ),
                     "users",
                 )
@@ -71,7 +72,7 @@ internal class ApiUserService(
                     ApiRequest.of(
                         "query",
                         "meta" to "userinfo",
-                        "uiprop" to "groups|rights|editcount|registrationdate|blockinfo",
+                        "uiprop" to Registry.CURRENT_USER.joined,
                     )
                 )
                 .throwOnError()
@@ -102,7 +103,7 @@ internal class ApiUserService(
                     "augroup" to group.takeIf { it.isNotEmpty() }?.joinToString("|"),
                     "auwitheditsonly" to if (withEditsOnly) "1" else null,
                     "auexcludetemp" to if (excludeTemporary) "1" else null,
-                    "auprop" to USER_PROPS,
+                    "auprop" to Registry.ALL_USERS.joined,
                     "aulimit" to apiLimit(limit),
                 ),
                 "allusers",
@@ -243,7 +244,7 @@ internal class ApiUserService(
                         "bkshow" to show.toParam(),
                         "bkstart" to start?.let { MwTimestamp.format(it) },
                         "bkend" to end?.let { MwTimestamp.format(it) },
-                        "bkprop" to BLOCK_PROPS,
+                        "bkprop" to Registry.BLOCKS.joined,
                         "bklimit" to apiLimit(limit),
                     ),
                     "blocks",
@@ -259,7 +260,5 @@ internal class ApiUserService(
     private companion object {
         const val DEFAULT_BATCH = 50
         const val MAX_BATCH = 500
-        const val USER_PROPS = "blockinfo|groups|rights|editcount|registration|emailable|gender"
-        const val BLOCK_PROPS = "id|user|by|timestamp|expiry|reason|flags"
     }
 }

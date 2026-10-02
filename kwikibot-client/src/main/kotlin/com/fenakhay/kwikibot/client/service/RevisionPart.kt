@@ -1,5 +1,7 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
+
 /**
  * A part of a revision that can be hidden from readers independently of the others.
  *
@@ -7,6 +9,7 @@ package com.fenakhay.kwikibot.client.service
  * nobody. They are separate because the reasons for hiding them are: a defamatory summary and a copyright
  * violation in the text call for different answers.
  */
+@MediaWikiParameter("revisiondelete", "hide", "show")
 public enum class RevisionPart(internal val apiValue: String) {
     /** The wikitext of the revision. */
     CONTENT("content"),

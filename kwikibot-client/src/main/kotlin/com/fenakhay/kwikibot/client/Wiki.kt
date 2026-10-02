@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.client.internal.ParserSettings
 import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.FileService
 import com.fenakhay.kwikibot.client.service.ListService
@@ -22,6 +23,8 @@ import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.ParamInfo
 import com.fenakhay.kwikibot.protocol.SiteInfo
+import com.fenakhay.kwikibot.wikitext.ParseOptions
+import com.fenakhay.kwikibot.wikitext.TitleRules
 
 /**
  * One wiki, ready to be worked with.
@@ -120,4 +123,20 @@ public interface Wiki {
 
     /** The token cache backing every write. */
     public val tokens: TokenStore
+
+    /**
+     * How this wiki's wikitext parses: its extension tags, URL schemes and File namespace names, and whether
+     * it converts between scripts. Pass it to `Wikitext.parse` to read a page as this wiki reads it.
+     *
+     * A wiki opened through a client asks once and keeps the answer.
+     */
+    public suspend fun parseOptions(): ParseOptions = ParserSettings.read(transport).first
+
+    /**
+     * How this wiki names pages: its namespace names, which namespaces keep case, its parser functions and
+     * variables. Pass it to `Template.key` or `Markup.templates` to tell templates apart as this wiki does.
+     *
+     * A wiki opened through a client asks once and keeps the answer.
+     */
+    public suspend fun titleRules(): TitleRules = ParserSettings.read(transport).second
 }

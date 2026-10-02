@@ -1,6 +1,5 @@
 package com.fenakhay.kwikibot.bot.fix
 
-import com.fenakhay.kwikibot.bot.run.apply
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.testkit.FakePageService

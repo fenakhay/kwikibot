@@ -38,7 +38,7 @@ public class Continuation(private val transport: MediaWikiTransport) {
         var batches = 0
 
         while (true) {
-            val response = transport.call(ApiRequest(params, RequestKind.READ)).throwOnError()
+            val response = transport.call(request.copy(params = params)).throwOnError()
             emit(response)
             batches++
 

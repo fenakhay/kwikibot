@@ -161,12 +161,6 @@ public data class ApiFailure(
 }
 
 /**
- * Raises the API error this response carries, if it carries one.
- *
- * The transport hands error blocks back rather than throwing, because only the caller knows whether a given
- * code is a failure. This is the shorthand for "any error here is a failure".
- */
-/**
  * A warning a wiki attached to a response it nonetheless answered.
  *
  * Warnings are how MediaWiki says "this worked, but": a parameter is deprecated, a result was truncated
@@ -178,15 +172,47 @@ public data class ApiWarning(
     val module: String,
     /** What it said, in whichever of the two shapes the wiki used. */
     val text: String,
+    /**
+     * The machine-readable code, such as `deprecation` or `truncatedresult`.
+     *
+     * Branch on this, not the text: the text is a translated message that changes between releases and
+     * languages. `null` when the wiki answered in the legacy format, which has none.
+     */
+    val code: String? = null,
 ) {
+    /** A warning without a code, as the legacy format reports one. */
+    public constructor(module: String, text: String) : this(module, text, null)
+
+    /**
+     * Whether this says something the request used is going away.
+     *
+     * Read from the code alone. The text is in the wiki's own language, so matching it would work on one wiki
+     * and silently miss on the next.
+     */
+    public val isDeprecation: Boolean
+        get() = code == DEPRECATION
+
     override fun toString(): String = "$module: $text"
+
+    /** The codes MediaWiki gives the warnings this library treats specially. */
+    public companion object {
+        /** A parameter or value the request used is deprecated. */
+        public const val DEPRECATION: String = "deprecation"
+
+        /**
+         * The advice to subscribe to the API announcement list, sent after every deprecation.
+         *
+         * It says nothing about the request, so a listener never hears it.
+         */
+        public const val DEPRECATION_HELP: String = "deprecation-help"
+    }
 }
 
 /**
  * Every warning on a response, in the order the wiki listed them.
  *
- * Both shapes are read, as with errors: `errorformat=plaintext` produces a `warnings` array with a module and
- * text, and the legacy format an object keyed by module.
+ * Both shapes are read, as with errors: `errorformat=plaintext` produces a `warnings` array whose entries
+ * carry a code, a module and text, and the legacy format an object keyed by module.
  */
 public fun JsonObject.warnings(): List<ApiWarning> {
     val array = this["warnings"] as? JsonArray
@@ -197,17 +223,16 @@ public fun JsonObject.warnings(): List<ApiWarning> {
                 module = warning["module"]?.jsonPrimitive?.content.orEmpty(),
                 text =
                     warning["text"]?.jsonPrimitive?.content ?: warning["*"]?.jsonPrimitive?.content.orEmpty(),
+                code = warning["code"]?.jsonPrimitive?.content,
             )
         }
     }
 
     val legacy = this["warnings"] as? JsonObject ?: return emptyList()
     return legacy.entries.map { (module, value) ->
-        val text =
-            (value as? JsonObject)?.let {
-                it["warnings"]?.jsonPrimitive?.content ?: it["*"]?.jsonPrimitive?.content
-            }
-        ApiWarning(module, text.orEmpty())
+        val fields = value as? JsonObject
+        val text = fields?.let { it["warnings"]?.jsonPrimitive?.content ?: it["*"]?.jsonPrimitive?.content }
+        ApiWarning(module, text.orEmpty(), fields?.get("code")?.jsonPrimitive?.content)
     }
 }
 

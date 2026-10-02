@@ -369,3 +369,30 @@ class AuthTest {
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 }
+
+class CredentialsFromEnvironmentTest {
+
+    @Test
+    fun `an OAuth token in the environment wins`() {
+        val environment = mapOf("KWIKIBOT_OAUTH_TOKEN" to "secret", "KWIKIBOT_ACCOUNT" to "FenaBot")
+
+        Credentials.fromEnvironment(environment = environment::get) shouldBe
+            Credentials.OAuth2("secret", "FenaBot")
+    }
+
+    @Test
+    fun `a bot password is read from three variables under the prefix`() {
+        val environment = mapOf("ETY_ACCOUNT" to "FenaBot", "ETY_BOT_NAME" to "ety", "ETY_PASSWORD" to "p")
+
+        Credentials.fromEnvironment("ETY", environment::get) shouldBe
+            Credentials.BotPassword("FenaBot", "ety", "p")
+    }
+
+    @Test
+    fun `nothing set is anonymous, and a bot password set only in part is a mistake`() {
+        Credentials.fromEnvironment(environment = { null }) shouldBe Credentials.Anonymous
+
+        val partial = mapOf("KWIKIBOT_ACCOUNT" to "FenaBot")
+        assertFailsWith<IllegalStateException> { Credentials.fromEnvironment(environment = partial::get) }
+    }
+}

@@ -11,6 +11,7 @@ import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.Kwikibot
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.Credentials
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
@@ -105,7 +106,7 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
 
         WikiClient(config, credentials = credentials).use { client ->
             try {
-                run(client.wiki(language(file), resolveFamily(file)))
+                run(client.wiki(endpoint(file)))
             } catch (e: WikiError) {
                 throw CliktError(e.message ?: e.toString(), e)
             }
@@ -138,6 +139,16 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
                 )
         return WikiConfig(userAgent = UserAgent("kwikibot", VERSION, given))
     }
+
+    /**
+     * Where the wiki is: a language or family flag wins, then the file, which may name a server of its own.
+     */
+    private fun endpoint(file: BotConfig?): ApiEndpoint =
+        if (lang == null && family == null && file != null) {
+            file.endpoint()
+        } else {
+            resolveFamily(file).endpoint(language(file))
+        }
 
     private fun language(file: BotConfig?): LangCode =
         if (lang != null) LangCode(lang!!) else file?.language() ?: LangCode("en")
@@ -222,19 +233,39 @@ public class ShowConfig : SuspendingCliktCommand(name = "config") {
         val config = BotConfig.read(found)
         echo("file:      $found")
         echo("bot:       ${config.bot.name}/${config.bot.version} (${config.bot.contact})")
-        echo("wiki:      ${config.wiki.lang}.${config.wiki.family}")
+        echo("wiki:      ${wiki(config.wiki)}")
         echo("throttle:  read ${config.throttle.read}, write ${config.throttle.write}")
         echo("maxlag:    ${config.maxlag.takeIf { it > 0 } ?: "not sent"}")
+        echo("http:      ${config.http.maxRequestsPerHost} connections, timeout ${config.http.timeout}")
+        echo("relogins:  ${config.retry.relogins} in ten minutes")
+        run(config.run)?.let { echo("run:       $it") }
+        config.oauth?.let { echo("oauth:     ${secret(it.tokenEnv, it.optional)}") }
 
         val login = config.login
         if (login == null) {
             echo("login:     anonymous")
         } else {
-            // Whether the variable is set, never what is in it.
-            val present = System.getenv(login.passwordEnv) != null
             echo("login:     ${login.account}@${login.botName}")
-            echo("password:  ${login.passwordEnv} is ${if (present) "set" else "NOT SET"}")
+            echo("password:  ${secret(login.passwordEnv, login.optional)}")
         }
+    }
+
+    private fun wiki(wiki: BotConfig.WikiSelection): String =
+        wiki.server?.let { it + wiki.scriptPath } ?: "${wiki.lang}.${wiki.family}"
+
+    private fun run(run: BotConfig.RunSettings): String? =
+        listOfNotNull(
+                run.readConcurrency?.let { "read $it at once" },
+                run.writeConcurrency?.let { "write $it at once" },
+                run.readBatch?.let { "$it pages a request" },
+            )
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(", ")
+
+    /** Whether the variable holding a secret is set, never what is in it. */
+    private fun secret(variable: String, optional: Boolean): String {
+        val present = System.getenv(variable) != null
+        return "$variable is ${if (present) "set" else "NOT SET"}${if (optional) " (optional)" else ""}"
     }
 }
 

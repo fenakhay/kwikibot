@@ -50,6 +50,47 @@ public class PathologicalBenchmark {
     public fun deeplyNestedWikilinks(): Int =
         Wikitext.parse("[[a|".repeat(DEPTH) + "x" + "]]".repeat(DEPTH)).nodes.size
 
+    /**
+     * Unclosed openings whose partner the parser searches for along the line: external links, bold, HTML tags
+     * and extension tags. Each failed search is remembered; this is where forgetting one would show.
+     */
+    @Benchmark
+    public fun unclosedOnOneLine(): Int =
+        Wikitext.parse(
+                "[http://example.org a ".repeat(REPEATS) +
+                    "''a ".repeat(REPEATS) +
+                    "<b>a".repeat(REPEATS) +
+                    "<ref a".repeat(REPEATS)
+            )
+            .nodes
+            .size
+
+    /**
+     * A run of opening brackets, which MediaWiki's link pass (`Parser::handleInternalLinks2`) pairs from the
+     * left and its preprocessor from the right.
+     */
+    @Benchmark
+    public fun bracketRun(): Int = Wikitext.parse("[".repeat(REPEATS) + "a" + "]".repeat(REPEATS)).nodes.size
+
+    /**
+     * Tags paired across paragraphs, lists and table cells, where each line's paragraph, item or cell ends
+     * what is open in it: spans ended at every blank line, bold run on through a list, cells split by `||`.
+     */
+    @Benchmark
+    public fun pairingAcrossBlocks(): Int =
+        Wikitext.parse(
+                "<span>a\n\n".repeat(REPEATS) +
+                    "<b>x" +
+                    "\n* a".repeat(REPEATS) +
+                    "\n</b>\n{|\n" +
+                    "|<span>a||b</span>\n".repeat(REPEATS) +
+                    "|}\n<div>" +
+                    "\n\n<i>a".repeat(REPEATS) +
+                    "</div>"
+            )
+            .nodes
+            .size
+
     private companion object {
         /** Well past the point where an exponential parser stops finishing, and instant for a linear one. */
         const val REPEATS = 200

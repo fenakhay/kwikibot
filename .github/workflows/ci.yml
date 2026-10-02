@@ -43,6 +43,45 @@ jobs:
           name: test-reports
           path: '**/build/reports/tests/**'
 
+  # Wikimedia runs this week's MediaWiki; third-party wikis run releases going back years. This job starts
+  # the current LTS and the latest release in Docker and runs LocalWikiTest against each, failing on any
+  # warning, so a value that only the newest MediaWiki accepts fails here.
+  mediawiki:
+    name: MediaWiki ${{ matrix.mediawiki }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mediawiki: [lts, latest]
+    runs-on: ubuntu-latest
+    env:
+      KWIKI_MEDIAWIKI: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Start MediaWiki ${{ matrix.mediawiki }}
+        run: bash .github/mediawiki/start.sh ${{ matrix.mediawiki }} 8080
+
+      - name: Run the live tests against it
+        run: ./gradlew :kwikibot-client:liveTest --tests 'com.fenakhay.kwikibot.client.LocalWikiTest' --stacktrace
+
+      - name: Show what the wiki logged
+        if: failure()
+        run: docker logs kwikibot-mediawiki
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mediawiki-${{ matrix.mediawiki }}-test-reports
+          path: kwikibot-client/build/reports/tests/liveTest/
+
   native:
     strategy:
       fail-fast: false

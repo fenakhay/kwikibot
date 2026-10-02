@@ -7,6 +7,7 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.protocol.decode.OptionSet
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -26,14 +27,31 @@ import kotlinx.coroutines.test.runTest
 
 class ParamInfoTest {
 
+    // The shape MediaWiki answers with for helpformat=none, trimmed to the parameters under test.
     private val categoryMembers =
         """
         {"paraminfo":{"modules":[{
-          "name":"categorymembers","path":"query+categorymembers","prefix":"cm",
+          "name":"categorymembers","classname":"MediaWiki\\Api\\ApiQueryCategoryMembers",
+          "path":"query+categorymembers","group":"list","prefix":"cm","source":"MediaWiki",
+          "sourcename":"MediaWiki","generator":true,"helpurls":[],
           "parameters":[
-            {"name":"title","type":"string","required":false},
-            {"name":"type","type":["page","subcat","file"],"multi":true},
-            {"name":"limit","type":"limit","limit":500,"highlimit":5000}]}]}}
+            {"index":1,"name":"title","type":"string","required":false,"multi":false},
+            {"index":6,"name":"type","type":["file","page","subcat"],"default":"page|subcat|file",
+             "required":false,"multi":true,"lowlimit":50,"highlimit":500,"limit":50},
+            {"index":8,"name":"limit","type":"limit","default":10,"required":false,"multi":false,
+             "max":500,"highmax":5000,"min":1}]}]}}
+        """
+            .trimIndent()
+
+    private val parse =
+        """
+        {"paraminfo":{"modules":[{
+          "name":"parse","path":"parse","group":"action","prefix":"","source":"MediaWiki",
+          "parameters":[
+            {"index":5,"name":"prop","type":["categories","headitems","links","sections","text","tocdata"],
+             "default":"text|langlinks|categories|links|templates|images|externallinks|sections|tocdata",
+             "required":false,"multi":true,"lowlimit":50,"highlimit":500,"limit":50,
+             "deprecatedvalues":["headitems","sections"],"internalvalues":["parseroutput"]}]}]}}
         """
             .trimIndent()
 
@@ -44,7 +62,7 @@ class ParamInfoTest {
         val module = info.module("query+categorymembers")
 
         ("title" in checkNotNull(module)) shouldBe true
-        module["type"]?.values shouldBe listOf("page", "subcat", "file")
+        module["type"]?.values shouldBe listOf("file", "page", "subcat")
         module["type"]?.multiValued shouldBe true
     }
 
@@ -54,6 +72,67 @@ class ParamInfoTest {
 
         info.limit("query+categorymembers", "limit", highLimits = false) shouldBe 500
         info.limit("query+categorymembers", "limit", highLimits = true) shouldBe 5000
+    }
+
+    @Test
+    fun `how many values a parameter takes is not how many results a query returns`() = runTest {
+        val info = paramInfo { respondJson(categoryMembers) }
+
+        val type = checkNotNull(info.module("query+categorymembers")?.get("type"))
+
+        type.valueLimit shouldBe 50
+        type.highValueLimit shouldBe 500
+        type.limit.shouldBeNull()
+        info.limit("query+categorymembers", "type", highLimits = true).shouldBeNull()
+    }
+
+    @Test
+    fun `the values a parameter accepts, and which of them are going away, are read`() = runTest {
+        val info = paramInfo { respondJson(parse) }
+
+        info.values("parse", "prop") shouldBe
+            listOf("categories", "headitems", "links", "sections", "text", "tocdata")
+        info.isDeprecated("parse", "prop", "sections") shouldBe true
+        info.isDeprecated("parse", "prop", "tocdata") shouldBe false
+        info.module("parse")?.get("prop")?.internalValues shouldBe listOf("parseroutput")
+    }
+
+    @Test
+    fun `a parameter taking free text has no values to check against`() = runTest {
+        val info = paramInfo { respondJson(categoryMembers) }
+
+        info.values("query+categorymembers", "title").shouldBeNull()
+        info.values("query+categorymembers", "nonesuch").shouldBeNull()
+        info.isDeprecated("query+categorymembers", "nonesuch", "x") shouldBe false
+    }
+
+    @Test
+    fun `prefetching asks once for many modules and remembers the ones the wiki lacks`() = runTest {
+        val asked = mutableListOf<String>()
+        val info = paramInfo { request ->
+            asked += request.url.parameters["modules"].orEmpty()
+            respondJson(categoryMembers)
+        }
+
+        info.prefetch(listOf("query+categorymembers", "query+nonesuch", "query+categorymembers"))
+        info.module("query+categorymembers").shouldNotBeNull()
+        info.module("query+nonesuch").shouldBeNull()
+        info.prefetch(listOf("query+nonesuch"))
+
+        asked shouldBe listOf("query+categorymembers|query+nonesuch")
+    }
+
+    @Test
+    fun `prefetching splits a long list into requests the wiki will accept`() = runTest {
+        var requests = 0
+        val info = paramInfo {
+            requests++
+            respondJson("""{"paraminfo":{"modules":[]}}""")
+        }
+
+        info.prefetch((1..ParamInfo.MAX_MODULES + 1).map { "query+m$it" })
+
+        requests shouldBe 2
     }
 
     @Test

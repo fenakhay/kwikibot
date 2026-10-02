@@ -5,7 +5,9 @@ import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.cache.ResponseCache
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -25,6 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
 
 class KtorTransportTest {
 
@@ -174,6 +177,44 @@ class KtorTransportTest {
     }
 
     @Test
+    fun `a listener hears each retry, why, and each pause the wiki asked for`() = runTest {
+        val retries = mutableListOf<String>()
+        val pauses = mutableListOf<Duration>()
+        val listener =
+            object : TransportListener {
+                override fun onRetry(request: ApiRequest, attempt: Int, wait: Duration, reason: String) {
+                    retries += "$attempt $wait $reason"
+                }
+
+                override fun onPenalty(wait: Duration) {
+                    pauses += wait
+                }
+            }
+        var calls = 0
+        val transport =
+            transport(listener = listener) {
+                calls++
+                when (calls) {
+                    1 ->
+                        respondError(
+                            HttpStatusCode.TooManyRequests,
+                            headers = headersOf(HttpHeaders.RetryAfter, "30"),
+                        )
+                    2 ->
+                        respondJson(
+                            """{"error":{"code":"readonly","info":"The wiki is in read-only mode."}}"""
+                        )
+                    else -> respondJson("""{"ok":true}""")
+                }
+            }
+
+        transport.call(ApiRequest.of("query"))
+
+        retries shouldBe listOf("1 30s rate limited", "2 2s the wiki reported readonly")
+        pauses shouldBe listOf(30.seconds)
+    }
+
+    @Test
     fun `server errors are retried and then reported`() = runTest {
         var calls = 0
         val transport =
@@ -239,6 +280,146 @@ class KtorTransportTest {
         calls shouldBe 2
     }
 
+    @Test
+    fun `the listener sees each answer the wiki sent, once, and not a cached copy of it`() = runTest {
+        val heard = mutableListOf<String>()
+        val remembered = mutableMapOf<ApiRequest, JsonObject>()
+        val cache =
+            object : ResponseCache {
+                override suspend fun get(request: ApiRequest): JsonObject? = remembered[request]
+
+                override suspend fun put(request: ApiRequest, response: JsonObject) {
+                    remembered[request] = response
+                }
+            }
+        var calls = 0
+        val transport =
+            transport(
+                cache = cache,
+                listener = responses { request, response -> heard += "${request.action}:${response["n"]}" },
+            ) {
+                calls++
+                respondJson("""{"n":$calls}""")
+            }
+
+        transport.call(ApiRequest.of("query", "titles" to "volcano"))
+        transport.call(ApiRequest.of("query", "titles" to "volcano"))
+        transport.call(ApiRequest.of("query", "titles" to "lava"))
+
+        heard shouldBe listOf("query:1", "query:2")
+    }
+
+    @Test
+    fun `a listener that throws fails the call, which is how a test makes a warning fatal`() = runTest {
+        val transport =
+            transport(listener = responses { _, _ -> throw AssertionError("deprecated") }) {
+                respondJson("""{"ok":true}""")
+            }
+
+        assertFailsWith<AssertionError> { transport.call(ApiRequest.of("query")) }
+    }
+
+    @Test
+    fun `a read that must be current goes to the wiki whatever the cache holds, and is not stored`() =
+        runTest {
+            val remembered = mutableMapOf<ApiRequest, JsonObject>()
+            val cache =
+                object : ResponseCache {
+                    override suspend fun get(request: ApiRequest): JsonObject? = remembered[request]
+
+                    override suspend fun put(request: ApiRequest, response: JsonObject) {
+                        remembered[request] = response
+                    }
+                }
+            var calls = 0
+            val transport =
+                transport(cache = cache) {
+                    calls++
+                    respondJson("""{"n":$calls}""")
+                }
+            val stopPage = ApiRequest.of("query", "titles" to "User:Bot/Stop")
+
+            transport.call(stopPage)
+            transport.call(stopPage.copy(cacheable = false))["n"].toString() shouldBe "2"
+            transport.call(stopPage.copy(cacheable = false))["n"].toString() shouldBe "3"
+
+            calls shouldBe 3
+            remembered.keys.single().cacheable shouldBe true
+            ResponseCache.isCacheable(stopPage.copy(cacheable = false)) shouldBe false
+        }
+
+    @Test
+    fun `a database connection error is waited out and the call retried`() = runTest {
+        var calls = 0
+        val transport = transport {
+            calls++
+            if (calls == 1) {
+                respondJson(
+                    """{"errors":[{"code":"internal_api_error_DBConnectionError",
+                       "text":"[abc] Database error","module":"main"}]}"""
+                )
+            } else {
+                respondJson("""{"ok":true}""")
+            }
+        }
+
+        val body = transport.call(ApiRequest.of("query"))
+
+        body.containsKey("ok") shouldBe true
+        calls shouldBe 2
+    }
+
+    @Test
+    fun `a wiki still read-only once the retries are spent is reported as the wiki said it`() = runTest {
+        var calls = 0
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 2, initialDelay = 1.seconds)) {
+                calls++
+                respondJson(
+                    """{"errors":[{"code":"readonly","text":"The wiki is read-only.","module":"main"}]}"""
+                )
+            }
+
+        val body = transport.call(ApiRequest.of("edit", "title" to "Foo", kind = RequestKind.WRITE))
+
+        body.toString() shouldContain "readonly"
+        calls shouldBe 3
+    }
+
+    @Test
+    fun `a query error is not retried, since it is as likely to be the query as the moment`() = runTest {
+        var calls = 0
+        val transport = transport {
+            calls++
+            respondJson(
+                """{"errors":[{"code":"internal_api_error_DBQueryError","text":"x","module":"main"}]}"""
+            )
+        }
+
+        transport.call(ApiRequest.of("query"))
+
+        calls shouldBe 1
+    }
+
+    @Test
+    fun `a lagged answer is retried rather than shown to the listener`() = runTest {
+        var heard = 0
+        var calls = 0
+        val transport =
+            transport(listener = responses { _, _ -> heard++ }) {
+                calls++
+                if (calls == 1) {
+                    respondJson("""{"error":{"code":"maxlag","info":"Waiting for db1: 6 seconds lagged."}}""")
+                } else {
+                    respondJson("""{"ok":true}""")
+                }
+            }
+
+        transport.call(ApiRequest.of("query"))
+
+        heard shouldBe 1
+    }
+
     private fun TestScope.transport(
         throttle: Throttle =
             Throttle(
@@ -247,6 +428,8 @@ class KtorTransportTest {
                 timeSource = testScheduler.timeSource,
             ),
         retry: RetryPolicy = RetryPolicy(maxRetries = 3, initialDelay = 1.seconds),
+        cache: ResponseCache = ResponseCache.NONE,
+        listener: TransportListener = TransportListener.NONE,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): KtorTransport =
         KtorTransport(
@@ -255,7 +438,15 @@ class KtorTransportTest {
             userAgent = userAgent,
             throttle = throttle,
             retry = retry,
+            cache = cache,
+            listener = listener,
         )
+
+    /** A listener that only hears responses, which is what most of these tests want. */
+    private fun responses(heard: (ApiRequest, JsonObject) -> Unit): TransportListener =
+        object : TransportListener {
+            override fun onResponse(request: ApiRequest, response: JsonObject) = heard(request, response)
+        }
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

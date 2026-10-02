@@ -6,6 +6,7 @@ import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.net.transport.ApiRequest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -224,5 +225,63 @@ class ApiFailureTest {
     @Test
     fun `a warning prints as module and message, which is what a log line wants`() {
         ApiWarning("query", "Truncated.").toString() shouldBe "query: Truncated."
+    }
+
+    @Test
+    fun `a warning carries its code, which is what tells a deprecation from the rest`() {
+        val warnings =
+            response(
+                    """{"warnings":[
+               {"code":"deprecation","module":"parse","text":"prop=sections is deprecated."},
+               {"code":"deprecation-help","module":"main","text":"Subscribe to the list."},
+               {"code":"truncatedresult","module":"query","text":"Truncated."}]}"""
+                )
+                .warnings()
+
+        warnings.map { it.code } shouldBe listOf("deprecation", "deprecation-help", "truncatedresult")
+        warnings.map { it.isDeprecation } shouldBe listOf(true, false, false)
+    }
+
+    @Test
+    fun `the legacy shape has no code, so nothing in it reads as a deprecation`() {
+        val warning =
+            response("""{"warnings":{"main":{"warnings":"Deprecated parameter."}}}""").warnings().single()
+
+        warning.code shouldBe null
+        warning.isDeprecation shouldBe false
+    }
+
+    @Test
+    fun `a warning made the way 1_1 made one has no code`() {
+        ApiWarning("parse", "text") shouldBe ApiWarning("parse", "text", null)
+    }
+
+    @Test
+    fun `a listener hears each warning except the advice that follows a deprecation`() {
+        val heard = mutableListOf<String?>()
+        val listener = ApiWarningListener { _, warning -> heard += warning.code }
+
+        listener.onResponse(
+            ApiRequest.of("parse"),
+            response(
+                """{"warnings":[
+                   {"code":"deprecation","module":"parse","text":"prop=sections is deprecated."},
+                   {"code":"deprecation-help","module":"main","text":"Subscribe to the list."}]}"""
+            ),
+        )
+
+        heard shouldBe listOf("deprecation")
+    }
+
+    @Test
+    fun `the logging listener takes the same warning many times without complaint`() {
+        val request = ApiRequest.of("parse")
+
+        repeat(3) {
+            ApiWarningListener.LOG.onWarning(request, ApiWarning("parse", "prop=sections", "deprecation"))
+            ApiWarningListener.LOG.onWarning(request, ApiWarning("query", "Truncated.", "truncatedresult"))
+            ApiWarningListener.LOG.onWarning(request, ApiWarning("query", "Legacy."))
+        }
+        ApiWarningListener.NONE.onWarning(request, ApiWarning("query", "Ignored."))
     }
 }

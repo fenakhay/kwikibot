@@ -174,6 +174,10 @@ public class PageDecoder(
      *
      * The API can be asked to resolve redirects instead, but a bot that is about to rewrite a page needs to
      * know what the text itself says.
+     *
+     * Only called for a page the wiki has already marked as a redirect, so any magic word will do: English
+     * writes `#REDIRECT`, German `#WEITERLEITUNG` and Arabic `#تحويل`. The target is the link that follows
+     * the magic word, with nothing but whitespace, line breaks included, and at most one colon between them.
      */
     private fun redirectTarget(text: String): Title? =
         REDIRECT.find(text)?.groupValues?.get(1)?.let { Title.parse(it, namespaces) }
@@ -195,6 +199,6 @@ public class PageDecoder(
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"
 
-        val REDIRECT = Regex("""^\s*#(?:REDIRECT|redirect)\s*:?\s*\[\[([^\]|#]+)""")
+        val REDIRECT = Regex("""^\s*#[^\s\[]+\s*:?\s*\[\[([^\]|#\n]+)""")
     }
 }

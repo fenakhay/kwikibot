@@ -18,9 +18,14 @@ public data class ParamDescription(
     val type: String? = null,
     /** The values it accepts, when it accepts a fixed set. */
     val values: List<String> = emptyList(),
-    /** The most this account may ask for, for a parameter that takes a count. */
+    /**
+     * For a parameter that takes a count, the largest it accepts: `max` in `paraminfo`.
+     *
+     * For a `type=limit` parameter this is the most results a request returns to an account without
+     * `apihighlimits`.
+     */
     val limit: Int? = null,
-    /** The most an account with `apihighlimits` may ask for. */
+    /** The most an account with `apihighlimits` may ask for, `highmax` in `paraminfo`. */
     val highLimit: Int? = null,
     /** Whether the module refuses the request without it. */
     val required: Boolean = false,
@@ -34,7 +39,47 @@ public data class ParamDescription(
     val deprecatedValues: List<String> = emptyList(),
     /** Whether the value is a credential, and so must never reach a URL or a log. */
     val sensitive: Boolean = false,
-)
+    /**
+     * For a multi-valued parameter, the most values this account may join in one request.
+     *
+     * Not a result count: `titles` taking fifty titles at once is this, and `cmlimit` returning five hundred
+     * members is [limit]. `paraminfo` calls this one `limit`, which makes the two easy to confuse.
+     */
+    val valueLimit: Int? = null,
+    /** For a multi-valued parameter, the most values an account with `apihighlimits` may join. */
+    val highValueLimit: Int? = null,
+    /** Values accepted but marked internal or unstable, which may change without notice. */
+    val internalValues: List<String> = emptyList(),
+) {
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        name: String,
+        type: String? = null,
+        values: List<String> = emptyList(),
+        limit: Int? = null,
+        highLimit: Int? = null,
+        required: Boolean = false,
+        multiValued: Boolean = false,
+        default: String? = null,
+        deprecated: Boolean = false,
+        deprecatedValues: List<String> = emptyList(),
+        sensitive: Boolean = false,
+    ) : this(
+        name,
+        type,
+        values,
+        limit,
+        highLimit,
+        required,
+        multiValued,
+        default,
+        deprecated,
+        deprecatedValues,
+        sensitive,
+        valueLimit = null,
+    )
+}
 
 /** One API module, as the wiki describes it. */
 public data class ModuleDescription(
@@ -118,6 +163,40 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
         module(module)?.contains(parameter) == true
 
     /**
+     * The values [parameter] of [module] accepts on this wiki.
+     *
+     * `null` when the wiki has no such module or parameter, or the parameter takes free text: there is then
+     * no list to check a value against. [parameter] is named without the module's prefix, as `paraminfo`
+     * names it.
+     */
+    public suspend fun values(module: String, parameter: String): List<String>? =
+        module(module)?.get(parameter)?.values?.takeIf { it.isNotEmpty() }
+
+    /**
+     * Whether this wiki has announced that [value] of [parameter] is going away.
+     *
+     * A deprecated value still works, but every response to a request that sends it carries a warning. A
+     * caller that knows the replacement can ask first and send that instead.
+     */
+    public suspend fun isDeprecated(module: String, parameter: String, value: String): Boolean =
+        module(module)?.get(parameter)?.deprecatedValues?.contains(value) == true
+
+    /**
+     * Fetches each of [modules] not already known, [MAX_MODULES] to a request.
+     *
+     * For a caller about to ask about several modules, which would otherwise cost a request each. A module
+     * the wiki lacks is remembered as absent, so a later [module] call for it sends no request.
+     */
+    public suspend fun prefetch(modules: Collection<String>) {
+        val wanted = mutex.withLock { modules.distinct().filterNot { it in cached } }
+
+        for (batch in wanted.chunked(MAX_MODULES)) {
+            val described = modules(*batch.toTypedArray()).mapTo(mutableSetOf()) { it.path }
+            mutex.withLock { batch.filterNot { it in described }.forEach { cached.putIfAbsent(it, null) } }
+        }
+    }
+
+    /**
      * Every module matching [patterns], which may use the `*` the API accepts.
      *
      * `modules("*", "query+*")` describes a wiki's whole API surface in one request. Results join the cache,
@@ -195,8 +274,10 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
                         runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
                     }
                     .orEmpty(),
-            limit = this["limit"]?.jsonPrimitive?.intOrNull,
-            highLimit = this["highlimit"]?.jsonPrimitive?.intOrNull,
+            // "limit" and "highlimit" count the values a multi-valued parameter takes, not the results a
+            // query returns; a type=limit parameter reports those as "max" and "highmax".
+            limit = this["max"]?.jsonPrimitive?.intOrNull,
+            highLimit = this["highmax"]?.jsonPrimitive?.intOrNull,
             required = flag("required"),
             multiValued = flag("multi"),
             default =
@@ -204,18 +285,29 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
                     runCatching { element.jsonPrimitive.content }.getOrNull()
                 },
             deprecated = flag("deprecated"),
-            deprecatedValues =
-                this["deprecatedvalues"]
-                    ?.let { element ->
-                        runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
-                    }
-                    .orEmpty(),
+            deprecatedValues = strings("deprecatedvalues"),
             sensitive = flag("sensitive"),
+            valueLimit = this["limit"]?.jsonPrimitive?.intOrNull,
+            highValueLimit = this["highlimit"]?.jsonPrimitive?.intOrNull,
+            internalValues = strings("internalvalues"),
         )
+
+    private fun JsonObject.strings(key: String): List<String> =
+        this[key]
+            ?.let { element ->
+                runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
+            }
+            .orEmpty()
 
     private fun JsonObject.string(key: String): String? =
         this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
 
     private fun JsonObject.flag(key: String): Boolean =
         this[key]?.let { runCatching { it.jsonPrimitive.content != "false" }.getOrDefault(true) } ?: false
+
+    /** How many modules one request may name. */
+    public companion object {
+        /** What `modules` takes from an account without `apihighlimits`, which is safe for any account. */
+        public const val MAX_MODULES: Int = 50
+    }
 }

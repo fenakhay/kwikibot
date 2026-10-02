@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.transform
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -58,15 +59,28 @@ internal class ApiListService(
         includeRedirects: Boolean,
         limit: Int?,
     ): Flow<PageRef> =
-        list(
-            "backlinks",
-            limit,
-            "bltitle" to title(target),
-            "blnamespace" to namespaces.toParam(),
-            // Without this a page linked only through a redirect is invisible to the query.
-            "blredirect" to if (includeRedirects) "1" else null,
-            "bllimit" to apiLimit(limit),
-        )
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "backlinks",
+                    "bltitle" to title(target),
+                    "blnamespace" to namespaces.toParam(),
+                    // Without this a page linked only through a redirect is invisible to the query.
+                    "blredirect" to if (includeRedirects) "1" else null,
+                    "bllimit" to apiLimit(limit),
+                ),
+                "backlinks",
+            )
+            // A page that links through a redirect comes back nested under that redirect, so the
+            // nested entries are read as well as the top level.
+            .transform { entry ->
+                decoder.refOf(entry)?.let { emit(it) }
+                (entry["redirlinks"] as? JsonArray)?.forEach { linked ->
+                    decoder.refOf(linked.jsonObject)?.let { emit(it) }
+                }
+            }
+            .applyLimit(limit)
 
     override fun transclusions(
         template: PageRef,

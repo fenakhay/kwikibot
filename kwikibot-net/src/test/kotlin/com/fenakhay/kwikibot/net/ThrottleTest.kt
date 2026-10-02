@@ -6,6 +6,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 
@@ -42,6 +43,69 @@ class ThrottleTest {
         throttle.acquire(RequestKind.WRITE)
 
         currentTime shouldBe 10_000
+    }
+
+    @Test
+    fun `a read is not held up by a write waiting out its own pace`() = runTest {
+        val throttle =
+            Throttle(read = 100.milliseconds, write = 10.seconds, timeSource = testScheduler.timeSource)
+        throttle.acquire(RequestKind.WRITE)
+
+        val write = async {
+            throttle.acquire(RequestKind.WRITE)
+            currentTime
+        }
+        val read = async {
+            throttle.acquire(RequestKind.READ)
+            currentTime
+        }
+
+        read.await() shouldBe 100
+        write.await() shouldBe 10_000
+    }
+
+    @Test
+    fun `concurrent reads each get their own slot, evenly spaced`() = runTest {
+        val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
+
+        val starts =
+            List(3) {
+                    async {
+                        throttle.acquire(RequestKind.READ)
+                        currentTime
+                    }
+                }
+                .awaitAll()
+
+        starts.sorted() shouldBe listOf(0L, 100L, 200L)
+    }
+
+    @Test
+    fun `a caller cancelled while it waits gives its slot back`() = runTest {
+        val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
+        throttle.acquire(RequestKind.READ)
+
+        val abandoned = async { throttle.acquire(RequestKind.READ) }
+        testScheduler.runCurrent()
+        abandoned.cancelAndJoin()
+        throttle.acquire(RequestKind.READ)
+
+        currentTime shouldBe 100
+    }
+
+    @Test
+    fun `a penalty asked for while a caller waits still holds it back`() = runTest {
+        val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
+        throttle.acquire(RequestKind.READ)
+
+        val waiting = async {
+            throttle.acquire(RequestKind.READ)
+            currentTime
+        }
+        testScheduler.runCurrent()
+        throttle.penalize(5.seconds)
+
+        waiting.await() shouldBe 5_000
     }
 
     @Test

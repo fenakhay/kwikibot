@@ -7,6 +7,108 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.2.0] — 2026-10-02
+
+Long runs now survive a lost session and can resume after a stop, and the parser reads wikitext
+the way MediaWiki does. kwikibot also follows MediaWiki's deprecations (see "Deprecations" in the
+README).
+
+Source-compatible, except that `PageOutcome` has a new case, `NotAttempted`. Binary-compatible
+except for `copy` on classes that gained properties: `WikiConfig`, `ApiWarning`,
+`ParamDescription`, `RecentChange`, `ApiRequest`, `Edit`, `BotReport`, `PageOutcome.Pending` and
+`Saved`, `Tag`, `Comment`, `ExternalLink`, `BotConfig` with `WikiSelection` and `LoginSettings`,
+and `DumpPage`.
+
+### Added
+
+- A renamed API value is sent under whichever name the wiki takes, read from its `paraminfo`.
+  `ParseProperty.TOC_DATA`, `ParamInfo.values`, `isDeprecated` and `prefetch`,
+  `WikiError.Configuration.Unsupported` and `SiteInfo.hasVersion`.
+- `WikiConfig.onWarning`, `ApiWarning.code` and `isDeprecation`, and `FailOnDeprecation` in the
+  testkit.
+- `ExtensionService.abuseFilters`, and `newPages` and `newPageStats` for PageTriage.
+- Automatic re-login: every request asserts its account, and when the wiki ends the session the
+  client logs in again and repeats the request. `WikiConfig.relogins` caps it.
+- `WikiConfig.listener`, a `TransportListener` that hears responses, retries, pauses and
+  re-logins.
+- `WikiConfig.http`, `Identity.batchLimit` and `withContent(..., concurrency)`.
+- `PageService.freshContents`, `expandTexts` and `redirectsTo`, `RenderService.parse` with
+  `TemplateSandbox`, and `Wiki.templateNames`, `requireGroup`, `parseOptions` and `titleRules`.
+- `BotRunBuilder.createMissing`, `state` and `resume` with `RunState`, `Edit.tags`, `section` and
+  `createOnly`, `BotReport.stopReason` and `StopPolicy.check()`.
+- `CommonOptions.parse(args)`, `Credentials.fromEnvironment()`, `BotConfig.connect(client)`, and
+  `[oauth]`, `[run]`, `[http]` and `[retry]` in `kwikibot.toml`.
+- `XmlDump` reads `.bz2` and multistream dumps, and `XmlDump.scan(path, workers)` reads one in
+  parallel. `DumpPage.redirectTarget`.
+- `ParseOptions`, `Wikitext.parseExact` and `roundTrips`, `Template.key`, `rawName` and
+  `rawValue`, `Parameter.rawKey` and `rawValue`, `TitleRules` and `MagicWords` with
+  `Markup.templates(names, rules)` and `mapTemplates`, and `Markup.ranges()`.
+- `<pre format="wikitext">`, `<inputbox>` and `<DynamicPageList>` bodies are read as MediaWiki
+  expands them, with `ParseOptions.preprocessedTags`.
+- `MockTransport`, `FakeWiki` taking any service, `FakePageService` refusing edits as a wiki does,
+  and a public `EditBuilder.validate()`.
+
+### Changed
+
+- A saving run reads pages and the stop page past the response cache, and saves to existing
+  pages with `nocreate`.
+- A stopped run takes no more pages. Those it already held are `NotAttempted`, not `Skipped`.
+- With `readBatch` above one, each page is reported as it finishes.
+- `readonly` and database errors are retried with backoff, and retries are logged at `INFO`.
+- A client allows 32 requests at once instead of five, and a bot account queries 500 titles at a
+  time instead of 50. `Throttle` no longer holds its lock while a write waits.
+- Parsed trees differ wherever 1.1 disagreed with MediaWiki. A stray `[` is text. A `|` or `=`
+  inside an external link, HTML tag or bold splits a template parameter. A heading may contain `=`
+  and be followed by a comment. Only allowed HTML tags and the wiki's extension tags are tags. An
+  unclosed `<!--` runs to the end of the page. `Template.title` keeps nested templates, and
+  `Markup.headings()` returns section headings only. `{{PAGENAME|x}}` is a template, since a
+  variable takes no arguments.
+- HTML tags pair where MediaWiki ends them. A `<span>` ends at a paragraph break, a list item, a
+  heading or a table cell; a `<div>`, a `<blockquote>` or a `<b>` stays open across them, so a tag
+  can hold a heading, which `headings()` and `outline()` still find.
+- Serializing a tree is about twice as fast.
+- `RunLog` names pages with their namespace, and `Progress` shows the rate and time left.
+- `kwikibot.toml` is also looked for in the home directory, and an unknown key is a warning.
+- `api-surface.tsv` merges the reference wikis. `wikiApiCheck` reports changes by kind, and
+  `wikiApiBetaCheck` checks the beta cluster.
+- CI runs the live tests against MediaWiki's LTS and latest releases. Opening a wiki older than
+  1.39 logs a warning.
+- Built with Kotlin 2.4.20, on Ktor 3.6.0 and SLF4J 2.0.20.
+
+### Deprecated
+
+- `ParseProperty.SECTIONS`: use `TOC_DATA` (MediaWiki 1.46, T319141).
+- `AbuseFilterProperty.STATUS`, `PRIVATE`, `PROTECTED` and `SUPPRESSED`: use `FLAGS` (MediaWiki
+  1.47, T435834).
+
+### Fixed
+
+- `recentChanges` and `watchlistChanges` failed for a session without the `patrol` or
+  `patrolmarks` right, and the watchlist never reported a change as patrolled.
+- `allUsers` asked for properties `list=allusers` does not take.
+- `ParamInfo.limit` was always `null`.
+- `lintErrors` did not check that Linter is installed.
+- `EntityService.search` sent `type=mediainfo`, which the API refuses.
+- `requireVersion` swapped the required and running versions in its error.
+- `backlinks(includeRedirects = true)` dropped pages that link through a redirect.
+- `backlinksOf`, `transclusionsOf` and `fileUsageOf` kept only the last continuation.
+- `PageContent.redirectTarget` was never set.
+- `Template.withParameter` could write a value that changed the template's parameters.
+- `shortenUrl` sent a token it does not take, and uploads did not assert the account.
+- A closing tag lost its spacing and case, a bare attribute lost its trailing space, and a bare
+  URL could run past the end of a heading or parameter.
+- `Markup.replace`, `mapNodes` and `replaceText` did not reach tag attributes.
+- `CosmeticChanges.HTML_EMPHASIS` turned an unclosed `<b>`, or one spanning lines, into `'''`
+  that ends sooner, and `EMPTY_SECTIONS` could join a heading to the line before it.
+- `XmlDump` left a file open when its sequence was never read, and stopped at the JDK's entity
+  limit.
+- `FakePageService` treated `Template:X` and `X` as one page.
+
+### Pending removal in 2.0
+
+- `ParseProperty.SECTIONS` and the deprecated `AbuseFilterProperty` entries.
+- The hidden 1.1 constructors and `withContent` signatures.
+
 ## [1.1.1] — 2026-09-06
 
 ### Fixed
@@ -155,6 +257,9 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[1.2.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.2.0
+[1.1.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.1
+[1.1.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.0
 [1.0.3]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.3
 [1.0.2]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.2
 [1.0.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.0.1

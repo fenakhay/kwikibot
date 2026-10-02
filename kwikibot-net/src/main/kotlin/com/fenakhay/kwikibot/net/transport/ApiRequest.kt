@@ -12,10 +12,25 @@ public data class ApiRequest(
     val params: Map<String, String>,
     /** Whether this changes the wiki, which decides how the throttle paces it. */
     val kind: RequestKind = RequestKind.READ,
+    /**
+     * Whether a response cache may answer it.
+     *
+     * `false` for a read whose answer must be the wiki's current one: the stop page a run checks before each
+     * save, and the text a save is computed from. A stale answer would let a stopped bot edit, or base an
+     * edit on text that is no longer there.
+     */
+    val cacheable: Boolean = true,
 ) {
     init {
         require(ACTION in params) { "an API request needs an 'action' parameter" }
     }
+
+    /** The constructor 1.1 compiled against, kept so code built then still links. */
+    @Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        params: Map<String, String>,
+        kind: RequestKind = RequestKind.READ,
+    ) : this(params, kind, cacheable = true)
 
     /** The API action, for logging and error messages. */
     val action: String

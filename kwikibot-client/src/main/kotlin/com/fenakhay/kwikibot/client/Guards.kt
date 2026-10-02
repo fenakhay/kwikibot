@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.client
 
 import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.protocol.SiteInfo
 
 /**
  * Checks a wiki can do what is about to be asked of it.
@@ -27,6 +28,20 @@ public suspend fun Wiki.requireRight(right: String) {
 public suspend fun Wiki.hasRight(right: String): Boolean = users.current().hasRight(right)
 
 /**
+ * Fails unless the account is in [group], such as `bot` for a bot that must not run without its flag.
+ *
+ * Read from the identity the session opened with, so it costs no request. Prefer [requireRight] where a right
+ * says what is needed; a group is for policy, such as a wiki that lets only flagged bots run.
+ *
+ * @throws WikiError.Auth.PermissionDenied if it is not.
+ */
+public fun Wiki.requireGroup(group: String) {
+    if (group !in identity.groups) {
+        throw WikiError.Auth.PermissionDenied("${identity.name} is not in the '$group' group")
+    }
+}
+
+/**
  * Fails unless the wiki has [extension] installed.
  *
  * @throws WikiError.Configuration.MissingExtension if it does not.
@@ -46,13 +61,24 @@ public fun Wiki.hasExtension(extension: String): Boolean = info.hasExtension(ext
 public fun Wiki.requireVersion(version: MediaWikiVersion) {
     val running = MediaWikiVersion.parse(info.version)
     if (running < version) {
-        throw WikiError.Configuration.VersionTooOld(running.toString(), version.toString())
+        throw WikiError.Configuration.VersionTooOld(
+            required = version.toString(),
+            actual = running.toString(),
+        )
     }
 }
 
 /** Whether the wiki runs at least [version]. */
-public fun Wiki.hasVersion(version: MediaWikiVersion): Boolean =
-    MediaWikiVersion.parse(info.version) >= version
+public fun Wiki.hasVersion(version: MediaWikiVersion): Boolean = info.hasVersion(version)
+
+/**
+ * Whether the wiki described by this site info runs at least [version].
+ *
+ * For code that holds the site info but not the wiki handle. Most differences between releases are better
+ * read from the wiki's description of its API, [Wiki.paramInfo]; a version is for behaviour that cannot show.
+ */
+public fun SiteInfo.hasVersion(version: MediaWikiVersion): Boolean =
+    MediaWikiVersion.parse(this.version) >= version
 
 /**
  * A MediaWiki version, comparable the way MediaWiki numbers them.

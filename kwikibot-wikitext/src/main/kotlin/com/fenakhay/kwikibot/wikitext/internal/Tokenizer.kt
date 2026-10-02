@@ -1,40 +1,61 @@
 package com.fenakhay.kwikibot.wikitext.internal
 
+import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.Token
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.ARGUMENT
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.COMMENT
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.COMMENT_OPEN_ENDED
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.EXT
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.EXT_SHORT
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.HEADING
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.HTML_PAIRED
+import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.TEMPLATE
+import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.APOSTROPHE
+import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.ASCII
+import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.LINK_BRACKETS
+import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.isLink
+import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.isWordChar
 
 /**
  * Turns wikitext into a flat stream of tokens.
  *
- * Two passes. [Scan] works out what closes, and this walks the text with that answer already in hand — so it
- * never tries a construct to see whether it parses, and never has to undo one. That is the whole design, and
- * it is worth saying why rather than only what.
+ * Two passes. The [Preprocessor] decides what MediaWiki's preprocessor decides (templates, arguments, the `|`
+ * and `=` between their parts, headings, comments and extension tags), and this walks the text with those
+ * answers in hand, so it never tries a construct to see whether it parses and never undoes one.
  *
- * A parser that finds out by trying re-reads everything an abandoned attempt covered, and if abandoned
- * attempts can contain each other the cost doubles per level. `{{#ifeq:{{pagename}}|x| '''}}` down a
- * quotation template is ordinary Wiktionary markup, and fifty of them on one page did not finish parsing.
- * Knowing the answer first is not an optimisation of that; it removes the question.
+ * What is left here is what MediaWiki reads after the preprocessor, in the text the templates expand to:
+ * links, HTML tags, bold and italic, external links and bare URLs, entities and list markers. None of them
+ * can move a template's boundaries, which is why they are decided second. Each is decided inside one
+ * *segment* (the page, a template's name or one of its parameters, a link's target or text, a heading), and a
+ * construct that would reach out of its segment is not one. The [Scanner] finds where each is; this emits it.
  *
- * The tokenizer decides what each piece of syntax *is*. [Builder] assembles the tree afterwards, which keeps
- * this a plain left-to-right walk.
+ * Every character of the input lands in exactly one token, which is what makes the tree serialize back to the
+ * input byte for byte.
  */
-internal class Tokenizer {
+internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAULT) {
 
     private var text: String = ""
-    private var scan: Scan = Scan.of("")
+    private var pp: Preprocessor = Preprocessor("", options)
+    private var scan: Scanner = Scanner("", pp, options)
+    private var kinds: ByteArray = ByteArray(0)
     private var head: Int = 0
 
-    private val tokens = mutableListOf<Token>()
+    private val tokens = ArrayList<Token>()
     private val buffer = StringBuilder()
 
     /** Tokenizes [wikitext]. */
     fun tokenize(wikitext: String): List<Token> {
         text = wikitext
-        scan = Scan.of(wikitext)
+        pp = Preprocessor(wikitext, options)
+        pp.run(0, wikitext.length)
+        scan = Scanner(wikitext, pp, options)
+        kinds = pp.kinds
         head = 0
+        segmentDepth = 0
         tokens.clear()
         buffer.setLength(0)
 
-        content(Scope.TOP, wikitext.length)
+        segment(wikitext.length)
         flush()
         return tokens.toList()
     }
@@ -45,7 +66,7 @@ internal class Tokenizer {
     private fun flush() {
         if (buffer.isNotEmpty()) {
             tokens += Token.Text(buffer.toString())
-            buffer.clear()
+            buffer.setLength(0)
         }
     }
 
@@ -54,145 +75,106 @@ internal class Tokenizer {
         tokens += token
     }
 
-    /**
-     * Buffers literal text.
-     *
-     * Buffered rather than emitted so that a run of ordinary characters becomes one [Token.Text] instead of
-     * one per character.
-     */
     private fun emitText(value: String) {
-        buffer.append(value)
-    }
-
-    private fun emitText(value: Char) {
         buffer.append(value)
     }
 
     /** Buffers the source between two offsets and leaves the cursor after it. */
     private fun emitSpan(from: Int, to: Int) {
-        buffer.append(text, from, to)
-        head = to
+        if (to > from) buffer.append(text, from, to)
+        head = maxOf(head, to)
     }
 
-    /**
-     * Everything needed to pretend a construct was never started.
-     *
-     * [Scan] settles whether a construct *closes*, which is the question that used to cost the parser its
-     * running time. It does not settle whether the inside is well formed, and two things can still turn out
-     * not to be what their opening claimed: a tag whose attributes run into something that is not a `>`, and
-     * a bracket pair around something that is not a URL.
-     *
-     * Backing out of those is safe in a way the old parser's backtracking was not. Neither can contain
-     * another of its own kind in the part being retried, so what is re-read is bounded by one construct
-     * rather than by the nesting depth of the page.
-     *
-     * The pending text is remembered as a length, not copied. A mark is taken for every bracketed link and
-     * every tag, used or not, so copying the text pending at the time was the parser's largest unconditional
-     * allocation.
-     *
-     * A length works because of where a flush goes: the buffer becomes the first token after the mark, so its
-     * first [pending] characters are what was buffered. The text is either still in the buffer or at the
-     * front of that token.
-     */
-    private class Mark(val head: Int, val tokens: Int, val pending: Int)
-
-    private fun mark() = Mark(head, tokens.size, buffer.length)
-
-    /** Undoes everything emitted since [mark], then emits [literal] and steps over it. */
-    private fun rollBackTo(mark: Mark, literal: Char) {
-        // Read before the tokens are dropped: if the buffer was flushed since the mark, this is where it
-        // went, and it is about to be removed.
-        val flushed = tokens.getOrNull(mark.tokens) as? Token.Text
-
-        while (tokens.size > mark.tokens) tokens.removeLast()
-
-        if (flushed == null) {
-            // Never flushed, so what was pending is still at the front of the builder.
-            buffer.setLength(mark.pending)
-        } else {
-            buffer.setLength(0)
-            buffer.append(flushed.text, 0, mark.pending)
-        }
-
-        head = mark.head
-        emitText(literal)
+    private fun emitChar() {
+        buffer.append(text[head])
         head++
     }
 
-    // ------------------------------------------------------------------ reading
+    private fun atLineStart(): Boolean = head == scan.documentStart || text[head - 1] == '\n'
 
-    private fun at(offset: Int = 0): Char = text[head + offset]
+    // ------------------------------------------------------------------ segments and content
 
-    private fun has(offset: Int = 0): Boolean = head + offset < text.length
-
-    private fun startsWith(prefix: String): Boolean = text.startsWith(prefix, head)
-
-    private fun atLineStart(): Boolean = head == 0 || text[head - 1] == '\n'
-
-    // ------------------------------------------------------------------ content
+    // The segments being read, innermost last: where each starts and ends, and whether its tags are paired.
+    private var segmentStarts = IntArray(INITIAL_DEPTH)
+    private var segmentLimits = IntArray(INITIAL_DEPTH)
+    private var segmentPaired = BooleanArray(INITIAL_DEPTH)
+    private var segmentModes = arrayOfNulls<BodyMode>(INITIAL_DEPTH)
+    private var segmentDepth = 0
 
     /**
-     * What is being parsed, and which characters end it.
+     * Reads one segment up to [limit]: the page, or a part of a template, link or heading.
      *
-     * Each scope carries its own terminators, so the content loop stays a dispatch on markup rather than a
-     * second switch on scope.
+     * HTML tags pair inside a segment and never across one. They are paired when the first opening tag in the
+     * segment is reached, once for the whole segment, so the many segments with no tag in them (most template
+     * parameters) cost nothing extra.
      */
-    private enum class Scope {
-        TOP,
-        TEMPLATE_NAME,
-        TEMPLATE_KEY,
-        TEMPLATE_VALUE,
-        ARGUMENT_NAME,
-        ARGUMENT_DEFAULT,
-        WIKILINK_TITLE,
-        WIKILINK_TEXT,
-        EXTERNAL_LINK_TEXT,
-        TAG_BODY,
-        STYLE,
-        HEADING,
+    private fun segment(limit: Int, mode: BodyMode = BodyMode.PAGE) {
+        if (segmentDepth == segmentStarts.size) {
+            segmentStarts = segmentStarts.copyOf(segmentDepth * 2)
+            segmentLimits = segmentLimits.copyOf(segmentDepth * 2)
+            segmentPaired = segmentPaired.copyOf(segmentDepth * 2)
+            segmentModes = segmentModes.copyOf(segmentDepth * 2)
+        }
+        segmentStarts[segmentDepth] = head
+        segmentLimits[segmentDepth] = limit
+        segmentPaired[segmentDepth] = false
+        segmentModes[segmentDepth] = mode
+        segmentDepth++
+
+        content(limit)
+        segmentDepth--
     }
 
-    /** Whether [char] ends [scope]. */
-    private fun ends(scope: Scope, char: Char): Boolean =
-        when (scope) {
-            Scope.TEMPLATE_NAME,
-            Scope.TEMPLATE_VALUE,
-            Scope.ARGUMENT_NAME -> char == '|'
-            Scope.TEMPLATE_KEY -> char == '|' || char == '='
-            Scope.WIKILINK_TITLE -> char == '|'
-            Scope.EXTERNAL_LINK_TEXT -> char == ']'
-            Scope.HEADING -> char == '\n' || char == '='
-            else -> false
-        }
+    /** Pairs the tags of the segment being read, if nothing has yet, and says whether it did. */
+    private fun pairSegment(): Boolean {
+        val top = segmentDepth - 1
+        if (top < 0 || segmentPaired[top]) return false
+        segmentPaired[top] = true
+        scan.pairTags(segmentStarts[top], segmentLimits[top], segmentModes[top] ?: BodyMode.PAGE)
+        return true
+    }
 
     /**
-     * Consumes content up to [limit], or until whatever ends [scope], whichever comes first.
+     * Consumes content up to [limit], which is always where the enclosing construct's closing markup starts.
      *
-     * [limit] is where the enclosing construct's closing markup begins, and it is known before this is called
-     * — which is what lets nested constructs be parsed once each.
+     * Every construct found here is known to close by [limit] before it is parsed, so nested constructs are
+     * read once each and the cursor ends at [limit].
      */
     @Suppress("CyclomaticComplexMethod") // A tokenizer's dispatch is a table; splitting it hides it.
-    private fun content(scope: Scope, limit: Int) {
+    private fun content(limit: Int) {
         while (head < limit) {
             skipPlainText(limit)
             if (head >= limit) return
 
             val char = text[head]
-            if (ends(scope, char)) return
-
             when {
                 char == '{' -> braces(limit)
                 char == '[' -> brackets(limit)
                 char == '<' -> angle(limit)
-                char == '&' -> entity()
-                char == APOSTROPHE && has(1) && at(1) == APOSTROPHE -> style(limit)
-                char == '=' && scope == Scope.TOP && atLineStart() -> heading(limit)
-                char in LIST_MARKERS && atLineStart() -> listMarker(char)
-                char == ':' || char.isLetter() -> freeLink(char)
-                else -> {
-                    emitText(char)
-                    head++
-                }
+                char == '&' -> entity(limit)
+                char == APOSTROPHE && head + 1 < limit && text[head + 1] == APOSTROPHE -> style(limit)
+                char == '=' && Preprocessor.isHeading(kinds[head]) && pp.end(head) <= limit -> heading()
+                char in LIST_MARKERS && atLineStart() && listAllowed() -> listMarker(char)
+                else -> if (!freeLink(limit)) emitChar()
+            }
+        }
+    }
+
+    /**
+     * Content with only the preprocessor's constructs in it, for attributes and URLs.
+     *
+     * MediaWiki escapes everything else it finds in an attribute value, and a URL is read whole, so a
+     * template or a comment is all that can be structure there.
+     */
+    private fun preprocessedOnly(limit: Int) {
+        while (head < limit) {
+            val kind = kinds[head]
+            when {
+                pp.end(head) > limit -> emitChar()
+                kind == TEMPLATE || kind == ARGUMENT -> braces(limit)
+                kind == COMMENT || kind == COMMENT_OPEN_ENDED -> comment()
+                kind == EXT || kind == EXT_SHORT -> extensionTag()
+                else -> emitChar()
             }
         }
     }
@@ -200,68 +182,73 @@ internal class Tokenizer {
     /**
      * Runs the cursor forward over text that cannot start anything, buffering it in one go.
      *
-     * Almost every character of almost every page is prose, and prose used to cost a map lookup that boxed
-     * the character, a call, and an append of one character to a builder. Here it costs one array read, and
-     * the run is copied in a block when it ends.
-     *
-     * The table is deliberately generous. It says "this character might begin something", not "this character
-     * does", so the dispatch above still decides — a `;` that is not at the start of a line, or an `h` that
-     * is not the start of `https://`, comes back here having emitted itself and cost only the detour.
+     * Most of a page is prose. Here each character costs one array read, and the run is copied in one block
+     * when it ends. A word starting with a URL scheme's first letter is settled here too, by whether its
+     * letters run into a `:`; sending every such word to the dispatch would stop prose at every other word.
      */
     private fun skipPlainText(limit: Int) {
         val start = head
-        while (head < limit && !startsSomething(head)) head++
+        val schemes = options.schemesByFirst
+        while (head < limit && !startsSomething(head, limit, schemes)) {
+            head = if (startsWord(head, schemes)) wordEnd(head, limit) else head + 1
+        }
         if (head > start) buffer.append(text, start, head)
     }
 
-    /**
-     * Whether the character at [offset] could begin a construct or end a scope.
-     *
-     * Nothing above ASCII is markup, so non-Latin text answers no on a bounds check and runs through at
-     * memory speed. A scheme letter answers yes only at the start of a word, since the `s` inside one cannot
-     * begin `sftp://`.
-     */
-    private fun startsSomething(offset: Int): Boolean {
-        val code = text[offset].code
-        if (code >= MARKUP.size) return false
-        if (MARKUP[code]) return true
+    private fun startsSomething(at: Int, limit: Int, schemes: Array<List<String>?>): Boolean {
+        val code = text[at].code
+        return code < ASCII && (MARKUP[code] || (startsWord(at, schemes) && scan.couldStartUrl(at, limit)))
+    }
 
-        return SCHEME_START[code] && (offset == 0 || !text[offset - 1].isLetterOrDigit())
+    /** Whether a word starts at [at] with a letter some URL scheme starts with. */
+    private fun startsWord(at: Int, schemes: Array<List<String>?>): Boolean {
+        val code = text[at].code
+        return code < ASCII && schemes[code] != null && (at == 0 || !isWordChar(text[at - 1]))
+    }
+
+    /** The end of the letters of the word starting at [at], which are prose. */
+    private fun wordEnd(at: Int, limit: Int): Int {
+        var end = at + 1
+        while (end < limit && Scanner.isSchemeChar(text[end])) end++
+        return end
     }
 
     // ------------------------------------------------------------------ templates and arguments
 
-    /**
-     * Parses whatever a `{` opens, or emits it as the text it is.
-     *
-     * A run of braces is several openings, not one, and only some of them may close: in `{{{{x}}}}` the outer
-     * brace on each side is text and the three inside are an argument. So each brace is looked at on its own
-     * and the run sorts itself out.
-     */
+    /** Parses whatever a `{` opens, or emits it as the text it is. */
     private fun braces(limit: Int) {
-        val end = scan.closerOf(head)
-        val width = scan.braceWidth(head)
-
-        if (end == Scan.UNMATCHED || end > limit || width == 0) {
-            emitText('{')
-            head++
-            return
+        val kind = kinds[head]
+        val end = pp.end(head)
+        when {
+            (kind != TEMPLATE && kind != ARGUMENT) || end > limit -> emitChar()
+            kind == ARGUMENT -> argument(end)
+            else -> template(end)
         }
-
-        if (width == ARGUMENT_BRACES) argument(end) else template(end)
     }
 
-    /** Parses `{{name|params}}`, whose closing braces begin at [end] minus two. */
+    /** Parses `{{name|params}}`, splitting it where the preprocessor did. */
     private fun template(end: Int) {
+        val start = head
         val inner = end - TEMPLATE_BRACES
-        emit(Token.TemplateOpen)
-        head += TEMPLATE_BRACES
+        val separators = pp.separatorsOf(start)
+        val parts = if (separators < 0) 0 else pp.partCount(separators)
 
-        content(Scope.TEMPLATE_NAME, inner)
-        while (head < inner && at() == '|') {
-            head++
+        emit(Token.TemplateOpen)
+        head = start + TEMPLATE_BRACES
+        segment(if (parts > 0) pp.pipe(separators, 0) else inner)
+
+        for (part in 0 until parts) {
+            val partEnd = if (part + 1 < parts) pp.pipe(separators, part + 1) else inner
             emit(Token.ParameterSeparator)
-            parameter(inner)
+            head = pp.pipe(separators, part) + 1
+
+            val equals = pp.equalsSign(separators, part)
+            if (equals >= 0) {
+                segment(equals)
+                emit(Token.ParameterEquals)
+                head = equals + 1
+            }
+            segment(partEnd)
         }
 
         head = end
@@ -269,31 +256,25 @@ internal class Tokenizer {
     }
 
     /**
-     * Parses one template parameter.
+     * Parses `{{{name|default}}}`.
      *
-     * A parameter is positional until an `=` turns up in its key, which is why the key is read first and the
-     * equals sign decides whether a value follows.
+     * An argument takes only one default. Anything after a second `|` is still part of the default as far as
+     * the page's text goes, so it is kept there as text.
      */
-    private fun parameter(limit: Int) {
-        content(Scope.TEMPLATE_KEY, limit)
-        if (head < limit && at() == '=') {
-            head++
-            emit(Token.ParameterEquals)
-            content(Scope.TEMPLATE_VALUE, limit)
-        }
-    }
-
-    /** Parses `{{{name|default}}}`, whose closing braces begin at [end] minus three. */
     private fun argument(end: Int) {
+        val start = head
         val inner = end - ARGUMENT_BRACES
-        emit(Token.ArgumentOpen)
-        head += ARGUMENT_BRACES
+        val separators = pp.separatorsOf(start)
 
-        content(Scope.ARGUMENT_NAME, inner)
-        if (head < inner && at() == '|') {
-            head++
+        emit(Token.ArgumentOpen)
+        head = start + ARGUMENT_BRACES
+        if (separators < 0) {
+            segment(inner)
+        } else {
+            segment(pp.pipe(separators, 0))
             emit(Token.ArgumentSeparator)
-            content(Scope.ARGUMENT_DEFAULT, inner)
+            head = pp.pipe(separators, 0) + 1
+            segment(inner)
         }
 
         head = end
@@ -304,288 +285,347 @@ internal class Tokenizer {
 
     /** Parses whatever a `[` opens, or emits it as the text it is. */
     private fun brackets(limit: Int) {
-        val end = scan.closerOf(head)
-        if (end == Scan.UNMATCHED || end > limit) {
-            emitText('[')
-            head++
-            return
+        val link = head + 1 < limit && text[head + 1] == '[' && isLink(kinds[head])
+        val end = if (link) scan.linkEnd(head) else -1
+        when {
+            end in 0..limit -> wikilink(end)
+            scan.bracketedLinkAt(head, limit) -> bracketedLink()
+            else -> emitChar()
         }
-
-        if (startsWith("[[")) wikilink(end) else bracketedLink(end)
     }
 
-    /** Parses `[[target|text]]`. */
+    /** Parses `[[target|text]]`, whose closing brackets end at [end]. */
     private fun wikilink(end: Int) {
-        val inner = end - WIKILINK_BRACKETS
-        emit(Token.WikiLinkOpen)
-        head += WIKILINK_BRACKETS
+        val start = head
+        val pipe = scan.linkPipe(start, end - LINK_BRACKETS)
 
-        content(Scope.WIKILINK_TITLE, inner)
-        if (head < inner && at() == '|') {
-            head++
+        emit(Token.WikiLinkOpen)
+        head = start + LINK_BRACKETS
+        if (pipe < 0) {
+            segment(end - LINK_BRACKETS)
+        } else {
+            segment(pipe)
             emit(Token.WikiLinkSeparator)
-            content(Scope.WIKILINK_TEXT, inner)
+            head = pipe + 1
+            segment(end - LINK_BRACKETS)
         }
 
         head = end
         emit(Token.WikiLinkClose)
     }
 
-    /**
-     * Parses `[url text]`.
-     *
-     * The brackets close — [Scan] said so — but a bracket pair around something that is not a URL is not a
-     * link, and `[not a url]` has to come back as the text it is.
-     */
-    private fun bracketedLink(end: Int) {
-        val inner = end - 1
-        val mark = mark()
-
-        head++
-        if (schemeAt(head) == null) {
-            rollBackTo(mark, '[')
-            return
-        }
-
-        val url = readUrl(inner)
-        if (url.isEmpty()) {
-            rollBackTo(mark, '[')
-            return
-        }
+    /** Parses the `[url text]` [Scanner.bracketedLinkAt] just found. */
+    private fun bracketedLink() {
+        val urlEnd = scan.urlEnd
+        val labelStart = scan.labelStart
+        val close = scan.labelEnd
 
         emit(Token.ExternalLinkOpen(brackets = true))
-        emitText(url)
-
-        // Whatever follows the first space is the link's display text.
-        if (head < inner && at() == ' ') {
-            head++
-            emit(Token.ExternalLinkSeparator)
-            content(Scope.EXTERNAL_LINK_TEXT, inner)
+        head++
+        preprocessedOnly(urlEnd)
+        if (close > urlEnd) {
+            emit(Token.ExternalLinkSeparator(text.substring(urlEnd, labelStart)))
+            head = labelStart
+            content(close)
         }
-
-        // The URL has to run right up to the bracket, give or take the display text. Anything
-        // else between the two - a full-width space, say, which is whitespace but is not the
-        // space that introduces a label - means this was never a link.
-        if (head != inner) {
-            rollBackTo(mark, '[')
-            return
-        }
-
-        head = end
+        head = close + 1
         emit(Token.ExternalLinkClose)
     }
 
     /**
-     * Parses a URL appearing bare in running text, such as `https://example.org`.
-     *
-     * Reached from every letter of every page, so the cheap checks come first: a character that cannot start
-     * a scheme costs one array lookup.
+     * Parses a URL appearing bare in running text, such as `https://example.org`, or reports there is none.
      */
-    private fun freeLink(char: Char) {
-        if (!couldStartScheme(char) || schemeAt(head) == null) {
-            emitText(char)
-            head++
-            return
-        }
-
-        val url = readUrl(text.length)
-        if (url.isEmpty()) {
-            emitText(char)
-            head++
-            return
-        }
+    private fun freeLink(limit: Int): Boolean {
+        val end = scan.freeLinkEnd(head, limit)
+        if (end < 0) return false
 
         emit(Token.ExternalLinkOpen(brackets = false))
-        emitText(url)
+        preprocessedOnly(end)
         emit(Token.ExternalLinkClose)
-    }
-
-    /** Whether [char] is the first character of any scheme, which most letters are not. */
-    private fun couldStartScheme(char: Char): Boolean =
-        char.code < SCHEMES_BY_FIRST.size && SCHEMES_BY_FIRST[char.code] != null
-
-    /**
-     * The URL scheme at [position], or `null` if what is there is not one MediaWiki links.
-     *
-     * Matched against the text in place rather than against a substring: this is consulted at the start of
-     * every word of every page, and copying the remainder each time would make tokenizing quadratic in the
-     * length of the page.
-     *
-     * Only the schemes beginning with this character are tried. That sounds like a detail and is not: the
-     * schemes start with s, t, i, h, m, w, n, f, b, g and u, which is most of the consonants English words
-     * start with, so testing all twenty-one against every such word was the single most expensive thing the
-     * tokenizer did.
-     */
-    private fun schemeAt(position: Int): String? {
-        // A scheme only starts a link at a word boundary, so "shttps://x" is not one.
-        if (position > 0 && text[position - 1].isLetterOrDigit()) return null
-
-        val char = text[position]
-        val candidates = if (char.code < SCHEMES_BY_FIRST.size) SCHEMES_BY_FIRST[char.code] else null
-
-        return candidates?.firstOrNull { scheme ->
-            text.startsWith(scheme, position, ignoreCase = true)
-        }
-    }
-
-    /**
-     * Consumes a URL, stopping where MediaWiki stops.
-     *
-     * Trailing punctuation is left behind: a sentence ending "see https://example.org." links to the site,
-     * not to the site plus a full stop.
-     */
-    private fun readUrl(limit: Int): String {
-        val start = head
-        var end = head
-        while (end < limit && !text[end].isWhitespace() && text[end] !in URL_STOP) end++
-        while (end > start && text[end - 1] in URL_TRAILING_PUNCTUATION) end--
-
-        head = end
-        return text.substring(start, end)
+        return true
     }
 
     // ------------------------------------------------------------------ comments and tags
 
     /** Parses whatever a `<` opens, or emits it as the text it is. */
     private fun angle(limit: Int) {
-        val end = scan.closerOf(head)
-        if (end == Scan.UNMATCHED || end > limit) {
-            emitText('<')
-            head++
-            return
+        val kind = kinds[head]
+        val fits = pp.end(head) <= limit
+        when {
+            fits && (kind == COMMENT || kind == COMMENT_OPEN_ENDED) -> comment()
+            fits && (kind == EXT || kind == EXT_SHORT) -> extensionTag()
+            else -> htmlTag(limit)
         }
-
-        if (startsWith(COMMENT_OPEN)) comment(end) else tag(end)
     }
 
-    /** Parses `<!-- … -->`. */
-    private fun comment(end: Int) {
-        emit(Token.CommentStart)
-        head += COMMENT_OPEN.length
+    /** Parses `<!-- … -->`, or an unclosed `<!--` that runs to the end. */
+    private fun comment() {
+        val start = head
+        val end = pp.end(start)
+        val closed = kinds[start] == COMMENT
 
-        emitSpan(head, end - COMMENT_CLOSE.length)
-        emit(Token.CommentEnd)
+        emit(Token.CommentStart)
+        emitSpan(start + COMMENT_OPEN.length, if (closed) end - COMMENT_CLOSE.length else end)
+        emit(Token.CommentEnd(closed))
         head = end
     }
 
     /**
-     * Parses an HTML-style tag.
+     * Parses an extension tag the preprocessor found.
      *
-     * Tags whose contents MediaWiki does not parse — `nowiki`, `pre` and friends — have their bodies taken
-     * verbatim, which is the whole point of writing `<nowiki>{{x}}</nowiki>`.
+     * Its attributes are raw: the preprocessor does not look inside them, so nothing there is a template. Its
+     * body is wikitext only for the tags [ParseOptions.parsedTags] names, and is then read as a document of
+     * its own; any other body is kept as written.
      */
-    private fun tag(end: Int) {
-        val mark = mark()
-
-        head++
-        val name = readWhile { it.isLetterOrDigit() }
+    private fun extensionTag() {
+        val start = head
+        val end = pp.end(start)
+        var nameEnd = start + 1
+        while (!Preprocessor.isSpace(text[nameEnd]) && text[nameEnd] != '/' && text[nameEnd] != '>') nameEnd++
+        val name = text.substring(start + 1, nameEnd)
+        val tagEnd = text.indexOf('>', nameEnd)
+        val short = kinds[start] == EXT_SHORT
 
         emit(Token.OpeningTagStart())
         emitText(name)
-        attributes()
+        head = nameEnd
+        val padding = attributes(if (short) tagEnd - 1 else tagEnd, raw = true)
 
-        val padding = readSpaces()
-        if (startsWith("/>")) {
-            head = end
+        if (short) {
             emit(Token.SelfClosingTagEnd(padding))
+            head = end
             return
         }
 
-        // The attributes have to end at the `>`. `<span class{{=}}"x">` does not: whatever it is,
-        // it is not a tag, and MediaWiki shows it as the text it is.
-        if (!has() || at() != '>') {
-            rollBackTo(mark, '<')
-            return
-        }
-
-        head++
-        if (name.lowercase() in VOID_TAGS) {
-            emit(Token.SelfClosingTagEnd(padding, implicit = true))
-            return
-        }
-        emit(Token.OpeningTagEnd(padding))
-
-        // The closing tag contains no `<` of its own, so the last one before the end opens it.
         val closerStart = text.lastIndexOf('<', end - 1)
+        val body = bodyOf(name, nameEnd, tagEnd)
+        emit(Token.OpeningTagEnd(padding, verbatim = body == Body.VERBATIM))
+        head = tagEnd + 1
 
-        if (name.lowercase() in RAW_CONTENT_TAGS) {
-            emitSpan(head, closerStart)
-        } else {
-            content(Scope.TAG_BODY, closerStart)
+        when (body) {
+            Body.VERBATIM -> emitSpan(head, closerStart)
+            Body.WIKITEXT -> {
+                pp.run(head, closerStart)
+                val outer = scan.documentStart
+                scan.documentStart = head
+                segment(closerStart, modeOf(name))
+                scan.documentStart = outer
+            }
+            Body.PREPROCESSED -> {
+                pp.run(head, closerStart)
+                preprocessedOnly(closerStart)
+            }
+            Body.PAGE_LIST -> pageListBody(closerStart)
         }
 
-        head = end
+        closingTag(closerStart, end)
+    }
+
+    /** How the body of the extension tag [name], whose attributes end at [tagEnd], is read. */
+    private fun bodyOf(name: String, nameEnd: Int, tagEnd: Int): Body =
+        when {
+            name in options.parsedTagNames -> Body.WIKITEXT
+            name.equals(TagNames.PRE, ignoreCase = true) &&
+                TagAttributes.isWikitextPre(text, nameEnd, tagEnd) -> Body.WIKITEXT
+            name in options.preprocessedTagNames -> Body.PREPROCESSED
+            name.equals(TagNames.PAGE_LIST, ignoreCase = true) -> Body.PAGE_LIST
+            else -> Body.VERBATIM
+        }
+
+    /**
+     * A `<DynamicPageList>` body up to [limit], read as the extension reads it: line by line, each split at
+     * its first `=`, with only the values of [TagNames.PAGE_LIST_EXPANDED] keys expanded, each on its own.
+     */
+    private fun pageListBody(limit: Int) {
+        while (head < limit) {
+            val lineEnd = text.indexOf('\n', head).let { if (it < 0 || it > limit) limit else it }
+            val equals = text.indexOf('=', head).takeIf { it in head until lineEnd }
+            val key = equals?.let { text.substring(head, it).trim() }
+            if (equals == null || key !in TagNames.PAGE_LIST_EXPANDED) {
+                emitSpan(head, minOf(lineEnd + 1, limit))
+                continue
+            }
+            var valueStart = equals + 1
+            while (valueStart < lineEnd && text[valueStart].isWhitespace()) valueStart++
+            var valueEnd = lineEnd
+            while (valueEnd > valueStart && text[valueEnd - 1].isWhitespace()) valueEnd--
+            emitSpan(head, valueStart)
+            pp.run(valueStart, valueEnd)
+            preprocessedOnly(valueEnd)
+            emitSpan(head, minOf(lineEnd + 1, limit))
+        }
+    }
+
+    /** How MediaWiki's paragraph pass reads the wikitext body of the extension tag [name]. */
+    private fun modeOf(name: String): BodyMode =
+        when (name.lowercase()) {
+            "ref",
+            "references" -> BodyMode.REFERENCE
+            "poem" -> BodyMode.POEM
+            TagNames.PRE -> BodyMode.PREFORMATTED
+            "gallery",
+            "imagemap" -> BodyMode.PER_LINE
+            else -> BodyMode.PAGE
+        }
+
+    /**
+     * Whether a list can start here: not inside a `<pre format="wikitext">`, and not on a reference's first
+     * line, which MediaWiki places after the list item it opens for the reference.
+     */
+    private fun listAllowed(): Boolean {
+        val top = segmentDepth - 1
+        return when (if (top >= 0) segmentModes[top] else null) {
+            BodyMode.PREFORMATTED -> false
+            BodyMode.REFERENCE -> head != segmentStarts[top]
+            else -> true
+        }
+    }
+
+    /** How an extension tag's body is read. */
+    private enum class Body {
+        /** Kept as written. */
+        VERBATIM,
+
+        /** Read as wikitext, a document of its own. */
+        WIKITEXT,
+
+        /** Templates, arguments, comments and extension tags found; everything else text. */
+        PREPROCESSED,
+
+        /** `<DynamicPageList>`'s lines. */
+        PAGE_LIST,
+    }
+
+    /** Emits the closing tag between [start] and [end] as written. */
+    private fun closingTag(start: Int, end: Int) {
         emit(Token.ClosingTagStart)
-        emitText(name)
+        emitText(text.substring(start + 2, end - 1))
         emit(Token.ClosingTagEnd)
+        head = end
     }
 
     /**
-     * Parses a tag's attributes, keeping the whitespace around each one.
+     * Parses an HTML tag, or emits its `<` as text.
      *
-     * The padding is not cosmetic detail to be normalised away: a bot that rewrites one attribute must leave
-     * the rest of the tag exactly as the last editor typed it.
+     * A tag paired with its closing tag in this segment wraps what is between them. One that is not stands
+     * alone, written as it was: `<br>`, an `<li>` left open, or a `<div>` whose `</div>` is in another
+     * segment. A closing tag with no opening is text.
      */
-    private fun attributes() {
-        while (true) {
-            val padFirst = readSpaces()
-            if (padFirst.isEmpty()) return
-            if (!has() || at() == '>' || startsWith("/>")) {
-                // The whitespace belongs to the tag's closing padding, not to an attribute.
-                head -= padFirst.length
-                return
+    private fun htmlTag(limit: Int) {
+        val start = head
+        if (!scan.htmlTagAt(start, limit) || scan.tagClosing) {
+            emitChar()
+            return
+        }
+        // The first opening tag in a segment that can pair pairs the segment's tags. Pairing reads tags too,
+        // so this one is read again after it.
+        if (!scan.tagVoid && !scan.tagSelfClosing && pairSegment()) scan.htmlTagAt(start, limit)
+
+        val nameEnd = scan.tagNameEnd
+        val end = scan.tagEnd
+        val selfClosing = scan.tagSelfClosing
+        val single = scan.tagVoid || selfClosing
+        val paired = !single && kinds[start] == HTML_PAIRED && pp.end(start) <= limit
+
+        emit(Token.OpeningTagStart())
+        emitText(text.substring(start + 1, nameEnd))
+        head = nameEnd
+        val padding = attributes(if (selfClosing) end - 1 else end, raw = false)
+
+        if (!paired) {
+            emit(Token.SelfClosingTagEnd(padding, implicit = !selfClosing))
+            head = end + 1
+            return
+        }
+
+        emit(Token.OpeningTagEnd(padding))
+        head = end + 1
+        val close = pp.end(start)
+        val closerStart = text.lastIndexOf('<', close - 1)
+        content(closerStart)
+        closingTag(closerStart, close)
+    }
+
+    /**
+     * Parses a tag's attributes up to [to], keeping the whitespace around each one, and returns the
+     * whitespace left before the closing `>`.
+     *
+     * Any text at all has a reading here, so a tag rebuilds byte for byte whatever its attributes look like:
+     * a name is anything up to whitespace or `=`, a quoted value runs to its closing quote if it has one, and
+     * an unquoted value to the next whitespace. [raw] is for an extension tag, whose attributes the
+     * preprocessor never looked inside.
+     */
+    private fun attributes(to: Int, raw: Boolean): String {
+        var padStart = head
+        head = whitespaceEnd(head, to)
+        while (head < to) {
+            val padFirst = text.substring(padStart, head)
+            val nameStart = head
+            val nameEnd = attributeRun(nameStart, to, raw) { it.isWhitespace() || it == '=' }
+            val equals = whitespaceEnd(nameEnd, to)
+
+            if (equals < to && text[equals] == '=') {
+                val valueStart = whitespaceEnd(equals + 1, to)
+                emit(
+                    Token.AttributeStart(
+                        padFirst,
+                        text.substring(nameEnd, equals),
+                        text.substring(equals + 1, valueStart),
+                    )
+                )
+                attributeText(nameStart, nameEnd, raw)
+                emit(Token.AttributeEquals)
+                attributeValue(valueStart, to, raw)
+            } else {
+                // A bare attribute: the whitespace after it belongs to whatever comes next.
+                emit(Token.AttributeStart(padFirst, "", ""))
+                attributeText(nameStart, nameEnd, raw)
+                head = nameEnd
             }
 
-            val name = readWhile { it.isLetterOrDigit() || it in ATTRIBUTE_NAME_PUNCTUATION }
-            if (name.isEmpty()) {
-                head -= padFirst.length
-                return
-            }
+            padStart = head
+            head = whitespaceEnd(head, to)
+        }
+        return text.substring(padStart, head)
+    }
 
-            val padBeforeEq = readSpaces()
-            if (!has() || at() != '=') {
-                emit(Token.AttributeStart(padFirst, padBeforeEq, ""))
-                emitText(name)
-                continue
-            }
-
-            head++
-            val padAfterEq = readSpaces()
-            emit(Token.AttributeStart(padFirst, padBeforeEq, padAfterEq))
-            emitText(name)
-            emit(Token.AttributeEquals)
-            attributeValue()
+    /** Parses a value starting at [from]: quoted if a closing quote follows, unquoted otherwise. */
+    private fun attributeValue(from: Int, to: Int, raw: Boolean) {
+        val quote = if (from < to) text[from] else ' '
+        val closingQuote =
+            if (quote == '"' || quote == APOSTROPHE) attributeRun(from + 1, to, raw) { it == quote } else to
+        if (closingQuote < to) {
+            emit(Token.AttributeQuote(quote.toString()))
+            attributeText(from + 1, closingQuote, raw)
+            head = closingQuote + 1
+        } else {
+            val valueEnd = attributeRun(from, to, raw) { it.isWhitespace() }
+            attributeText(from, valueEnd, raw)
+            head = valueEnd
         }
     }
 
-    private fun attributeValue() {
-        val quote = if (has()) at() else return
-        val value =
-            if (quote == '"' || quote == APOSTROPHE) {
-                val closing = text.indexOf(quote, head + 1)
-                // An unterminated quote is not a quote; the rest of the tag is read unquoted.
-                if (closing < 0) {
-                    readWhile { !it.isWhitespace() && it != '>' && it != '/' }
-                } else {
-                    head++
-                    emit(Token.AttributeQuote(quote.toString()))
-                    val quoted = text.substring(head, closing)
-                    head = closing + 1
-                    quoted
-                }
-            } else {
-                readWhile { !it.isWhitespace() && it != '>' && it != '/' }
-            }
-
-        if (value.isNotEmpty()) emitText(value)
+    private fun whitespaceEnd(from: Int, to: Int): Int {
+        var at = from
+        while (at < to && text[at].isWhitespace()) at++
+        return at
     }
 
-    private fun readSpaces(): String = readWhile { it == ' ' || it == '\t' }
+    /** Where a run of attribute text from [from] ends: at [stop], skipping templates unless [raw]. */
+    private inline fun attributeRun(from: Int, to: Int, raw: Boolean, stop: (Char) -> Boolean): Int {
+        var at = from
+        while (at < to) {
+            val skip = if (raw || kinds[at] == 0.toByte()) -1 else scan.opaqueEnd(at, to, links = false)
+            if (skip < 0 && stop(text[at])) return at
+            at = if (skip >= 0) skip else at + 1
+        }
+        return at
+    }
 
-    private inline fun readWhile(predicate: (Char) -> Boolean): String {
-        val start = head
-        while (has() && predicate(at())) head++
-        return text.substring(start, head)
+    private fun attributeText(from: Int, to: Int, raw: Boolean) {
+        head = from
+        if (raw) emitSpan(from, to) else preprocessedOnly(to)
+        head = to
     }
 
     // ------------------------------------------------------------------ styles and lists
@@ -593,21 +633,13 @@ internal class Tokenizer {
     /**
      * Parses `''italic''` and `'''bold'''`, or emits the apostrophes as text.
      *
-     * The partner is looked for once, with a plain search, rather than by parsing ahead and giving up. That
-     * is the difference between this being linear and it being the reason a real page never finished.
-     *
-     * The search stops at the end of the line, because MediaWiki applies apostrophe markup a line at a time
-     * and closes an open one where the line ends. Without that bound an unmatched `'''` pairs with the next
-     * one anywhere on the page, and everything between — headings included — ends up inside the tag. On `1`,
-     * a `'''` inside a `<gallery>` paired with one in the Swedish section three languages later, and the
-     * entry appeared to have no English, Chinese or German at all.
+     * The partner is looked for on the same line and at the same level, by [Scanner.styleCloser].
      */
     private fun style(limit: Int) {
-        val markup = if (startsWith(BOLD)) BOLD else ITALIC
-        val closing = text.indexOf(markup, head + markup.length)
-        val endOfLine = text.indexOf('\n', head).takeIf { it >= 0 } ?: text.length
+        val markup = if (head + 2 < limit && text[head + 2] == APOSTROPHE) BOLD else ITALIC
+        val closing = scan.styleCloser(head + markup.length, limit, markup)
 
-        if (closing < 0 || closing + markup.length > minOf(limit, endOfLine)) {
+        if (closing < 0) {
             emitText(markup)
             head += markup.length
             return
@@ -620,7 +652,7 @@ internal class Tokenizer {
         emitText(name)
         emit(Token.OpeningTagEnd())
 
-        content(Scope.STYLE, closing)
+        content(closing)
 
         head = closing + markup.length
         emit(Token.ClosingTagStart)
@@ -643,66 +675,22 @@ internal class Tokenizer {
     // ------------------------------------------------------------------ headings
 
     /**
-     * Parses a heading, or emits its `=` run as text.
+     * Parses a heading the preprocessor found.
      *
-     * Whether the line is a heading is decided by looking at the line, before anything in it is parsed — so a
-     * line that turns out not to be one is not parsed twice.
+     * Its level is the shorter of its two runs of `=`, capped at six, and any surplus on either side is part
+     * of its text, which is how `===a==` is a level-two heading reading `=a`. Whatever follows the closing
+     * run on the line, spaces or a comment, is outside the heading.
      */
-    private fun heading(limit: Int) {
-        val opening = countEquals(head)
-        val bodyStart = head + opening
+    private fun heading() {
+        val start = head
+        val level = kinds[start] - HEADING
+        val end = pp.end(start)
 
-        // The body ends at the first `=` after it, which is why `== a = b ==` is not a heading:
-        // what follows its closing run is not blank.
-        var bodyEnd = bodyStart
-        while (bodyEnd < limit && text[bodyEnd] != '=' && text[bodyEnd] != '\n') bodyEnd++
-
-        val closing = countEquals(bodyEnd)
-        if (opening == 0 || closing == 0 || !restOfLineIsBlank(bodyEnd + closing)) {
-            emitSpan(head, bodyStart)
-            return
-        }
-
-        val level = minOf(opening, closing, MAX_HEADING_LEVEL)
         emit(Token.HeadingStart(level))
-        head = bodyStart
-
-        content(Scope.HEADING, bodyEnd)
-
-        // MediaWiki takes the shorter side and leaves the surplus as heading text, which is why
-        // `==foo===` is a level-two heading whose text ends in `=`.
-        appendText("=".repeat(closing - level))
-
-        head = bodyEnd + closing
+        head = start + level
+        segment(end - level)
+        head = end
         emit(Token.HeadingEnd)
-    }
-
-    /** Appends text to the stream, merging into a trailing [Token.Text] if there is one. */
-    private fun appendText(suffix: String) {
-        if (suffix.isEmpty()) return
-        if (buffer.isNotEmpty()) {
-            buffer.append(suffix)
-            return
-        }
-
-        val last = tokens.lastOrNull()
-        if (last is Token.Text) {
-            tokens[tokens.lastIndex] = Token.Text(last.text + suffix)
-        } else {
-            tokens += Token.Text(suffix)
-        }
-    }
-
-    private fun countEquals(from: Int): Int {
-        var probe = from
-        while (probe < text.length && text[probe] == '=') probe++
-        return probe - from
-    }
-
-    private fun restOfLineIsBlank(from: Int): Boolean {
-        var probe = from
-        while (probe < text.length && text[probe] == ' ') probe++
-        return probe >= text.length || text[probe] == '\n'
     }
 
     // ------------------------------------------------------------------ entities
@@ -710,31 +698,19 @@ internal class Tokenizer {
     /**
      * Parses `&amp;`, `&#65;` or `&#x41;`.
      *
-     * An `&` that does not begin a well-formed entity is ordinary text — `a & b` must survive untouched — so
-     * an unrecognised name is emitted as what it is.
+     * An `&` that does not begin a well-formed entity is ordinary text, so `a & b` survives untouched.
      */
-    private fun entity() {
+    private fun entity(limit: Int) {
         val start = head
-        var probe = head + 1
+        val numeric = start + 1 < limit && text[start + 1] == '#'
+        val hexadecimal = numeric && start + 2 < limit && (text[start + 2] == 'x' || text[start + 2] == 'X')
+        val bodyStart = start + 1 + (if (numeric) 1 else 0) + (if (hexadecimal) 1 else 0)
 
-        var numeric = false
-        var hexadecimal = false
-
-        if (probe < text.length && text[probe] == '#') {
-            numeric = true
-            probe++
-            if (probe < text.length && (text[probe] == 'x' || text[probe] == 'X')) {
-                hexadecimal = true
-                probe++
-            }
-        }
-
-        val semicolon = text.indexOf(';', probe)
-        val body = if (semicolon < 0) "" else text.substring(probe, semicolon)
-
-        if (semicolon < 0 || !isValidEntity(body, numeric, hexadecimal)) {
-            emitText('&')
-            head++
+        var semicolon = bodyStart
+        while (semicolon < limit && text[semicolon].isLetterOrDigit()) semicolon++
+        val closed = semicolon < limit && text[semicolon] == ';'
+        if (!closed || !isValidEntity(bodyStart, semicolon, numeric, hexadecimal)) {
+            emitChar()
             return
         }
 
@@ -742,121 +718,36 @@ internal class Tokenizer {
         if (numeric) emit(Token.EntityNumeric)
         if (hexadecimal) emit(Token.EntityHex(text[start + 2].toString()))
 
-        emitText(body)
+        emitText(text.substring(bodyStart, semicolon))
         emit(Token.EntityEnd)
         head = semicolon + 1
     }
 
-    private fun isValidEntity(body: String, numeric: Boolean, hexadecimal: Boolean): Boolean =
+    private fun isValidEntity(from: Int, to: Int, numeric: Boolean, hexadecimal: Boolean): Boolean =
         when {
-            body.isEmpty() -> false
-            hexadecimal -> body.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }
-            numeric -> body.all { it.isDigit() }
-            else -> body in HtmlEntities.NAMES
+            to == from -> false
+            hexadecimal -> (from until to).all { text[it].isDigit() || text[it].lowercaseChar() in 'a'..'f' }
+            numeric -> (from until to).all { text[it] in '0'..'9' }
+            else -> text.substring(from, to) in HtmlEntities.NAMES
         }
 
     private companion object {
-        const val MAX_HEADING_LEVEL = 6
         const val TEMPLATE_BRACES = 2
         const val ARGUMENT_BRACES = 3
-        const val WIKILINK_BRACKETS = 2
+        const val INITIAL_DEPTH = 32
         const val COMMENT_OPEN = "<!--"
         const val COMMENT_CLOSE = "-->"
-
-        /** The character MediaWiki doubles and triples for italic and bold. */
-        const val APOSTROPHE = '\''
-
-        private const val BOLD = "'''"
-        private const val ITALIC = "''"
-
-        private const val ATTRIBUTE_NAME_PUNCTUATION = "-_:."
-
-        /** Tags that never have a body, so `<br>` needs no `</br>` to be complete. */
-        val VOID_TAGS = setOf("br", "wbr", "hr", "meta", "link", "img")
-
-        /** Tags whose contents MediaWiki does not parse; their bodies are taken verbatim. */
-        val RAW_CONTENT_TAGS = setOf("nowiki", "pre", "syntaxhighlight", "source", "math", "score")
+        const val BOLD = "'''"
+        const val ITALIC = "''"
 
         /** Line-start markers MediaWiki turns into list tags. */
         val LIST_MARKERS = mapOf('*' to "li", '#' to "li", ';' to "dt", ':' to "dd")
 
-        /** The schemes MediaWiki turns into links without brackets. */
-        val URL_SCHEMES =
-            listOf(
-                "https://",
-                "http://",
-                "ftps://",
-                "ftp://",
-                "sftp://",
-                "irc://",
-                "ircs://",
-                "gopher://",
-                "telnet://",
-                "nntp://",
-                "worldwind://",
-                "mailto:",
-                "news:",
-                "svn://",
-                "git://",
-                "mms://",
-                "bitcoin:",
-                "magnet:",
-                "urn:",
-                "geo:",
-                "//",
-            )
-
-        /**
-         * The schemes each character can begin, in both cases, or `null` for the characters that begin none.
-         *
-         * Consulted at the start of every word of every page, which is why it is a lookup into a handful of
-         * candidates rather than a search through all of them.
-         */
-        val SCHEMES_BY_FIRST: Array<List<String>?> =
-            arrayOfNulls<List<String>>(128).also { table ->
-                for (scheme in URL_SCHEMES) {
-                    val first = scheme[0]
-                    if (first.code >= table.size) continue
-                    for (code in setOf(first.lowercaseChar().code, first.uppercaseChar().code)) {
-                        table[code] = (table[code] ?: emptyList()) + scheme
-                    }
-                }
-            }
-
-        /**
-         * Every character that begins a construct or ends a scope, wherever it appears.
-         *
-         * Anything not in here and not in [SCHEME_START] is prose, and is copied without being looked at
-         * again.
-         */
+        /** Every character that begins a construct here, wherever it appears. */
         val MARKUP =
-            BooleanArray(128).apply {
-                // Openings.
-                for (char in "{[<&'") this[char.code] = true
-                // Scope terminators: a parameter's pipe, a named parameter's equals, a link's
-                // bracket, and the newline that ends a heading.
-                for (char in "}]|=>\n") this[char.code] = true
-                // Line-start markers, which are only markers at the start of a line - but they are
-                // punctuation, so stopping wherever they appear costs almost nothing.
+            BooleanArray(ASCII).apply {
+                for (char in "{[<&'=") this[char.code] = true
                 for (char in "*#;:") this[char.code] = true
             }
-
-        /**
-         * Characters that begin a construct only at the start of a word.
-         *
-         * Kept apart from [MARKUP] because these are letters, and letters are what pages are made of. Between
-         * them the schemes begin with s, t, i, h, m, w, n, f, b, g and u, so breaking at every one of those
-         * rather than every word-initial one meant breaking on most of the consonants in the language.
-         */
-        val SCHEME_START =
-            BooleanArray(128).apply {
-                SCHEMES_BY_FIRST.forEachIndexed { code, schemes -> if (schemes != null) this[code] = true }
-            }
-
-        /** Characters that end a URL because they cannot appear inside one unescaped. */
-        val URL_STOP = charArrayOf('|', '}', ']', '[', '<', '>', '"', '{')
-
-        /** Punctuation a URL never ends with, so a sentence's full stop stays out of the link. */
-        val URL_TRAILING_PUNCTUATION = charArrayOf('.', ',', ';', ':', '!', '?', ')')
     }
 }

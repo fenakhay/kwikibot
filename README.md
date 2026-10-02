@@ -50,8 +50,22 @@ patterns, subpage depth, `distinctPages`, `intersect`, `excluding`.
 
 ### Wikitext
 
-The parser gives back exactly what it was given. Closure is decided in one pass before anything is
-parsed, so it stays linear in page length and cannot be driven into backtracking.
+The parser finds templates, parameters and headings where MediaWiki does, and ends HTML tags where
+MediaWiki's paragraphs and lists end them. It is checked against MediaWiki's own parse of 243
+fragments, and a tree writes back as the exact text it was parsed from. Parsing stays linear in
+page length.
+
+```kotlin
+val options = wiki.parseOptions()                  // this wiki's extension tags, URL schemes, …
+val code = Wikitext.parseExact(page.text, options) // throws if the tree would not write back as given
+val rules = wiki.titleRules()                       // namespace names, case, parser functions
+code.templates(listOf("l", "link"), rules)          // both templates, however they are written
+code.ranges()[code.templates().first()]             // where one sits in the text
+```
+
+`Template.key` is the page a template transcludes, resolved as MediaWiki resolves it. `rawName`
+and `rawValue` give names and values as written. `Wikitext.parse(text)` without options uses the
+settings of Wikimedia's wikis.
 
 On top of that: section outlines, template and parameter editing, category and language-link
 handling, scoped text replacement that cannot reach into a link target, unified diffs, ISBN
@@ -70,11 +84,12 @@ assemble by hand.
 
 ### Knowing what a wiki supports
 
-`paramInfo` reads the wiki's own description of its API, so query limits are read rather than
-assumed and a bot can check for an extension without a second round trip. `requireRight`,
-`requireExtension` and `requireVersion` fail at the start of a run instead of halfway through. The
-extension services (GeoData, PageImages, TextExtracts, Linter, Echo, Thanks, FlaggedRevs,
-ProofreadPage and the rest) refuse politely when their extension is absent.
+`paramInfo` reads the wiki's own description of its API: the limits an account gets, the values a
+parameter takes, and which of those are deprecated. That is how a renamed value goes out under the
+new name on a wiki that knows it and the old name on one that does not. `requireRight`,
+`requireExtension` and `requireVersion` fail at the start of a run instead of halfway through.
+The extension services (GeoData, PageImages, TextExtracts, Linter, Echo, Thanks, FlaggedRevs,
+AbuseFilter, PageTriage, ProofreadPage and the rest) refuse when their extension is absent.
 
 ### Writing bots
 
@@ -126,25 +141,60 @@ Principles: explicit API mode everywhere, `data`/`value` classes over mutable st
 hierarchies for closed sets, `Flow` for every generator, exceptions for the exceptional and
 sealed results for the expected, constructor injection with no singletons.
 
+## Long runs
+
+A run can last hours, and the client and `botRun` are built for that:
+
+- Every request from a logged-in client asserts its account. When the wiki ends the session, the
+  client logs back in and repeats the request instead of carrying on anonymously.
+  `WikiConfig.relogins` caps how often.
+- Replication lag, `429`, `readonly` and database errors are retried with backoff. Retries are
+  logged at `INFO`, and `WikiConfig.listener` is told about every retry, every pause the wiki asks
+  for and every login.
+- A run that saves reads its pages and its stop page past any response cache. Each save carries
+  the revision it was computed from and `nocreate`. If someone edited the page in the meantime,
+  the wiki merges the two edits or, when it cannot, refuses the save. It also refuses a save to a
+  page deleted since it was read.
+- `state = RunState(dir)` records each finished page, the revision it was decided on and each
+  save as they happen. `resume = true` carries on from there.
+- `Progress` keeps the rate, the time left and what the run would change (or has saved) on one
+  line that fits the terminal.
+
+`CommonOptions.parse(args)` reads the usual flags (`--save`, `--limit`, `--stop-page`, `--state`,
+`--resume` and so on), and `Credentials.fromEnvironment()` reads the login from environment
+variables. `kwikibot.toml` holds `[run]` concurrency and batch size, `[http]` connections,
+`[retry]` and `[oauth]`, and is looked for in the working directory, then the home directory.
+
+## Logging
+
+The library logs through SLF4J and ships no binding, so a program picks one. Without one, SLF4J
+prints a warning and drops every line, retries and logins included. For a command-line bot:
+
+```kotlin
+dependencies {
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.20")
+}
+```
+
 ## Installing
 
 ```kotlin
 dependencies {
-    implementation("com.fenakhay.kwikibot:kwikibot:1.0.0")
+    implementation("com.fenakhay.kwikibot:kwikibot:1.2.0")
 }
 ```
 
 That is the whole library. Testing a bot wants the fakes as well:
 
 ```kotlin
-testImplementation("com.fenakhay.kwikibot:kwikibot-testkit:1.0.0")
+testImplementation("com.fenakhay.kwikibot:kwikibot-testkit:1.2.0")
 ```
 
 The modules are published separately too, for the cases where that earns something. A tool that
 only parses wikitext has no reason to pull in Ktor:
 
 ```kotlin
-implementation("com.fenakhay.kwikibot:kwikibot-wikitext:1.0.0")
+implementation("com.fenakhay.kwikibot:kwikibot-wikitext:1.2.0")
 ```
 
 They are released together, so give them the same version. Sources and KDoc are published
@@ -197,6 +247,48 @@ scriptPath: /w
 actually in effect, `get` prints a page, and `version` gives you the line to paste into a bug
 report.
 
+## Supported MediaWiki
+
+| MediaWiki | |
+|---|---|
+| Wikimedia production, the weekly `-wmf` builds | Supported. The live tests run against it, and the record of its API is checked weekly. |
+| The current LTS and the latest release, 1.43 and 1.46 today | Supported. CI starts each in Docker and runs the live tests against it, failing on any warning the wiki gives. |
+| 1.39 to 1.42 | Supported, not tested in CI. A value MediaWiki has since renamed is sent the way the wiki takes it. Before 1.41, opening a wiki draws one harmless warning, for a site property the release does not have. |
+| Older than 1.39 | Not supported. Opening one logs a warning instead of refusing. |
+
+The library checks a version number only where it cannot ask the wiki. A renamed value is chosen
+from the wiki's `paraminfo` instead, so a third-party wiki on an old release is handled the same
+way as Wikimedia's weekly builds. The few version checks left live in one place, each with the
+Phabricator task behind it, so they can be deleted once the oldest supported release is past them.
+
+## Deprecations
+
+kwikibot looks for MediaWiki deprecations in three places:
+
+- Before sending a value MediaWiki has renamed, kwikibot asks the wiki which spellings it accepts
+  and sends the first one it has not deprecated.
+- A response that uses something deprecated carries a warning with the code `deprecation`.
+  `WikiConfig.onWarning` hears every warning and by default logs each one once, deprecations at
+  `WARN`. kwikibot avoids deprecated values, so a deprecation warning means something needs
+  fixing. `FailOnDeprecation` from `kwikibot-testkit` turns one into a test failure, and the live
+  tests run with it.
+- `api-surface.tsv` records the API of five Wikimedia wikis, and the build checks every value
+  kwikibot sends against it. A weekly job compares the file with the wikis and reports what
+  changed, marking anything kwikibot uses. The same report runs on the beta cluster, which gets
+  each change minutes after it is merged and the week before it reaches production.
+
+kwikibot's own deprecations follow MediaWiki's. When MediaWiki deprecates the value behind an enum
+entry, the entry is marked `@Deprecated` with its replacement, and keeps working because it is
+sent as the replacement. When the value is gone from every reference wiki, the deprecation
+becomes an error, and the entry is removed at the next major release. The build fails when an
+entry's deprecation and MediaWiki's disagree. Every message has the same form:
+
+```
+MediaWiki 1.46 (T319141) deprecated parse prop=sections; use TOC_DATA. Deprecated since kwikibot 1.2.0.
+```
+
+`CHANGELOG.md` lists each release's deprecations, and what is pending removal in the next major.
+
 ## Building
 
 The published jars target Java 21, so a consumer needs JDK 21 or newer. The build itself runs on
@@ -215,7 +307,16 @@ KWIKI_LIVE=1 ./gradlew liveTest
 
 They read from production wikis but write **only** to `test.wikipedia.org` sandbox pages.
 
-The wikitext parser is checked against MediaWiki rather than against another parser: 88 fragments
+The same tests can run against a throwaway MediaWiki in Docker, where they may write anywhere.
+Any tag of the official image works, such as `lts`, `latest` or `1.39`:
+
+```bash
+bash .github/mediawiki/start.sh lts
+KWIKI_MEDIAWIKI=http://localhost:8080 ./gradlew :kwikibot-client:liveTest --tests '*LocalWikiTest'
+docker rm -f kwikibot-mediawiki
+```
+
+The wikitext parser is checked against MediaWiki rather than against another parser: 243 fragments
 recorded from `action=parse`, and 230 real pages from eight wikis and namespaces that must survive
 parse and serialize byte for byte. Wikitext has no specification, so MediaWiki's behaviour is the
 only thing there is to be correct against.

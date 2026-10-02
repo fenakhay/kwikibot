@@ -50,10 +50,12 @@ public interface ResponseCache {
          *
          * Writes never are: replaying a stored `action=edit` response would report a save that did not
          * happen. Neither is anything carrying a token or a password, which would put a credential on disk,
-         * nor a token request, whose whole purpose is to be fresh.
+         * nor a token request, whose whole purpose is to be fresh, nor a read its caller marked as needing
+         * the wiki's current answer.
          */
         public fun isCacheable(request: ApiRequest): Boolean =
             when {
+                !request.cacheable -> false
                 request.isWrite -> false
                 request.requiresPost -> false
                 request.params["meta"] == "tokens" -> false

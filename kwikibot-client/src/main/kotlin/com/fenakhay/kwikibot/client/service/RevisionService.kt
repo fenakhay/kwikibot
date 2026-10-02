@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
@@ -9,6 +10,10 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 
 /** Which end of a page history to start from. */
+@MediaWikiParameter("query+revisions", "rvdir")
+@MediaWikiParameter("query+allrevisions", "arvdir")
+@MediaWikiParameter("query+alldeletedrevisions", "adrdir")
+@MediaWikiParameter("query+deletedrevisions", "drvdir")
 public enum class HistoryOrder(internal val apiValue: String) {
     /** Newest first, which is what a page history shows. */
     NEWEST_FIRST("older"),

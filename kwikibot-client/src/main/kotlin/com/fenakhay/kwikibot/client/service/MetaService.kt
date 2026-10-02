@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.LanguageInfo
 import kotlinx.serialization.json.JsonElement
@@ -94,6 +95,7 @@ public interface MetaService {
 }
 
 /** What [MetaService.manageTag] should do to a tag definition. */
+@MediaWikiParameter("managetags", "operation")
 public enum class TagOperation(internal val apiValue: String) {
     /** Define a new tag, which users may then apply. */
     CREATE("create"),

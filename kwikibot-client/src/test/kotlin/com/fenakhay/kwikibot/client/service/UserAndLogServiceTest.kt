@@ -10,6 +10,7 @@ import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.auth.Identity
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.KtorTransport
@@ -18,6 +19,8 @@ import com.fenakhay.kwikibot.protocol.decode.ActivityDecoder
 import com.fenakhay.kwikibot.protocol.decode.OptionSet
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -290,6 +293,68 @@ class UserAndLogServiceTest {
     }
 
     @Test
+    fun `a session without the patrol right is not refused its recent changes`() = runTest {
+        // MediaWiki refuses rcprop=patrolled to such a session, failing the whole query.
+        val sent = mutableMapOf<String, List<String>>()
+        val transport = transport { request ->
+            val list = request.url.parameters["list"].orEmpty()
+            sent[list] = request.url.parameters[PROPS.getValue(list)].orEmpty().split('|')
+            respondJson(
+                """{"query":{"$list":[{"type":"edit","rcid":1,"ns":0,"title":"volcano",
+                   "timestamp":"2026-08-01T00:00:00Z","user":"Alice","comment":"c"}]}}"""
+            )
+        }
+
+        val change = logs(transport, ANONYMOUS).recentChanges().toList().single()
+        logs(transport, Identity("FenaBot", 7, rights = setOf("edit"))).watchlistChanges().toList()
+
+        sent.getValue("recentchanges") shouldNotContain "patrolled"
+        sent.getValue("watchlist") shouldNotContain "patrol"
+        sent.getValue("recentchanges") shouldContain "ids"
+        change.patrolled.shouldBeNull()
+        change.isPatrolled shouldBe false
+    }
+
+    @Test
+    fun `a session with the patrol right asks whether each change was patrolled`() = runTest {
+        val sent = mutableMapOf<String, List<String>>()
+        val transport = transport { request ->
+            val list = request.url.parameters["list"].orEmpty()
+            sent[list] = request.url.parameters[PROPS.getValue(list)].orEmpty().split('|')
+            respondJson(
+                """{"query":{"$list":[
+                   {"type":"edit","rcid":1,"ns":0,"title":"volcano","timestamp":"2026-08-01T00:00:00Z",
+                    "user":"Alice","comment":"c","patrolled":true},
+                   {"type":"edit","rcid":2,"ns":0,"title":"lava","timestamp":"2026-08-01T00:00:01Z",
+                    "user":"Bob","comment":"c","patrolled":false}]}}"""
+            )
+        }
+        val patroller = Identity("FenaBot", 7, rights = setOf("edit", "patrol"))
+
+        val changes = logs(transport, patroller).recentChanges().toList()
+        val watched = logs(transport, patroller).watchlistChanges().toList()
+
+        sent.getValue("recentchanges") shouldContain "patrolled"
+        sent.getValue("watchlist") shouldContain "patrol"
+        changes.map { it.patrolled } shouldBe listOf(true, false)
+        changes.map { it.isPatrolled } shouldBe listOf(true, false)
+        watched.map { it.patrolled } shouldBe listOf(true, false)
+    }
+
+    @Test
+    fun `patrolmarks alone is enough to ask for the patrol flag`() = runTest {
+        var props = emptyList<String>()
+        val transport = transport { request ->
+            props = request.url.parameters["rcprop"].orEmpty().split('|')
+            respondJson("""{"query":{"recentchanges":[]}}""")
+        }
+
+        logs(transport, Identity("FenaBot", 7, rights = setOf("patrolmarks"))).recentChanges().toList()
+
+        props shouldContain "patrolled"
+    }
+
+    @Test
     fun `a block relies on its defaults when only a reason is given`() = runTest {
         // The defaults are public API: block() without them must still send a usable request,
         // and "prevent account creation" defaulting to off would be a quiet safety hole.
@@ -375,13 +440,22 @@ class UserAndLogServiceTest {
             activity = ActivityDecoder(PageDecoder(wiki, NamespaceMap.CANONICAL)),
         )
 
-    private fun logs(transport: MediaWikiTransport): LogService =
+    private fun logs(transport: MediaWikiTransport, identity: Identity = ANONYMOUS): LogService =
         ApiLogService(
             transport = transport,
             activity = ActivityDecoder(PageDecoder(wiki, NamespaceMap.CANONICAL)),
             namespaces = NamespaceMap.CANONICAL,
+            identity = identity,
         )
 
     private fun MockRequestHandleScope.respondJson(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+
+    private companion object {
+        /** A client that has not logged in: an address, with no rights. */
+        val ANONYMOUS = Identity("192.0.2.1", 0)
+
+        /** The parameter each activity list takes its properties under. */
+        val PROPS = mapOf("recentchanges" to "rcprop", "watchlist" to "wlprop")
+    }
 }

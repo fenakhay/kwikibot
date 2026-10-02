@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.HistoryOrder
 import com.fenakhay.kwikibot.client.service.RevisionPart
@@ -53,7 +54,7 @@ internal class ApiRevisionService(
                 "query",
                 "prop" to "revisions",
                 "titles" to namespaces.format(page.title),
-                "rvprop" to REVISION_PROPS,
+                "rvprop" to Registry.REVISIONS.joined,
                 "rvdir" to order.apiValue,
                 "rvstart" to start?.let { MwTimestamp.format(it) },
                 "rvend" to end?.let { MwTimestamp.format(it) },
@@ -88,7 +89,7 @@ internal class ApiRevisionService(
             "arvdir" to order.apiValue,
             "arvstart" to start?.let { MwTimestamp.format(it) },
             "arvend" to end?.let { MwTimestamp.format(it) },
-            "arvprop" to REVISION_PROPS,
+            "arvprop" to Registry.ALL_REVISIONS.joined,
             "arvlimit" to apiLimit(limit),
         )
 
@@ -108,7 +109,7 @@ internal class ApiRevisionService(
             "adrdir" to order.apiValue,
             "adrstart" to start?.let { MwTimestamp.format(it) },
             "adrend" to end?.let { MwTimestamp.format(it) },
-            "adrprop" to REVISION_PROPS,
+            "adrprop" to Registry.ALL_DELETED_REVISIONS.joined,
             "adrlimit" to apiLimit(limit),
         )
 
@@ -122,7 +123,7 @@ internal class ApiRevisionService(
                 "query",
                 "prop" to "deletedrevisions",
                 "titles" to namespaces.format(page.title),
-                "drvprop" to REVISION_PROPS,
+                "drvprop" to Registry.DELETED_REVISIONS.joined,
                 "drvdir" to order.apiValue,
                 "drvlimit" to apiLimit(limit),
             )
@@ -164,7 +165,7 @@ internal class ApiRevisionService(
                         "query",
                         "prop" to "revisions",
                         "revids" to revision.value.toString(),
-                        "rvprop" to "$REVISION_PROPS|content",
+                        "rvprop" to Registry.REVISIONS_WITH_CONTENT.joined,
                         "rvslots" to "main",
                     )
                 )
@@ -185,7 +186,7 @@ internal class ApiRevisionService(
                         "query",
                         "prop" to "revisions",
                         "revids" to batch.joinToString("|") { it.value.toString() },
-                        "rvprop" to REVISION_PROPS,
+                        "rvprop" to Registry.REVISIONS.joined,
                     )
                 )
                 .toList()
@@ -262,6 +263,5 @@ internal class ApiRevisionService(
     private companion object {
         const val DEFAULT_BATCH = 50
         const val MAX_BATCH = 500
-        const val REVISION_PROPS = "ids|timestamp|user|comment|size|flags|sha1|tags"
     }
 }

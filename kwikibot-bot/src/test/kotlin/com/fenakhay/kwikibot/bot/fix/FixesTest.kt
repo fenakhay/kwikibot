@@ -1,6 +1,5 @@
 package com.fenakhay.kwikibot.bot.fix
 
-import com.fenakhay.kwikibot.bot.run.apply
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

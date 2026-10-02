@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.model.log.LogEvent
 import com.fenakhay.kwikibot.model.log.RecentChange
 import com.fenakhay.kwikibot.model.page.PageRef
@@ -9,6 +10,9 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 
 /** Which way through time a stream of activity runs. */
+@MediaWikiParameter("query+logevents", "ledir")
+@MediaWikiParameter("query+recentchanges", "rcdir")
+@MediaWikiParameter("query+watchlist", "wldir")
 public enum class TimeOrder(internal val apiValue: String) {
     /** Newest first, which is what a log page shows. */
     NEWEST_FIRST("older"),

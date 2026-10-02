@@ -167,6 +167,30 @@ class PageDecoderTest {
     }
 
     @Test
+    fun `a redirect is read whatever language the wiki writes the magic word in`() {
+        val targets =
+            listOf("#WEITERLEITUNG [[Farbe]]", "#تحويل [[لون]]", "  #redirect:[[colour|x]]").map { text ->
+                decoder
+                    .decode(
+                        page(
+                            """{"pageid":1,"ns":0,"title":"A","redirect":true,"revisions":[{"revid":1,
+                               "timestamp":"2026-01-01T00:00:00Z","slots":{"main":{"content":"$text"}}}]}"""
+                        )
+                    )
+                    .shouldBeInstanceOf<PageResult.Existing>()
+                    .content
+                    ?.redirectTarget
+            }
+
+        targets shouldBe
+            listOf(
+                Title.Local(Namespace.MAIN, "Farbe"),
+                Title.Local(Namespace.MAIN, "لون"),
+                Title.Local(Namespace.MAIN, "Colour"),
+            )
+    }
+
+    @Test
     fun `a hidden author is reported as absent rather than as an empty name`() {
         val result =
             decoder

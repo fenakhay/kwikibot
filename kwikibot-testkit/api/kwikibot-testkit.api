@@ -1,6 +1,21 @@
+public final class com/fenakhay/kwikibot/testkit/FailOnDeprecation : com/fenakhay/kwikibot/protocol/ApiWarningListener {
+	public fun <init> ()V
+	public fun <init> (Lcom/fenakhay/kwikibot/protocol/ApiWarningListener;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/protocol/ApiWarningListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun onPenalty-LRDsOJo (J)V
+	public fun onRelogin (Lcom/fenakhay/kwikibot/net/auth/Identity;)V
+	public fun onResponse (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlinx/serialization/json/JsonObject;)V
+	public fun onRetry-exY8QGI (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;IJLjava/lang/String;)V
+	public fun onWarning (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lcom/fenakhay/kwikibot/protocol/ApiWarning;)V
+}
+
 public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/kwikibot/client/service/PageService {
+	public static final field Companion Lcom/fenakhay/kwikibot/testkit/FakePageService$Companion;
 	public static final field INITIAL_REVISION J
+	public fun <init> ()V
 	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> ([Lkotlin/Pair;)V
 	public fun backlinksOf (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -13,7 +28,9 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/
 	public fun edit (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun exists (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun expandText (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun expandTexts (Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun fileUsageOf (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun freshContents (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getEdits ()Ljava/util/List;
 	public fun importPage (Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun isWatched (Ljava/lang/String;)Z
@@ -22,8 +39,10 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/
 	public fun protect (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/List;Ljava/lang/String;ZLcom/fenakhay/kwikibot/client/service/WatchMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun protections (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun purge (Ljava/util/Collection;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun redirectsTo (Ljava/util/Collection;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun ref-dg5IrSY (Ljava/lang/String;I)Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public static synthetic fun ref-dg5IrSY$default (Lcom/fenakhay/kwikibot/testkit/FakePageService;Ljava/lang/String;IILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/page/PageRef;
+	public final fun revision-Gct2XK0 (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/RevisionId;
 	public fun rollback (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZLcom/fenakhay/kwikibot/client/service/WatchMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun setLanguage-RJpTI5k (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun testActions (Ljava/util/Collection;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -34,8 +53,13 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/
 	public fun watch (Ljava/util/Collection;ZLjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class com/fenakhay/kwikibot/testkit/FakePageService$Companion {
+}
+
 public final class com/fenakhay/kwikibot/testkit/FakeWiki : com/fenakhay/kwikibot/client/Wiki {
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lcom/fenakhay/kwikibot/client/service/ListService;Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/client/service/UserService;Lcom/fenakhay/kwikibot/client/service/LogService;Lcom/fenakhay/kwikibot/client/service/RenderService;Lcom/fenakhay/kwikibot/client/service/MetaService;Lcom/fenakhay/kwikibot/net/transport/MediaWikiTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lcom/fenakhay/kwikibot/client/service/ListService;Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/client/service/UserService;Lcom/fenakhay/kwikibot/client/service/LogService;Lcom/fenakhay/kwikibot/client/service/RenderService;Lcom/fenakhay/kwikibot/client/service/MetaService;Lcom/fenakhay/kwikibot/net/transport/MediaWikiTransport;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> ([Lkotlin/Pair;)V
 	public fun getExtensions ()Lcom/fenakhay/kwikibot/client/service/ExtensionService;
@@ -57,7 +81,22 @@ public final class com/fenakhay/kwikibot/testkit/FakeWiki : com/fenakhay/kwikibo
 	public fun getTransport ()Lcom/fenakhay/kwikibot/net/transport/MediaWikiTransport;
 	public fun getUsers ()Lcom/fenakhay/kwikibot/client/service/UserService;
 	public fun parse-dg5IrSY (Ljava/lang/String;I)Lcom/fenakhay/kwikibot/model/title/Title;
+	public fun parseOptions (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun ref (Lcom/fenakhay/kwikibot/model/title/Title$Local;)Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public fun ref-dg5IrSY (Ljava/lang/String;I)Lcom/fenakhay/kwikibot/model/page/PageRef;
+	public fun titleRules (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/testkit/MockTransport : com/fenakhay/kwikibot/net/transport/MediaWikiTransport {
+	public static final field Companion Lcom/fenakhay/kwikibot/testkit/MockTransport$Companion;
+	public fun <init> (Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun call (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getEndpoint ()Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;
+	public final fun getRequests ()Ljava/util/List;
+}
+
+public final class com/fenakhay/kwikibot/testkit/MockTransport$Companion {
+	public final fun json (Ljava/lang/String;)Lkotlinx/serialization/json/JsonObject;
 }
 

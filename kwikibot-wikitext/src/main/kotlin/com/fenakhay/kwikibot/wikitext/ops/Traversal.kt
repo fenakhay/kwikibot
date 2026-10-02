@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.wikitext.ops
 
 import com.fenakhay.kwikibot.wikitext.Markup
+import com.fenakhay.kwikibot.wikitext.internal.TagNames
 import com.fenakhay.kwikibot.wikitext.node.Argument
 import com.fenakhay.kwikibot.wikitext.node.ExternalLink
 import com.fenakhay.kwikibot.wikitext.node.Heading
@@ -15,15 +16,16 @@ import com.fenakhay.kwikibot.wikitext.node.WikiLink
  * The traversal is here rather than on [Markup] because it is what a tidying pass needs and nothing else
  * does: an edit that knows which node it wants uses `replace`.
  *
- * It does not descend into a tag whose contents MediaWiki does not parse. What is inside `<nowiki>`, `<pre>`
- * or `<syntaxhighlight>` is content: decoding an entity there changes what the page displays, and stripping
- * whitespace there alters preformatted content.
+ * It does not descend into a tag whose contents MediaWiki does not parse, one the parser marked
+ * [Tag.verbatim]. What is inside `<nowiki>`, `<pre>` or `<syntaxhighlight>` is content: decoding an entity
+ * there changes what the page displays, and stripping whitespace there alters preformatted content. `<code>`
+ * is left alone for the same reason, though MediaWiki parses it.
  */
 public fun Markup.mapNodes(transform: (Node) -> Node): Markup =
     Markup(nodes.map { transform(it.mapChildren(transform)) })
 
-/** Tags whose contents are text to display, not wikitext to rewrite. */
-private val RAW_TAGS = setOf("nowiki", "pre", "syntaxhighlight", "source", "code", "math", "score")
+/** `<code>` is parsed by MediaWiki, but its contents are code to display, not prose to tidy. */
+private const val CODE = "code"
 
 private fun Node.mapChildren(transform: (Node) -> Node): Node =
     when (this) {
@@ -37,9 +39,20 @@ private fun Node.mapChildren(transform: (Node) -> Node): Node =
             )
 
         is WikiLink -> copy(target = target.mapNodes(transform), text = text?.mapNodes(transform))
-        is ExternalLink -> copy(title = title?.mapNodes(transform))
+        is ExternalLink -> copy(url = url.mapNodes(transform), title = title?.mapNodes(transform))
         is Heading -> copy(title = title.mapNodes(transform))
-        is Tag -> if (name.lowercase() in RAW_TAGS) this else copy(contents = contents?.mapNodes(transform))
+        is Tag ->
+            if (TagNames.isRaw(this) || name.equals(CODE, ignoreCase = true)) {
+                this
+            } else {
+                copy(
+                    contents = contents?.mapNodes(transform),
+                    attributes =
+                        attributes.map {
+                            it.copy(name = it.name.mapNodes(transform), value = it.value?.mapNodes(transform))
+                        },
+                )
+            }
         is Argument -> copy(name = name.mapNodes(transform), default = default?.mapNodes(transform))
         else -> this
     }

@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.internal.sectionNodes
 import com.fenakhay.kwikibot.wikitext.node.Heading
 import com.fenakhay.kwikibot.wikitext.node.HtmlEntity
 import com.fenakhay.kwikibot.wikitext.node.Node
@@ -44,10 +45,18 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
         }
 
     /** The page with every pass applied, as text. */
-    public fun apply(wikitext: String): String = apply(Wikitext.parse(wikitext)).serialize()
+    public fun apply(wikitext: String): String = apply(wikitext, ParseOptions.DEFAULT)
+
+    /** The page with every pass applied, as text, parsed the way a wiki with [options] parses it. */
+    public fun apply(wikitext: String, options: ParseOptions): String =
+        apply(Wikitext.parse(wikitext, options)).serialize()
 
     /** Whether any pass would change this page. */
     public fun wouldChange(wikitext: String): Boolean = apply(wikitext) != wikitext
+
+    /** Whether any pass would change this page, parsed the way a wiki with [options] parses it. */
+    public fun wouldChange(wikitext: String, options: ParseOptions): Boolean =
+        apply(wikitext, options) != wikitext
 
     /** The passes that ship with the library, and the set applied by default. */
     public companion object {
@@ -79,6 +88,10 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
                 val tag = node as? Tag ?: return@mapNodes node
                 when {
                     tag.wikiMarkup != null -> node
+                    // A `<b>` nothing closes would become a `'''` nothing closes, which means something else.
+                    tag.selfClosing -> node
+                    // `'''` ends at the end of its line, where a `<b>` goes on.
+                    tag.contents?.serialize()?.contains('\n') == true -> node
                     tag.name.equals("b", ignoreCase = true) -> tag.asMarkup("'''")
                     tag.name.equals("i", ignoreCase = true) -> tag.asMarkup("''")
                     else -> node
@@ -137,7 +150,9 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
          * it, whether or not it renders.
          */
         public val EMPTY_SECTIONS: CosmeticPass = CosmeticPass { code ->
-            Markup(dropEmptySections(code.nodes))
+            val nodes = code.nodes.sectionNodes()
+            val kept = dropEmptySections(nodes)
+            if (kept.size == nodes.size) code else Markup(kept)
         }
 
         /**
@@ -234,8 +249,12 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
                     index++
                 } else {
                     // The heading goes and so does the blank space under it. Keeping that space
-                    // would leave a growing gap where sections used to be.
+                    // would leave a growing gap where sections used to be. One line break stays, so a
+                    // heading after it still starts a line.
                     kept.removeTrailingBlankText()
+                    if (end < nodes.size && kept.isNotEmpty() && !kept.last().serialize().endsWith('\n')) {
+                        kept += TextNode("\n")
+                    }
                     index = end
                 }
             }

@@ -8,8 +8,7 @@ package com.fenakhay.kwikibot.wikitext
  * and keeps backtracking cheap — a construct that turns out not to parse is abandoned by discarding a list,
  * not by unwinding a tree.
  *
- * The vocabulary is fixed rather than convenient: recorded token streams are replayed against it by the
- * conformance suite, so renaming or merging a token changes the contract.
+ * Internal, and so free to change with the tokenizer.
  */
 internal sealed interface Token {
 
@@ -57,8 +56,11 @@ internal sealed interface Token {
      */
     data class ExternalLinkOpen(val brackets: Boolean) : Token
 
-    /** The space between a bracketed link's URL and its display text. */
-    data object ExternalLinkSeparator : Token
+    /** The spaces between a bracketed link's URL and its display text, which may be none or several. */
+    data class ExternalLinkSeparator(
+        /** The separator as written. */
+        val separator: String
+    ) : Token
 
     /** The end of an external link. */
     data object ExternalLinkClose : Token
@@ -90,8 +92,11 @@ internal sealed interface Token {
     /** `<!--` */
     data object CommentStart : Token
 
-    /** `-->` */
-    data object CommentEnd : Token
+    /** `-->`, or the end of the text for a comment that never closes. */
+    data class CommentEnd(
+        /** Whether the comment was closed with `-->`. */
+        val closed: Boolean
+    ) : Token
 
     /**
      * The `<` that opens a tag, or the wiki markup standing in for one.
@@ -129,7 +134,9 @@ internal sealed interface Token {
     /** The `>` that ends an opening tag, with any padding before it. */
     data class OpeningTagEnd(
         /** The whitespace before the `>`. */
-        val padding: String? = null
+        val padding: String? = null,
+        /** Whether the body is kept as written rather than parsed. */
+        val verbatim: Boolean = false,
     ) : Token
 
     /**

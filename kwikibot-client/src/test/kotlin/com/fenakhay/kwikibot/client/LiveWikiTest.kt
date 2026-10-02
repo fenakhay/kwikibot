@@ -8,6 +8,7 @@ import com.fenakhay.kwikibot.model.title.Title
 import com.fenakhay.kwikibot.model.title.TitleCase
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.testkit.FailOnDeprecation
 import com.fenakhay.kwikibot.wikitext.Wikitext
 import com.fenakhay.kwikibot.wikitext.ops.outline
 import io.kotest.matchers.shouldBe
@@ -28,6 +29,8 @@ class LiveWikiTest {
             userAgent =
                 UserAgent("kwikibot-livetest", "0.1.0", "https://en.wiktionary.org/wiki/User:FenaBot"),
             throttle = Throttle(read = 500.milliseconds),
+            // Every spelling is negotiated with the wiki, so a deprecation here means one is wrong.
+            onWarning = FailOnDeprecation(),
         )
 
     private fun onWiktionary(block: suspend (Wiki) -> Unit): Unit = runBlocking {
@@ -194,6 +197,17 @@ class LiveWikiTest {
         who.users.isNotEmpty() shouldBe true
         who.users.all { it.name.isNotEmpty() } shouldBe true
     }
+
+    @Test
+    fun `an anonymous client reads recent changes without asking whether they were patrolled`(): Unit =
+        onWiktionary { wiki ->
+            // MediaWiki refuses rcprop=patrolled to a session without the patrol or patrolmarks right,
+            // failing the query.
+            val changes = wiki.logs.recentChanges(limit = 5).toList()
+
+            changes.size shouldBe 5
+            changes.all { it.patrolled == null } shouldBe true
+        }
 
     @Test
     fun `a wiktionary reads its files from Commons as well as its own`(): Unit = onWiktionary { wiki ->

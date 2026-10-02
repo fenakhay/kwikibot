@@ -106,6 +106,20 @@ class EntityServiceTest {
     }
 
     @Test
+    fun `wbsearchentities takes no mediainfo type, so asking is refused rather than sent`() = runTest {
+        var requests = 0
+        val service = service {
+            requests++
+            respondJson("""{"search":[]}""")
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            service.search("sunset", kind = EntityId.Kind.MEDIA_INFO)
+        }
+        requests shouldBe 0
+    }
+
+    @Test
     fun `an edit posts its data and is flagged as a bot edit`() = runTest {
         var body = ""
         val service = service { request ->
