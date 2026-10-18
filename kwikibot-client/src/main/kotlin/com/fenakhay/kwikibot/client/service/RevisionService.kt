@@ -49,6 +49,15 @@ public interface RevisionService {
     /** The page as it was at one revision, or `null` if there is no such revision. */
     public suspend fun contentAt(revision: RevisionId): PageContent?
 
+    /**
+     * The pages as they were at each of [revisions], read many to a request. A revision that does not exist,
+     * or whose text is hidden, is left out.
+     *
+     * An implementation that does not override this reads each one with [contentAt].
+     */
+    public suspend fun contentsAt(revisions: Collection<RevisionId>): Map<RevisionId, PageContent> =
+        revisions.distinct().mapNotNull { id -> contentAt(id)?.let { id to it } }.toMap()
+
     /** Revisions by id, for following a log entry or a diff back to what it changed. */
     public suspend fun byId(ids: Collection<RevisionId>): Map<RevisionId, Revision>
 

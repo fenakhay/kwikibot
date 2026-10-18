@@ -32,6 +32,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -124,6 +125,48 @@ class ExtensionServiceTest {
             }
 
         service.wikibaseItems(listOf(page)) shouldBe emptyMap()
+    }
+
+    @Test
+    fun `the image of a page is its file name, and a page with none is absent`() = runTest {
+        var asked = ""
+        val lava = PageRef(wiki, Title.Local(Namespace.MAIN, "Lava"))
+        val service =
+            service(installed = listOf("PageImages")) { request ->
+                asked = request.url.parameters["piprop"].orEmpty()
+                respondJson(
+                    """{"query":{"pages":[{"pageid":1,"ns":0,"title":"Volcano","pageimage":"Etna.jpg"},
+                       {"pageid":2,"ns":0,"title":"Lava"}]}}"""
+                )
+            }
+
+        service.pageImages(listOf(page, lava)) shouldBe mapOf(page to "Etna.jpg")
+        asked shouldBe "name"
+    }
+
+    @Test
+    fun `an extract is the plain opening of a page, as many sentences as were asked for`() = runTest {
+        val asked = mutableListOf<Parameters>()
+        val lava = PageRef(wiki, Title.Local(Namespace.MAIN, "Lava"))
+        val service =
+            service(installed = listOf("TextExtracts")) { request ->
+                asked += request.url.parameters
+                respondJson(
+                    """{"query":{"pages":[
+                       {"pageid":1,"ns":0,"title":"Volcano","extract":"A volcano is a rupture. It erupts."},
+                       {"pageid":2,"ns":0,"title":"Lava","extract":" "}]}}"""
+                )
+            }
+
+        service.extracts(listOf(page, lava)) shouldBe mapOf(page to "A volcano is a rupture. It erupts.")
+        service.extracts(listOf(page), sentences = 0)
+
+        val (two, lead) = asked
+        two["explaintext"] shouldBe "1"
+        two["exintro"] shouldBe "1"
+        two["exlimit"] shouldBe "max"
+        two["exsentences"] shouldBe "2"
+        lead.contains("exsentences") shouldBe false
     }
 
     @Test
@@ -430,6 +473,23 @@ class ExtensionServiceTest {
         notifications.first().isRead shouldBe false
         notifications.first().agent shouldBe "Someone"
         notifications.last().isRead shouldBe true
+    }
+
+    @Test
+    fun `an answer with no notification list is no notifications`() = runTest {
+        val service = service(installed = listOf("Echo")) { respondJson("""{"query":{}}""") }
+
+        service.notifications() shouldBe emptyList()
+    }
+
+    @Test
+    fun `an answer that leaves out what was asked for is an error, not an empty result`() = runTest {
+        val shortener = service(installed = listOf("UrlShortener")) { respondJson("""{"shortenurl":{}}""") }
+        val triage = service(installed = listOf("PageTriage")) { respondJson("""{"pagetriagestats":{}}""") }
+
+        assertFailsWith<WikiError.Api> { shortener.shortenUrl("https://example.org") }.code shouldBe
+            "noshorturl"
+        assertFailsWith<WikiError.Api> { triage.newPageStats() }.code shouldBe "nostats"
     }
 
     @Test

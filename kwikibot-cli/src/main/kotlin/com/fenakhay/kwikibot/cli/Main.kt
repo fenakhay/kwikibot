@@ -23,6 +23,9 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
+import io.ktor.client.engine.HttpClientEngine
+import java.io.IOException
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.writeText
@@ -33,14 +36,36 @@ import kotlin.io.path.writeText
  * Deliberately small: enough to check that credentials work and to look at a page, which is what is needed to
  * tell whether a misbehaving bot or the wiki is at fault.
  */
-public class Kwikibot : SuspendingCliktCommand(name = "kwikibot") {
+internal class Kwikibot : SuspendingCliktCommand(name = "kwikibot") {
     override fun help(context: Context): String = "Talk to a MediaWiki wiki."
 
     override suspend fun run(): Unit = Unit
 }
 
+/**
+ * What the commands read from the machine they run on, which a test replaces.
+ *
+ * Environment variables are read through Clikt instead, whose context a test can set as well.
+ *
+ * @param searchPath where a configuration is looked for when `--config` names none, in order.
+ * @param engine the HTTP engine wikis are reached through, or `null` for the one on the classpath.
+ */
+internal class CliEnvironment(
+    val searchPath: () -> List<Path>,
+    val engine: HttpClientEngine? = null,
+) {
+    /** The first configuration on [searchPath] that exists, or `null` if none does. */
+    fun configFile(): Path? = searchPath().firstOrNull { it.exists() }
+
+    companion object {
+        /** The machine's own: the library's search path, and the network. */
+        val SYSTEM = CliEnvironment(searchPath = BotConfig::searchPath)
+    }
+}
+
 /** Options shared by every subcommand that opens a wiki. */
-public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = name) {
+internal abstract class WikiCommand(name: String, private val environment: CliEnvironment) :
+    SuspendingCliktCommand(name = name) {
 
     private val lang: String? by
         option(
@@ -92,21 +117,14 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
     final override suspend fun run() {
         // The file supplies what the flags do not, so a configured checkout needs no flags and
         // a one-off invocation needs no file.
-        val file = BotConfig.find(configPath)
-        val config = wikiConfig(file)
+        val file = (configPath ?: environment.configFile())?.let(::readConfiguration)
+        val config = reportingMisconfiguration { wikiConfig(file) }
+        val credentials = reportingMisconfiguration { credentials(file) }
+        val endpoint = reportingMisconfiguration { endpoint(file) }
 
-        // A misconfigured bot is an ordinary outcome of running a command-line tool, so it is
-        // reported as a message. A stack trace here would say nothing the message does not.
-        val credentials =
+        WikiClient(config, credentials, engine = environment.engine).use { client ->
             try {
-                credentials(file)
-            } catch (e: IllegalStateException) {
-                throw CliktError(e.message ?: "credentials are not configured", e)
-            }
-
-        WikiClient(config, credentials = credentials).use { client ->
-            try {
-                run(client.wiki(endpoint(file)))
+                run(client.wiki(endpoint))
             } catch (e: WikiError) {
                 throw CliktError(e.message ?: e.toString(), e)
             }
@@ -122,13 +140,13 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
         if (account != null && botName != null && password != null) {
             return Credentials.BotPassword(account, botName, password)
         }
-        return file?.credentials() ?: Credentials.Anonymous
+        return file?.credentials(currentContext.readEnvvar) ?: Credentials.Anonymous
     }
 
     /** What the file says, overridden by the flags, or the flags alone. */
     private fun wikiConfig(file: BotConfig?): WikiConfig {
         file?.toWikiConfig()?.let { fromFile ->
-            return contact?.let { fromFile.copy(userAgent = UserAgent("kwikibot", VERSION, it)) } ?: fromFile
+            return contact?.let { fromFile.copy(userAgent = userAgent(it)) } ?: fromFile
         }
 
         val given =
@@ -137,7 +155,7 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
                     "no configuration found and no --contact given; run 'kwikibot init-config' " +
                         "or pass --contact"
                 )
-        return WikiConfig(userAgent = UserAgent("kwikibot", VERSION, given))
+        return WikiConfig(userAgent = userAgent(given))
     }
 
     /**
@@ -157,14 +175,10 @@ public abstract class WikiCommand(name: String) : SuspendingCliktCommand(name = 
         val named = family ?: return file?.family() ?: Family.WIKTIONARY
         return Family.named(named) ?: throw CliktError("unknown family: $named")
     }
-
-    private companion object {
-        val VERSION = Kwikibot.version
-    }
 }
 
 /** Reports who the wiki thinks we are — the first thing to check when a bot cannot edit. */
-public class WhoAmI : WikiCommand("whoami") {
+internal class WhoAmI(environment: CliEnvironment) : WikiCommand("whoami", environment) {
     override fun help(context: Context): String = "Show the account the wiki sees."
 
     override suspend fun run(wiki: Wiki) {
@@ -177,17 +191,13 @@ public class WhoAmI : WikiCommand("whoami") {
 }
 
 /** Prints a page's wikitext, so a bot's input can be inspected without a browser. */
-public class GetPage : WikiCommand("get") {
+internal class GetPage(environment: CliEnvironment) : WikiCommand("get", environment) {
     override fun help(context: Context): String = "Print the wikitext of a page."
 
     private val title: String by argument(help = "Page title.")
 
     override suspend fun run(wiki: Wiki) {
-        val content = wiki.pages.content(wiki.ref(title))
-        if (content == null) {
-            echo("no such page: $title", err = true)
-            return
-        }
+        val content = wiki.pages.content(wiki.ref(title)) ?: throw CliktError("no such page: $title")
         echo(content.text)
     }
 }
@@ -198,7 +208,7 @@ public class GetPage : WikiCommand("get") {
  * The template holds no password: it names an environment variable to read one from, so the file can be
  * committed and shared without leaking a credential.
  */
-public class InitConfig : SuspendingCliktCommand(name = "init-config") {
+internal class InitConfig : SuspendingCliktCommand(name = "init-config") {
     override fun help(context: Context): String = "Write a starter kwikibot.toml."
 
     private val out: Path by
@@ -207,10 +217,7 @@ public class InitConfig : SuspendingCliktCommand(name = "init-config") {
     private val force: Boolean by option("--force", help = "Overwrite an existing file.").flag()
 
     override suspend fun run() {
-        if (out.exists() && !force) {
-            echo("$out already exists; pass --force to overwrite it", err = true)
-            return
-        }
+        if (out.exists() && !force) throw CliktError("$out already exists; pass --force to overwrite it")
 
         out.writeText(BotConfig.template())
         echo("wrote $out")
@@ -219,18 +226,19 @@ public class InitConfig : SuspendingCliktCommand(name = "init-config") {
 }
 
 /** Shows where the configuration was found and what it says, without the password. */
-public class ShowConfig : SuspendingCliktCommand(name = "config") {
+internal class ShowConfig(private val environment: CliEnvironment) : SuspendingCliktCommand(name = "config") {
     override fun help(context: Context): String = "Show the configuration in effect."
 
     override suspend fun run() {
-        val found = BotConfig.searchPath().firstOrNull { it.exists() }
-        if (found == null) {
-            echo("no configuration found. Looked in:", err = true)
-            BotConfig.searchPath().forEach { echo("  $it", err = true) }
-            return
-        }
+        val found =
+            environment.configFile()
+                ?: throw CliktError(
+                    environment.searchPath().joinToString("\n", "no configuration found. Looked in:\n") {
+                        "  $it"
+                    }
+                )
 
-        val config = BotConfig.read(found)
+        val config = readConfiguration(found)
         echo("file:      $found")
         echo("bot:       ${config.bot.name}/${config.bot.version} (${config.bot.contact})")
         echo("wiki:      ${wiki(config.wiki)}")
@@ -262,9 +270,12 @@ public class ShowConfig : SuspendingCliktCommand(name = "config") {
             .takeIf { it.isNotEmpty() }
             ?.joinToString(", ")
 
-    /** Whether the variable holding a secret is set, never what is in it. */
+    /**
+     * Whether the variable holding a secret is set, never what is in it. A blank one is not set, as logging
+     * in treats it.
+     */
     private fun secret(variable: String, optional: Boolean): String {
-        val present = System.getenv(variable) != null
+        val present = !currentContext.readEnvvar(variable).isNullOrBlank()
         return "$variable is ${if (present) "set" else "NOT SET"}${if (optional) " (optional)" else ""}"
     }
 }
@@ -275,7 +286,7 @@ public class ShowConfig : SuspendingCliktCommand(name = "config") {
  * Third-party wikis put MediaWiki wherever they like, and every install advertises where in the page head.
  * This reads that rather than guessing.
  */
-public class Detect : SuspendingCliktCommand(name = "detect") {
+internal class Detect(private val environment: CliEnvironment) : SuspendingCliktCommand(name = "detect") {
     override fun help(context: Context): String = "Find the api.php of the wiki at a URL."
 
     private val url: String by argument(help = "Any page of the wiki.")
@@ -288,38 +299,24 @@ public class Detect : SuspendingCliktCommand(name = "detect") {
             .default("https://github.com/fenakhay/kwikibot")
 
     override suspend fun run() {
-        val userAgent = UserAgent("kwikibot", VERSION, contact)
-        val client = WikiHttpClient.create()
+        val endpoint =
+            WikiHttpClient.create(engine = environment.engine).use { client ->
+                ApiDetector.detect(url, client, userAgent(contact))
+            } ?: throw CliktError("no MediaWiki API advertised at $url")
 
-        try {
-            val endpoint = ApiDetector.detect(url, client, userAgent)
-            if (endpoint == null) {
-                echo("no MediaWiki API advertised at $url", err = true)
-                return
-            }
-            echo("api:        ${endpoint.apiUrl}")
-            echo("server:     ${endpoint.server}")
-            echo("scriptPath: ${endpoint.scriptPath.ifEmpty { "(none)" }}")
-        } finally {
-            client.close()
-        }
-    }
-
-    private companion object {
-        val VERSION = Kwikibot.version
+        echo("api:        ${endpoint.apiUrl}")
+        echo("server:     ${endpoint.server}")
+        echo("scriptPath: ${endpoint.scriptPath.ifEmpty { "(none)" }}")
     }
 }
 
 /** Checks that the configured credentials actually log in. */
-public class Login : WikiCommand("login") {
+internal class Login(environment: CliEnvironment) : WikiCommand("login", environment) {
     override fun help(context: Context): String = "Log in and report the result."
 
     override suspend fun run(wiki: Wiki) {
         val identity = wiki.identity
-        if (identity.isAnonymous) {
-            echo("not logged in: no credentials were configured", err = true)
-            return
-        }
+        if (identity.isAnonymous) throw CliktError("not logged in: no credentials were configured")
         echo("logged in to ${wiki.id} as ${identity.name}")
         echo("groups: ${identity.groups.sorted().joinToString(", ").ifEmpty { "none" }}")
     }
@@ -331,7 +328,7 @@ public class Login : WikiCommand("login") {
  * The first thing to paste into a bug report, and deliberately nothing more than that: not the machine name,
  * not the working directory, not the user.
  */
-public class Version : SuspendingCliktCommand(name = "version") {
+internal class Version : SuspendingCliktCommand(name = "version") {
     override fun help(context: Context): String = "Show the library and runtime versions."
 
     override suspend fun run() {
@@ -341,15 +338,49 @@ public class Version : SuspendingCliktCommand(name = "version") {
 
 /** Runs the `kwikibot` command. */
 public suspend fun main(args: Array<String>) {
+    kwikibot(CliEnvironment.SYSTEM).main(args)
+}
+
+/** The `kwikibot` command with its subcommands, reading from [environment]. */
+internal fun kwikibot(environment: CliEnvironment): SuspendingCliktCommand =
     Kwikibot()
         .subcommands(
-            WhoAmI(),
-            GetPage(),
-            Login(),
+            WhoAmI(environment),
+            GetPage(environment),
+            Login(environment),
             InitConfig(),
-            ShowConfig(),
-            Detect(),
+            ShowConfig(environment),
+            Detect(environment),
             Version(),
         )
-        .main(args)
-}
+
+/** How this tool identifies itself to a wiki, for the operator [contact] reaches. */
+private fun userAgent(contact: String): UserAgent = UserAgent(Kwikibot.NAME, Kwikibot.version, contact)
+
+/**
+ * The configuration at [path]. A missing, invalid or unreadable file stops the command with a message saying
+ * which.
+ */
+private fun readConfiguration(path: Path): BotConfig =
+    try {
+        BotConfig.read(path)
+    } catch (e: IOException) {
+        val problem =
+            if (e is NoSuchFileException) "no configuration at $path" else "cannot read $path: ${e.message}"
+        throw CliktError(problem, e)
+    } catch (e: IllegalArgumentException) {
+        throw CliktError("$path is not valid: ${e.message}", e)
+    }
+
+/**
+ * What [block] makes of the configuration. A configuration it cannot use stops the command with a one-line
+ * message saying what is wrong.
+ */
+private inline fun <T> reportingMisconfiguration(block: () -> T): T =
+    try {
+        block()
+    } catch (e: IllegalStateException) {
+        throw CliktError(e.message ?: e.toString(), e)
+    } catch (e: IllegalArgumentException) {
+        throw CliktError(e.message ?: e.toString(), e)
+    }

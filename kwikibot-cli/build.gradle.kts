@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":kwikibot-bot"))
     implementation(libs.clikt)
     runtimeOnly(libs.slf4j.simple)
+
+    testImplementation(libs.ktor.client.mock)
 }
 
 application {
@@ -49,7 +51,6 @@ graalvmNative {
             imageName.set("kwikibot")
             mainClass.set("com.fenakhay.kwikibot.cli.MainKt")
             sharedLibrary.set(false)
-            fallback.set(false)
             verbose.set(true)
 
             buildArgs.add("-H:+ReportExceptionStackTraces")

@@ -73,7 +73,7 @@ private fun Node.replaceTextIn(
 
         is Tag -> replaceInTag(pattern, scope, replacement)
 
-        is Comment -> if (scope.comments) Comment(pattern.replace(contents, replacement)) else this
+        is Comment -> if (scope.comments) copy(contents = pattern.replace(contents, replacement)) else this
 
         is Argument ->
             copy(

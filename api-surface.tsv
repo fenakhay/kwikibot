@@ -63,7 +63,7 @@ centralnoticechoicedata	-	action	CentralNotice
 centralnoticechoicedata	language	action	CentralNotice	required	type=string
 centralnoticechoicedata	project	action	CentralNotice	required	type=string
 centralnoticequerycampaign	-	action	CentralNotice
-centralnoticequerycampaign	campaign	action	CentralNotice	required	type=string
+centralnoticequerycampaign	campaign	action	CentralNotice	required,multi	type=string limit=32 highlimit=32
 changeauthenticationdata	-	action	MediaWiki		prefix=changeauth write post
 changeauthenticationdata	changeauthrequest	action	MediaWiki	required	type=string
 changeauthenticationdata	changeauthtoken	action	MediaWiki	required,sensitive	type=string
@@ -112,7 +112,7 @@ collection	-	action	Collection	internal		commonswiki,enwiki,enwiktionary,wikidat
 collection	submodule	action	Collection	required	enum=addarticle|addcategory|addchapter|clearcollection|getbookcreatorboxcontent|getcollection|getpopupdata|postcollection|removearticle|removeitem|renamechapter|setsorting|settitles|sortitems|suggestarticleaction|suggestundoarticleaction	commonswiki,enwiki,enwiktionary,wikidatawiki
 communityconfigurationedit	-	action	CommunityConfiguration		write post
 communityconfigurationedit	content	action	CommunityConfiguration	required	type=string
-communityconfigurationedit	provider	action	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|CommunityUpdates|ContentTranslation|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
+communityconfigurationedit	provider	action	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|Cite-VisualEditor-Autonames|CommunityUpdates|ContentTranslation|EditCheck|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
 communityconfigurationedit	summary	action	CommunityConfiguration		type=string
 communityconfigurationedit	token	action	CommunityConfiguration	required,sensitive	type=string
 compare	-	action	MediaWiki
@@ -1171,7 +1171,7 @@ query+codexicons	-	list	MediaWiki
 query+codexicons	names	list	MediaWiki	required,multi	enum=<config> limit=50 highlimit=500
 query+communityconfiguration	-	meta	CommunityConfiguration		prefix=ccr
 query+communityconfiguration	ccrassertversion	meta	CommunityConfiguration		type=string
-query+communityconfiguration	ccrprovider	meta	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|CommunityUpdates|ContentTranslation|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
+query+communityconfiguration	ccrprovider	meta	CommunityConfiguration	required	enum=Babel|BlockedDomain|CampaignEvents|Cite-VisualEditor-Autonames|CommunityUpdates|ContentTranslation|EditCheck|GrowthHomepage|GrowthMentorList|GrowthSuggestedEdits|HelpPanel|Mentorship|ReportIncident|TemplateData-FeaturedTemplates
 query+contenttranslation	-	list	ContentTranslation			enwiki
 query+contenttranslation	from	list	ContentTranslation		type=string	enwiki
 query+contenttranslation	limit	list	ContentTranslation		type=limit default=100 max=500 highmax=5000	enwiki

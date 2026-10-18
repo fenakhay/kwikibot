@@ -6,13 +6,14 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
-import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.util.zip.GZIPOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -25,9 +26,9 @@ import kotlinx.serialization.json.put
 /**
  * Records the biggest pages the wikis have, for the parallel pre-scan to be judged on.
  *
- * The round-trip corpus in [RealPages] deliberately skips anything over 80KB: past that a page is a list or
- * an archive, which is the same few constructs repeated thousands of times, and it stresses the repository
- * more than the parser. That makes it the wrong corpus for one question.
+ * The round-trip corpus that [recordRealPages] records deliberately skips anything over 80KB: past that a
+ * page is a list or an archive, which is the same few constructs repeated thousands of times, and it stresses
+ * the repository more than the parser. That makes it the wrong corpus for one question.
  *
  * Splitting the scan across threads only pays when there is enough text to amortise handing work to another
  * thread, so it runs above a size threshold — and the round-trip corpus has nothing that would reach one. Its
@@ -87,14 +88,21 @@ private const val PAGE_BATCH = 20
  * The first argument is the file to write.
  */
 public fun main(args: Array<String>) {
-    val target = Path(args.firstOrNull() ?: "large-pages.json.gz")
-    val document = runBlocking { record() }
-
-    GZIPOutputStream(target.outputStream()).bufferedWriter().use { it.write(document) }
-    println("wrote $target")
+    runBlocking { recordLargePages(args, ToolEnvironment.SYSTEM) }
 }
 
-private suspend fun record(): String {
+/** What [main] does with [args], asking the wikis and printing through [environment]. */
+internal suspend fun recordLargePages(args: Array<String>, environment: ToolEnvironment) {
+    val target = Path(args.firstOrNull() ?: "large-pages.json.gz")
+    val document = record(environment)
+
+    withContext(Dispatchers.IO) {
+        GZIPOutputStream(target.outputStream()).bufferedWriter().use { it.write(document) }
+    }
+    environment.output.appendLine("wrote $target")
+}
+
+private suspend fun record(environment: ToolEnvironment): String {
     val userAgent =
         UserAgent(
             "kwikibot-largepage-corpus",
@@ -106,21 +114,20 @@ private suspend fun record(): String {
 
     val pages = buildJsonArray {
         for (source in SOURCES) {
-            WikiHttpClient.create().use { client ->
+            environment.client().use { client ->
                 val transport =
                     KtorTransport(
                         client = client,
                         endpoint = ApiEndpoint(server = source.wiki),
                         userAgent = userAgent,
-                        throttle = Throttle(read = 500.milliseconds),
+                        throttle = Throttle(read = 500.milliseconds, timeSource = environment.timeSource),
                         maxlag = null,
                     )
 
                 var taken = 0
 
                 for (seed in SEEDS) {
-                    val (batch, _) = largePages(transport, source, seed)
-                    val (title, text) = batch.firstOrNull() ?: continue
+                    val (title, text) = largePages(transport, source, seed).firstOrNull() ?: continue
 
                     add(
                         buildJsonObject {
@@ -132,12 +139,12 @@ private suspend fun record(): String {
                     taken++
                     characters += text.length
                 }
-                System.err.println("  ${source.wiki} ns${source.namespace}: $taken")
+                environment.log.appendLine("  ${source.wiki} ns${source.namespace}: $taken")
             }
         }
     }
 
-    System.err.println("$characters characters over ${pages.size} pages")
+    environment.log.appendLine("$characters characters over ${pages.size} pages")
 
     val document = buildJsonObject {
         put(
@@ -154,15 +161,14 @@ private suspend fun record(): String {
 /**
  * Asks for a batch of pages over [MIN_PAGE_BYTES], with their wikitext.
  *
- * `list=allpages` walks in title order rather than sampling, so [from] carries the continuation and the
- * result is the alphabetically first large pages rather than a random draw. That is a biased sample and it
- * does not matter here: nothing is asserted about these pages, only timed.
+ * `list=allpages` walks in title order, so the result is the alphabetically first large pages from [from] on.
+ * The sample is biased, which is fine here: these pages are only timed.
  */
 private suspend fun largePages(
     transport: MediaWikiTransport,
     source: LargeSource,
-    from: String?,
-): Pair<List<Pair<String, String>>, String?> {
+    from: String,
+): List<Pair<String, String>> {
     val response =
         transport
             .call(
@@ -173,7 +179,7 @@ private suspend fun largePages(
                     "gapminsize" to MIN_PAGE_BYTES.toString(),
                     "gaplimit" to PAGE_BATCH.toString(),
                     "gapfilterredir" to "nonredirects",
-                    *(from?.let { arrayOf("gapfrom" to it) } ?: emptyArray()),
+                    "gapfrom" to from,
                     "prop" to "revisions",
                     "rvprop" to "content",
                     "rvslots" to "main",
@@ -181,12 +187,9 @@ private suspend fun largePages(
             )
             .throwOnError()
 
-    val next = response["continue"]?.jsonObject?.get("gapcontinue")?.jsonPrimitive?.content
-    val pages =
-        response["query"]?.jsonObject?.get("pages") as? JsonArray
-            ?: return emptyList<Pair<String, String>>() to next
+    val pages = response["query"]?.jsonObject?.get("pages") as? JsonArray ?: return emptyList()
 
-    val usable = pages.mapNotNull { entry ->
+    return pages.mapNotNull { entry ->
         val page = entry.jsonObject
         val title = page["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
         val slot =
@@ -200,12 +203,11 @@ private suspend fun largePages(
 
         if (slot["contentmodel"]?.jsonPrimitive?.content != "wikitext") return@mapNotNull null
         val text = slot["content"]?.jsonPrimitive?.content ?: return@mapNotNull null
-        if (text.length !in MIN_PAGE_BYTES..MAX_PAGE_BYTES) return@mapNotNull null
+        // In bytes, as gapminsize counts them.
+        if (text.encodeToByteArray().size !in MIN_PAGE_BYTES..MAX_PAGE_BYTES) return@mapNotNull null
 
         title to text
     }
-
-    return usable to next
 }
 
 private val PLAIN = Json { prettyPrint = false }

@@ -52,7 +52,12 @@ public data class Comment(val contents: String, val closed: Boolean = true) : No
  * @param showKey whether the parameter was written as `name=value` rather than positionally.
  */
 public data class Parameter(
-    /** The name as written, which for a positional parameter is its number. */
+    /**
+     * The name as written, which for a positional parameter is its number: `{{t|a}}`'s one parameter has the
+     * name `1` although no name was written. Writing a parameter back as `name=value` by hand turns a
+     * positional one into a named one; [serialize] writes each as it was, [showKey] says which it is, and
+     * [rawKey] is `null` for a positional one.
+     */
     val name: Markup,
     /** The value as written, markup and all. */
     val value: Markup,
@@ -90,9 +95,37 @@ public data class Template(
      * The name as MediaWiki reads it before expanding anything: comments removed, whitespace trimmed, the
      * first letter as written. A template inside the name is kept, so `{{ {{lang}}-noun }}` is
      * `{{lang}}-noun` rather than `-noun`. [key] is the name normalised for comparing.
+     *
+     * A parser function's name runs on past its colon, as MediaWiki's is: `{{#switch:{{{1}}}|…}}` is
+     * `#switch:{{{1}}}`. [functionName] and [functionArgument] are its two parts.
      */
     val title: String
         get() = name.withoutComments().trim()
+
+    /**
+     * The parser function or variable this calls, by its name, under [TitleRules.DEFAULT]: `#switch` for
+     * `{{#switch:{{{1}}}|…}}`, `lc` for `{{subst:lc:A}}`, `PAGENAME` for `{{PAGENAME}}` and for
+     * `{{PAGENAME:Foo}}`. `null` for a template. See [functionName] with rules for a wiki's own functions.
+     */
+    val functionName: String?
+        get() = functionName(TitleRules.DEFAULT)
+
+    /** The parser function or variable this calls, as [functionName] describes, under [rules]. */
+    public fun functionName(rules: TitleRules): String? =
+        rules.function(title, hasArguments = parameters.isNotEmpty())?.first
+
+    /**
+     * What a parser function is given after its colon, as MediaWiki reads it: comments removed, whitespace
+     * trimmed, templates and arguments kept as written. `{{#invoke:sa-decl|show}}` gives `sa-decl`. `null`
+     * for a template, and for a parser function or variable written without a colon, under
+     * [TitleRules.DEFAULT]: `{{PAGENAME}}` has none and `{{PAGENAME:Foo}}` gives `Foo`.
+     */
+    val functionArgument: String?
+        get() = functionArgument(TitleRules.DEFAULT)
+
+    /** What a parser function is given after its colon, as [functionArgument] describes, under [rules]. */
+    public fun functionArgument(rules: TitleRules): String? =
+        rules.function(title, hasArguments = parameters.isNotEmpty())?.second
 
     /** The name as written, comments and whitespace included. */
     val rawName: String

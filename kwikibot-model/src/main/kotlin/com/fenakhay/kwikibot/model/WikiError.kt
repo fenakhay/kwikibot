@@ -58,6 +58,26 @@ public sealed class WikiError(
         ) : Transport("server error $status from $url")
 
         /**
+         * The server refused the request with an HTTP 4xx and no API answer: a block on the user agent or the
+         * address, or a URL with no API behind it.
+         *
+         * Not transient: the same request gets the same refusal, so it is raised at once.
+         */
+        public class Refused(
+            /** The HTTP status the server answered with. */
+            public val status: Int,
+            /** The endpoint that answered it. */
+            public val url: String,
+            /**
+             * The start of what the server said, which usually names the reason. Empty when it said nothing.
+             */
+            public val detail: String,
+        ) : Transport("HTTP $status from $url" + if (detail.isEmpty()) "" else ": $detail") {
+            override val isTransient: Boolean
+                get() = false
+        }
+
+        /**
          * The server asked us to slow down, via HTTP 429 or a `ratelimited` API error.
          *
          * @param retryAfter the delay the server asked for, when it named one.

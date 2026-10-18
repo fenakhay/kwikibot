@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.wikibase
 
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.wikibase.entity.Entity
 import com.fenakhay.kwikibot.wikibase.value.DataValue
 import com.fenakhay.kwikibot.wikibase.value.EntityId
@@ -11,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
@@ -170,6 +172,29 @@ class EntityDecoderTest {
             )
 
         value.shouldBeInstanceOf<DataValue.EntityRef>().id shouldBe EntityId("Q5")
+    }
+
+    @Test
+    fun `an older reference to a property or lexeme keeps its prefix, and any other is kept as it came`() {
+        fun reference(value: String) =
+            EntityDecoder.decodeValue(
+                Json.parseToJsonElement("""{"type":"wikibase-entityid","value":$value}""").jsonObject
+            )
+
+        reference("""{"entity-type":"property","numeric-id":31}""") shouldBe
+            DataValue.EntityRef(EntityId("P31"))
+        reference("""{"entity-type":"lexeme","numeric-id":1}""") shouldBe DataValue.EntityRef(EntityId("L1"))
+        reference("""{"entity-type":"form","numeric-id":1}""").shouldBeInstanceOf<DataValue.Unknown>()
+        reference("""{"entity-type":"item"}""").shouldBeInstanceOf<DataValue.Unknown>()
+    }
+
+    @Test
+    fun `an entity this library does not model, or one with no id, is refused by name`() {
+        fun decode(json: String) = EntityDecoder.decode(Json.parseToJsonElement(json).jsonObject)
+
+        assertFailsWith<WikiError.Api> { decode("""{"type":"entity-schema","id":"E10"}""") }.code shouldBe
+            "unknownentitytype"
+        assertFailsWith<WikiError.Api> { decode("""{"type":"item"}""") }.code shouldBe "malformedentity"
     }
 
     @Test

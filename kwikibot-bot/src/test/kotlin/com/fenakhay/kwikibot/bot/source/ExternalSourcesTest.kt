@@ -94,6 +94,14 @@ class ExternalSourcesTest {
     }
 
     @Test
+    fun `the titles of a petscan query can be had as a list`() = runTest {
+        val client = HttpClient(MockEngine { respondPlain("Volcano", "Mount Etna") })
+
+        ExternalSources.petScanTitles(mapOf("psid" to "7"), client, userAgent) shouldBe
+            listOf("Volcano", "Mount Etna")
+    }
+
+    @Test
     fun `an external tool is told who is asking`() = runTest {
         var sent: String? = null
         val client =

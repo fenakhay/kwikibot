@@ -264,7 +264,7 @@ class LocalWikiTest {
         wiki.pages.redirectsTo(listOf(template)).getValue(template).map { it.title } shouldBe
             listOf(redirect.title)
         val names = wiki.templateNames(name)
-        names shouldBe setOf("Template:$name", "Template:$name redirect")
+        names shouldBe setOf(name, "$name redirect")
 
         val code = Wikitext.parse("{{$name|a}} {{$name redirect|b}} {{other}}", wiki.parseOptions())
         code.templates(names, wiki.titleRules()).map { it.rawValue("1") } shouldBe listOf("a", "b")

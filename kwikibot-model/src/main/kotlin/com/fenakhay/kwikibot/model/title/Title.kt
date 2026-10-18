@@ -81,7 +81,10 @@ public sealed interface Title {
             /** Nothing left after normalization. */
             EMPTY,
 
-            /** Contains one of `# < > [ ] { } |` or a control character. */
+            /**
+             * Contains one of `# < > [ ] { } |`, a control character, or U+FFFD, which MediaWiki puts where a
+             * character reference names no character.
+             */
             ILLEGAL_CHARACTER,
 
             /** A relative path segment (`.`, `..`) that MediaWiki refuses to resolve. */
@@ -106,6 +109,12 @@ public sealed interface Title {
              * namespace prefix.
              */
             TALK_OF_NON_MAIN,
+
+            /**
+             * In a namespace the wiki does not have. Written without a prefix, as such a title would have to
+             * be, it would name a page in the main namespace instead.
+             */
+            UNKNOWN_NAMESPACE,
         }
     }
 
@@ -135,7 +144,11 @@ public sealed interface Title {
         /** Characters below this are C0 controls; 0x7F is DEL. Neither may appear in a title. */
         private const val FIRST_PRINTABLE = 0x20
         private const val DELETE = 0x7F
+        private const val DECIMAL = 10
         private const val HEX = 16
+
+        /** What MediaWiki decodes a reference to no character into, and then refuses in a title. */
+        private const val REPLACEMENT = '\uFFFD'
 
         /**
          * Parses [raw] the way MediaWiki resolves a link target.
@@ -149,7 +162,8 @@ public sealed interface Title {
          * @param namespaces the namespaces of the wiki; defaults to the canonical English set.
          * @param interwiki the interwiki prefixes of the wiki; defaults to none, which makes every prefix
          *   either a namespace or plain title text.
-         * @param defaultNamespace the namespace to assume when the title carries no prefix.
+         * @param defaultNamespace the namespace to assume when the title carries no prefix. One [namespaces]
+         *   does not have makes such a title [Invalid.Reason.UNKNOWN_NAMESPACE].
          */
         public fun parse(
             raw: String,
@@ -181,14 +195,18 @@ public sealed interface Title {
             namespaces: NamespaceMap,
             fragment: String?,
         ): Title {
-            val text = normalizeWhitespace(prefixes.rest)
-            if (text.isEmpty()) return Invalid(raw, Invalid.Reason.EMPTY)
-
+            val text = prefixes.rest
             validate(text)?.let {
                 return Invalid(raw, it)
             }
 
-            val case = namespaces[prefixes.namespace]?.case ?: TitleCase.FIRST_LETTER
+            // Only a default namespace can be one the wiki lacks: a prefix resolves to the wiki's own.
+            val namespace = namespaces[prefixes.namespace]
+            if (namespace == null && prefixes.namespace != Namespace.MAIN) {
+                return Invalid(raw, Invalid.Reason.UNKNOWN_NAMESPACE)
+            }
+
+            val case = namespace?.case ?: TitleCase.FIRST_LETTER
             val cased =
                 if (case == TitleCase.FIRST_LETTER) {
                     text.replaceFirstChar { it.uppercaseChar() }
@@ -200,6 +218,10 @@ public sealed interface Title {
 
         /** What the leading `prefix:` chain of a title resolved to. */
         private sealed interface Prefixes {
+            /**
+             * A page on this wiki. [rest] is never empty and needs no further normalizing: it is the parsed
+             * text, or the trimmed remainder of it after a prefix.
+             */
             data class Local(val namespace: Namespace, val rest: String) : Prefixes
 
             data class OffWiki(val prefix: String, val rest: String) : Prefixes
@@ -268,7 +290,7 @@ public sealed interface Title {
         private fun validate(text: String): Invalid.Reason? =
             when {
                 text.any { it in ILLEGAL } -> Invalid.Reason.ILLEGAL_CHARACTER
-                text.any { it.code < FIRST_PRINTABLE || it.code == DELETE } ->
+                text.any { it.code < FIRST_PRINTABLE || it.code == DELETE || it == REPLACEMENT } ->
                     Invalid.Reason.ILLEGAL_CHARACTER
                 PERCENT_ESCAPE.containsMatchIn(text) -> Invalid.Reason.PERCENT_ESCAPE
                 text.contains("~~~") -> Invalid.Reason.SIGNATURE
@@ -312,18 +334,21 @@ public sealed interface Title {
             if ('&' !in text) return text
             return ENTITY.replace(text) { match ->
                 val body = match.groupValues[1]
-                val decoded =
-                    when {
-                        body.startsWith("#x") || body.startsWith("#X") ->
-                            body.drop(2).toIntOrNull(HEX)?.let { String(Character.toChars(it)) }
-
-                        body.startsWith("#") ->
-                            body.drop(1).toIntOrNull()?.let { String(Character.toChars(it)) }
-
-                        else -> NAMED_ENTITIES[body.lowercase()]
-                    }
-                decoded ?: match.value
+                when {
+                    body.startsWith("#x") || body.startsWith("#X") -> character(body.drop(2), HEX)
+                    body.startsWith("#") -> character(body.drop(1), DECIMAL)
+                    else -> NAMED_ENTITIES[body.lowercase()] ?: match.value
+                }
             }
         }
+
+        /**
+         * The character a numeric reference names, or [REPLACEMENT] where it names none: past U+10FFFF, or
+         * too long to read. That is what MediaWiki decodes such a reference to.
+         */
+        private fun character(digits: String, radix: Int): String =
+            digits.toIntOrNull(radix)?.takeIf(Character::isValidCodePoint)?.let {
+                String(Character.toChars(it))
+            } ?: REPLACEMENT.toString()
     }
 }

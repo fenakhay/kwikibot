@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.wikitext.MagicWords
 import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.TitleRules
 import com.fenakhay.kwikibot.wikitext.Wikitext
@@ -38,14 +39,15 @@ class ParserSettingsTest {
                    {"name":"defaultsort","aliases":["DEFAULTSORT:","DEFAULTSORTKEY:"],"case-sensitive":true},
                    {"name":"pagename","aliases":["PAGENAME"],"case-sensitive":true},
                    {"name":"!","aliases":["!"],"case-sensitive":true},
-                   {"name":"subst","aliases":["SUBST:","ERSETZEN:"],"case-sensitive":false}]}
+                   {"name":"subst","aliases":["SUBST:","ERSETZEN:"],"case-sensitive":false},
+                   {"name":"redirect","aliases":["#WEITERLEITUNG","#REDIRECT"],"case-sensitive":false}]}
                 """
             )
             .jsonObject
 
     private val decoded = ParserSettings.decode(wiktionary)
-    private val options = decoded.first
-    private val rules = decoded.second
+    private val options = decoded.options
+    private val rules = decoded.rules
 
     @Test
     fun `a wiki's tags, schemes and file names are its own`() {
@@ -86,10 +88,16 @@ class ParserSettingsTest {
     }
 
     @Test
+    fun `a redirect starts with any spelling the wiki gives its magic word`() {
+        decoded.redirects shouldBe MagicWords(caseInsensitive = setOf("#WEITERLEITUNG", "#REDIRECT"))
+    }
+
+    @Test
     fun `a wiki that says nothing gets MediaWiki's defaults`() {
-        val (options, rules) = ParserSettings.decode(JsonObject(emptyMap()))
+        val (options, rules, redirects) = ParserSettings.decode(JsonObject(emptyMap()))
 
         options shouldBe ParseOptions.DEFAULT
         rules shouldBe TitleRules.DEFAULT
+        redirects shouldBe MagicWords(caseInsensitive = setOf("#REDIRECT"))
     }
 }

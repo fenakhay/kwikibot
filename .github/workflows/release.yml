@@ -57,8 +57,6 @@ jobs:
             name: windows-x64
           - os: macos-26
             name: macos-arm64
-          - os: macos-26-intel
-            name: macos-x64
           - os: ubuntu-latest
             name: linux-x64
     runs-on: ${{ matrix.os }}
@@ -72,7 +70,7 @@ jobs:
 
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '25'
+          version: '25.4'
           distribution: graalvm
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -190,7 +188,7 @@ jobs:
           git clone "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" tap
           python3 .github/scripts/brew_formula.py \
             "$GITHUB_REPOSITORY" "$VERSION" tap/Formula/kwikibot.rb \
-            "$(digest macos-arm64)" "$(digest macos-x64)" "$(digest linux-x64)"
+            "$(digest macos-arm64)" "$(digest linux-x64)"
 
           cd tap
           git config user.name "github-actions[bot]"

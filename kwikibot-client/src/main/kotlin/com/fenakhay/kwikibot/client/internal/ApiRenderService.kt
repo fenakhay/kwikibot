@@ -6,9 +6,9 @@ import com.fenakhay.kwikibot.client.internal.wire.Wire
 import com.fenakhay.kwikibot.client.service.ParseProperty
 import com.fenakhay.kwikibot.client.service.RenderRequest
 import com.fenakhay.kwikibot.client.service.RenderService
-import com.fenakhay.kwikibot.client.service.TemplateSandbox
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.render.LimitReport
 import com.fenakhay.kwikibot.model.render.ParsedPage
 import com.fenakhay.kwikibot.model.render.RenderedSection
 import com.fenakhay.kwikibot.model.render.ResolvedLink
@@ -62,10 +62,12 @@ internal class ApiRenderService(
                     ApiRequest.of(
                         "parse",
                         *source(request),
-                        *sandbox(request.sandbox),
+                        *namespaces.sandboxParams(request.sandbox),
+                        "revid" to request.revision?.value?.toString(),
+                        "parser" to request.parser?.apiValue,
                         "prop" to properties.flatMap { wire(it) }.distinct().joinToString("|"),
-                        // Edit-section links and the limit report are markup for a reader, and noise to
-                        // anything reading the result.
+                        // Edit-section links and the limit report's comment are markup for a reader and
+                        // only get in the way of code reading the result. The limit data is still returned.
                         "disableeditsection" to "1",
                         "disablelimitreport" to "1",
                     )
@@ -83,8 +85,23 @@ internal class ApiRenderService(
             images = parsed.array("images").mapNotNull { it.name()?.toFile() },
             externalLinks = parsed.array("externallinks").mapNotNull { it.name() },
             revision = parsed["revid"]?.jsonPrimitive?.longOrNull?.let { RevisionId(it) },
+            limitReport = (parsed["limitreportdata"] as? JsonArray)?.let { limitReport(it) },
         )
     }
+
+    /**
+     * The limit report's rows: each a name and its values under the keys `0`, `1` and on, a number or a
+     * string as the row has it.
+     */
+    private fun limitReport(rows: JsonArray): LimitReport =
+        LimitReport(
+            rows
+                .mapNotNull { it as? JsonObject }
+                .associate { row ->
+                    row.text("name") to
+                        row.keys.mapNotNull { it.toIntOrNull() }.sorted().map { row.text(it.toString()) }
+                }
+        )
 
     /** What is parsed: a saved page, or text, which needs a title for relative links to resolve against. */
     private fun source(request: RenderRequest): Array<Pair<String, String?>> {
@@ -99,18 +116,6 @@ internal class ApiRenderService(
             )
         }
     }
-
-    private fun sandbox(sandbox: TemplateSandbox?): Array<Pair<String, String?>> =
-        if (sandbox == null) {
-            emptyArray()
-        } else {
-            arrayOf(
-                "templatesandboxprefix" to sandbox.prefixes.takeIf { it.isNotEmpty() }?.joinToString("|"),
-                "templatesandboxtitle" to sandbox.title?.let { namespaces.format(it.title) },
-                "templatesandboxtext" to sandbox.text,
-                "templatesandboxcontentmodel" to sandbox.contentModel,
-            )
-        }
 
     /** What [property] goes out as on this wiki: its own value, or the spelling this wiki takes. */
     private suspend fun wire(property: ParseProperty): List<String> =
@@ -171,7 +176,8 @@ internal class ApiRenderService(
             .takeIf { it.isNotEmpty() }
             ?.let { decoder.refOf(it.replace('_', ' '), Namespace.CATEGORY.id) }
 
-    private fun String.toFile(): PageRef? = decoder.refOf(this, Namespace.FILE.id)
+    /** A file entry, which arrives as a database key as a category does, and is normalised the same way. */
+    private fun String.toFile(): PageRef? = decoder.refOf(replace('_', ' '), Namespace.FILE.id)
 
     private fun JsonElement.name(): String? = runCatching {
         jsonPrimitive.content

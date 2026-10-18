@@ -104,4 +104,15 @@ class PromptTest {
     fun `a choice is matched by its key, whatever case it was typed in`() = runTest {
         ScriptedPrompt(listOf("Q")).choose("What now?", choices) shouldBe "quit"
     }
+
+    @Test
+    fun `a terminal prompt is interactive, and asks again until it gets a yes or a no`() = runTest {
+        val typed = ArrayDeque(listOf("maybe", " No "))
+        val shown = mutableListOf<String>()
+        val prompt = TerminalPrompt(output = { shown += it }, input = { typed.removeFirst() })
+
+        prompt.isInteractive shouldBe true
+        prompt.confirm("Save?", default = true) shouldBe false
+        shown shouldBe listOf("Save? [Y/n] ", "Save? [Y/n] ")
+    }
 }

@@ -109,6 +109,27 @@ class CosmeticChangesTest {
     }
 
     @Test
+    fun `a heading whose only content is its subsections stays`() {
+        val before = "==English==\n===Noun===\n# A word.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe before
+    }
+
+    @Test
+    fun `a section goes with its subsections when they are empty too`() {
+        val before = "==English==\n===Noun===\n\n====Synonyms====\n\n==French==\nUn mot.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==French==\nUn mot.\n"
+    }
+
+    @Test
+    fun `an empty subsection goes and the section it was in stays for its other content`() {
+        val before = "==English==\n===Etymology===\n\n===Noun===\n# A word.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==English==\n===Noun===\n# A word.\n"
+    }
+
+    @Test
     fun `a section holding only a comment is not empty`() {
         val before = "==English==\n<!-- to be written -->\n"
 

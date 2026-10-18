@@ -114,11 +114,3 @@ tasks.register<JavaExec>("wikitextLargePageDump") {
     mainClass.set("com.fenakhay.kwikibot.tools.LargePagesKt")
     args(largePagesFile.asFile.absolutePath)
 }
-
-kover {
-    currentProject {
-        instrumentation {
-            disabledForAll = true
-        }
-    }
-}

@@ -191,6 +191,60 @@ class SurfaceTest {
     }
 
     @Test
+    fun `a module going away names everything kwikibot sends to it`() {
+        val before =
+            Surface.parse(
+                "$COLUMNS\nquery+oldlist\t-\tlist\tMediaWiki\nquery+oldlist\tolmode\tlist\tMediaWiki\n"
+            )
+        val usage =
+            Usage.parse(
+                """
+                module	parameter	value	symbol
+                query+oldlist	olmode	a	OldListMode.A
+                query+oldlist	ollimit		OldListRequest.limit
+                query+other	otmode	a	OtherMode.A
+                """
+                    .trimIndent()
+            )
+
+        SurfaceReport.compare(before, emptyList(), usage).removed.map { it.render() } shouldBe
+            listOf(
+                "- `query+oldlist` (module) — **used by kwikibot**: OldListMode, OldListRequest",
+                "- `query+oldlist olmode` — **used by kwikibot**: OldListMode",
+            )
+    }
+
+    @Test
+    fun `a row that moves extension, stops deprecating a value or leaves some wikis says each`() {
+        val header = COLUMNS.split('\t')
+        val before =
+            listOf(
+                Row.parse(
+                    header,
+                    "edit\tsummary\taction\tMediaWiki\t\ttype=string deprecatedvalues=old|older",
+                )
+            )
+        val after =
+            listOf(
+                Row.parse(
+                    header,
+                    "edit\tsummary\taction\tCheckUser\t\ttype=string deprecatedvalues=older\tenwiki",
+                )
+            )
+
+        val report = SurfaceReport.compare(before, after)
+
+        report.deprecated shouldBe emptyList()
+        report.changed.single().render() shouldBe
+            "- `edit summary`: source MediaWiki → CheckUser; no longer deprecated: old; wikis (all) → enwiki"
+    }
+
+    @Test
+    fun `an empty registry marks nothing as used`() {
+        Usage.parse("").of("edit", NO_PARAMETER) shouldBe emptyList()
+    }
+
+    @Test
     fun `nothing to report says so`() {
         val rows = Surface.parse("$COLUMNS\nedit\t-\taction\tMediaWiki\n")
 

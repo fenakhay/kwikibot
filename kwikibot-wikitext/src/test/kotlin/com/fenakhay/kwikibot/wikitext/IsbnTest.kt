@@ -49,7 +49,23 @@ class IsbnTest {
         val before = "See ISBN 0-19-853737-9 and ISBN 0-19-853737-8."
 
         ReformatIsbns(toIsbn13 = true).apply(Wikitext.parse(before)).serialize() shouldBe
-            "See ISBN 9780198537373 and ISBN 0-19-853737-8."
+            "See ISBN 978-0-19-853737-3 and ISBN 0-19-853737-8."
+    }
+
+    @Test
+    fun `a converted isbn keeps the separators it was written with`() {
+        val toIsbn13 = ReformatIsbns(toIsbn13 = true)
+
+        toIsbn13.apply(Wikitext.parse("ISBN 0198537379")).serialize() shouldBe "ISBN 9780198537373"
+        toIsbn13.apply(Wikitext.parse("ISBN 0 19 853737 9")).serialize() shouldBe "ISBN 978 0 19 853737 3"
+        toIsbn13.apply(Wikitext.parse("ISBN  043942089X")).serialize() shouldBe "ISBN  9780439420891"
+    }
+
+    @Test
+    fun `a thirteen-digit isbn is left as it was written`() {
+        val before = "ISBN 978-0-306-40615-7 and ISBN  9780306406157"
+
+        ReformatIsbns(toIsbn13 = true).apply(Wikitext.parse(before)).serialize() shouldBe before
     }
 
     @Test
@@ -57,7 +73,7 @@ class IsbnTest {
         val before = "{{cite book|isbn=0-19-853737-9}} and ISBN 0-19-853737-9"
 
         ReformatIsbns(toIsbn13 = true).apply(Wikitext.parse(before)).serialize() shouldBe
-            "{{cite book|isbn=0-19-853737-9}} and ISBN 9780198537373"
+            "{{cite book|isbn=0-19-853737-9}} and ISBN 978-0-19-853737-3"
     }
 
     @Test

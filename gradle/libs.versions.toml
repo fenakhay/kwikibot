@@ -63,4 +63,5 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "benchmark" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

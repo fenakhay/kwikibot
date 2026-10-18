@@ -34,6 +34,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.time.Duration
@@ -90,6 +91,75 @@ class UserAndLogServiceTest {
         me.name shouldBe "FenaBot"
         me.hasRight("bot") shouldBe true
         me.hasRight("delete") shouldBe false
+    }
+
+    @Test
+    fun `a session the wiki says nothing about is read as logged out`() = runTest {
+        val transport = transport { respondJson("""{"query":{}}""") }
+
+        val me = users(transport).current()
+
+        me.isAnonymous shouldBe true
+        me.name shouldBe ""
+    }
+
+    @Test
+    fun `every account is listed in name order, asking only for what allusers knows`() = runTest {
+        var asked = Parameters.Empty
+        val transport = transport { request ->
+            asked = request.url.parameters
+            respondJson(
+                """{"query":{"allusers":[
+                   {"userid":1,"name":"Equinox","editcount":5,"groups":["user","sysop"]},
+                   {"userid":2,"name":"Erutuon","editcount":9,"groups":["user"]}]}}"""
+            )
+        }
+
+        val accounts = users(transport).allUsers().toList()
+
+        accounts.map { it.name } shouldBe listOf("Equinox", "Erutuon")
+        accounts.first().groups shouldContain "sysop"
+        asked["list"] shouldBe "allusers"
+        asked["auprop"] shouldBe "blockinfo|groups|rights|editcount|registration"
+        asked["aulimit"] shouldBe "max"
+        listOf("aufrom", "auto", "auprefix", "augroup", "auwitheditsonly", "auexcludetemp").forEach {
+            asked.contains(it) shouldBe false
+        }
+    }
+
+    @Test
+    fun `the account list is narrowed by the wiki, and stops at its limit`() = runTest {
+        val asked = mutableListOf<Parameters>()
+        val transport = transport { request ->
+            asked += request.url.parameters
+            respondJson(
+                """{"continue":{"aufrom":"Ebc","continue":"-||"},"query":{"allusers":[
+                   {"userid":1,"name":"Eaa"},{"userid":2,"name":"Ebb"}]}}"""
+            )
+        }
+
+        val accounts =
+            users(transport)
+                .allUsers(
+                    from = "E",
+                    to = "F",
+                    prefix = "E",
+                    group = setOf("bot", "sysop"),
+                    withEditsOnly = true,
+                    excludeTemporary = true,
+                    limit = 1,
+                )
+                .toList()
+
+        accounts.map { it.name } shouldBe listOf("Eaa")
+        val sent = asked.single()
+        sent["aufrom"] shouldBe "E"
+        sent["auto"] shouldBe "F"
+        sent["auprefix"] shouldBe "E"
+        sent["augroup"] shouldBe "bot|sysop"
+        sent["auwitheditsonly"] shouldBe "1"
+        sent["auexcludetemp"] shouldBe "1"
+        sent["aulimit"] shouldBe "1"
     }
 
     @Test

@@ -302,12 +302,24 @@ public interface PageService {
      * @param categories whether to report the categories each text would put a page in. Each text is then
      *   sent alone, since a wiki reports categories for a whole expansion. An implementation that does not
      *   override this expands each text with [expandText] and reports none.
+     * @param sandbox unsaved templates or modules to expand with, as a parse takes them.
+     * @param revision the revision to expand as, which `{{REVISIONID}}` and the like read. Without it, the
+     *   texts are expanded as a preview, which a module can tell.
+     * @throws IllegalStateException from an implementation that does not override this, given a sandbox or a
+     *   revision.
      */
     public suspend fun expandTexts(
         texts: List<String>,
         title: PageRef? = null,
         categories: Boolean = false,
-    ): List<ExpandedText> = texts.map { ExpandedText(expandText(it, title)) }
+        sandbox: TemplateSandbox? = null,
+        revision: RevisionId? = null,
+    ): List<ExpandedText> {
+        check(sandbox == null && revision == null) {
+            "this PageService cannot expand with a sandbox or a revision"
+        }
+        return texts.map { ExpandedText(expandText(it, title)) }
+    }
 
     /**
      * The redirects to each of [refs], optionally only those in [namespaces]: every other name a page is

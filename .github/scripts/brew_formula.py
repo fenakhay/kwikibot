@@ -1,6 +1,6 @@
 """Write the Homebrew formula for a release.
 
-Usage: brew_formula.py <repo> <version> <out> <arm64-sha> <x64-sha> <linux-sha>
+Usage: brew_formula.py <repo> <version> <out> <arm64-sha> <linux-sha>
 """
 
 import pathlib
@@ -13,14 +13,9 @@ TEMPLATE = '''class Kwikibot < Formula
   version "{version}"
 
   on_macos do
-    on_arm do
-      url "{base}/kwikibot-{version}-macos-arm64.tgz"
-      sha256 "{arm}"
-    end
-    on_intel do
-      url "{base}/kwikibot-{version}-macos-x64.tgz"
-      sha256 "{intel}"
-    end
+    depends_on arch: :arm64
+    url "{base}/kwikibot-{version}-macos-arm64.tgz"
+    sha256 "{arm}"
   end
 
   on_linux do
@@ -40,9 +35,11 @@ end
 
 
 def main() -> None:
-    repo, version, out, arm, intel, linux = sys.argv[1:7]
+    if len(sys.argv) != 6:
+        raise SystemExit(__doc__.strip())
+    repo, version, out, arm, linux = sys.argv[1:]
 
-    for name, digest in (("arm64", arm), ("x64", intel), ("linux", linux)):
+    for name, digest in (("arm64", arm), ("linux", linux)):
         if len(digest) != 64:
             raise SystemExit(f"{name}: expected a sha256, got {digest!r}")
 
@@ -51,7 +48,6 @@ def main() -> None:
         version=version,
         base=f"https://github.com/{repo}/releases/download/v{version}",
         arm=arm,
-        intel=intel,
         linux=linux,
     )
 

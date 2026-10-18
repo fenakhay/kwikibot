@@ -63,11 +63,12 @@ val reportsDir = layout.buildDirectory.dir("reports/benchmarks/main")
 
 tasks.register("recordBaseline") {
     group = "benchmark"
-    description = "Copies the last mainBenchmark report over baseline.json."
+    description = "Copies the last mainBenchmark report over baseline.json, without the home directory."
 
     dependsOn("mainBenchmark")
     val target = File(baselinePath)
     val reports = reportsDir
+    val home = providers.systemProperty("user.home")
     doLast {
         val report =
             requireNotNull(
@@ -83,7 +84,18 @@ tasks.register("recordBaseline") {
                 "no benchmark report found"
             }
 
-        report.copyTo(target, overwrite = true)
+        fun String.inJson(): String = replace("\\", "\\\\")
+        val homeDirectory = File(home.get())
+        val neutral = homeDirectory.parentFile?.resolve("user") ?: File("user")
+        val recorded =
+            report
+                .readText()
+                .replace(
+                    (homeDirectory.path + File.separator).inJson(),
+                    (neutral.path + File.separator).inJson(),
+                )
+
+        target.writeText(recorded)
         logger.lifecycle("baseline recorded from ${report.parentFile.name}")
     }
 }

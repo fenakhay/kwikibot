@@ -1,7 +1,7 @@
 [
-  {"name": "parse", "bytes": 18370640, "units": 764152},
-  {"name": "parseShort", "bytes": 1601456, "units": 37859},
-  {"name": "parseLong", "bytes": 16740528, "units": 726293},
-  {"name": "parseLarge", "bytes": 29280328, "units": 1950246},
-  {"name": "roundTrip", "bytes": 24025064, "units": 764152}
+  {"name": "parse", "bytes": 18658496, "units": 764152},
+  {"name": "parseShort", "bytes": 1622616, "units": 37859},
+  {"name": "parseLong", "bytes": 17035968, "units": 726293},
+  {"name": "parseLarge", "bytes": 29875320, "units": 1950246},
+  {"name": "roundTrip", "bytes": 24258552, "units": 764152}
 ]

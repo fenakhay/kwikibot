@@ -1,5 +1,7 @@
 package com.fenakhay.kwikibot.model.title
 
+import com.fenakhay.kwikibot.model.WikiError
+
 /** How a wiki treats the first character of a title in a given namespace. */
 public enum class TitleCase {
     /** The first letter is capitalised automatically — the default nearly everywhere. */
@@ -63,11 +65,24 @@ public class NamespaceMap(namespaces: Collection<NamespaceInfo>) {
     /** The namespace a title prefix refers to, or `null` if the prefix names none. */
     public fun byPrefix(prefix: String): NamespaceInfo? = byPrefix[normalizePrefix(prefix)]
 
-    /** Renders a local title with its namespace prefix, as MediaWiki would display it. */
+    /**
+     * Renders a local title with its namespace prefix, as MediaWiki would display it.
+     *
+     * @throws WikiError.Page.BadTitle if this wiki has no namespace [title] is in, or one with no name:
+     *   written without a prefix, the title would name a page in the main namespace instead.
+     */
     public fun format(title: Title.Local): String {
-        val prefix = this[title.namespace]?.localName?.takeIf { it.isNotEmpty() }
-        val base = if (prefix == null) title.text else "$prefix:${title.text}"
+        val base = if (title.namespace == Namespace.MAIN) title.text else "${prefix(title)}:${title.text}"
         return title.fragment?.let { "$base#$it" } ?: base
+    }
+
+    private fun prefix(title: Title.Local): String {
+        val info = this[title.namespace]
+        return info?.localName?.takeIf { it.isNotEmpty() }
+            ?: info?.canonicalName?.takeIf { it.isNotEmpty() }
+            ?: throw WikiError.Page.BadTitle(
+                Title.Invalid(title.toString(), Title.Invalid.Reason.UNKNOWN_NAMESPACE)
+            )
     }
 
     private fun normalizePrefix(raw: String): String = raw.replace('_', ' ').trim().lowercase()

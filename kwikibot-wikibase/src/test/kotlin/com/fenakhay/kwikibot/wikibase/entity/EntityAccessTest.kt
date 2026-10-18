@@ -178,5 +178,11 @@ class EntityAccessTest {
         EntityId("L1").kind shouldBe EntityId.Kind.LEXEME
         EntityId("L1-F2").kind shouldBe EntityId.Kind.FORM
         EntityId("L1-S1").kind shouldBe EntityId.Kind.SENSE
+        EntityId("M123").kind shouldBe EntityId.Kind.MEDIA_INFO
+    }
+
+    @Test
+    fun `an id with a prefix this library does not know is kept as unknown, not refused`() {
+        EntityId("E10").kind shouldBe EntityId.Kind.UNKNOWN
     }
 }

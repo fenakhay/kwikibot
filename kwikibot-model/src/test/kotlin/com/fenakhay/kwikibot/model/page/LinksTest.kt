@@ -56,6 +56,11 @@ class LinksTest {
     }
 
     @Test
+    fun `an interwiki link prints as the wikitext it renders`() {
+        SiteLink("fr", "Volcan", text = "volcan").toString() shouldBe "[[fr:Volcan|volcan]]"
+    }
+
+    @Test
     fun `an interwiki link needs both halves`() {
         assertFailsWith<IllegalArgumentException> { SiteLink("", "Volcan") }
         assertFailsWith<IllegalArgumentException> { SiteLink("fr", "  ") }

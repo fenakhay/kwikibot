@@ -44,6 +44,16 @@ class TextOpsTest {
     }
 
     @Test
+    fun `a comment left open stays open, whether or not anything in it matched`() {
+        val code = Wikitext.parse("colour <!-- open colour")
+
+        code.replaceText(Regex("absent"), "x", TextScope(comments = true)).serialize() shouldBe
+            "colour <!-- open colour"
+        code.replaceText(Regex("colour"), "color", TextScope(comments = true)).serialize() shouldBe
+            "color <!-- open color"
+    }
+
+    @Test
     fun `a link's display text is prose but its target is not`() {
         val code = Wikitext.parse("[[colour|the colour]]")
 

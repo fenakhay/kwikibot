@@ -363,6 +363,11 @@ public final class com/fenakhay/kwikibot/bot/BotConfig$WikiSelection$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/fenakhay/kwikibot/bot/BotMainKt {
+	public static final fun botMain ([Ljava/lang/String;ZLkotlin/jvm/functions/Function2;)Ljava/lang/Void;
+	public static synthetic fun botMain$default ([Ljava/lang/String;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ljava/lang/Void;
+}
+
 public final class com/fenakhay/kwikibot/bot/BotPolicy {
 	public static final field ALL Ljava/lang/String;
 	public static final field NOBOTS Ljava/lang/String;
@@ -370,6 +375,14 @@ public final class com/fenakhay/kwikibot/bot/BotPolicy {
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun check (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/bot/EditPermission;
 	public final fun check (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/EditPermission;
+}
+
+public final class com/fenakhay/kwikibot/bot/BotStart {
+	public fun <init> (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/bot/CommonOptions;Ljava/util/List;Lcom/fenakhay/kwikibot/bot/BotConfig;)V
+	public final fun getArguments ()Ljava/util/List;
+	public final fun getConfig ()Lcom/fenakhay/kwikibot/bot/BotConfig;
+	public final fun getOptions ()Lcom/fenakhay/kwikibot/bot/CommonOptions;
+	public final fun getWiki ()Lcom/fenakhay/kwikibot/client/Wiki;
 }
 
 public final class com/fenakhay/kwikibot/bot/Choice {
@@ -861,6 +874,7 @@ public final class com/fenakhay/kwikibot/bot/run/StopReason : java/lang/Enum {
 	public static final field POLICY Lcom/fenakhay/kwikibot/bot/run/StopReason;
 	public static final field POLICY_UNREACHABLE Lcom/fenakhay/kwikibot/bot/run/StopReason;
 	public static final field READ_ONLY Lcom/fenakhay/kwikibot/bot/run/StopReason;
+	public static final field REFUSED Lcom/fenakhay/kwikibot/bot/run/StopReason;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/run/StopReason;
 	public static fun values ()[Lcom/fenakhay/kwikibot/bot/run/StopReason;

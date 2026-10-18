@@ -130,7 +130,7 @@ public interface Wiki {
      *
      * A wiki opened through a client asks once and keeps the answer.
      */
-    public suspend fun parseOptions(): ParseOptions = ParserSettings.read(transport).first
+    public suspend fun parseOptions(): ParseOptions = ParserSettings.read(transport).options
 
     /**
      * How this wiki names pages: its namespace names, which namespaces keep case, its parser functions and
@@ -138,5 +138,5 @@ public interface Wiki {
      *
      * A wiki opened through a client asks once and keeps the answer.
      */
-    public suspend fun titleRules(): TitleRules = ParserSettings.read(transport).second
+    public suspend fun titleRules(): TitleRules = ParserSettings.read(transport).rules
 }

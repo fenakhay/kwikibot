@@ -23,6 +23,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.time.Duration
@@ -189,17 +190,40 @@ class ListServiceTest {
     }
 
     @Test
-    fun `a special page is queried through querypage`() = runTest {
-        var params = emptyMap<String, String>()
+    fun `a special page is read from the results of querypage, across continuation batches`() = runTest {
+        val sent = mutableListOf<Map<String, String>>()
         val lists = lists { request ->
-            params = request.url.parameters.entries().associate { it.key to it.value.first() }
-            respondJson("""{"query":{"querypage":[{"ns":14,"title":"Category:Wanted"}]}}""")
+            sent += request.url.parameters.entries().associate { it.key to it.value.first() }
+            if (sent.size == 1) {
+                respondJson(
+                    """{"batchcomplete":true,"continue":{"offset":1,"continue":"-||"},
+                       "query":{"querypage":{"name":"Wantedcategories","results":[
+                       {"value":"7","ns":14,"title":"Category:Wanted"}],
+                       "cached":true,"cachedtimestamp":"2026-10-15T03:12:44Z","maxresults":5000}}}"""
+                )
+            } else {
+                respondJson(
+                    """{"batchcomplete":true,"query":{"querypage":{"name":"Wantedcategories","results":[
+                       {"value":"3","ns":14,"title":"Category:Also wanted"}]}}}"""
+                )
+            }
         }
 
         val wanted = lists.specialPage("Wantedcategories").toList()
 
-        params["qppage"] shouldBe "Wantedcategories"
-        wanted.single().title.namespace shouldBe Namespace.CATEGORY
+        sent.first()["qppage"] shouldBe "Wantedcategories"
+        sent.last()["offset"] shouldBe "1"
+        wanted.map { it.title.namespace to it.title.text } shouldBe
+            listOf(Namespace.CATEGORY to "Wanted", Namespace.CATEGORY to "Also wanted")
+    }
+
+    @Test
+    fun `a special page that is not cached has no results and lists nothing`() = runTest {
+        val lists = lists {
+            respondJson("""{"batchcomplete":true,"query":{"querypage":{"name":"Longpages","results":[]}}}""")
+        }
+
+        lists.specialPage("Longpages", limit = 10).toList() shouldBe emptyList()
     }
 
     @Test
@@ -334,6 +358,58 @@ class ListServiceTest {
 
         url.contains("alunique") shouldBe false
     }
+
+    @Test
+    fun `redirect and transclusion targets are each their own module, in the namespace each lives in`() =
+        runTest {
+            val asked = mutableListOf<Parameters>()
+            val lists = lists { request ->
+                asked += request.url.parameters
+                val module = request.url.parameters["list"]
+                respondJson("""{"query":{"$module":[{"ns":10,"title":"Template:col"}]}}""")
+            }
+
+            lists.allRedirectTargets().toList()
+            val templates = lists.allTransclusionTargets().toList()
+            lists
+                .allRedirectTargets(Namespace.CATEGORY, from = "A", to = "B", unique = false, limit = 5)
+                .toList()
+
+            templates.single() shouldBe ref("col", Namespace.TEMPLATE)
+            val (redirects, transclusions, narrowed) = asked
+            redirects["list"] shouldBe "allredirects"
+            redirects["arnamespace"] shouldBe "0"
+            redirects["arunique"] shouldBe "1"
+            redirects["arlimit"] shouldBe "max"
+            transclusions["list"] shouldBe "alltransclusions"
+            transclusions["atnamespace"] shouldBe "10"
+            transclusions["atunique"] shouldBe "1"
+            narrowed["arnamespace"] shouldBe "14"
+            narrowed["arfrom"] shouldBe "A"
+            narrowed["arto"] shouldBe "B"
+            narrowed.contains("arunique") shouldBe false
+            narrowed["arlimit"] shouldBe "5"
+        }
+
+    @Test
+    fun `a prefix search and a category enumeration ask about articles and every category by default`() =
+        runTest {
+            val asked = mutableListOf<Parameters>()
+            val lists = lists { request ->
+                asked += request.url.parameters
+                respondJson("""{"query":{"prefixsearch":[],"allcategories":[]}}""")
+            }
+
+            lists.prefixSearch("volc").toList()
+            lists.allCategories().toList()
+
+            val (search, categories) = asked
+            search["psnamespace"] shouldBe "0"
+            categories["list"] shouldBe "allcategories"
+            listOf("acfrom", "acto", "acprefix", "acmin", "acmax").forEach {
+                categories.contains(it) shouldBe false
+            }
+        }
 
     @Test
     fun `file usages have no namespace, since their targets are always files`() = runTest {

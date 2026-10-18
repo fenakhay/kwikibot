@@ -74,97 +74,83 @@ public object PageSourceSpec {
             "the '$kind' page source needs an argument"
         }
 
-        return build(kind, argument)
+        return SOURCES.getValue(kind)(argument)
     }
 
     /** Every source in a list of specs, in order. */
     public fun parseAll(specs: List<String>): PageSource = PageSource.concat(specs.map { parse(it) })
 
-    /** The source kinds [parse] understands. */
-    public val kinds: List<String> =
-        listOf(
-            "page",
-            "cat",
-            "subcats",
-            "catfiles",
-            "links",
-            "backlinks",
-            "transcludes",
-            "search",
-            "prefix",
-            "allpages",
-            "special",
-            "usercontribs",
-            "recentchanges",
-            "file",
-        )
-
-    private val ARGUMENTLESS = setOf("allpages", "recentchanges")
-
-    @Suppress("CyclomaticComplexMethod")
-    private fun build(kind: String, argument: String): PageSource =
-        when (kind) {
-            "page" -> PageSource.titles(listOf(argument))
-
-            "cat" ->
-                PageSource { wiki ->
-                    wiki.lists.categoryMembers(wiki.category(argument))
-                }
-
-            "subcats" ->
-                PageSource { wiki ->
-                    wiki.lists.categoryMembers(wiki.category(argument), CategoryMemberType.SUBCATEGORY)
-                }
-
-            "catfiles" ->
-                PageSource { wiki ->
-                    wiki.lists.categoryMembers(wiki.category(argument), CategoryMemberType.FILE)
-                }
-
-            "links" -> PageSource { wiki -> wiki.lists.linksFrom(wiki.ref(argument)) }
-            "backlinks" -> PageSource { wiki -> wiki.lists.backlinks(wiki.ref(argument)) }
-            "transcludes" -> PageSource { wiki -> wiki.lists.transclusions(wiki.ref(argument)) }
-
-            "search" ->
-                PageSource { wiki ->
-                    wiki.lists.search(argument, scope = SearchScope.TEXT)
-                }
-
-            "prefix" -> PageSource { wiki -> wiki.lists.allPages(prefix = argument) }
-
-            "allpages" ->
-                PageSource { wiki ->
-                    wiki.lists.allPages(from = argument.takeIf { it.isNotEmpty() })
-                }
-
-            "special" -> PageSource { wiki -> wiki.lists.specialPage(argument) }
-
-            "usercontribs" ->
-                PageSource { wiki ->
-                    wiki.users.contributions(argument).map { it.page }
-                }
-
-            "recentchanges" ->
-                PageSource { wiki ->
-                    wiki.logs.recentChanges(limit = argument.toIntOrNull() ?: DEFAULT_RECENT).mapNotNull {
-                        it.page
+    /**
+     * How each kind builds its source from the argument, in the order [kinds] lists them.
+     *
+     * One map holds both, so every listed kind has a builder.
+     */
+    private val SOURCES: Map<String, (String) -> PageSource> =
+        linkedMapOf(
+            "page" to { argument -> PageSource.titles(listOf(argument)) },
+            "cat" to
+                { argument ->
+                    PageSource { wiki -> wiki.lists.categoryMembers(wiki.category(argument)) }
+                },
+            "subcats" to
+                { argument ->
+                    PageSource { wiki ->
+                        wiki.lists.categoryMembers(wiki.category(argument), CategoryMemberType.SUBCATEGORY)
                     }
-                }
-
+                },
+            "catfiles" to
+                { argument ->
+                    PageSource { wiki ->
+                        wiki.lists.categoryMembers(wiki.category(argument), CategoryMemberType.FILE)
+                    }
+                },
+            "links" to { argument -> PageSource { wiki -> wiki.lists.linksFrom(wiki.ref(argument)) } },
+            "backlinks" to { argument -> PageSource { wiki -> wiki.lists.backlinks(wiki.ref(argument)) } },
+            "transcludes" to
+                { argument ->
+                    PageSource { wiki -> wiki.lists.transclusions(wiki.ref(argument)) }
+                },
+            "search" to
+                { argument ->
+                    PageSource { wiki -> wiki.lists.search(argument, scope = SearchScope.TEXT) }
+                },
+            "prefix" to { argument -> PageSource { wiki -> wiki.lists.allPages(prefix = argument) } },
+            "allpages" to
+                { argument ->
+                    PageSource { wiki -> wiki.lists.allPages(from = argument.takeIf { it.isNotEmpty() }) }
+                },
+            "special" to { argument -> PageSource { wiki -> wiki.lists.specialPage(argument) } },
+            "usercontribs" to
+                { argument ->
+                    PageSource { wiki -> wiki.users.contributions(argument).map { it.page } }
+                },
+            "recentchanges" to
+                { argument ->
+                    PageSource { wiki ->
+                        wiki.logs.recentChanges(limit = argument.toIntOrNull() ?: DEFAULT_RECENT).mapNotNull {
+                            it.page
+                        }
+                    }
+                },
             // A file of titles, one per line, which is how a bot run is resumed or a list from
             // somewhere else is fed in. Blank lines and "#" comments are ignored.
-            "file" ->
-                PageSource { wiki ->
-                    Path.of(argument)
-                        .readLines()
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() && !it.startsWith("#") }
-                        .asFlow()
-                        .map { wiki.ref(it) }
-                }
+            "file" to
+                { argument ->
+                    PageSource { wiki ->
+                        Path.of(argument)
+                            .readLines()
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() && !it.startsWith("#") }
+                            .asFlow()
+                            .map { wiki.ref(it) }
+                    }
+                },
+        )
 
-            else -> error("unhandled page source '$kind'")
-        }
+    /** The source kinds [parse] understands. */
+    public val kinds: List<String> = SOURCES.keys.toList()
+
+    private val ARGUMENTLESS = setOf("allpages", "recentchanges")
 
     // "cat:Foo" and "cat:Category:Foo" name the same category; resolving against the category
     // namespace by default means a bot author does not have to remember which one to write.

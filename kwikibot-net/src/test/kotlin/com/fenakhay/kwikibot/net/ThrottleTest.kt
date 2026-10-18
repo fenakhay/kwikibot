@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.net
 
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
@@ -94,6 +95,38 @@ class ThrottleTest {
     }
 
     @Test
+    fun `a write cancelled while it waits gives its slot back`() = runTest {
+        val throttle =
+            Throttle(read = 100.milliseconds, write = 10.seconds, timeSource = testScheduler.timeSource)
+        throttle.acquire(RequestKind.WRITE)
+
+        val abandoned = async { throttle.acquire(RequestKind.WRITE) }
+        testScheduler.runCurrent()
+        throttle.peek(RequestKind.WRITE) shouldBe 20.seconds
+        abandoned.cancelAndJoin()
+
+        throttle.peek(RequestKind.WRITE) shouldBe 10.seconds
+        throttle.acquire(RequestKind.WRITE)
+        currentTime shouldBe 10_000
+    }
+
+    @Test
+    fun `a slot is not given back once a later caller has queued behind it`() = runTest {
+        val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
+        throttle.acquire(RequestKind.READ)
+
+        val abandoned = async { throttle.acquire(RequestKind.READ) }
+        val queued = async {
+            throttle.acquire(RequestKind.READ)
+            currentTime
+        }
+        testScheduler.runCurrent()
+        abandoned.cancelAndJoin()
+
+        queued.await() shouldBe 200
+    }
+
+    @Test
     fun `a penalty asked for while a caller waits still holds it back`() = runTest {
         val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
         throttle.acquire(RequestKind.READ)
@@ -134,6 +167,17 @@ class ThrottleTest {
     }
 
     @Test
+    fun `a pause of nothing, or less, holds nothing back`() = runTest {
+        val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
+
+        throttle.penalize(Duration.ZERO)
+        throttle.penalize((-5).seconds)
+        throttle.acquire(RequestKind.READ)
+
+        currentTime shouldBe 0
+    }
+
+    @Test
     fun `a longer penalty wins and a shorter one cannot cut it short`() = runTest {
         val throttle = Throttle(read = 100.milliseconds, timeSource = testScheduler.timeSource)
 
@@ -151,6 +195,16 @@ class ThrottleTest {
         List(5) { async { throttle.acquire(RequestKind.READ) } }.awaitAll()
 
         currentTime shouldBe 400
+    }
+
+    @Test
+    fun `a throttle paces as Wikimedia asks unless told otherwise`() {
+        val throttle = Throttle()
+
+        throttle.read shouldBe Throttle.DEFAULT_READ
+        throttle.write shouldBe Throttle.DEFAULT_WRITE
+        Throttle.DEFAULT_READ shouldBe 100.milliseconds
+        Throttle.DEFAULT_WRITE shouldBe 10.seconds
     }
 
     @Test

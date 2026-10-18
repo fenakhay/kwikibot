@@ -61,6 +61,22 @@ public data class TitleRules(
         return colon > 0 && name.substring(0, colon) in functions
     }
 
+    /**
+     * The parser function or variable [title] calls, split from what it is given: `#switch:x` is `#switch`
+     * and `x`, `subst:lc:A` is `lc` and `A`, `PAGENAME` is `PAGENAME` and nothing. `null` when [title] names
+     * a page.
+     *
+     * @param title the template's name as written, trimmed.
+     * @param hasArguments whether the template has any parameters, as for [isParserFunction].
+     */
+    internal fun function(title: String, hasArguments: Boolean): Pair<String, String?>? {
+        if (!isParserFunction(title, hasArguments)) return null
+        val name = withoutModifiers(stripOnce(title, substitutionsLower).trim())
+        val colon = name.indexOfFirst { it == ':' || it == WIDE_COLON }
+        return if (colon < 0) name to null
+        else name.substring(0, colon).trim() to name.substring(colon + 1).trim()
+    }
+
     /** The page `{{title}}`, with no arguments, transcludes; see the other overload. */
     public fun key(title: String): String? = key(title, hasArguments = false)
 

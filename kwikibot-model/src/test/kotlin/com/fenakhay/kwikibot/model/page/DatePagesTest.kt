@@ -17,6 +17,17 @@ class DatePagesTest {
     }
 
     @Test
+    fun `english is the language assumed when none is named`() {
+        DatePages.dayTitle(8, 31) shouldBe "August 31"
+        DatePages.parseDayTitle("August 31") shouldBe (8 to 31)
+    }
+
+    @Test
+    fun `a language with no format here reads no title as a date`() {
+        DatePages.parseDayTitle("15 janvier", "ja").shouldBeNull()
+    }
+
+    @Test
     fun `french writes an ordinal on the first of the month and nowhere else`() {
         DatePages.dayTitle(1, 1, "fr") shouldBe "1er janvier"
         DatePages.dayTitle(1, 2, "fr") shouldBe "2 janvier"

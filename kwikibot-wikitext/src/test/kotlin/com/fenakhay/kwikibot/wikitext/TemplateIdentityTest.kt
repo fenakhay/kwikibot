@@ -38,6 +38,15 @@ class TemplateIdentityTest {
     }
 
     @Test
+    fun `a positional parameter is named by its number, which is not written back`() {
+        val positional = template("{{t|a|x=y|b}}").parameters.filterNot { it.showKey }
+
+        positional.map { it.name.serialize() } shouldBe listOf("1", "2")
+        positional.map { it.rawKey } shouldBe listOf(null, null)
+        positional.map { it.serialize() } shouldBe listOf("a", "b")
+    }
+
+    @Test
     fun `the key is the page transcluded, normalised as MediaWiki normalises it`() {
         template("{{foo bar}}").key shouldBe "Foo bar"
         template("{{Template:foo_bar}}").key shouldBe "Foo bar"
@@ -62,6 +71,52 @@ class TemplateIdentityTest {
         template("{{pagename}}").isParserFunction shouldBe false
         template("{{ {{a}} }}").key shouldBe null
         template("{{<!-- -->}}").key shouldBe null
+    }
+
+    @Test
+    fun `a parser function is named by what comes before its colon, and given what comes after`() {
+        val switch = template("{{#switch:{{{title|}}}|a=b}}")
+        switch.title shouldBe "#switch:{{{title|}}}"
+        switch.functionName shouldBe "#switch"
+        switch.functionArgument shouldBe "{{{title|}}}"
+
+        val invoke = template("{{ #invoke : sa-decl <!-- x --> |show}}")
+        invoke.functionName shouldBe "#invoke"
+        invoke.functionArgument shouldBe "sa-decl"
+        template("{{subst:#if:a|b}}").functionName shouldBe "#if"
+        template("{{subst:#if:a|b}}").functionArgument shouldBe "a"
+        template("{{safesubst:lc:ABC}}").functionName shouldBe "lc"
+        template("{{DEFAULTSORT\uFF1Ax}}").functionName shouldBe "DEFAULTSORT"
+    }
+
+    @Test
+    fun `a variable is a function with no argument, and with one it is a function of another title`() {
+        template("{{PAGENAME}}").functionName shouldBe "PAGENAME"
+        template("{{PAGENAME}}").functionArgument shouldBe null
+        template("{{PAGENAME:Foo}}").functionName shouldBe "PAGENAME"
+        template("{{PAGENAME:Foo}}").functionArgument shouldBe "Foo"
+        template("{{#if}}").functionName shouldBe "#if"
+        template("{{#if}}").functionArgument shouldBe null
+    }
+
+    @Test
+    fun `a template is no function`() {
+        template("{{Template:foo}}").functionName shouldBe null
+        template("{{Template:foo}}").functionArgument shouldBe null
+        template("{{lc :x}}").functionName shouldBe null
+        template("{{PAGENAME|x}}").functionName shouldBe null
+    }
+
+    @Test
+    fun `a wiki's own functions are named by its rules`() {
+        val core = TitleRules.CORE_FUNCTIONS
+        val rules = TitleRules(functions = core.copy(caseInsensitive = core.caseInsensitive + "lst"))
+        val section = template("{{lst:Page|part}}")
+
+        section.functionName shouldBe null
+        section.functionName(rules) shouldBe "lst"
+        section.functionArgument(rules) shouldBe "Page"
+        section.isParserFunction(rules) shouldBe true
     }
 
     @Test

@@ -41,6 +41,15 @@ class PreprocessorRulesTest {
     }
 
     @Test
+    fun `three opening brackets inside a parameter leave the template whole`() {
+        val template = parse("{{quote-journal|en|title=[[[Dinar]]] coins|year=2001}}").templates().single()
+
+        template.title shouldBe "quote-journal"
+        template.rawValue("title") shouldBe "[[[Dinar]]] coins"
+        template.rawValue("year") shouldBe "2001"
+    }
+
+    @Test
     fun `a link left open hides the braces after it, as MediaWiki reads it`() {
         parse("{{t|[[x}}").templates().shouldBeEmpty()
     }
@@ -154,6 +163,15 @@ class PreprocessorRulesTest {
         tag.closing shouldBe "</i >"
         tag.serialize() shouldBe "<i>x</i >"
         tag.copy(name = "b").serialize() shouldBe "<b>x</b>"
+    }
+
+    @Test
+    fun `a closing tag keeps its case, and what follows it sits where it was`() {
+        val text = "<i>x</I > {{t}}"
+        val code = parse(text)
+
+        code.tags().single().closing shouldBe "</I >"
+        text.substring(code.ranges()[code.templates().single()]!!) shouldBe "{{t}}"
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.fenakhay.kwikibot.net.transport.KtorTransport
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -108,6 +109,24 @@ class AuthTest {
 
         result shouldBe "saved with token2"
         used shouldBe listOf("token1", "token2")
+    }
+
+    @Test
+    fun `a rejection of some other token is not retried with a fresh one of this type`() = runTest {
+        var tokenRequests = 0
+        val store =
+            TokenStore(
+                transport {
+                    tokenRequests++
+                    respondJson("""{"query":{"tokens":{"csrftoken":"abc"}}}""")
+                }
+            )
+
+        assertFailsWith<WikiError.Auth.BadToken> {
+            store.withFreshToken { throw WikiError.Auth.BadToken(TokenStore.ROLLBACK) }
+        }
+
+        tokenRequests shouldBe 1
     }
 
     @Test
@@ -347,6 +366,106 @@ class AuthTest {
     }
 
     @Test
+    fun `a wiki that hands out no token is reported, not given an empty one`() = runTest {
+        val store = TokenStore(transport { respondJson("""{"query":{"tokens":{}}}""") })
+
+        val error = assertFailsWith<WikiError.Api> { store.token(TokenStore.ROLLBACK) }
+
+        error.code shouldBe "notoken"
+        error.info shouldBe "wiki returned no 'rollback' token"
+    }
+
+    @Test
+    fun `the identity a login established is remembered, and nothing before it`() = runTest {
+        val transport = transport { respondJson("""{"query":{"userinfo":{"id":0,"name":"1.2.3.4"}}}""") }
+        val manager = LoginManager(transport, Credentials.Anonymous)
+
+        manager.currentIdentity shouldBe null
+        val identity = manager.login()
+
+        manager.currentIdentity shouldBe identity
+        manager.login() shouldBeSameInstanceAs identity
+    }
+
+    @Test
+    fun `an OAuth token needs no login, only the wiki's word that it is accepted`() = runTest {
+        val sent = mutableListOf<String>()
+        val transport = transport { request ->
+            sent += request.url.encodedQuery
+            respondJson("""{"query":{"userinfo":{"id":42,"name":"FenaBot","groups":["bot"]}}}""")
+        }
+
+        val identity = LoginManager(transport, Credentials.OAuth2("ya29.token")).login()
+
+        identity.name shouldBe "FenaBot"
+        sent.single() shouldContain "meta=userinfo"
+    }
+
+    @Test
+    fun `an OAuth token the wiki treats as anonymous is a failed login`() = runTest {
+        val transport = transport { respondJson("""{"query":{"userinfo":{"id":0,"name":"1.2.3.4"}}}""") }
+
+        assertFailsWith<WikiError.Auth.LoginFailed> {
+            LoginManager(transport, Credentials.OAuth2("revoked")).login()
+        }
+    }
+
+    @Test
+    fun `an answer with no userinfo in it is an error, not an anonymous user`() = runTest {
+        val transport = transport { respondJson("""{"query":{}}""") }
+
+        val error = assertFailsWith<WikiError.Api> { LoginManager(transport, Credentials.Anonymous).whoAmI() }
+
+        error.code shouldBe "nouserinfo"
+    }
+
+    @Test
+    fun `a login answer that says nothing is a failure, named as best it can be`() = runTest {
+        val answers =
+            mapOf(
+                """{"ok":true}""" to "no login block in the response",
+                """{"login":{"result":"Aborted"}}""" to "Aborted",
+                """{"login":{}}""" to "unknown",
+                """{"login":{"result":"Failed","reason":{"code":"wrongpassword"}}}""" to "wrongpassword",
+                """{"login":{"result":"Failed","reason":["throttled",300]}}""" to """["throttled",300]""",
+            )
+
+        for ((answer, reason) in answers) {
+            val transport = transport { request ->
+                if (request.url.encodedQuery.contains("meta=tokens")) {
+                    respondJson("""{"query":{"tokens":{"logintoken":"LOGIN"}}}""")
+                } else {
+                    respondJson(answer)
+                }
+            }
+
+            val error =
+                assertFailsWith<WikiError.Auth.LoginFailed> { LoginManager(transport, botPassword).login() }
+
+            error.reason shouldBe reason
+        }
+    }
+
+    @Test
+    fun `a bot password is attributed to its account, and anonymous to nobody`() {
+        botPassword.username shouldBe "FenaBot"
+        Credentials.Anonymous.username shouldBe null
+    }
+
+    @Test
+    fun `an account written with its bot name is refused, since the two are joined later`() {
+        assertFailsWith<IllegalArgumentException> { Credentials.BotPassword("FenaBot@compounds", "x", "p") }
+    }
+
+    @Test
+    fun `credentials with a blank part are refused rather than sent`() {
+        assertFailsWith<IllegalArgumentException> { Credentials.BotPassword(" ", "task", "p") }
+        assertFailsWith<IllegalArgumentException> { Credentials.BotPassword("FenaBot", "", "p") }
+        assertFailsWith<IllegalArgumentException> { Credentials.BotPassword("FenaBot", "task", " ") }
+        assertFailsWith<IllegalArgumentException> { Credentials.OAuth2("") }
+    }
+
+    @Test
     fun `credentials keep their secret out of their own toString`() {
         val botPassword = Credentials.BotPassword("FenaBot", "task", "hunter2")
         val oauth = Credentials.OAuth2("ya29.super-secret-token", username = "FenaBot")
@@ -386,6 +505,20 @@ class CredentialsFromEnvironmentTest {
 
         Credentials.fromEnvironment("ETY", environment::get) shouldBe
             Credentials.BotPassword("FenaBot", "ety", "p")
+    }
+
+    @Test
+    fun `a variable set to nothing counts as unset`() {
+        val environment = mapOf("KWIKIBOT_OAUTH_TOKEN" to " ", "KWIKIBOT_ACCOUNT" to "")
+
+        Credentials.fromEnvironment(environment = environment::get) shouldBe Credentials.Anonymous
+    }
+
+    @Test
+    fun `the process environment is read when no other is given`() {
+        val prefix = "KWIKIBOT_TEST_NEVER_SET_${System.nanoTime()}"
+
+        Credentials.fromEnvironment(prefix) shouldBe Credentials.Anonymous
     }
 
     @Test

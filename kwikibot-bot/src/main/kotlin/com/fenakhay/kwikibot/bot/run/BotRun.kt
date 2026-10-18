@@ -17,8 +17,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.takeWhile
@@ -83,6 +81,9 @@ public enum class StopReason {
 
     /** The wiki or the library is set up in a way the run cannot work with. */
     CONFIGURATION,
+
+    /** The server refused the requests outright, as it does a blocked user agent or address. */
+    REFUSED,
 }
 
 /** What became of one page in a run. */
@@ -362,7 +363,10 @@ public class BotRunBuilder internal constructor() {
      */
     public var exclusionPolicy: BotPolicy? = null
 
-    /** Called as each page is finished, for progress and logging. */
+    /**
+     * Called as each page finishes, for progress and logging. It runs before the next save in the page's
+     * batch is sent, and two calls never overlap.
+     */
     public var onOutcome: ((PageOutcome) -> Unit)? = null
 
     /** Where the run records each outcome as it happens, so it can be resumed; see [RunState]. */
@@ -429,6 +433,10 @@ internal class SkipPage(val reason: String) : Exception(null, null, false, false
  * The run stops at the first refusal it cannot attribute to the page, such as a session that cannot be
  * restored or a wiki in read-only mode, rather than grinding through thousands of pages failing the same way.
  * Once stopped, it takes no more pages from the source.
+ *
+ * A run that saves checks its stop policy before reading anything. If the policy says stop, or cannot be
+ * checked, the run reads and saves nothing and its report has [BotReport.stopped] set, with
+ * [StopReason.POLICY] or [StopReason.POLICY_UNREACHABLE].
  */
 public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport {
     val config = BotRunBuilder().apply(block)
@@ -437,7 +445,9 @@ public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): 
 
     // Fail-closed before anything is read, so a stopped bot does not even start.
     if (!config.dryRun) {
-        check(stopCheck(config.stopPolicy) == null) { "the stop policy refused; not starting" }
+        stopCheck(config.stopPolicy)?.let { reason ->
+            return BotReport(stopped = true, stopReason = reason)
+        }
     }
 
     val runner = Runner(pages, config, transform)
@@ -483,7 +493,7 @@ private class Runner(
             if (config.resume && state != null) source.filter { !state.isFinished(it) } else source
         val limited = config.limit?.let { remaining.take(it) } ?: remaining
 
-        channelFlow {
+        coroutineScope {
             limited
                 // A stopped run asks the source for no more pages, so it does not go on listing a
                 // category it will never edit.
@@ -491,16 +501,15 @@ private class Runner(
                 .chunked(config.readBatch)
                 .collect { batch ->
                     batches.acquire()
-                    launch {
+                    this@coroutineScope.launch {
                         try {
-                            work(batch) { send(it) }
+                            work(batch) { record(it) }
                         } finally {
                             batches.release()
                         }
                     }
                 }
         }
-            .collect { record(it) }
 
         return BotReport(
             processed = processed,
@@ -632,6 +641,8 @@ private class Runner(
                 is WikiError.Auth -> StopReason.AUTH
                 is WikiError.ReadOnly -> StopReason.READ_ONLY
                 is WikiError.Configuration -> StopReason.CONFIGURATION
+                // Every request after this one would be refused the same way.
+                is WikiError.Transport.Refused -> StopReason.REFUSED
                 // A transport hiccup or an error about this page is worth recording and moving on from.
                 is WikiError.Transport,
                 is WikiError.Api,
@@ -689,7 +700,12 @@ private class Runner(
         }
     }
 
-    /** Counts one outcome, keeps it if it is a refusal or a failure, and hands it to `onOutcome`. */
+    /**
+     * Counts one outcome, keeps it if it is a refusal or a failure, and hands it to `onOutcome`.
+     *
+     * The worker that finished the page calls this before moving on, so the page is reported before the next
+     * save in its batch. The lock keeps `onOutcome` calls from overlapping.
+     */
     private suspend fun record(outcome: PageOutcome) {
         lock.withLock {
             if (outcome !is PageOutcome.NotAttempted) processed++
@@ -708,9 +724,9 @@ private class Runner(
             if (wentWrong && problems.size < BotReport.PROBLEM_LIMIT) {
                 problems += outcome
             }
-        }
 
-        config.onOutcome?.invoke(outcome)
+            config.onOutcome?.invoke(outcome)
+        }
     }
 }
 

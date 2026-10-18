@@ -18,8 +18,8 @@ import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
-import com.fenakhay.kwikibot.protocol.decode.PageResult
 import com.fenakhay.kwikibot.protocol.throwOnError
+import com.fenakhay.kwikibot.wikitext.MagicWords
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -36,6 +36,8 @@ internal class ApiRevisionService(
     private val decoder: PageDecoder,
     private val namespaces: NamespaceMap,
     private val batchSize: Int = DEFAULT_BATCH,
+    /** The spellings of the wiki's redirect magic word, read when first needed. */
+    private val redirects: suspend () -> MagicWords = { ParserSettings.DEFAULT_REDIRECTS },
 ) : RevisionService {
 
     private val continuation = Continuation(transport)
@@ -127,7 +129,8 @@ internal class ApiRevisionService(
                 "drvdir" to order.apiValue,
                 "drvlimit" to apiLimit(limit),
             )
-        return revisionsIn(continuation.pages(request), limit)
+        // A page module answers under its own name, where the list modules say "revisions".
+        return revisionsIn(continuation.pages(request), limit, "deletedrevisions")
     }
 
     /**
@@ -146,10 +149,14 @@ internal class ApiRevisionService(
             limit,
         )
 
-    private fun revisionsIn(pages: Flow<JsonObject>, limit: Int?): Flow<Revision> {
+    private fun revisionsIn(
+        pages: Flow<JsonObject>,
+        limit: Int?,
+        key: String = "revisions",
+    ): Flow<Revision> {
         val revisions = flow {
             pages.collect { entry ->
-                entry["revisions"]?.jsonArray?.forEach {
+                entry[key]?.jsonArray?.forEach {
                     emit(decoder.decodeRevision(it.jsonObject))
                 }
             }
@@ -157,22 +164,31 @@ internal class ApiRevisionService(
         return if (limit == null) revisions else revisions.take(limit)
     }
 
-    override suspend fun contentAt(revision: RevisionId): PageContent? {
-        val response =
+    override suspend fun contentAt(revision: RevisionId): PageContent? =
+        contentsAt(listOf(revision))[revision]
+
+    override suspend fun contentsAt(revisions: Collection<RevisionId>): Map<RevisionId, PageContent> {
+        val found = mutableMapOf<RevisionId, PageContent>()
+        if (revisions.isEmpty()) return found
+        val words = redirects()
+        for (batch in revisions.distinct().chunked(batchSize)) {
+            // One page can come back in several batches, each with some of its revisions, when the texts
+            // are more than one response holds.
             continuation
                 .pages(
                     ApiRequest.of(
                         "query",
                         "prop" to "revisions",
-                        "revids" to revision.value.toString(),
+                        "revids" to batch.joinToString("|") { it.value.toString() },
                         "rvprop" to Registry.REVISIONS_WITH_CONTENT.joined,
                         "rvslots" to "main",
                     )
                 )
-                .toList()
-                .firstOrNull() ?: return null
-
-        return (decoder.decode(response) as? PageResult.Existing)?.content
+                .collect { page ->
+                    decoder.decodeContents(page) { words.start(it) }.forEach { found[it.revisionId] = it }
+                }
+        }
+        return found
     }
 
     override suspend fun byId(ids: Collection<RevisionId>): Map<RevisionId, Revision> {
@@ -250,6 +266,16 @@ internal class ApiRevisionService(
                 .also { it.raiseBadToken() }
                 .throwOnError()
         }
+    }
+
+    /**
+     * Whether [text] starts with one of these spellings, as MediaWiki reads a redirect: past any leading
+     * whitespace, the case kept or ignored as each spelling's magic word says.
+     */
+    private fun MagicWords.start(text: String): Boolean {
+        val start = text.trimStart()
+        return caseSensitive.any { start.startsWith(it) } ||
+            caseInsensitive.any { start.startsWith(it, ignoreCase = true) }
     }
 
     /**

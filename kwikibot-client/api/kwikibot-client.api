@@ -935,8 +935,8 @@ public abstract interface class com/fenakhay/kwikibot/client/service/PageService
 	public abstract fun exists (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun expandText (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun expandText$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public fun expandTexts (Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun expandTexts$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun expandTexts-REN4W-g (Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun expandTexts-REN4W-g$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun fileUsageOf (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun freshContents (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun importPage (Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -971,8 +971,8 @@ public final class com/fenakhay/kwikibot/client/service/PageService$DefaultImpls
 	public static synthetic fun changeContentModel$default (Lcom/fenakhay/kwikibot/client/service/PageService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun delete$default (Lcom/fenakhay/kwikibot/client/service/PageService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;ZLcom/fenakhay/kwikibot/client/service/WatchMode;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun expandText$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static fun expandTexts (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun expandTexts$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun expandTexts-REN4W-g (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun expandTexts-REN4W-g$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static fun freshContents (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun importPage$default (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun mergeHistory$default (Lcom/fenakhay/kwikibot/client/service/PageService;Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/time/Instant;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
@@ -994,6 +994,7 @@ public final class com/fenakhay/kwikibot/client/service/ParseProperty : java/lan
 	public static final field Companion Lcom/fenakhay/kwikibot/client/service/ParseProperty$Companion;
 	public static final field EXTERNAL_LINKS Lcom/fenakhay/kwikibot/client/service/ParseProperty;
 	public static final field IMAGES Lcom/fenakhay/kwikibot/client/service/ParseProperty;
+	public static final field LIMIT_REPORT Lcom/fenakhay/kwikibot/client/service/ParseProperty;
 	public static final field LINKS Lcom/fenakhay/kwikibot/client/service/ParseProperty;
 	public static final field SECTIONS Lcom/fenakhay/kwikibot/client/service/ParseProperty;
 	public static final field TEMPLATES Lcom/fenakhay/kwikibot/client/service/ParseProperty;
@@ -1007,6 +1008,14 @@ public final class com/fenakhay/kwikibot/client/service/ParseProperty : java/lan
 public final class com/fenakhay/kwikibot/client/service/ParseProperty$Companion {
 	public final fun getALL ()Ljava/util/Set;
 	public final fun getCONTENTS ()Ljava/util/Set;
+}
+
+public final class com/fenakhay/kwikibot/client/service/Parser : java/lang/Enum {
+	public static final field LEGACY Lcom/fenakhay/kwikibot/client/service/Parser;
+	public static final field PARSOID Lcom/fenakhay/kwikibot/client/service/Parser;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/service/Parser;
+	public static fun values ()[Lcom/fenakhay/kwikibot/client/service/Parser;
 }
 
 public final class com/fenakhay/kwikibot/client/service/ProofreadQuality : java/lang/Enum {
@@ -1071,19 +1080,23 @@ public final class com/fenakhay/kwikibot/client/service/RedirectFilter : java/la
 public final class com/fenakhay/kwikibot/client/service/RenderRequest {
 	public static final field Companion Lcom/fenakhay/kwikibot/client/service/RenderRequest$Companion;
 	public fun <init> ()V
-	public fun <init> (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;)V
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/client/service/Parser;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/client/service/Parser;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public final fun component4 ()Ljava/util/Set;
 	public final fun component5 ()Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;
-	public final fun copy (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;)Lcom/fenakhay/kwikibot/client/service/RenderRequest;
-	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/client/service/RenderRequest;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/service/RenderRequest;
+	public final fun component6-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
+	public final fun component7 ()Lcom/fenakhay/kwikibot/client/service/Parser;
+	public final fun copy-QPbOOQ0 (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/client/service/Parser;)Lcom/fenakhay/kwikibot/client/service/RenderRequest;
+	public static synthetic fun copy-QPbOOQ0$default (Lcom/fenakhay/kwikibot/client/service/RenderRequest;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/client/service/Parser;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/service/RenderRequest;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getContext ()Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public final fun getPage ()Lcom/fenakhay/kwikibot/model/page/PageRef;
+	public final fun getParser ()Lcom/fenakhay/kwikibot/client/service/Parser;
 	public final fun getProperties ()Ljava/util/Set;
+	public final fun getRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
 	public final fun getSandbox ()Lcom/fenakhay/kwikibot/client/service/TemplateSandbox;
 	public final fun getText ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -1131,6 +1144,7 @@ public abstract interface class com/fenakhay/kwikibot/client/service/RevisionSer
 	public abstract fun byId (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun compare-aArGqr0 (JJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun contentAt-1ouadek (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun contentsAt (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun deletedHistory (Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Ljava/lang/Integer;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun deletedHistory$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public abstract fun history (Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Lkotlin/time/Instant;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lkotlinx/coroutines/flow/Flow;
@@ -1142,6 +1156,7 @@ public abstract interface class com/fenakhay/kwikibot/client/service/RevisionSer
 public final class com/fenakhay/kwikibot/client/service/RevisionService$DefaultImpls {
 	public static synthetic fun allDeletedRevisions$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Ljava/util/Set;Ljava/lang/String;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Lkotlin/time/Instant;Lkotlin/time/Instant;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun allRevisions$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Ljava/util/Set;Ljava/lang/String;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Lkotlin/time/Instant;Lkotlin/time/Instant;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static fun contentsAt (Lcom/fenakhay/kwikibot/client/service/RevisionService;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun deletedHistory$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun history$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/model/page/PageRef;Lcom/fenakhay/kwikibot/client/service/HistoryOrder;Lkotlin/time/Instant;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun revisionDelete$default (Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/util/Collection;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;

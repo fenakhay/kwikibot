@@ -5,6 +5,7 @@ import kotlinx.kover.gradle.plugin.dsl.GroupingEntityType
 
 plugins {
     base
+    alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.nmcp.aggregation)
     alias(libs.plugins.kover)
@@ -15,11 +16,12 @@ group = "com.fenakhay.kwikibot"
 val describedVersion = providers.exec {
     commandLine("git", "describe", "--tags", "--match", "v[0-9]*", "--dirty")
     isIgnoreExitValue = true
-}.standardOutput.asText.map { it.trim().removePrefix("v") }.filter { it.isNotEmpty() }
+}.standardOutput.asText.map { it.trim().removePrefix("v") }
 
-version = runCatching {
-    providers.gradleProperty("releaseVersion").orElse(describedVersion).get()
-}.getOrElse { "0.0.0-SNAPSHOT" }
+version =
+    providers.gradleProperty("releaseVersion").orNull
+        ?: runCatching { describedVersion.get() }.getOrNull()?.takeIf { it.isNotEmpty() }
+        ?: "0.0.0-SNAPSHOT"
 
 subprojects {
     group = rootProject.group
@@ -47,6 +49,8 @@ val covered = listOf(
     ":kwikibot-wikibase",
     ":kwikibot-bot",
     ":kwikibot-testkit",
+    ":kwikibot-cli",
+    ":kwikibot-tools",
 )
 
 kover {
@@ -55,7 +59,7 @@ kover {
             rule("line coverage overall") {
                 groupBy = GroupingEntityType.APPLICATION
                 bound {
-                    minValue = 90
+                    minValue = 95
                     coverageUnits = CoverageUnit.LINE
                 }
             }
@@ -63,7 +67,7 @@ kover {
     }
 }
 
-val minimumCoverage = 90.0
+val minimumCoverage = 95.0
 val coverageReport = layout.buildDirectory.file("reports/kover/report.xml")
 
 val coverageByModule = tasks.register("coverageByModule") {

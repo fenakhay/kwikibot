@@ -6,6 +6,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.exists
 import kotlin.io.path.walk
 import kotlin.io.path.writeText
 import kotlin.test.Test
@@ -73,6 +74,20 @@ class ResponseCacheTest {
     }
 
     @Test
+    fun `an entry is served for a day of development by default, and not after`() = runTest {
+        val clock = FixedClock()
+        val cache = DiskCache(tempRoot(), clock = clock)
+
+        cache.put(read, body("""{"ok":1}"""))
+        clock.advance(DiskCache.DEFAULT_TTL)
+        cache.get(read) shouldBe body("""{"ok":1}""")
+        clock.advance(1.hours)
+
+        cache.get(read).shouldBeNull()
+        DiskCache.DEFAULT_TTL shouldBe 12.hours
+    }
+
+    @Test
     fun `an entry from the future is not trusted`() = runTest {
         val clock = FixedClock()
         val cache = DiskCache(tempRoot(), ttl = 12.hours, clock = clock)
@@ -120,6 +135,14 @@ class ResponseCacheTest {
     }
 
     @Test
+    fun `a session action is never cached, even with no secret in it`() {
+        for (action in listOf("login", "logout", "clientlogin", "createaccount")) {
+            ResponseCache.isCacheable(ApiRequest.of(action)) shouldBe false
+        }
+        ResponseCache.isCacheable(read) shouldBe true
+    }
+
+    @Test
     fun `an error response is not stored`() = runTest {
         val cache = DiskCache(tempRoot())
 
@@ -136,6 +159,21 @@ class ResponseCacheTest {
 
         root.walk().filter { it.toString().endsWith(".json") }.forEach { it.writeText("{not json") }
 
+        cache.get(read).shouldBeNull()
+    }
+
+    @Test
+    fun `clearing removes every entry and leaves the directory in place`() = runTest {
+        val root = tempRoot()
+        val cache = DiskCache(root)
+        cache.put(read, body("""{"query":{"pages":[]}}"""))
+        cache.put(ApiRequest.of("query", "titles" to "lava"), body("""{"query":{"pages":[]}}"""))
+        filesUnder(root) shouldBe 2
+
+        cache.clear()
+
+        filesUnder(root) shouldBe 0
+        root.exists() shouldBe true
         cache.get(read).shouldBeNull()
     }
 

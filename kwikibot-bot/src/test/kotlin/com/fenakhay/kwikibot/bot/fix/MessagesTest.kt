@@ -158,4 +158,30 @@ class MessagesTest {
     fun `the languages a bundle carries are the ones it was given`() {
         messages.languages shouldBe setOf("en", "fr", "ru", "pt")
     }
+
+    @Test
+    fun `a count with nothing to fill it takes the last form, and an unclosed plural is left as written`() {
+        val odd =
+            Messages.of(
+                mapOf(
+                    "en" to
+                        mapOf("unfilled" to "{{PLURAL:$2|one|many}}", "unclosed" to "{{PLURAL:$1|one|many")
+                )
+            )
+
+        odd["unfilled", "en", 1] shouldBe "many"
+        odd["unclosed", "en", 1] shouldBe "{{PLURAL:1|one|many"
+    }
+
+    @Test
+    fun `the shipped fallbacks can be extended, keeping the ones they had`() {
+        val withSami =
+            Messages(
+                mapOf("nb" to mapOf("k" to "bokmål")),
+                fallbacks = Messages.FALLBACKS + ("se" to listOf("nb")),
+            )
+
+        withSami["k", "se"] shouldBe "bokmål"
+        withSami.chain("nn") shouldBe listOf("nn", "nb", "no", "en")
+    }
 }

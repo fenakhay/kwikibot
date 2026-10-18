@@ -4,7 +4,9 @@ import com.fenakhay.kwikibot.wikibase.entity.LanguageValue
 import com.fenakhay.kwikibot.wikibase.entity.SiteLink
 import com.fenakhay.kwikibot.wikibase.value.DataValue
 import com.fenakhay.kwikibot.wikibase.value.EntityId
+import com.fenakhay.kwikibot.wikibase.value.Rank
 import com.fenakhay.kwikibot.wikibase.value.Snak
+import com.fenakhay.kwikibot.wikibase.value.Statement
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
@@ -76,6 +78,39 @@ class EntityEncoderTest {
         value["entity-type"]?.jsonPrimitive?.content shouldBe "form"
         value["id"]?.jsonPrimitive?.content shouldBe "L1-F1"
         value.containsKey("numeric-id") shouldBe false
+    }
+
+    @Test
+    fun `every kind of entity is referred to by the type Wikibase gives it`() {
+        fun typeOf(id: String) =
+            EntityEncoder.encodeValue(DataValue.EntityRef(EntityId(id)))["value"]!!
+                .jsonObject["entity-type"]!!
+                .jsonPrimitive
+                .content
+
+        listOf("Q5", "P31", "L1", "L1-F1", "L1-S1", "M123", "E10").map { typeOf(it) } shouldBe
+            listOf("item", "property", "lexeme", "form", "sense", "mediainfo", "unknown")
+    }
+
+    @Test
+    fun `a globe coordinate is written as Wikibase spells it, and reads back the same`() {
+        val paris = DataValue.GlobeCoordinate(48.8, 2.3, 0.0001, "http://www.wikidata.org/entity/Q2")
+
+        val encoded = EntityEncoder.encodeValue(paris)
+
+        encoded["type"]!!.jsonPrimitive.content shouldBe "globecoordinate"
+        encoded["value"]!!.jsonObject.keys shouldBe setOf("latitude", "longitude", "precision", "globe")
+        EntityDecoder.decodeValue(encoded) shouldBe paris
+    }
+
+    @Test
+    fun `a deprecated statement stays deprecated when written back`() {
+        val wrong = Statement(Snak.Value(EntityId("P569"), DataValue.Text("1950")), rank = Rank.DEPRECATED)
+
+        val encoded = EntityEncoder.encodeStatement(wrong)
+
+        encoded["rank"]!!.jsonPrimitive.content shouldBe "deprecated"
+        EntityDecoder.decodeStatement(encoded) shouldBe wrong
     }
 
     @Test

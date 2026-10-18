@@ -268,6 +268,14 @@ public final class com/fenakhay/kwikibot/model/WikiError$Transport$RateLimited :
 	public final fun getRetryAfter-FghU774 ()Lkotlin/time/Duration;
 }
 
+public final class com/fenakhay/kwikibot/model/WikiError$Transport$Refused : com/fenakhay/kwikibot/model/WikiError$Transport {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;)V
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getStatus ()I
+	public final fun getUrl ()Ljava/lang/String;
+	public fun isTransient ()Z
+}
+
 public final class com/fenakhay/kwikibot/model/WikiError$Transport$ServerError : com/fenakhay/kwikibot/model/WikiError$Transport {
 	public fun <init> (ILjava/lang/String;)V
 	public final fun getStatus ()I
@@ -1051,10 +1059,29 @@ public final class com/fenakhay/kwikibot/model/page/WikiId {
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
 }
 
+public final class com/fenakhay/kwikibot/model/render/LimitReport {
+	public static final field EXPENSIVE_FUNCTIONS Ljava/lang/String;
+	public static final field LUA_MEMORY Ljava/lang/String;
+	public static final field LUA_TIME Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/fenakhay/kwikibot/model/render/LimitReport;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/model/render/LimitReport;Ljava/util/Map;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/render/LimitReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/Map;
+	public final fun getExpensiveFunctions ()Ljava/lang/Integer;
+	public final fun getLuaMemory ()Ljava/lang/Long;
+	public final fun getLuaTime-FghU774 ()Lkotlin/time/Duration;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/fenakhay/kwikibot/model/render/ParsedPage {
 	public fun <init> ()V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/render/LimitReport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/render/LimitReport;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/util/List;
 	public final fun component3 ()Ljava/util/List;
@@ -1063,13 +1090,15 @@ public final class com/fenakhay/kwikibot/model/render/ParsedPage {
 	public final fun component6 ()Ljava/util/List;
 	public final fun component7 ()Ljava/util/List;
 	public final fun component8-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
-	public final fun copy-uQjYtkc (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;)Lcom/fenakhay/kwikibot/model/render/ParsedPage;
-	public static synthetic fun copy-uQjYtkc$default (Lcom/fenakhay/kwikibot/model/render/ParsedPage;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/render/ParsedPage;
+	public final fun component9 ()Lcom/fenakhay/kwikibot/model/render/LimitReport;
+	public final fun copy-AzUIjRw (Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/render/LimitReport;)Lcom/fenakhay/kwikibot/model/render/ParsedPage;
+	public static synthetic fun copy-AzUIjRw$default (Lcom/fenakhay/kwikibot/model/render/ParsedPage;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/render/LimitReport;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/render/ParsedPage;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCategories ()Ljava/util/List;
 	public final fun getExternalLinks ()Ljava/util/List;
 	public final fun getHtml ()Ljava/lang/String;
 	public final fun getImages ()Ljava/util/List;
+	public final fun getLimitReport ()Lcom/fenakhay/kwikibot/model/render/LimitReport;
 	public final fun getLinks ()Ljava/util/List;
 	public final fun getRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
 	public final fun getSections ()Ljava/util/List;
@@ -1255,6 +1284,7 @@ public final class com/fenakhay/kwikibot/model/title/Title$Invalid$Reason : java
 	public static final field SIGNATURE Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;
 	public static final field TALK_OF_NON_MAIN Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;
 	public static final field TOO_LONG Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;
+	public static final field UNKNOWN_NAMESPACE Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;
 	public static fun values ()[Lcom/fenakhay/kwikibot/model/title/Title$Invalid$Reason;

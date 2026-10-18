@@ -69,6 +69,7 @@ internal class ApiWiki(
             decoder = decoder,
             namespaces = info.namespaces,
             batchSize = batch,
+            redirects = { parserSettings.redirects() },
         )
 
     override val users: UserService =

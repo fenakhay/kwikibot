@@ -7,7 +7,11 @@ import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.KtorTransport
+import com.fenakhay.kwikibot.testkit.FakePageService
+import com.fenakhay.kwikibot.testkit.FakeWiki
+import com.fenakhay.kwikibot.testkit.MockTransport
 import com.fenakhay.kwikibot.wikibase.entity.Entity
+import com.fenakhay.kwikibot.wikibase.entity.SiteLink
 import com.fenakhay.kwikibot.wikibase.value.DataValue
 import com.fenakhay.kwikibot.wikibase.value.EntityId
 import com.fenakhay.kwikibot.wikibase.value.Rank
@@ -33,6 +37,7 @@ import kotlin.time.Duration
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -356,6 +361,112 @@ class EntityServiceTest {
         body.contains("action=wbeditentity") shouldBe true
         body.contains("new=item") shouldBe true
         body.contains("&id=") shouldBe false
+    }
+
+    @Test
+    fun `every kind of entity is created under the type Wikibase gives it, and an unknown one is refused`() =
+        runTest {
+            val created = mutableListOf<String>()
+            val service = service { request ->
+                if (request.url.parameters["meta"] == "tokens") {
+                    respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+                } else {
+                    val body = urlDecode(request.body.toByteArray().decodeToString())
+                    created += body.split("&").first { it.startsWith("new=") }.removePrefix("new=")
+                    respondJson("""{"entity":{"type":"property","id":"P1","lastrevid":1},"success":1}""")
+                }
+            }
+
+            listOf(
+                    EntityId.Kind.PROPERTY,
+                    EntityId.Kind.LEXEME,
+                    EntityId.Kind.FORM,
+                    EntityId.Kind.SENSE,
+                    EntityId.Kind.MEDIA_INFO,
+                )
+                .forEach { kind -> service.create(kind) { labels = mapOf("en" to "x") } }
+            assertFailsWith<IllegalArgumentException> { service.create(EntityId.Kind.UNKNOWN) {} }
+
+            created shouldBe listOf("property", "lexeme", "form", "sense", "mediainfo")
+        }
+
+    @Test
+    fun `an edit sends every part it sets, and can replace the entity outright`() = runTest {
+        var body = ""
+        val service = service { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+            } else {
+                body = urlDecode(request.body.toByteArray().decodeToString())
+                respondJson("""{"entity":{"type":"item","id":"Q42","lastrevid":9},"success":1}""")
+            }
+        }
+        val location =
+            Statement(
+                Snak.Value(EntityId("P625"), DataValue.GlobeCoordinate(48.8, 2.3, 0.0001, "Q2")),
+                rank = Rank.DEPRECATED,
+            )
+
+        service.edit(EntityId("Q42")) {
+            descriptions = mapOf("en" to "English writer")
+            aliases = mapOf("en" to listOf("Douglas Noël Adams", "DNA"))
+            siteLinks = mapOf("enwiki" to SiteLink("enwiki", "Douglas Adams"))
+            statements = mapOf(EntityId("P625") to listOf(location))
+            bot = false
+            clear = true
+        }
+
+        val params = body.split("&").associate { it.substringBefore("=") to it.substringAfter("=") }
+        val data = Json.parseToJsonElement(params.getValue("data")).jsonObject
+        data.keys shouldBe setOf("descriptions", "aliases", "sitelinks", "claims")
+        data["descriptions"]!!.jsonObject["en"]!!.jsonObject["value"]!!.jsonPrimitive.content shouldBe
+            "English writer"
+        data["aliases"]!!.jsonObject["en"]!!.jsonArray.map {
+            it.jsonObject["value"]!!.jsonPrimitive.content
+        } shouldBe listOf("Douglas Noël Adams", "DNA")
+        data["sitelinks"]!!.jsonObject["enwiki"]!!.jsonObject["title"]!!.jsonPrimitive.content shouldBe
+            "Douglas Adams"
+        val claim = data["claims"]!!.jsonObject["P625"]!!.jsonArray.single().jsonObject
+        EntityDecoder.decodeStatement(claim) shouldBe location
+        params["clear"] shouldBe "1"
+        params.containsKey("bot") shouldBe false
+    }
+
+    @Test
+    fun `a write the repository answers without what it saved is an error, not an empty result`() = runTest {
+        val service = service { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+            } else {
+                respondJson("""{"success":1}""")
+            }
+        }
+        val statement = Statement(Snak.Value(EntityId("P31"), DataValue.EntityRef(EntityId("Q5"))))
+
+        assertFailsWith<WikiError.Api> { service.setStatement(EntityId("Q42"), statement) }.code shouldBe
+            "noclaim"
+        assertFailsWith<WikiError.Api> { service.edit(EntityId("Q42")) { labels = mapOf("en" to "x") } }
+            .code shouldBe "noentity"
+    }
+
+    @Test
+    fun `the repository is reached through the session of the wiki it was opened from`() = runTest {
+        val transport = MockTransport { request ->
+            when {
+                request.params["meta"] == "tokens" ->
+                    MockTransport.json("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+                request.action == "wbgetentities" ->
+                    MockTransport.json("""{"entities":{"Q42":{"type":"item","id":"Q42"}}}""")
+                else -> MockTransport.json("""{"success":1}""")
+            }
+        }
+        val repository = FakeWiki(FakePageService(), transport = transport).wikibase()
+
+        repository.entity(EntityId("Q42"))?.id shouldBe EntityId("Q42")
+        repository.mergeLexemes(EntityId("L1"), EntityId("L2"))
+
+        transport.requests.map { it.action } shouldBe listOf("wbgetentities", "query", "wblmergelexemes")
+        transport.requests.last().params["summary"] shouldBe ""
     }
 
     @Test

@@ -6,13 +6,14 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
-import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.util.zip.GZIPOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -75,14 +76,21 @@ private const val RANDOM_BATCH = 10
  * The first argument is the file to write.
  */
 public fun main(args: Array<String>) {
-    val target = Path(args.firstOrNull() ?: "roundtrip-pages.json.gz")
-    val document = runBlocking { record() }
-
-    GZIPOutputStream(target.outputStream()).bufferedWriter().use { it.write(document) }
-    println("wrote $target")
+    runBlocking { recordRealPages(args, ToolEnvironment.SYSTEM) }
 }
 
-private suspend fun record(): String {
+/** What [main] does with [args], asking the wikis and printing through [environment]. */
+internal suspend fun recordRealPages(args: Array<String>, environment: ToolEnvironment) {
+    val target = Path(args.firstOrNull() ?: "roundtrip-pages.json.gz")
+    val document = record(environment)
+
+    withContext(Dispatchers.IO) {
+        GZIPOutputStream(target.outputStream()).bufferedWriter().use { it.write(document) }
+    }
+    environment.output.appendLine("wrote $target")
+}
+
+private suspend fun record(environment: ToolEnvironment): String {
     val userAgent =
         UserAgent(
             "kwikibot-roundtrip-corpus",
@@ -95,7 +103,7 @@ private suspend fun record(): String {
         var skipped = 0
 
         for (source in SOURCES) {
-            WikiHttpClient.create().use { client ->
+            environment.client().use { client ->
                 val transport =
                     KtorTransport(
                         client = client,
@@ -103,7 +111,7 @@ private suspend fun record(): String {
                         userAgent = userAgent,
                         // Somebody else's production wiki, and this is recorded once rather than on
                         // every build. There is no hurry.
-                        throttle = Throttle(read = 500.milliseconds),
+                        throttle = Throttle(read = 500.milliseconds, timeSource = environment.timeSource),
                         maxlag = null,
                     )
 
@@ -112,7 +120,8 @@ private suspend fun record(): String {
                     val batch = randomPages(transport, source, RANDOM_BATCH)
                     if (batch.isEmpty()) break
 
-                    val usable = batch.filter { (_, text) -> text.length <= MAX_PAGE_BYTES }
+                    // In bytes, as the wiki measures a page.
+                    val usable = batch.filter { (_, text) -> text.encodeToByteArray().size <= MAX_PAGE_BYTES }
                     skipped += batch.size - usable.size
 
                     for ((title, text) in usable.take(source.pages - taken)) {
@@ -127,10 +136,10 @@ private suspend fun record(): String {
                         kept++
                     }
                 }
-                System.err.println("  ${source.wiki} ns${source.namespace}: $taken")
+                environment.log.appendLine("  ${source.wiki} ns${source.namespace}: $taken")
             }
         }
-        System.err.println("kept $kept, skipped $skipped over $MAX_PAGE_BYTES bytes")
+        environment.log.appendLine("kept $kept, skipped $skipped over $MAX_PAGE_BYTES bytes")
     }
 
     val document = buildJsonObject {

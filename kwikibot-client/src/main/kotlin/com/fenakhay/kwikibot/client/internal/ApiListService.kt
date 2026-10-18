@@ -333,13 +333,27 @@ internal class ApiListService(
             "srlimit" to apiLimit(limit),
         )
 
+    /**
+     * `querypage` is the one list module that does not answer with a list: its key holds an object naming the
+     * special page, with the pages under `results`.
+     */
     override fun specialPage(name: String, limit: Int?): Flow<PageRef> =
-        list(
-            "querypage",
-            limit,
-            "qppage" to name,
-            "qplimit" to apiLimit(limit),
-        )
+        continuation
+            .batches(
+                ApiRequest.of(
+                    "query",
+                    "list" to "querypage",
+                    "qppage" to name,
+                    "qplimit" to apiLimit(limit),
+                )
+            )
+            .transform { response ->
+                val page = response["query"]?.jsonObject?.get("querypage") as? JsonObject
+                (page?.get("results") as? JsonArray)?.forEach { entry ->
+                    decoder.refOf(entry.jsonObject)?.let { emit(it) }
+                }
+            }
+            .applyLimit(limit)
 
     override fun externalLinkUsage(
         url: String,

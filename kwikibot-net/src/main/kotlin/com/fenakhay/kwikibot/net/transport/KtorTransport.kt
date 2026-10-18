@@ -7,6 +7,8 @@ import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.cache.ResponseCache
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -16,6 +18,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.http.encodeURLParameter
+import java.net.SocketTimeoutException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
@@ -94,16 +97,19 @@ public class KtorTransport(
                 if (request.cacheable) cache.put(request, outcome.body)
                 return outcome.body
             }
+            if (outcome is Attempt.Refused) throw outcome.error
 
             val deferral = outcome as Attempt.Deferred
             if (attempt >= retry.maxRetries) {
-                // Once the retries are spent, an error the wiki reported in its body is returned as the
-                // answer, so the caller sees the read-only or database error itself.
-                if (deferral is Attempt.Deferred.Transient) {
-                    listener.onResponse(request, deferral.body)
-                    return deferral.body
+                when (deferral) {
+                    // Once the retries are spent, an error the wiki reported in its body is returned as
+                    // the answer, so the caller sees the read-only or database error itself.
+                    is Attempt.Deferred.Transient -> {
+                        listener.onResponse(request, deferral.body)
+                        return deferral.body
+                    }
+                    is Attempt.Deferred.Unanswered -> throw deferral.toError()
                 }
-                throw deferral.toError()
             }
 
             attempt++
@@ -124,28 +130,50 @@ public class KtorTransport(
     }
 
     private suspend fun attemptOnce(request: ApiRequest, params: List<Pair<String, String>>): Attempt {
-        val response =
-            try {
-                send(request, params)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: IOException) {
-                return Attempt.Deferred.Network(endpoint.apiUrl, e)
+        val response: HttpResponse
+        val body: String
+        try {
+            response = send(request, params)
+            body = response.bodyAsText()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            return if (e.isTimeout()) {
+                Attempt.Deferred.TimedOut(endpoint.apiUrl, e)
+            } else {
+                Attempt.Deferred.Network(endpoint.apiUrl, e)
             }
-        return classify(response)
+        }
+        return classify(response, body)
     }
 
-    private suspend fun classify(response: HttpResponse): Attempt {
+    /**
+     * Whether this is one of the three timeouts the client applies: on connecting, on a silent socket, and on
+     * the whole request.
+     */
+    private fun IOException.isTimeout(): Boolean =
+        this is HttpRequestTimeoutException ||
+            this is ConnectTimeoutException ||
+            this is SocketTimeoutException
+
+    private fun classify(response: HttpResponse, body: String): Attempt {
         statusDeferral(response)?.let {
             return it
         }
 
         val parsed = runCatching {
-            json.parseToJsonElement(response.bodyAsText()).jsonObject
+            json.parseToJsonElement(body).jsonObject
         }
             .getOrElse {
-                // A non-JSON body behind a 2xx means something between us and MediaWiki answered
-                // instead of it — a proxy error page, a captive portal, a WAF block.
+                // A body that is not JSON comes from something between us and MediaWiki. After a 4xx
+                // it is a refusal, such as a block on the user agent or the address, or a URL with no
+                // API behind it, and asking again gets the same answer. Otherwise it is a proxy error
+                // page or a captive portal, which passes.
+                if (response.status.isRefusal()) {
+                    return Attempt.Refused(
+                        WikiError.Transport.Refused(response.status.value, endpoint.apiUrl, body.gist())
+                    )
+                }
                 return Attempt.Deferred.Server(
                     response.status.value,
                     endpoint.apiUrl,
@@ -214,6 +242,16 @@ public class KtorTransport(
         headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.seconds
 
     /**
+     * A 4xx that means the request will not be served. 408 Request Timeout, 425 Too Early and 429 Too Many
+     * Requests only mean "not now", so they are not refusals.
+     */
+    private fun HttpStatusCode.isRefusal(): Boolean =
+        value in CLIENT_ERRORS && value !in RETRYABLE_CLIENT_ERRORS
+
+    /** The start of an error page as one line of text, without its markup. */
+    private fun String.gist(): String = replace(MARKUP, " ").replace(WHITESPACE, " ").trim().take(MAX_DETAIL)
+
+    /**
      * The first error the response reports, in either shape MediaWiki uses.
      *
      * `errorformat=plaintext` produces an `errors` array; the legacy format produces a single `error` object
@@ -241,16 +279,24 @@ public class KtorTransport(
 
         data class Done(val body: JsonObject) : Attempt
 
+        /** The server will not serve the request, so there is nothing to retry. */
+        data class Refused(val error: WikiError.Transport.Refused) : Attempt
+
         sealed interface Deferred : Attempt {
             val retryAfter: Duration?
 
             /** Why the request is being retried, for the log and the listener. */
             val reason: String
 
-            /** The failure to raise once the retry budget is spent. */
-            fun toError(): WikiError.Transport
+            /**
+             * A deferral with no answer from the wiki to hand back, so it is raised once retries are spent.
+             */
+            sealed interface Unanswered : Deferred {
+                /** The failure to raise once the retry budget is spent. */
+                fun toError(): WikiError.Transport
+            }
 
-            data class Network(val url: String, val cause: Throwable) : Deferred {
+            data class Network(val url: String, val cause: Throwable) : Unanswered {
                 override val reason: String
                     get() = "could not reach $url (${cause.message ?: cause::class.simpleName})"
 
@@ -260,18 +306,28 @@ public class KtorTransport(
                 override fun toError(): WikiError.Transport = WikiError.Transport.Unreachable(url, cause)
             }
 
+            data class TimedOut(val url: String, val cause: Throwable) : Unanswered {
+                override val reason: String
+                    get() = "$url did not answer in time"
+
+                override val retryAfter: Duration?
+                    get() = null
+
+                override fun toError(): WikiError.Transport = WikiError.Transport.Timeout(url, cause)
+            }
+
             data class Server(
                 val status: Int,
                 val url: String,
                 override val retryAfter: Duration?,
-            ) : Deferred {
+            ) : Unanswered {
                 override val reason: String
                     get() = "the server answered HTTP $status"
 
                 override fun toError(): WikiError.Transport = WikiError.Transport.ServerError(status, url)
             }
 
-            data class RateLimited(override val retryAfter: Duration?) : Deferred {
+            data class RateLimited(override val retryAfter: Duration?) : Unanswered {
                 override val reason: String
                     get() = "rate limited"
 
@@ -289,15 +345,13 @@ public class KtorTransport(
             ) : Deferred {
                 override val reason: String
                     get() = "the wiki reported $code"
-
-                override fun toError(): WikiError.Transport = WikiError.Transport.ServerError(SUCCESS, "")
             }
 
             data class Lag(
                 val lag: Duration,
                 val host: String?,
                 override val retryAfter: Duration?,
-            ) : Deferred {
+            ) : Unanswered {
                 override val reason: String
                     get() = "replication lag of $lag${host?.let { " on $it" }.orEmpty()}"
 
@@ -330,7 +384,6 @@ public class KtorTransport(
 
         private const val MAXLAG_CODE = "maxlag"
         private const val RATELIMIT_CODE = "ratelimited"
-        private const val SUCCESS = 200
 
         /**
          * Errors that belong to the moment rather than the request: a wiki in read-only mode during
@@ -346,6 +399,14 @@ public class KtorTransport(
                 "internal_api_error_DBReadOnlyError",
                 "internal_api_error_DBTransactionStateError",
             )
+
+        private val CLIENT_ERRORS = 400..499
+        private val RETRYABLE_CLIENT_ERRORS = setOf(408, 425, 429)
+
+        /** How much of an error page goes into [WikiError.Transport.Refused.detail]. */
+        private const val MAX_DETAIL = 300
+        private val MARKUP = Regex("""<[^>]*>""")
+        private val WHITESPACE = Regex("""\s+""")
 
         private val LAG_SECONDS = Regex("""([\d.]+) seconds? lagged""")
         private val LAG_HOST = Regex("""Waiting for ([^:]+):""")

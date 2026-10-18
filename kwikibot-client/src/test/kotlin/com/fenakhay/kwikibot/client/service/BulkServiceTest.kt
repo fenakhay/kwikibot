@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.client.service
 import com.fenakhay.kwikibot.client.internal.ApiPageService
 import com.fenakhay.kwikibot.client.internal.ApiRenderService
 import com.fenakhay.kwikibot.client.templateNames
+import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
@@ -17,8 +18,8 @@ import com.fenakhay.kwikibot.testkit.MockTransport
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -112,10 +113,37 @@ class BulkServiceTest {
     }
 
     @Test
-    fun `a page service that cannot batch expands each text on its own`() = runTest {
+    fun `texts can be expanded with a sandbox and as a saved revision, in every request`() = runTest {
+        val transport = upperCasing()
+        val sandbox =
+            TemplateSandbox(title = ref("l", Namespace.TEMPLATE), text = "{{{2}}}", contentModel = "wikitext")
+
+        val batched =
+            pages(transport)
+                .expandTexts(listOf("a", "b"), ref("x"), sandbox = sandbox, revision = RevisionId(7))
+        pages(transport).expandTexts(listOf("c"), ref("x"), categories = true, sandbox = sandbox)
+
+        batched.map { it.text } shouldBe listOf("A", "B")
+        transport.requests.size shouldBe 2
+        transport.requests.forEach { request ->
+            request.params["templatesandboxtitle"] shouldBe "Template:l"
+            request.params["templatesandboxtext"] shouldBe "{{{2}}}"
+            request.params["templatesandboxcontentmodel"] shouldBe "wikitext"
+        }
+        transport.requests.first().params["revid"] shouldBe "7"
+        transport.requests.last().params.containsKey("revid") shouldBe false
+        transport.requests.last().params.containsKey("templatesandboxprefix") shouldBe false
+    }
+
+    @Test
+    fun `a page service that cannot batch expands each text on its own, and refuses a sandbox`() = runTest {
         val fake = FakePageService(expander = { text, _ -> text.reversed() })
 
         (fake as PageService).expandTexts(listOf("ab", "cd")).map { it.text } shouldBe listOf("ba", "dc")
+        assertFailsWith<IllegalStateException> {
+            fake.expandTexts(listOf("ab"), sandbox = TemplateSandbox(prefixes = listOf("User:Me/sandbox")))
+        }
+        assertFailsWith<IllegalStateException> { fake.expandTexts(listOf("ab"), revision = RevisionId(1)) }
     }
 
     @Test
@@ -150,7 +178,21 @@ class BulkServiceTest {
                 "lemma" to "#REDIRECT [[Template:l]]",
             )
 
-        FakeWiki(fake).templateNames("l") shouldBe setOf("Template:L", "Template:Link", "Template:Lien")
+        FakeWiki(fake).templateNames("l") shouldBe setOf("L", "Link", "Lien")
+        FakeWiki(fake).templateNames("Template:l") shouldBe setOf("L", "Link", "Lien")
+    }
+
+    @Test
+    fun `a template name that would name a page in another namespace keeps its prefix`() = runTest {
+        val fake =
+            FakePageService(
+                "Template:Help:box" to "{{{1}}}",
+                "Template:Box help" to "#REDIRECT [[Template:Help:box]]",
+                "Template:Note: box" to "#REDIRECT [[Template:Help:box]]",
+            )
+
+        FakeWiki(fake).templateNames("Template:Help:box") shouldBe
+            setOf("Template:Help:box", "Box help", "Note: box")
     }
 
     @Test
@@ -193,6 +235,67 @@ class BulkServiceTest {
     }
 
     @Test
+    fun `a parse can name its revision and its parser, and report the limits it used`() = runTest {
+        val transport = MockTransport {
+            MockTransport.json(
+                """{"parse":{"title":"volcano","categories":[],"limitreportdata":[
+                   {"name":"limitreport-cputime","0":"0.312"},
+                   {"name":"limitreport-expensivefunctioncount","0":2,"1":500},
+                   {"name":"scribunto-limitreport-timeusage","0":"0.250","1":"10.000"},
+                   {"name":"scribunto-limitreport-memusage","0":1048576,"1":52428800}]}}"""
+            )
+        }
+        val renderer =
+            ApiRenderService(transport, PageDecoder(wiki, NamespaceMap.CANONICAL), NamespaceMap.CANONICAL)
+
+        val parsed =
+            renderer.parse(
+                RenderRequest.text(
+                        "{{sa-decl}}",
+                        ref("volcano"),
+                        setOf(ParseProperty.CATEGORIES, ParseProperty.LIMIT_REPORT),
+                    )
+                    .copy(revision = RevisionId(93431376), parser = Parser.PARSOID)
+            )
+
+        val params = transport.requests.single().params
+        params["prop"] shouldBe "categories|limitreportdata"
+        params["revid"] shouldBe "93431376"
+        params["parser"] shouldBe "parsoid"
+        val report = parsed.limitReport!!
+        report.luaTime shouldBe 250.milliseconds
+        report.luaMemory shouldBe 1_048_576L
+        report.expensiveFunctions shouldBe 2
+        report.entries["scribunto-limitreport-timeusage"] shouldBe listOf("0.250", "10.000")
+        report.entries["limitreport-cputime"] shouldBe listOf("0.312")
+    }
+
+    @Test
+    fun `a parse that did not ask for the limits has no report, and one without Lua has no Lua figures`() =
+        runTest {
+            val transport = MockTransport { request ->
+                if ("limitreportdata" in request.params.getValue("prop")) {
+                    MockTransport.json(
+                        """{"parse":{"limitreportdata":[{"name":"limitreport-cputime","0":"0.01"}]}}"""
+                    )
+                } else {
+                    MockTransport.json("""{"parse":{"text":"<p>x</p>"}}""")
+                }
+            }
+            val renderer =
+                ApiRenderService(transport, PageDecoder(wiki, NamespaceMap.CANONICAL), NamespaceMap.CANONICAL)
+
+            renderer.parse(RenderRequest.page(ref("a"), setOf(ParseProperty.TEXT))).limitReport shouldBe null
+            val report =
+                renderer.parse(RenderRequest.page(ref("a"), setOf(ParseProperty.LIMIT_REPORT))).limitReport!!
+            report.luaTime shouldBe null
+            report.luaMemory shouldBe null
+            report.expensiveFunctions shouldBe null
+            transport.requests.first().params.containsKey("parser") shouldBe false
+            transport.requests.first().params.containsKey("revid") shouldBe false
+        }
+
+    @Test
     fun `a request is a page or a text, and a sandbox needs something to stand in`() {
         assertFailsWith<IllegalArgumentException> { RenderRequest() }
         assertFailsWith<IllegalArgumentException> {
@@ -201,6 +304,9 @@ class BulkServiceTest {
         assertFailsWith<IllegalArgumentException> { RenderRequest(text = "b") }
         assertFailsWith<IllegalArgumentException> { TemplateSandbox() }
         assertFailsWith<IllegalArgumentException> { TemplateSandbox(title = ref("l", Namespace.TEMPLATE)) }
+        assertFailsWith<IllegalArgumentException> {
+            RenderRequest.page(ref("a")).copy(revision = RevisionId(1))
+        }
         RenderRequest.page(ref("a")).page shouldBe ref("a")
     }
 
@@ -233,6 +339,12 @@ class BulkServiceTest {
             plain.parse(
                 RenderRequest.page(ref("a")).copy(sandbox = TemplateSandbox(prefixes = listOf("U:x")))
             )
+        }
+        assertFailsWith<IllegalStateException> {
+            plain.parse(RenderRequest.text("x", ref("a")).copy(revision = RevisionId(1)))
+        }
+        assertFailsWith<IllegalStateException> {
+            plain.parse(RenderRequest.page(ref("a")).copy(parser = Parser.LEGACY))
         }
     }
 }

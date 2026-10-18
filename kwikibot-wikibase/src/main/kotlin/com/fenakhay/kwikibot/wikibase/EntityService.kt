@@ -20,7 +20,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 
 /** One hit from an entity search: enough to choose between candidates, not the whole entity. */
 public data class EntityMatch(
@@ -318,7 +317,7 @@ internal class ApiEntityService(
                         "search" to query,
                         "language" to language,
                         "uselang" to language,
-                        "type" to EntityId("${kind.samplePrefix}1").entityType,
+                        "type" to kind.entityType,
                         "limit" to limit.toString(),
                     )
                 )
@@ -341,7 +340,7 @@ internal class ApiEntityService(
 
     override suspend fun create(kind: EntityId.Kind, block: EntityEdit.() -> Unit): Entity {
         val builder = EntityEdit().apply(block)
-        val type = EntityId("${kind.samplePrefix}1").entityType
+        val type = kind.entityType
         require(type != "unknown") { "cannot create an entity of kind $kind" }
         return editEntity(builder) { put("new", type) }
     }
@@ -493,19 +492,3 @@ internal class ApiEntityService(
         const val BAD_TOKEN = "badtoken"
     }
 }
-
-/**
- * A representative id of this kind, for the places the API wants an entity type rather than an id — searching
- * and creating.
- */
-private val EntityId.Kind.samplePrefix: String
-    get() =
-        when (this) {
-            EntityId.Kind.ITEM -> "Q"
-            EntityId.Kind.PROPERTY -> "P"
-            EntityId.Kind.LEXEME -> "L"
-            EntityId.Kind.FORM -> "L1-F"
-            EntityId.Kind.SENSE -> "L1-S"
-            EntityId.Kind.MEDIA_INFO -> "M"
-            EntityId.Kind.UNKNOWN -> "?"
-        }

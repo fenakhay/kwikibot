@@ -1,10 +1,10 @@
 package com.fenakhay.kwikibot.tools
 
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.KtorTransport
-import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.ParamInfo
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -33,13 +33,31 @@ private val PATTERNS = arrayOf("main", "*", "query+*")
  * `--report <file>` keeps the report as well as printing it.
  */
 public fun main(args: Array<String>) {
+    exitProcess(runBlocking { writeOrCheckSurface(args, ToolEnvironment.SYSTEM) })
+}
+
+/**
+ * What [main] does with [args], reading the wikis and printing through [environment]. Returns the status to
+ * exit with: 1 when a wiki could not be read or a lane that fails on drift has drifted, 0 otherwise.
+ */
+internal suspend fun writeOrCheckSurface(args: Array<String>, environment: ToolEnvironment): Int {
     val options = Options.parse(args)
-    val rendered = runBlocking { collect(options.lane) }
+    val rendered =
+        try {
+            collect(options.lane, environment)
+        } catch (e: WikiError) {
+            // A wiki that refuses or cannot be reached ends the run with one line, which also goes to
+            // the report, so the job's artifacts keep the reason.
+            val message = "${options.lane.title}: could not read the surface: ${e.message}"
+            environment.log.appendLine(message)
+            options.report?.createParentDirectories()?.writeText("$message\n")
+            return 1
+        }
 
     if (!options.checking) {
         options.target.writeText(rendered)
-        println("wrote ${options.target}")
-        return
+        environment.output.appendLine("wrote ${options.target}")
+        return 0
     }
 
     val recorded = if (options.target.exists()) options.target.readText() else ""
@@ -50,13 +68,14 @@ public fun main(args: Array<String>) {
             if (report.isEmpty) ""
             else "\nReview the lines above, then run `./gradlew ${options.dumpTask}`.\n"
 
-    println(markdown)
-    options.report?.let { it.createParentDirectories().writeText(markdown) }
-    System.getenv("GITHUB_STEP_SUMMARY")
+    environment.output.appendLine(markdown)
+    options.report?.createParentDirectories()?.writeText(markdown)
+    environment
+        .variables("GITHUB_STEP_SUMMARY")
         ?.takeIf { it.isNotEmpty() }
         ?.let { Path(it).appendText(markdown + "\n") }
 
-    if (!report.isEmpty && options.lane.failsOnDrift) exitProcess(1)
+    return if (!report.isEmpty && options.lane.failsOnDrift) 1 else 0
 }
 
 private class Options(
@@ -94,7 +113,7 @@ private class Options(
     }
 }
 
-private suspend fun collect(lane: Lane): String {
+private suspend fun collect(lane: Lane, environment: ToolEnvironment): String {
     // Politely slow, and read-only: this is somebody else's production wiki.
     val userAgent =
         UserAgent(
@@ -104,21 +123,21 @@ private suspend fun collect(lane: Lane): String {
         )
 
     val byWiki =
-        WikiHttpClient.create().use { client ->
+        environment.client().use { client ->
             lane.wikis.mapValues { (_, server) ->
                 val transport =
                     KtorTransport(
                         client = client,
                         endpoint = ApiEndpoint(server = server),
                         userAgent = userAgent,
-                        throttle = Throttle(read = 500.milliseconds),
+                        throttle = Throttle(read = 500.milliseconds, timeSource = environment.timeSource),
                         // paraminfo describes how the wiki is set up, which replica lag does not change,
                         // so lag is no reason to hold it back. Left on, a lagging Wikidata fails the run.
                         maxlag = null,
                     )
 
                 val modules = ParamInfo(transport).modules(*PATTERNS)
-                System.err.println("$server: ${modules.size} modules")
+                environment.log.appendLine("$server: ${modules.size} modules")
                 Surface.rows(modules)
             }
         }

@@ -38,6 +38,9 @@ To move the baseline forward, once a change is understood and wanted:
 ./gradlew :kwikibot-benchmarks:recordBaseline
 ```
 
+The report names the JVM it ran by its path, so the home directory in it is written as `user`
+(`/Users/user`, `C:\Users\user`) and a committed baseline carries no username.
+
 **A baseline is only comparable to a run from the same machine.** These are laptop numbers, and a
 comparison against a baseline recorded somewhere else measures the hardware instead of the code.
 If the machine has changed, re-record before comparing.

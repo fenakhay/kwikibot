@@ -91,6 +91,27 @@ public class PageDecoder(
         )
     }
 
+    /**
+     * The text at each revision one page entry carries, which `prop=revisions&revids=…` gives several of when
+     * several of the revisions asked for belong to the same page. A revision without text, hidden or not
+     * asked for, is left out; so is everything when the entry is not an existing page.
+     *
+     * The entry says whether the page is a redirect now, which says nothing of an older revision, so whether
+     * each revision's wikitext is one is up to [isRedirect]: the wiki's own redirect magic word starting it.
+     */
+    public fun decodeContents(page: JsonObject, isRedirect: (String) -> Boolean): List<PageContent> {
+        val ref = refOf(page) ?: return emptyList()
+        if (page.flag("missing") || page.flag("invalid")) return emptyList()
+        val contentModel =
+            page["contentmodel"]?.jsonPrimitive?.content?.let { ContentModel(it) } ?: ContentModel.WIKITEXT
+
+        return page["revisions"]?.jsonArray.orEmpty().mapNotNull { entry ->
+            val revision = entry.jsonObject
+            val text = revision.slotContent() ?: return@mapNotNull null
+            content(ref, revision, contentModel, contentModel == ContentModel.WIKITEXT && isRedirect(text))
+        }
+    }
+
     /** Decodes one revision entry, from `prop=revisions` or from a log or history query. */
     public fun decodeRevision(revision: JsonObject): Revision =
         Revision(
@@ -199,6 +220,6 @@ public class PageDecoder(
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"
 
-        val REDIRECT = Regex("""^\s*#[^\s\[]+\s*:?\s*\[\[([^\]|#\n]+)""")
+        val REDIRECT = Regex("""^\s*#[^\s\[]+\s*:?\s*\[\[([^]|#\n]+)""")
     }
 }

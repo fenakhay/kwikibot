@@ -2,6 +2,8 @@ package com.fenakhay.kwikibot.model.render
 
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageRef
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * One heading in a page, as MediaWiki renders it.
@@ -64,4 +66,35 @@ public data class ParsedPage(
     val externalLinks: List<String> = emptyList(),
     /** The revision parsed, absent when unsaved wikitext was. */
     val revision: RevisionId? = null,
+    /** How much of each parser limit the parse used, when that was asked for. */
+    val limitReport: LimitReport? = null,
 )
+
+/**
+ * How much of each parser limit a parse used, as its limit report gives it.
+ *
+ * @param entries every row of the report by its name, such as `limitreport-expensivefunctioncount`, each with
+ *   its values in order: for a limit, what the parse used and then the limit.
+ */
+public data class LimitReport(val entries: Map<String, List<String>> = emptyMap()) {
+
+    /** How long Lua ran, or `null` when no module did. */
+    val luaTime: Duration?
+        get() = first(LUA_TIME)?.toDoubleOrNull()?.seconds
+
+    /** How much memory Lua took at most, in bytes, or `null` when no module ran. */
+    val luaMemory: Long?
+        get() = first(LUA_MEMORY)?.toLongOrNull()
+
+    /** How many expensive parser functions the parse called. */
+    val expensiveFunctions: Int?
+        get() = first(EXPENSIVE_FUNCTIONS)?.toIntOrNull()
+
+    private fun first(name: String): String? = entries[name]?.firstOrNull()
+
+    private companion object {
+        const val LUA_TIME = "scribunto-limitreport-timeusage"
+        const val LUA_MEMORY = "scribunto-limitreport-memusage"
+        const val EXPENSIVE_FUNCTIONS = "limitreport-expensivefunctioncount"
+    }
+}

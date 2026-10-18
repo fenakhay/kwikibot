@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.model
 
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
@@ -155,5 +156,35 @@ class SignaturesTest {
     @Test
     fun `a language nothing is shipped for reads as english rather than failing`() {
         Signatures.forLanguage("xyz").findAll(thread).size shouldBe 2
+    }
+
+    @Test
+    fun `each shipped language reads its own wiki's signatures`() {
+        Signatures.forLanguage("fr") shouldBe Signatures.FRENCH
+        Signatures.forLanguage("de") shouldBe Signatures.GERMAN
+        Signatures.forLanguage("es") shouldBe Signatures.SPANISH
+        Signatures.forLanguage("en") shouldBe Signatures.ENGLISH
+    }
+
+    @Test
+    fun `a format missing a field, or capturing something that is not a number, matches nothing`() {
+        val months = mapOf("august" to 8)
+        val noMonth = SignatureFormat("xx", Regex("(?<hour>\\d{2}):(?<minute>\\d{2})"), months)
+        val noYear =
+            SignatureFormat(
+                "xx",
+                Regex("(?<hour>\\d{2}):(?<minute>\\d{2}), (?<day>\\d{1,2}) (?<month>\\p{L}+)"),
+                months,
+            )
+        val wordForDay =
+            SignatureFormat(
+                "xx",
+                Regex("(?<hour>\\d{2}):(?<minute>\\d{2}), (?<day>\\p{L}+) (?<month>\\p{L}+) (?<year>\\d{4})"),
+                months,
+            )
+
+        noMonth.findAll("21:43, 31 August 2026").shouldBeEmpty()
+        noYear.findAll("21:43, 31 August 2026").shouldBeEmpty()
+        wordForDay.findAll("21:43, last August 2026").shouldBeEmpty()
     }
 }

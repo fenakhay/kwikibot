@@ -1,18 +1,36 @@
 package com.fenakhay.kwikibot.testkit
 
+import com.fenakhay.kwikibot.client.service.ListService
+import com.fenakhay.kwikibot.client.service.LogService
+import com.fenakhay.kwikibot.client.service.MetaService
+import com.fenakhay.kwikibot.client.service.PageService
+import com.fenakhay.kwikibot.client.service.RenderService
+import com.fenakhay.kwikibot.client.service.RevisionService
+import com.fenakhay.kwikibot.client.service.UserService
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.edit.Protection
+import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
+import com.fenakhay.kwikibot.model.title.NamespaceMap
+import com.fenakhay.kwikibot.net.auth.Identity
 import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.wikitext.ParseOptions
+import com.fenakhay.kwikibot.wikitext.TitleRules
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import java.lang.reflect.Proxy
+import kotlin.jvm.internal.DefaultConstructorMarker
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 
 class FakeWikiTest {
@@ -400,6 +418,149 @@ class FakeWikiTest {
     }
 
     @Test
+    fun `a list service handed in is the one the fake wiki lists with`() = runTest {
+        val member = FakePageService().ref("Volcano")
+        val lists = stub<ListService> { method -> if (method == "categoryMembers") flowOf(member) else null }
+        val wiki = FakeWiki(pages = FakePageService(), lists = lists)
+
+        wiki.lists shouldBeSameInstanceAs lists
+        wiki.lists.categoryMembers(wiki.ref("Category:Volcanoes")).toList() shouldBe listOf(member)
+    }
+
+    @Test
+    fun `every other service handed in is the one the fake wiki uses`() {
+        val revisions = stub<RevisionService>()
+        val users = stub<UserService>()
+        val logs = stub<LogService>()
+        val renderer = stub<RenderService>()
+        val meta = stub<MetaService>()
+
+        val wiki =
+            FakeWiki(
+                pages = FakePageService(),
+                revisions = revisions,
+                users = users,
+                logs = logs,
+                renderer = renderer,
+                meta = meta,
+            )
+
+        wiki.revisions shouldBeSameInstanceAs revisions
+        wiki.users shouldBeSameInstanceAs users
+        wiki.logs shouldBeSameInstanceAs logs
+        wiki.renderer shouldBeSameInstanceAs renderer
+        wiki.meta shouldBeSameInstanceAs meta
+    }
+
+    @Test
+    fun `a fake wiki parses as Wikimedia's wikis do, without asking its transport`() = runTest {
+        val wiki = FakeWiki("volcano" to "x")
+
+        wiki.parseOptions() shouldBe ParseOptions.DEFAULT
+        wiki.titleRules() shouldBe TitleRules.DEFAULT
+    }
+
+    @Test
+    fun `code compiled against the 1_1 fake wiki constructor still links`() {
+        // Found by its JVM signature: WikiId is a value class, so Kotlin adds a marker parameter.
+        val pages = FakePageService("volcano" to "x")
+        val identity = Identity(name = "OtherBot", id = 9)
+        val parameters =
+            arrayOf(
+                PageService::class.java,
+                String::class.java,
+                NamespaceMap::class.java,
+                Identity::class.java,
+            )
+
+        val full =
+            FakeWiki::class
+                .java
+                .getConstructor(*parameters, DefaultConstructorMarker::class.java)
+                .newInstance(pages, "enwiktionary", NamespaceMap.CANONICAL, identity, null)
+        // A 1.1 call that gave only the pages, which leaves the other three to their defaults.
+        val defaulted =
+            FakeWiki::class
+                .java
+                .getConstructor(*parameters, Int::class.java, DefaultConstructorMarker::class.java)
+                .newInstance(pages, null, null, null, 0b1110, null)
+
+        full.pages shouldBeSameInstanceAs pages
+        full.id shouldBe WikiId("enwiktionary")
+        full.identity shouldBe identity
+        defaulted.id shouldBe WikiId("testwiki")
+        defaulted.identity.name shouldBe "TestBot"
+        assertFailsWith<NotImplementedError> { defaulted.lists }
+    }
+
+    @Test
+    fun `code compiled against the 1_1 fake page service constructor still links`() = runTest {
+        val refused = EditOutcome.Protected(FakePageService().ref("Volcano"), "protected")
+        val parameters =
+            arrayOf(Map::class.java, String::class.java, Function1::class.java, Function0::class.java)
+        val refuse: (PageRef) -> EditOutcome.Refused? = { refused }
+
+        val full =
+            FakePageService::class
+                .java
+                .getConstructor(*parameters, DefaultConstructorMarker::class.java)
+                .newInstance(mapOf("volcano" to "x"), "enwiktionary", refuse, null, null)
+        val defaulted =
+            FakePageService::class
+                .java
+                .getConstructor(*parameters, Int::class.java, DefaultConstructorMarker::class.java)
+                .newInstance(null, null, null, null, 0b1111, null)
+
+        full.text("volcano") shouldBe "x"
+        full.ref("volcano").wiki shouldBe WikiId("enwiktionary")
+        full.edit(full.ref("volcano")) { text = "y" } shouldBe refused
+        // Expansion, which 1.1 did not have, is the identity.
+        full.expandText("{{x}}") shouldBe "{{x}}"
+        defaulted.ref("volcano").wiki shouldBe WikiId("testwiki")
+        defaulted.edit(defaulted.ref("volcano")) { text = "y" }.shouldBeInstanceOf<EditOutcome.Saved>()
+    }
+
+    @Test
+    fun `the pages redirecting to a page are found in its text, in the namespaces asked for`() = runTest {
+        val pages =
+            FakePageService(
+                "Volcano" to "==English==",
+                "Volcanoes" to "#REDIRECT [[Volcano]]",
+                "Template:Volcano" to "#redirect [[volcano]]",
+                "Lava" to "no redirect here",
+            )
+        val volcano = pages.ref("Volcano")
+
+        pages.redirectsTo(listOf(volcano)) shouldBe
+            mapOf(volcano to listOf(pages.ref("Volcanoes"), pages.ref("Volcano", Namespace.TEMPLATE)))
+        pages.redirectsTo(listOf(volcano), setOf(Namespace.TEMPLATE)) shouldBe
+            mapOf(volcano to listOf(pages.ref("Volcano", Namespace.TEMPLATE)))
+        pages.redirectsTo(listOf(pages.ref("Lava"))) shouldBe emptyMap()
+    }
+
+    @Test
+    fun `moving, deleting or undeleting a page the fake does not hold changes nothing`() = runTest {
+        val pages = FakePageService("volcano" to "x")
+
+        pages.move(pages.ref("Nope"), pages.ref("Elsewhere")).title.text shouldBe "Elsewhere"
+        pages.delete(pages.ref("Nope"))
+        pages.undelete(pages.ref("Nope"))
+
+        pages.text("Elsewhere").shouldBeNull()
+        pages.text("Nope").shouldBeNull()
+        pages.revision("Nope").shouldBeNull()
+        pages.text("volcano") shouldBe "x"
+    }
+
+    @Test
+    fun `a title no wiki would accept is kept as written, the fake not being a title validator`() = runTest {
+        val pages = FakePageService("a|b" to "x")
+
+        pages.text("a|b") shouldBe "x"
+        pages.content(pages.ref("a|b"))?.text shouldBe "x"
+    }
+
+    @Test
     fun `the administrative actions run without doing anything`() = runTest {
         val pages = FakePageService("volcano" to "x")
         val ref = pages.ref("volcano")
@@ -442,4 +603,18 @@ class FakeWikiTest {
 
         found.size shouldBe 2
     }
+
+    /**
+     * A service that answers [answer] for the methods it knows and refuses every other call, for checking
+     * which instance the fake hands out: the service interfaces are too wide to write out by hand for that.
+     */
+    private inline fun <reified T : Any> stub(crossinline answer: (String) -> Any? = { null }): T =
+        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { proxy, method, args ->
+            when (method.name) {
+                "toString" -> "stub ${T::class.simpleName}"
+                "hashCode" -> System.identityHashCode(proxy)
+                "equals" -> proxy === args?.firstOrNull()
+                else -> answer(method.name) ?: throw UnsupportedOperationException(method.name)
+            }
+        } as T
 }

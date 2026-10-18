@@ -1,19 +1,28 @@
 package com.fenakhay.kwikibot.bot
 
 import com.fenakhay.kwikibot.bot.run.BotRunBuilder
+import com.fenakhay.kwikibot.client.WikiClient
+import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlin.io.path.Path
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.test.runTest
 
 class BotConfigTest {
 
@@ -98,6 +107,38 @@ class BotConfigTest {
     @Test
     fun `no login section means anonymous, which is a choice rather than a failure`() {
         BotConfig.parse(minimal).credentials { null } shouldBe Credentials.Anonymous
+    }
+
+    @Test
+    fun `a file with no login asks the environment for no secret`() {
+        BotConfig.parse(minimal).credentials() shouldBe Credentials.Anonymous
+    }
+
+    @Test
+    fun `a configuration opens the wiki it names, on the client it is given`() = runTest {
+        val asked = mutableListOf<String>()
+        val engine = MockEngine { request ->
+            asked += request.url.host + request.url.encodedPath
+            val answer =
+                if (request.url.parameters["meta"] == "userinfo") {
+                    """{"query":{"userinfo":{"id":0,"name":"192.0.2.1","anon":true}}}"""
+                } else {
+                    """{"query":{"general":{"wikiid":"examplewiki","sitename":"Example","lang":"en",
+                       "server":"//wiki.example.org","articlepath":"/wiki/${'$'}1","mainpage":"Main Page",
+                       "generator":"MediaWiki 1.47.0"},"namespaces":{"0":{"id":0,"name":""}}}}"""
+                }
+            respond(answer, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val config = BotConfig.parse("$minimal\n\n[wiki]\nserver = \"wiki.example.org\"\n")
+        val wikiConfig =
+            config
+                .toWikiConfig()
+                .copy(throttle = Throttle(Duration.ZERO, Duration.ZERO, testScheduler.timeSource))
+
+        val wiki = WikiClient(wikiConfig, engine = engine).use { config.connect(it) }
+
+        wiki.info.siteName shouldBe "Example"
+        asked.distinct() shouldBe listOf("wiki.example.org/w/api.php")
     }
 
     @Test

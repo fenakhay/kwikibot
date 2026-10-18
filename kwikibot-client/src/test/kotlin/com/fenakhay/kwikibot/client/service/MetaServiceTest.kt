@@ -114,6 +114,61 @@ class MetaServiceTest {
     }
 
     @Test
+    fun `tags go on and come off revisions, recent changes and log entries in one request`() = runTest {
+        val bodies = mutableListOf<String>()
+        val meta = meta { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"TOKEN"}}}""")
+            } else {
+                bodies += request.body.toByteArray().decodeToString()
+                respondJson("""{"tag":[{"revid":1,"status":"success"}]}""")
+            }
+        }
+
+        meta.applyTags(add = setOf("bot trial"), revisions = listOf(1L, 2L))
+        meta.applyTags(
+            remove = setOf("mw-reverted", "bot trial"),
+            recentChanges = listOf(30L),
+            logEntries = listOf(40L),
+            reason = "mistagged",
+        )
+
+        val (adding, removing) = bodies
+        adding shouldContain "action=tag"
+        adding shouldContain "add=bot+trial"
+        adding shouldContain "revid=1%7C2"
+        adding.contains("remove=") shouldBe false
+        adding.contains("rcid=") shouldBe false
+        adding.contains("logid=") shouldBe false
+        removing shouldContain "remove=mw-reverted%7Cbot+trial"
+        removing shouldContain "rcid=30"
+        removing shouldContain "logid=40"
+        removing shouldContain "reason=mistagged"
+        removing.contains("add=") shouldBe false
+        removing.contains("revid=") shouldBe false
+        removing.endsWith("token=TOKEN") shouldBe true
+    }
+
+    @Test
+    fun `retiring a tag needs no reason`() = runTest {
+        var body = ""
+        val meta = meta { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"TOKEN"}}}""")
+            } else {
+                body = request.body.toByteArray().decodeToString()
+                respondJson("""{"managetags":{"status":"success"}}""")
+            }
+        }
+
+        meta.manageTag("bot trial", TagOperation.DEACTIVATE)
+
+        body shouldContain "operation=deactivate"
+        body shouldContain "tag=bot+trial"
+        body shouldContain "reason=&"
+    }
+
+    @Test
     fun `defining a tag is not the same call as applying one`() = runTest {
         var body = ""
         val meta = meta { request ->

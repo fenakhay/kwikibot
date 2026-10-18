@@ -248,6 +248,7 @@ public final class com/fenakhay/kwikibot/protocol/decode/PageDecoder {
 	public static final field EPOCH Ljava/lang/String;
 	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun decode (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/protocol/decode/PageResult;
+	public final fun decodeContents (Lkotlinx/serialization/json/JsonObject;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
 	public final fun decodeRevision (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/model/page/Revision;
 	public final fun refOf (Ljava/lang/String;ILjava/lang/Long;)Lcom/fenakhay/kwikibot/model/page/PageRef;
 	public final fun refOf (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/model/page/PageRef;

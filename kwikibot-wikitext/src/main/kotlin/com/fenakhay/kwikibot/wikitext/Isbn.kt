@@ -110,7 +110,8 @@ private constructor(
  * - an ISBN whose check digit does not add up is left exactly as written, because it is a typo and a bot
  *   cannot know which digit was mistyped;
  * - a valid ten-digit ISBN can be converted to thirteen digits, which is what most projects asked for when
- *   the format changed.
+ *   the format changed. It keeps the hyphens or spaces it was written with, `978` taking the first of them,
+ *   and an ISBN that already has thirteen digits is left as written.
  *
  * Only prose is touched: an ISBN inside a template parameter belongs to that template, and rewriting it can
  * change what the citation renders.
@@ -124,14 +125,26 @@ public class ReformatIsbns(
         if (!toIsbn13) return code
 
         return code.replaceText(ISBN, TextScope.PROSE) { match ->
-            val parsed = Isbn.parse(match.groupValues[1])
+            val written = match.groupValues[1]
+            val parsed = Isbn.parse(written)
             // Left alone when it does not parse: a wrong check digit is a typo, and tidying the
             // formatting of a number that identifies nothing serves no purpose.
-            if (parsed == null) match.value else "ISBN ${parsed.toIsbn13()}"
+            if (parsed == null || parsed.isIsbn13) match.value
+            else match.value.removeSuffix(written) + thirteenDigits(written, parsed)
         }
     }
 
     private companion object {
+        /**
+         * [written], the ten-digit [isbn] as it appears on the page, as thirteen digits written the same way.
+         */
+        fun thirteenDigits(written: String, isbn: Isbn): String {
+            val converted = isbn.toIsbn13().normalised
+            val prefix = converted.dropLast(isbn.normalised.length)
+            val separator = written.firstOrNull { it == '-' || it == ' ' }?.toString().orEmpty()
+            return prefix + separator + written.dropLast(1) + converted.last()
+        }
+
         /** `ISBN 0-19-853737-9`, as the magic link and the citation templates write it. */
         val ISBN = Regex("""ISBN\s+([\dXx][\dXx\- ]{8,20}[\dXx])""")
     }

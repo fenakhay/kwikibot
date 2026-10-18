@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.bot.fix
 
+import com.fenakhay.kwikibot.wikitext.ParseOptions
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -47,6 +48,11 @@ class FixesTest {
     }
 
     @Test
+    fun `fixes named on a command line come back in the order they were named`() {
+        Fixes.named(listOf("ellipsis", "extra-spaces")) shouldBe listOf(Fixes.ELLIPSIS, Fixes.EXTRA_SPACES)
+    }
+
+    @Test
     fun `a bot can register its own fix`() {
         Fixes.register(
             Fix(
@@ -63,5 +69,11 @@ class FixesTest {
     fun `a fix reports whether it would change anything`() {
         Fixes.ELLIPSIS.wouldChange("nothing here") shouldBe false
         Fixes.ELLIPSIS.wouldChange("wait...") shouldBe true
+    }
+
+    @Test
+    fun `whether a fix would change a page is read the way the wiki parses it`() {
+        Fixes.ELLIPSIS.wouldChange("wait...", ParseOptions.DEFAULT) shouldBe true
+        Fixes.ELLIPSIS.wouldChange("{{quote|wait...}}", ParseOptions.DEFAULT) shouldBe false
     }
 }

@@ -79,4 +79,10 @@ class UnlinkerTest {
 
         unlinker.unlink(before, target) shouldBe "== English ==\n\n{{col|en|volcano}}\n\nA volcano.\n"
     }
+
+    @Test
+    fun `whether wikitext links to the target can be asked of the text itself`() {
+        unlinker.linksTo("A [[mountain]].", target) shouldBe false
+        unlinker.linksTo("A [[volcano|vent]].", target) shouldBe true
+    }
 }

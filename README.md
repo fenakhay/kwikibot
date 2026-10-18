@@ -180,21 +180,21 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("com.fenakhay.kwikibot:kwikibot:1.2.0")
+    implementation("com.fenakhay.kwikibot:kwikibot:1.3.0")
 }
 ```
 
 That is the whole library. Testing a bot wants the fakes as well:
 
 ```kotlin
-testImplementation("com.fenakhay.kwikibot:kwikibot-testkit:1.2.0")
+testImplementation("com.fenakhay.kwikibot:kwikibot-testkit:1.3.0")
 ```
 
 The modules are published separately too, for the cases where that earns something. A tool that
 only parses wikitext has no reason to pull in Ktor:
 
 ```kotlin
-implementation("com.fenakhay.kwikibot:kwikibot-wikitext:1.2.0")
+implementation("com.fenakhay.kwikibot:kwikibot-wikitext:1.3.0")
 ```
 
 They are released together, so give them the same version. Sources and KDoc are published
@@ -232,8 +232,8 @@ brew install fenakhay/tap/kwikibot
 ```
 
 Debian and RPM packages are attached to each [release](https://github.com/fenakhay/kwikibot/releases),
-as are plain archives for Windows, macOS (Intel and Apple Silicon) and Linux. Unpack one and put
-the binary on your path. `SHA256SUMS` covers every file. To build it yourself:
+as are plain archives for Windows, macOS on Apple Silicon and Linux. Unpack one and put the
+binary on your path. `SHA256SUMS` covers every file. To build it yourself:
 `./gradlew :kwikibot-cli:appArchive`, which needs a GraalVM JDK.
 
 ```

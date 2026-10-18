@@ -138,6 +138,27 @@ class RunLogTest {
     }
 
     @Test
+    fun `a failure records what went wrong`() {
+        val skips = StringBuilder()
+
+        RunLog(skips = skips)(PageOutcome.Failed(ref("volcano"), IllegalStateException("timed out")))
+
+        skips.toString() shouldContain """"kind":"failed""""
+        skips.toString() shouldContain """"reason":"timed out""""
+    }
+
+    @Test
+    fun `every handler is told of each outcome, in the order they were given`() {
+        val heard = mutableListOf<String>()
+        val report = reportTo({ heard += "log ${it.ref.title}" }, { heard += "count ${it.ref.title}" })
+
+        report(PageOutcome.Missing(ref("volcano")))
+        report(PageOutcome.Missing(ref("lava")))
+
+        heard shouldBe listOf("log volcano", "count volcano", "log lava", "count lava")
+    }
+
+    @Test
     fun `a skip reason containing quotes stays valid JSON`() {
         val skips = StringBuilder()
 
@@ -230,6 +251,16 @@ class ProgressTest {
         val line = out.toString().removePrefix("\r")
         line.startsWith("1/10") shouldBe true
         (line.length < 30) shouldBe true
+    }
+
+    @Test
+    fun `a terminal too narrow even for the counts gets as much of them as fits`() {
+        val out = StringBuilder()
+
+        progress(total = 10, out, width = 12)(PageOutcome.Unchanged(ref("a")))
+
+        // One column is left free, so the cursor does not wrap onto the next line.
+        out.toString().removePrefix("\r") shouldBe "1/10  unchanged 1".take(11)
     }
 
     @Test

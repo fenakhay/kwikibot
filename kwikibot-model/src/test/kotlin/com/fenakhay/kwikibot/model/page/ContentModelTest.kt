@@ -1,14 +1,9 @@
 package com.fenakhay.kwikibot.model.page
 
-import com.fenakhay.kwikibot.model.title.Namespace
-import com.fenakhay.kwikibot.model.title.Title
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class ContentModelTest {
-    private val title = Title.Local(Namespace.MAIN, "volcano")
-    private val ref = PageRef(WikiId("enwiktionary"), title)
-
     @Test
     fun `only wikitext is wikitext`() {
         ContentModel.WIKITEXT.isWikitext shouldBe true
@@ -23,5 +18,7 @@ class ContentModelTest {
     fun `a content model prints as the name the API uses`() {
         ContentModel.SCRIBUNTO.toString() shouldBe "Scribunto"
         ContentModel.WIKITEXT.toString() shouldBe "wikitext"
+        ContentModel.JAVASCRIPT.toString() shouldBe "javascript"
+        ContentModel.TEXT.toString() shouldBe "text"
     }
 }

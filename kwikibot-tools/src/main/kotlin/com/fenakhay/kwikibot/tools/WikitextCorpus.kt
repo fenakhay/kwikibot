@@ -6,7 +6,6 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
-import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -64,13 +63,18 @@ private const val PROPERTIES = "text|templates|links|tocdata|externallinks|parse
  * recorded, so adding cases does not re-record the rest; `--all` records every case again.
  */
 public fun main(args: Array<String>) {
+    runBlocking { recordCorpus(args, ToolEnvironment.SYSTEM) }
+}
+
+/** What [main] does with [args], asking the wiki and printing through [environment]. */
+internal suspend fun recordCorpus(args: Array<String>, environment: ToolEnvironment) {
     val target = Path(args.firstOrNull() ?: "wikitext-cases.json")
     val known = if ("--all" in args || !target.exists()) emptyMap() else recorded(target)
-    val document = runBlocking { record(known) }
+    val document = record(known, environment)
 
     target.writeText(document)
     val added = WikitextCases.ALL.count { (it.name to it.input) !in known }
-    println("wrote $target: ${WikitextCases.ALL.size} cases, $added recorded now")
+    environment.output.appendLine("wrote $target: ${WikitextCases.ALL.size} cases, $added recorded now")
 }
 
 /** The cases [target] already holds, by name and input. */
@@ -82,7 +86,10 @@ private fun recorded(target: Path): Map<Pair<String, String>, JsonObject> =
 
 private fun JsonObject.text(key: String): String = this[key]?.jsonPrimitive?.content.orEmpty()
 
-private suspend fun record(known: Map<Pair<String, String>, JsonObject>): String {
+private suspend fun record(
+    known: Map<Pair<String, String>, JsonObject>,
+    environment: ToolEnvironment,
+): String {
     val userAgent =
         UserAgent(
             "kwikibot-wikitext-corpus",
@@ -90,7 +97,7 @@ private suspend fun record(known: Map<Pair<String, String>, JsonObject>): String
             "https://en.wiktionary.org/wiki/User:Fenakhay",
         )
 
-    return WikiHttpClient.create().use { client ->
+    return environment.client().use { client ->
         val transport =
             KtorTransport(
                 client = client,
@@ -98,7 +105,7 @@ private suspend fun record(known: Map<Pair<String, String>, JsonObject>): String
                 userAgent = userAgent,
                 // Politely slow: this is somebody else's production wiki, and the corpus is recorded
                 // once rather than on every build.
-                throttle = Throttle(read = 500.milliseconds),
+                throttle = Throttle(read = 500.milliseconds, timeSource = environment.timeSource),
                 // action=parse is answered from the parser rather than from a database replica, so
                 // replica lag is no reason to refuse it.
                 maxlag = null,
@@ -108,7 +115,7 @@ private suspend fun record(known: Map<Pair<String, String>, JsonObject>): String
             WikitextCases.ALL.forEachIndexed { index, case ->
                 add(known[case.name to case.input] ?: record(transport, case))
                 if ((index + 1) % PROGRESS_EVERY == 0) {
-                    System.err.println("  ${index + 1}/${WikitextCases.ALL.size}")
+                    environment.log.appendLine("  ${index + 1}/${WikitextCases.ALL.size}")
                 }
             }
         }
@@ -194,7 +201,7 @@ private fun JsonObject.headings(): List<String> =
         }
 
 private fun JsonObject.strings(key: String): List<String> =
-    (this[key] as? JsonArray).orEmpty().mapNotNull { it.jsonPrimitive.content }
+    (this[key] as? JsonArray).orEmpty().map { it.jsonPrimitive.content }
 
 private const val PROGRESS_EVERY = 20
 

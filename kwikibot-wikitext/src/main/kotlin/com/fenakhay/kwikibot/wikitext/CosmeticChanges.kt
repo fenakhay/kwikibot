@@ -147,7 +147,8 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
          * Sections with a heading and nothing under them.
          *
          * Only a section with no content at all: a section holding a comment or a template has something in
-         * it, whether or not it renders.
+         * it, whether or not it renders. A section includes its subsections, so `==English==` followed by
+         * `===Noun===` and a definition stays, and goes only when its subsections are empty too.
          */
         public val EMPTY_SECTIONS: CosmeticPass = CosmeticPass { code ->
             val nodes = code.nodes.sectionNodes()
@@ -227,24 +228,24 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
                 "ntilde" to "ñ",
             )
 
-        /** Drops each heading followed by nothing but whitespace, and that whitespace with it. */
+        /**
+         * Drops each heading whose section holds nothing but whitespace and empty subsections, and the
+         * section with it.
+         */
         private fun dropEmptySections(nodes: List<Node>): List<Node> {
             val kept = mutableListOf<Node>()
             var index = 0
 
             while (index < nodes.size) {
                 val node = nodes[index]
-                if (node !is Heading) {
-                    kept += node
-                    index++
-                    continue
-                }
+                val end = if (node is Heading) sectionEnd(nodes, index) else index + 1
+                val empty =
+                    node is Heading &&
+                        nodes.subList(index + 1, end).all {
+                            it is Heading || (it is TextNode && it.text.isBlank())
+                        }
 
-                var end = index + 1
-                while (end < nodes.size && nodes[end] !is Heading) end++
-                val body = nodes.subList(index + 1, end)
-
-                if (body.any { it !is TextNode || it.text.isNotBlank() }) {
+                if (!empty) {
                     kept += node
                     index++
                 } else {
@@ -260,6 +261,14 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
             }
 
             return kept
+        }
+
+        /** Where the section headed by `nodes[start]` ends: at the next heading at its own level or above. */
+        private fun sectionEnd(nodes: List<Node>, start: Int): Int {
+            val level = (nodes[start] as Heading).level
+            var end = start + 1
+            while (end < nodes.size && (nodes[end] as? Heading)?.let { it.level <= level } != true) end++
+            return end
         }
 
         private fun MutableList<Node>.removeTrailingBlankText() {

@@ -28,7 +28,7 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/
 	public fun edit (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun exists (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun expandText (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun expandTexts (Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun expandTexts-REN4W-g (Ljava/util/List;Lcom/fenakhay/kwikibot/model/page/PageRef;ZLcom/fenakhay/kwikibot/client/service/TemplateSandbox;Lcom/fenakhay/kwikibot/model/RevisionId;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun fileUsageOf (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun freshContents (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getEdits ()Ljava/util/List;

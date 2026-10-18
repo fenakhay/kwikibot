@@ -45,6 +45,14 @@ class TempAccountConfigTest {
     }
 
     @Test
+    fun `a pattern with no placeholder matches only that exact name`() {
+        val fixed = TempAccountConfig(enabled = true, matchPatterns = listOf("Temporary user"))
+
+        fixed.matches("Temporary user") shouldBe true
+        fixed.matches("Temporary user 2") shouldBe false
+    }
+
+    @Test
     fun `a registered editor is neither anonymous nor temporary`() {
         UserInfo(name = "Fenakhay", id = 1).isRegistered shouldBe true
         UserInfo(name = "203.0.113.5", isAnonymous = true).isRegistered shouldBe false

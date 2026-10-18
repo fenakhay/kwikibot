@@ -14,19 +14,26 @@ import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import java.net.SocketTimeoutException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 import kotlinx.serialization.json.JsonObject
 
 class KtorTransportTest {
@@ -235,6 +242,80 @@ class KtorTransportTest {
     }
 
     @Test
+    fun `a request that times out is retried and then reported as a timeout`() = runTest {
+        val timeouts =
+            listOf(
+                HttpRequestTimeoutException(endpoint.apiUrl, 60_000, null),
+                ConnectTimeoutException("connect timed out", null),
+                SocketTimeoutException("read timed out"),
+            )
+
+        for (timeout in timeouts) {
+            var calls = 0
+            val transport =
+                transport(retry = RetryPolicy(maxRetries = 1, initialDelay = 1.seconds)) {
+                    calls++
+                    throw timeout
+                }
+
+            val error =
+                assertFailsWith<WikiError.Transport.Timeout> { transport.call(ApiRequest.of("query")) }
+
+            error.url shouldBe endpoint.apiUrl
+            error.cause?.message shouldBe timeout.message
+            error.isTransient shouldBe true
+            calls shouldBe 2
+        }
+    }
+
+    @Test
+    fun `a wiki that does not answer within the client's timeout is reported as a timeout`() {
+        val slow = MockEngine {
+            delay(30.seconds)
+            respondJson("""{"ok":true}""")
+        }
+
+        WikiHttpClient.create(engine = slow, timeout = 100.milliseconds).use { client ->
+            val transport =
+                KtorTransport(client, endpoint, userAgent, Throttle.unpaced(), retry = RetryPolicy.NONE)
+
+            assertFailsWith<WikiError.Transport.Timeout> {
+                runBlocking { transport.call(ApiRequest.of("query")) }
+            }
+        }
+    }
+
+    @Test
+    fun `a connection that fails is retried, then reported as unreachable with its cause`() = runTest {
+        val reasons = mutableListOf<String>()
+        val listener =
+            object : TransportListener {
+                override fun onRetry(request: ApiRequest, attempt: Int, wait: Duration, reason: String) {
+                    reasons += reason
+                }
+            }
+        var calls = 0
+        val reset = IOException("connection reset")
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 2, initialDelay = 1.seconds), listener = listener) {
+                calls++
+                throw if (calls == 1) IOException() else reset
+            }
+
+        val error =
+            assertFailsWith<WikiError.Transport.Unreachable> { transport.call(ApiRequest.of("query")) }
+
+        error.url shouldBe endpoint.apiUrl
+        error.cause?.message shouldBe "connection reset"
+        calls shouldBe 3
+        reasons shouldBe
+            listOf(
+                "could not reach ${endpoint.apiUrl} (IOException)",
+                "could not reach ${endpoint.apiUrl} (connection reset)",
+            )
+    }
+
+    @Test
     fun `an html error page from a proxy is treated as a server error`() = runTest {
         var calls = 0
         val transport =
@@ -249,6 +330,58 @@ class KtorTransportTest {
 
         assertFailsWith<WikiError.Transport.ServerError> { transport.call(ApiRequest.of("query")) }
         calls shouldBe 1
+    }
+
+    @Test
+    fun `a refusal is raised at once, with what the server said`() = runTest {
+        var calls = 0
+        val transport = transport { _ ->
+            calls++
+            respond(
+                "<html><body><p>Please set a user-agent and respect our robot policy\n" +
+                    "https://w.wiki/4wJS.</p></body></html>",
+                HttpStatusCode.Forbidden,
+                headersOf(HttpHeaders.ContentType, "text/html"),
+            )
+        }
+
+        val error = assertFailsWith<WikiError.Transport.Refused> { transport.call(ApiRequest.of("query")) }
+
+        calls shouldBe 1
+        currentTime shouldBe 0
+        error.status shouldBe 403
+        error.isTransient shouldBe false
+        error.detail shouldBe "Please set a user-agent and respect our robot policy https://w.wiki/4wJS."
+        error.message shouldContain "HTTP 403 from https://en.wiktionary.org/w/api.php"
+    }
+
+    @Test
+    fun `a 4xx that means not now is retried like a server error`() = runTest {
+        var calls = 0
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 1, initialDelay = 1.seconds)) {
+                calls++
+                respondError(HttpStatusCode.RequestTimeout)
+            }
+
+        assertFailsWith<WikiError.Transport.ServerError> { transport.call(ApiRequest.of("query")) }
+
+        calls shouldBe 2
+    }
+
+    @Test
+    fun `a 4xx that carries an API answer is handed back like any other`() = runTest {
+        val transport = transport {
+            respond(
+                """{"errors":[{"code":"badvalue","text":"Unrecognized value"}]}""",
+                HttpStatusCode.BadRequest,
+                headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val body = transport.call(ApiRequest.of("query"))
+
+        body.containsKey("errors") shouldBe true
     }
 
     @Test
@@ -384,6 +517,143 @@ class KtorTransportTest {
 
         body.toString() shouldContain "readonly"
         calls shouldBe 3
+    }
+
+    @Test
+    fun `every database error that belongs to the moment is waited out, doubling the wait each time`() =
+        runTest {
+            val codes =
+                listOf(
+                    "readonly",
+                    "internal_api_error_DBConnectionError",
+                    "internal_api_error_DBQueryTimeoutError",
+                    "internal_api_error_DBReadOnlyError",
+                    "internal_api_error_DBTransactionStateError",
+                )
+
+            for (code in codes) {
+                val waits = mutableListOf<Duration>()
+                val listener =
+                    object : TransportListener {
+                        override fun onRetry(
+                            request: ApiRequest,
+                            attempt: Int,
+                            wait: Duration,
+                            reason: String,
+                        ) {
+                            waits += wait
+                        }
+                    }
+                var calls = 0
+                val transport =
+                    transport(listener = listener) {
+                        calls++
+                        if (calls <= 3) {
+                            respondJson("""{"errors":[{"code":"$code","text":"x","module":"main"}]}""")
+                        } else {
+                            respondJson("""{"ok":true}""")
+                        }
+                    }
+                val started = currentTime
+
+                val body = transport.call(ApiRequest.of("query"))
+
+                body.containsKey("ok") shouldBe true
+                calls shouldBe 4
+                waits shouldBe listOf(1.seconds, 2.seconds, 4.seconds)
+                currentTime - started shouldBe 7_000
+            }
+        }
+
+    @Test
+    fun `a rate limit that outlasts the retries is raised with the wait the server asked for`() = runTest {
+        var calls = 0
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 1, initialDelay = 1.seconds)) {
+                calls++
+                respondError(
+                    HttpStatusCode.TooManyRequests,
+                    headers = headersOf(HttpHeaders.RetryAfter, " 30 "),
+                )
+            }
+
+        val error =
+            assertFailsWith<WikiError.Transport.RateLimited> { transport.call(ApiRequest.of("query")) }
+
+        error.retryAfter shouldBe 30.seconds
+        calls shouldBe 2
+        currentTime shouldBe 30_000
+    }
+
+    @Test
+    fun `a rate limit the wiki reports in its body is waited out like a 429`() = runTest {
+        var calls = 0
+        val transport = transport {
+            calls++
+            if (calls == 1) {
+                respondJson("""{"errors":[{"code":"ratelimited","text":"slow down","module":"main"}]}""")
+            } else {
+                respondJson("""{"ok":true}""")
+            }
+        }
+
+        transport.call(ApiRequest.of("query")).containsKey("ok") shouldBe true
+
+        calls shouldBe 2
+        currentTime shouldBe 1_000
+    }
+
+    @Test
+    fun `lag that outlasts the retries is raised with how far behind the replica was`() = runTest {
+        val reasons = mutableListOf<String>()
+        val listener =
+            object : TransportListener {
+                override fun onRetry(request: ApiRequest, attempt: Int, wait: Duration, reason: String) {
+                    reasons += reason
+                }
+            }
+        var calls = 0
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 1, initialDelay = 1.seconds), listener = listener) {
+                calls++
+                if (calls == 1) {
+                    respondJson("""{"error":{"code":"maxlag","info":"lagged"}}""")
+                } else {
+                    respondJson(
+                        """{"error":{"code":"maxlag","info":"Waiting for db1234: 7.5 seconds lagged"}}"""
+                    )
+                }
+            }
+
+        val error = assertFailsWith<WikiError.Transport.Maxlag> { transport.call(ApiRequest.of("query")) }
+
+        error.lag shouldBe 7.5.seconds
+        error.host shouldBe "db1234"
+        reasons shouldBe listOf("replication lag of 0s")
+    }
+
+    @Test
+    fun `a transport with no maxlag leaves the parameter out`() = runTest {
+        var query = ""
+        val transport =
+            KtorTransport(
+                client =
+                    HttpClient(
+                        MockEngine { request ->
+                            query = request.url.encodedQuery
+                            respondJson("""{"ok":true}""")
+                        }
+                    ),
+                endpoint = endpoint,
+                userAgent = userAgent,
+                throttle = Throttle.unpaced(),
+                maxlag = null,
+            )
+
+        transport.call(ApiRequest.of("query"))
+
+        query.contains("maxlag") shouldBe false
+        query.contains("format=json") shouldBe true
     }
 
     @Test

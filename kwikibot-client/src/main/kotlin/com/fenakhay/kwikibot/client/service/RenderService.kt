@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.client.service
 
 import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
+import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.render.ParsedPage
 import com.fenakhay.kwikibot.model.render.RenderedSection
@@ -68,10 +69,12 @@ public interface RenderService {
      * and [ParseProperty.CATEGORIES] together gets the HTML and the categories from one parse.
      *
      * An implementation that does not override this answers through [resolve] and [resolveText], and refuses
-     * a sandbox.
+     * a sandbox, a revision and a choice of parser.
      */
     public suspend fun parse(request: RenderRequest): ParsedPage {
-        check(request.sandbox == null) { "this RenderService cannot parse with a sandbox" }
+        check(request.sandbox == null && request.revision == null && request.parser == null) {
+            "this RenderService cannot parse with a sandbox, a revision or a chosen parser"
+        }
         val page = request.page
         return if (page != null) {
             resolve(page, request.properties)
@@ -91,6 +94,10 @@ public interface RenderService {
  * @param context the title to parse [text] as, which decides what relative links and `PAGENAME` mean.
  * @param properties which parts of the result to report.
  * @param sandbox unsaved templates or modules to parse with.
+ * @param revision the revision to parse [text] as, which `{{REVISIONID}}` and the like read. Without it, a
+ *   text is parsed as a preview, which a module can tell. A saved page is parsed at its own.
+ * @param parser which of the wiki's parsers to use, where it runs more than one. `null` leaves it to the
+ *   wiki.
  */
 public data class RenderRequest(
     val page: PageRef? = null,
@@ -98,6 +105,8 @@ public data class RenderRequest(
     val context: PageRef? = null,
     val properties: Set<ParseProperty> = ParseProperty.CONTENTS,
     val sandbox: TemplateSandbox? = null,
+    val revision: RevisionId? = null,
+    val parser: Parser? = null,
 ) {
     init {
         require((page == null) != (text == null)) {
@@ -105,6 +114,7 @@ public data class RenderRequest(
         }
         require(text == null || context != null) { "a text needs a context to parse it as" }
         require(properties.isNotEmpty()) { "a parse needs at least one property" }
+        require(revision == null || text != null) { "a saved page is parsed at its own revision" }
     }
 
     /** Requests for the two things a parse can be of. */
@@ -150,6 +160,16 @@ public data class TemplateSandbox(
     }
 }
 
+/** One of the parsers a wiki can render with, named as `action=parse` names it. */
+@MediaWikiParameter("parse", "parser")
+public enum class Parser(internal val apiValue: String) {
+    /** The parser MediaWiki has always had. */
+    LEGACY("legacy"),
+
+    /** Parsoid, which Wikimedia is moving its wikis to. */
+    PARSOID("parsoid"),
+}
+
 /** A part of a parse result, named as `action=parse` names it. */
 @MediaWikiParameter("parse", "prop")
 public enum class ParseProperty(internal val apiValue: String) {
@@ -182,6 +202,12 @@ public enum class ParseProperty(internal val apiValue: String) {
 
     /** External URLs it points at. */
     EXTERNAL_LINKS("externallinks"),
+
+    /**
+     * How much of each parser limit the parse used: Lua time and memory, expensive functions, expansion size.
+     * Arrives in [com.fenakhay.kwikibot.model.render.ParsedPage.limitReport].
+     */
+    LIMIT_REPORT("limitreportdata"),
 
     /**
      * The headings, each carrying the index an edit takes, read from the table of contents.

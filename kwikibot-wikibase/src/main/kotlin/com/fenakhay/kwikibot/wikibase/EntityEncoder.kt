@@ -199,8 +199,12 @@ public object EntityEncoder {
 
 /** What Wikibase calls this kind of entity on the wire. */
 internal val EntityId.entityType: String
+    get() = kind.entityType
+
+/** What Wikibase calls this kind of entity on the wire, which is also what it creates and searches by. */
+internal val EntityId.Kind.entityType: String
     get() =
-        when (kind) {
+        when (this) {
             EntityId.Kind.ITEM -> "item"
             EntityId.Kind.PROPERTY -> "property"
             EntityId.Kind.LEXEME -> "lexeme"

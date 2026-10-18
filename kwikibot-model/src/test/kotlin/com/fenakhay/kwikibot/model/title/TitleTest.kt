@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.model.title
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class TitleTest {
 
@@ -68,6 +69,27 @@ class TitleTest {
     fun `html entities are decoded`() {
         Title.parse("AT&amp;T").shouldBeInstanceOf<Title.Local>().text shouldBe "AT&T"
         Title.parse("&#x41;pple").shouldBeInstanceOf<Title.Local>().text shouldBe "Apple"
+        Title.parse("&#65;pple").shouldBeInstanceOf<Title.Local>().text shouldBe "Apple"
+        Title.parse("&#X41;pple").shouldBeInstanceOf<Title.Local>().text shouldBe "Apple"
+        Title.parse("AT&AMP;T").shouldBeInstanceOf<Title.Local>().text shouldBe "AT&T"
+    }
+
+    @Test
+    fun `a character reference to no character is an illegal character, not a crash`() {
+        // Past U+10FFFF, or too large to read at all. MediaWiki decodes these to U+FFFD and then
+        // refuses the title.
+        for (raw in listOf("&#x110000;", "&#1114112;", "&#99999999999;", "Foo�")) {
+            Title.parse(raw).shouldBeInstanceOf<Title.Invalid>().reason shouldBe
+                Title.Invalid.Reason.ILLEGAL_CHARACTER
+        }
+    }
+
+    @Test
+    fun `a control character is rejected like any other illegal character`() {
+        for (raw in listOf("foo\u0007bar", "foo\u007Fbar")) {
+            Title.parse(raw).shouldBeInstanceOf<Title.Invalid>().reason shouldBe
+                Title.Invalid.Reason.ILLEGAL_CHARACTER
+        }
     }
 
     @Test
@@ -113,6 +135,15 @@ class TitleTest {
     }
 
     @Test
+    fun `every shape of relative path is refused, wherever in the title it sits`() {
+        for (raw in listOf(".", "..", "./Foo", "Foo/.", "Foo/..", "Foo/../Bar")) {
+            Title.parse(raw).shouldBeInstanceOf<Title.Invalid>().reason shouldBe
+                Title.Invalid.Reason.RELATIVE_PATH
+        }
+        Title.parse("Foo.bar/baz..").shouldBeInstanceOf<Title.Local>()
+    }
+
+    @Test
     fun `titles longer than 255 bytes are invalid`() {
         Title.parse("a".repeat(255)).shouldBeInstanceOf<Title.Local>()
         Title.parse("a".repeat(256)).shouldBeInstanceOf<Title.Invalid>().reason shouldBe
@@ -155,6 +186,14 @@ class TitleTest {
     }
 
     @Test
+    fun `a prefix naming this wiki with nothing after it names no page`() {
+        val iw = InterwikiMap(listOf("wikt"), selfPrefixes = listOf("wikt"))
+
+        Title.parse("wikt:", interwiki = iw).shouldBeInstanceOf<Title.Invalid>().reason shouldBe
+            Title.Invalid.Reason.EMPTY
+    }
+
+    @Test
     fun `an interwiki prefix with an empty target stays interwiki`() {
         val title = Title.parse("w:", interwiki = enwiktionary).shouldBeInstanceOf<Title.Interwiki>()
         title.prefix shouldBe "w"
@@ -182,9 +221,29 @@ class TitleTest {
     }
 
     @Test
+    fun `a local title prints with its fragment, and cannot be empty`() {
+        Title.Local(Namespace.TEMPLATE, "col", "Usage").toString() shouldBe "Template:col#Usage"
+        assertFailsWith<IllegalArgumentException> { Title.Local(Namespace.MAIN, "") }
+    }
+
+    @Test
     fun `a custom namespace renders by number rather than guessing a name`() {
         Title.Local(Namespace(118), "Proto-Indo-European/wed-").toString() shouldBe
             "ns118:Proto-Indo-European/wed-"
+    }
+
+    @Test
+    fun `an interwiki title prints with its prefix and fragment`() {
+        Title.parse("w:Etsy#History", interwiki = enwiktionary).toString() shouldBe "w:Etsy#History"
+        Title.parse("de:Haus", interwiki = enwiktionary).toString() shouldBe "de:Haus"
+    }
+
+    @Test
+    fun `an invalid title prints what was rejected and why, and has no fragment`() {
+        val invalid = Title.parse("foo[bar#baz").shouldBeInstanceOf<Title.Invalid>()
+
+        invalid.fragment shouldBe null
+        invalid.toString() shouldBe "invalid title (illegal_character): foo[bar#baz"
     }
 
     @Test
@@ -195,5 +254,14 @@ class TitleTest {
         Title.parse("Category:Foo", defaultNamespace = Namespace.TEMPLATE)
             .shouldBeInstanceOf<Title.Local>()
             .namespace shouldBe Namespace.CATEGORY
+    }
+
+    @Test
+    fun `a default namespace the wiki does not have makes an unprefixed title invalid`() {
+        Title.parse("sa-decl", defaultNamespace = Namespace(828)) shouldBe
+            Title.Invalid("sa-decl", Title.Invalid.Reason.UNKNOWN_NAMESPACE)
+        Title.parse("Category:x", defaultNamespace = Namespace(828)) shouldBe
+            Title.Local(Namespace.CATEGORY, "X")
+        Title.parse("x", NamespaceMap(emptyList())) shouldBe Title.Local(Namespace.MAIN, "X")
     }
 }

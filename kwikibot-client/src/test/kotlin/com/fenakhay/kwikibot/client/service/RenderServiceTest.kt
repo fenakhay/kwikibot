@@ -23,6 +23,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.time.Duration
@@ -171,6 +172,47 @@ class RenderServiceTest {
         category.title.text shouldBe "English terms borrowed from Italian"
         category.title.namespace shouldBe Namespace.CATEGORY
     }
+
+    @Test
+    fun `a file comes back as a title, not as a database key, and an external link as its url`() = runTest {
+        val service = service {
+            respondJson(
+                """{"parse":{"title":"volcano","images":["Etna_eruption_1971.jpg",""],
+                   "externallinks":["https://www.usgs.gov/volcanoes","//example.org/lava"]}}"""
+            )
+        }
+
+        val parsed =
+            service.resolve(ref("volcano"), setOf(ParseProperty.IMAGES, ParseProperty.EXTERNAL_LINKS))
+
+        parsed.images shouldBe listOf(ref("Etna eruption 1971.jpg", Namespace.FILE))
+        parsed.externalLinks shouldBe listOf("https://www.usgs.gov/volcanoes", "//example.org/lava")
+    }
+
+    @Test
+    fun `a saved page is rendered from the page itself, and unsaved text resolved as the title given`() =
+        runTest {
+            val asked = mutableListOf<Parameters>()
+            val service = service { request ->
+                asked += request.url.parameters
+                respondJson(
+                    """{"parse":{"title":"volcano","text":"<p>lava</p>",
+                       "links":[{"ns":0,"title":"lava","exists":true}]}}"""
+                )
+            }
+
+            val html = service.render(ref("volcano"))
+            val draft = service.resolveText("[[lava]]", context = ref("Sandbox"))
+
+            html shouldBe "<p>lava</p>"
+            draft.links.single().page shouldBe ref("lava")
+            val (rendered, resolved) = asked
+            rendered["page"] shouldBe "volcano"
+            rendered["prop"] shouldBe "text"
+            resolved["text"] shouldBe "[[lava]]"
+            resolved["title"] shouldBe "Sandbox"
+            resolved.contains("page") shouldBe false
+        }
 
     @Test
     fun `unsaved wikitext is parsed as a title, so magic words have an answer`() = runTest {

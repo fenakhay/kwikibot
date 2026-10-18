@@ -27,18 +27,30 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
 
     private val mutex = Mutex()
 
-    @Volatile private var settings: Pair<ParseOptions, TitleRules>? = null
+    @Volatile private var settings: Settings? = null
 
-    suspend fun options(): ParseOptions = settings().first
+    suspend fun options(): ParseOptions = settings().options
 
-    suspend fun rules(): TitleRules = settings().second
+    suspend fun rules(): TitleRules = settings().rules
 
-    private suspend fun settings(): Pair<ParseOptions, TitleRules> =
+    suspend fun redirects(): MagicWords = settings().redirects
+
+    private suspend fun settings(): Settings =
         settings ?: mutex.withLock { settings ?: read(transport).also { settings = it } }
+
+    /**
+     * What the site info says.
+     *
+     * @param options how the wiki's wikitext parses.
+     * @param rules how it names pages.
+     * @param redirects the spellings of the magic word a redirect starts with, `#REDIRECT` and the wiki's
+     *   own.
+     */
+    data class Settings(val options: ParseOptions, val rules: TitleRules, val redirects: MagicWords)
 
     companion object {
         /** Asks the wiki behind [transport], without keeping the answer. */
-        suspend fun read(transport: MediaWikiTransport): Pair<ParseOptions, TitleRules> {
+        suspend fun read(transport: MediaWikiTransport): Settings {
             val response =
                 transport
                     .call(
@@ -52,7 +64,7 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
          * Reads the settings out of a `meta=siteinfo` answer, keeping MediaWiki's defaults for anything
          * missing.
          */
-        fun decode(query: JsonObject): Pair<ParseOptions, TitleRules> {
+        fun decode(query: JsonObject): Settings {
             val namespaces = namespaceNames(query)
             val magicWords = (query["magicwords"] as? JsonArray).orEmpty().map { it.jsonObject }
 
@@ -95,7 +107,12 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
                     modifiers = prefixes(TitleRules.MODIFIERS),
                 )
 
-            return options to rules
+            val redirects =
+                words(setOf(REDIRECT))
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { magicWordsOf(it) { _, alias -> alias } } ?: DEFAULT_REDIRECTS
+
+            return Settings(options, rules, redirects)
         }
 
         /**
@@ -168,6 +185,12 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
         private fun JsonObject.text(key: String): String? = (this[key] as? JsonPrimitive)?.content
 
         private const val FILE = 6
+
+        /** The id of the magic word a redirect starts with. */
+        private const val REDIRECT = "redirect"
+
+        /** How a redirect starts on a wiki that has not said: MediaWiki's own spelling, in any case. */
+        val DEFAULT_REDIRECTS = MagicWords(caseInsensitive = setOf("#REDIRECT"))
 
         private const val COLON = ":"
 

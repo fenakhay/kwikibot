@@ -394,6 +394,10 @@ public final class com/fenakhay/kwikibot/wikitext/node/Template : com/fenakhay/k
 	public final fun copy (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;)Lcom/fenakhay/kwikibot/wikitext/node/Template;
 	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/wikitext/node/Template;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/node/Template;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun functionArgument (Lcom/fenakhay/kwikibot/wikitext/TitleRules;)Ljava/lang/String;
+	public final fun functionName (Lcom/fenakhay/kwikibot/wikitext/TitleRules;)Ljava/lang/String;
+	public final fun getFunctionArgument ()Ljava/lang/String;
+	public final fun getFunctionName ()Ljava/lang/String;
 	public final fun getKey ()Ljava/lang/String;
 	public final fun getName ()Lcom/fenakhay/kwikibot/wikitext/Markup;
 	public final fun getParameters ()Ljava/util/List;

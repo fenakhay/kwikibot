@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.EditBuilder
 import com.fenakhay.kwikibot.client.service.ExpandedText
 import com.fenakhay.kwikibot.client.service.PageService
+import com.fenakhay.kwikibot.client.service.TemplateSandbox
 import com.fenakhay.kwikibot.client.service.WatchMode
 import com.fenakhay.kwikibot.client.service.applyTo
 import com.fenakhay.kwikibot.model.LangCode
@@ -37,6 +38,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
@@ -329,7 +331,8 @@ internal class ApiPageService(
                 pages = info.number("pages"),
                 files = info.number("files"),
                 subcategories = info.number("subcats"),
-                hidden = info["hidden"] != null,
+                // Sent on every category, as false on most: its presence says nothing.
+                hidden = info["hidden"]?.jsonPrimitive?.booleanOrNull == true,
             )
         }
 
@@ -620,7 +623,7 @@ internal class ApiPageService(
     }
 
     override suspend fun expandText(wikitext: String, title: PageRef?): String =
-        expand(wikitext, title, categories = false).text
+        expand(wikitext, Expansion(title), categories = false).text
 
     /**
      * Expands many texts in few requests.
@@ -638,8 +641,11 @@ internal class ApiPageService(
         texts: List<String>,
         title: PageRef?,
         categories: Boolean,
+        sandbox: TemplateSandbox?,
+        revision: RevisionId?,
     ): List<ExpandedText> {
-        if (categories) return texts.map { expand(it, title, categories = true) }
+        val expansion = Expansion(title, sandbox, revision)
+        if (categories) return texts.map { expand(it, expansion, categories = true) }
 
         val expanded = ArrayList<ExpandedText>(texts.size)
         var batch = mutableListOf<String>()
@@ -649,19 +655,26 @@ internal class ApiPageService(
                 batch.isNotEmpty() &&
                     (batch.size == EXPANSION_BATCH || characters + text.length > EXPANSION_CHARACTERS)
             ) {
-                expanded += expandBatch(batch, title)
+                expanded += expandBatch(batch, expansion)
                 batch = mutableListOf()
                 characters = 0
             }
             batch += text
             characters += text.length
         }
-        if (batch.isNotEmpty()) expanded += expandBatch(batch, title)
+        if (batch.isNotEmpty()) expanded += expandBatch(batch, expansion)
         return expanded
     }
 
-    private suspend fun expandBatch(texts: List<String>, title: PageRef?): List<ExpandedText> {
-        if (texts.size == 1) return listOf(expand(texts.single(), title, categories = false))
+    /** What every text of one call to [expandTexts] is expanded as, and with. */
+    private class Expansion(
+        val title: PageRef?,
+        val sandbox: TemplateSandbox? = null,
+        val revision: RevisionId? = null,
+    )
+
+    private suspend fun expandBatch(texts: List<String>, expansion: Expansion): List<ExpandedText> {
+        if (texts.size == 1) return listOf(expand(texts.single(), expansion, categories = false))
 
         val marker = "kwikibot:${UUID.randomUUID()}"
         fun separator(index: Int) = "\n<nowiki>@@$marker:$index@@</nowiki>\n"
@@ -672,13 +685,13 @@ internal class ApiPageService(
                 append(text)
             }
         }
-        val result = expand(joined, title, categories = false).text
+        val result = expand(joined, expansion, categories = false).text
 
         val parts = ArrayList<ExpandedText>(texts.size)
         var from = 0
         for (index in 1 until texts.size) {
             val at = result.indexOf(separator(index), from)
-            if (at < 0) return texts.map { expand(it, title, categories = false) }
+            if (at < 0) return texts.map { expand(it, expansion, categories = false) }
             parts += ExpandedText(result.substring(from, at))
             from = at + separator(index).length
         }
@@ -686,14 +699,16 @@ internal class ApiPageService(
         return parts
     }
 
-    private suspend fun expand(wikitext: String, title: PageRef?, categories: Boolean): ExpandedText {
+    private suspend fun expand(wikitext: String, expansion: Expansion, categories: Boolean): ExpandedText {
         val response =
             transport
                 .call(
                     ApiRequest.of(
                         "expandtemplates",
                         "text" to wikitext,
-                        "title" to title?.let { namespaces.format(it.title) },
+                        "title" to expansion.title?.let { namespaces.format(it.title) },
+                        *namespaces.sandboxParams(expansion.sandbox),
+                        "revid" to expansion.revision?.value?.toString(),
                         "prop" to
                             if (categories) Registry.EXPANSION.joined else Registry.EXPANSION.values.first(),
                         // Expanding changes nothing on the wiki, so it is paced as a read.

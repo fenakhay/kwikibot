@@ -7,6 +7,76 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [1.3.0] — 2026-10-18
+
+`botMain` sets up a bot in one call. `renderer.parse` takes a revision and a parser and reports
+the parse's limits, `expandTexts` takes a sandbox and a revision, and old revisions can be read
+many to a request. When a server refuses a request outright, the run stops at once.
+
+Source-compatible, except that `WikiError.Transport` has a new case (`Refused`), `StopReason` and
+`Title.Invalid.Reason` have new entries, and an override of `PageService.expandTexts` must take
+two more parameters. Binary-compatible except for `PageService.expandTexts`, which gained `sandbox`
+and `revision`, and the constructors and `copy` of `RenderRequest` and `ParsedPage`, which gained
+properties.
+
+### Added
+
+- `botMain(args) { … }` with `BotStart`. It reads the common flags and `kwikibot.toml`, logs in,
+  refuses an anonymous session and a save by an account outside the bot group, and ends with one
+  line and an exit status when the bot cannot start.
+- `RevisionService.contentsAt`, which reads the text of many old revisions in one request, and
+  `PageDecoder.decodeContents`.
+- `ParseProperty.LIMIT_REPORT` and `ParsedPage.limitReport`, with Lua time and memory and the
+  expensive-function count. `RenderRequest.revision` and `parser`, with `Parser.LEGACY` and
+  `PARSOID`.
+- `sandbox` and `revision` on `PageService.expandTexts`.
+- `Template.functionName` and `functionArgument`: a parser function's name, and what follows its
+  colon.
+- `WikiError.Transport.Refused`, `StopReason.REFUSED` and `Title.Invalid.Reason.UNKNOWN_NAMESPACE`.
+
+### Changed
+
+- The `kwikibot` tool is built with GraalVM 25.4, the latest innovation release.
+- A 4xx whose body is not an API answer, such as a block on the user agent or the address, is
+  raised at once as `WikiError.Transport.Refused` with what the server said, instead of being
+  retried five times. A run stops on it with `StopReason.REFUSED`.
+- A request that times out now fails with `WikiError.Transport.Timeout`. It used to be reported as
+  `Unreachable`.
+- A run whose stop policy refuses, or cannot be checked, before anything is read returns a stopped
+  `BotReport` instead of throwing.
+- `Wiki.templateNames` returns names as a call writes them, without the `Template:` prefix unless
+  the bare name would mean another namespace.
+- A title in a namespace the wiki does not have is refused: `Title.parse` returns it as invalid,
+  and `NamespaceMap.format` throws `WikiError.Page.BadTitle` instead of writing it as a
+  main-namespace title.
+- `Title.parse` rejects a title containing U+FFFD, as MediaWiki does. A character reference to no
+  valid character decodes to U+FFFD, so it is rejected too.
+
+### Removed
+
+- The macOS Intel build of the `kwikibot` tool. GraalVM 25.1 and later no longer build for macOS
+  x86-64. Homebrew on an Intel Mac now refuses the formula instead of installing it.
+
+### Fixed
+
+- `CosmeticChanges.EMPTY_SECTIONS` removed a heading whose only content was its subsections, such as
+  `==English==` directly followed by `===Noun===`. A section now includes its subsections, and goes only
+  when they are empty too.
+- `replaceText` with `TextScope(comments = true)` closed an unclosed `<!--`, even when nothing matched.
+- `ReformatIsbns(toIsbn13 = true)` dropped an ISBN's hyphens, and rewrote ISBNs that were already
+  thirteen digits. A converted ISBN keeps its own hyphens, and a thirteen-digit one is left as written.
+- With `readBatch` above one, a page could reach `onOutcome` only after later saves in its batch
+  had been sent. Each page is now reported as soon as it is done, and `onOutcome` calls never
+  overlap.
+- `lists.specialPage()` failed on every special page.
+- `pages.categoryInfo` reported every category as hidden.
+- `revisions.deletedHistory` returned nothing.
+- `ParsedPage.images` kept the underscores of a database key.
+- `revisions.contentAt` read an old revision's redirect target from the page as it is now.
+- `Title.parse` threw on a character reference past U+10FFFF.
+- The `kwikibot` tool exited with status 0 when a command failed, printed a stack trace for a
+  configuration mistake, and reported a blank password variable as set.
+
 ## [1.2.0] — 2026-10-02
 
 Long runs now survive a lost session and can resume after a stop, and the parser reads wikitext
@@ -257,6 +327,7 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[1.3.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.2.0
 [1.1.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.1
 [1.1.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.0
