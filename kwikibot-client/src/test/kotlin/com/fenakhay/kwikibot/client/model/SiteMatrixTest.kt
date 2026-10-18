@@ -3,9 +3,11 @@ package com.fenakhay.kwikibot.client.model
 import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.testkit.MockTransport
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
@@ -85,5 +87,27 @@ class SiteMatrixTest {
     @Test
     fun `an empty response is an empty matrix rather than a failure`() {
         SiteMatrix.decode(Json.parseToJsonElement("{}").jsonObject).wikis shouldBe emptyList()
+    }
+
+    @Test
+    fun `a project with no language has no wiki in any language, and lists no languages`() {
+        matrix[LangCode("en"), "commons"].shouldBeNull()
+        matrix.languagesOf("commons") shouldBe emptyList()
+    }
+
+    @Test
+    fun `a site that says nothing about itself is still listed, under an unknown name`() {
+        val sparse =
+            SiteMatrix.decode(Json.parseToJsonElement("""{"sitematrix":{"0":{"site":[{}]}}}""").jsonObject)
+
+        sparse.wikis shouldBe listOf(MatrixWiki(WikiId("unknown"), url = ""))
+    }
+
+    @Test
+    fun `the matrix is fetched with one request to the wiki it is asked of`() = runTest {
+        val transport = MockTransport { response }
+
+        SiteMatrix.fetch(transport).wikis shouldBe matrix.wikis
+        transport.requests.single().action shouldBe "sitematrix"
     }
 }

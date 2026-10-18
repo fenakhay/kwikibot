@@ -1,7 +1,12 @@
 package com.fenakhay.kwikibot.client.model
 
-import com.fenakhay.kwikibot.model.MwTimestamp
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.time
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -14,10 +19,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 /**
  * One change, as the public event stream reports it.
@@ -165,29 +167,25 @@ public class EventStreams(
     private fun decode(payload: String, id: String?): WikiEvent? {
         val event = runCatching { json.parseToJsonElement(payload).jsonObject }.getOrNull() ?: return null
 
-        val meta = event["meta"]?.jsonObject
+        val meta = event.obj("meta")
         val title = event.string("title") ?: return null
+        val revision = event.obj("revision")
 
         return WikiEvent(
             wiki = event.string("wiki") ?: meta?.string("domain").orEmpty(),
             type = event.string("type").orEmpty(),
             title = title,
-            namespace = event["namespace"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+            namespace = event.int("namespace") ?: 0,
             user = event.string("user"),
             comment = event.string("comment"),
-            timestamp =
-                event["timestamp"]?.jsonPrimitive?.longOrNull?.let { Instant.fromEpochSeconds(it) }
-                    ?: meta?.string("dt")?.let { MwTimestamp.parseOrNull(it) },
-            revisionId = event["revision"]?.jsonObject?.get("new")?.jsonPrimitive?.longOrNull,
-            previousRevisionId = event["revision"]?.jsonObject?.get("old")?.jsonPrimitive?.longOrNull,
-            isBot = event["bot"]?.jsonPrimitive?.content == "true",
-            isMinor = event["minor"]?.jsonPrimitive?.content == "true",
+            timestamp = event.long("timestamp")?.let { Instant.fromEpochSeconds(it) } ?: meta?.time("dt"),
+            revisionId = revision?.long("new"),
+            previousRevisionId = revision?.long("old"),
+            isBot = event.flag("bot"),
+            isMinor = event.flag("minor"),
             offset = id,
         )
     }
-
-    private fun JsonObject.string(key: String): String? =
-        this[key]?.jsonPrimitive?.takeIf { it.isString }?.content
 
     /** Where Wikimedia serves the streams, and how long to wait before reconnecting. */
     public companion object {

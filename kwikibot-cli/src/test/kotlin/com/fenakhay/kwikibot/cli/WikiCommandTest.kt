@@ -130,6 +130,30 @@ class WikiCommandTest {
     }
 
     @Test
+    fun `a bot password only partly given by flags leaves the configuration's login in place`() = runTest {
+        configuration()
+
+        kwikibot("whoami", "--account=Other", password = "secret").statusCode shouldBe 0
+        kwikibot("whoami", "--account=Other", "--bot-name=check", password = "secret").statusCode shouldBe 0
+
+        logins.map { it["lgname"] } shouldBe listOf("TestBot@task", "TestBot@task")
+    }
+
+    @Test
+    fun `an account in no group is said to be in none`() = runTest {
+        configuration()
+        val groupless = MockWiki(groups = emptyList())
+        val environment = CliEnvironment(searchPath = { searchPath }, engine = groupless.engine)
+        val envvars = mapOf("TEST_PASSWORD" to "secret")
+
+        val whoami = kwikibot(environment).test(listOf("whoami"), envvars = envvars)
+        val login = kwikibot(environment).test(listOf("login"), envvars = envvars)
+
+        whoami.stdout.lines()[2] shouldBe "groups: none"
+        login.stdout shouldBe "logged in to testwiki as TestBot\ngroups: none\n"
+    }
+
+    @Test
     fun `a language or family flag keeps the rest of the wiki the configuration names`() = runTest {
         configuration()
 

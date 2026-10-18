@@ -9,6 +9,7 @@ import com.fenakhay.kwikibot.wikibase.value.Statement
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class EntityAccessTest {
 
@@ -184,5 +185,33 @@ class EntityAccessTest {
     @Test
     fun `an id with a prefix this library does not know is kept as unknown, not refused`() {
         EntityId("E10").kind shouldBe EntityId.Kind.UNKNOWN
+    }
+
+    @Test
+    fun `a blank id is refused, since it names no entity`() {
+        assertFailsWith<IllegalArgumentException> { EntityId(" ") }.message shouldBe
+            "entity id must not be blank"
+    }
+
+    @Test
+    fun `a statement that there is no value, or an unknown one, has no value to read`() {
+        Statement(Snak.NoValue(instanceOf)).value.shouldBeNull()
+        Statement(Snak.SomeValue(instanceOf)).value.shouldBeNull()
+        statement("human").value shouldBe DataValue.Text("human")
+    }
+
+    @Test
+    fun `a label in neither the language asked for nor mul is absent`() {
+        val untitled = Entity.Item(EntityId("Q1"), labels = mapOf("fr" to LanguageValue("fr", "volcan")))
+
+        untitled.label("en").shouldBeNull()
+        untitled.label("fr") shouldBe "volcan"
+    }
+
+    @Test
+    fun `a lemma in a language the lexeme is not written in is absent`() {
+        Entity.Lexeme(EntityId("L1"), lemmas = mapOf("en" to LanguageValue("en", "volcano")))
+            .lemma("fr")
+            .shouldBeNull()
     }
 }

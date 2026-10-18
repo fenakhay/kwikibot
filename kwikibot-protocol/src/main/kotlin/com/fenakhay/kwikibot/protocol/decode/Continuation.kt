@@ -10,7 +10,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Walks a query across its continuation batches.
@@ -63,7 +62,7 @@ public class Continuation(private val transport: MediaWikiTransport) {
         maxBatches: Int? = null,
     ): Flow<JsonObject> = flow {
         batches(request, maxBatches).collect { response ->
-            val items = response["query"]?.jsonObject?.get(listName)?.asObjectList().orEmpty()
+            val items = response.obj("query")?.get(listName)?.asObjectList().orEmpty()
             items.forEach { emit(it) }
         }
     }
@@ -76,7 +75,7 @@ public class Continuation(private val transport: MediaWikiTransport) {
      */
     public fun pages(request: ApiRequest, maxBatches: Int? = null): Flow<JsonObject> = flow {
         batches(request, maxBatches).collect { response ->
-            val pages = response["query"]?.jsonObject?.get("pages")?.asObjectList().orEmpty()
+            val pages = response.obj("query")?.get("pages")?.asObjectList().orEmpty()
             pages.forEach { emit(it) }
         }
     }
@@ -88,11 +87,13 @@ public class Continuation(private val transport: MediaWikiTransport) {
          * Only the modern `continue` object is read. The `query-continue` form belongs to MediaWiki 1.25 and
          * earlier, which no supported wiki still runs.
          */
-        fun JsonObject.nextBatchParams(): Map<String, String>? =
-            this["continue"]
-                ?.jsonObject
-                ?.mapValues { (_, value) -> value.jsonPrimitive.content }
-                ?.takeIf { it.isNotEmpty() }
+        fun JsonObject.nextBatchParams(): Map<String, String>? {
+            val next = obj("continue") ?: return null
+            return next.keys
+                .mapNotNull { key -> next.string(key)?.let { key to it } }
+                .toMap()
+                .takeIf { it.isNotEmpty() }
+        }
 
         /**
          * Reads a result collection that may be a list or, on older shapes, a map keyed by id.

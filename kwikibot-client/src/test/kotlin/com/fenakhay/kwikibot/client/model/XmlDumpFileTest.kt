@@ -139,6 +139,51 @@ class XmlDumpFileTest {
     }
 
     @Test
+    fun `a scan needs a worker, and by default has one for each processor`() {
+        val file = directory.resolve("dump.xml")
+        file.writeBytes((header + page(1) + page(2) + "</mediawiki>").toByteArray())
+        val seen = Collections.synchronizedList(mutableListOf<Long>())
+
+        assertFailsWith<IllegalArgumentException> { runBlocking { XmlDump.scan(file, workers = 0) {} } }
+        runBlocking { XmlDump.scan(file) { seen += it.pageId } }
+
+        seen.sorted() shouldBe listOf(1L, 2L)
+    }
+
+    @Test
+    fun `a multistream index is passed over by one worker, and where it names no offset at all`() {
+        runBlocking {
+            val file = directory.resolve("lone-multistream.xml.bz2")
+            file.writeBytes(bzip2(header + page(1) + page(2) + "</mediawiki>"))
+            directory.resolve("lone-multistream-index.txt.bz2").writeBytes(bzip2("not an offset\n"))
+            val seen = Collections.synchronizedList(mutableListOf<Long>())
+
+            XmlDump.scan(file, workers = 1) { seen += it.pageId }
+            XmlDump.scan(file, workers = 2) { seen += it.pageId }
+
+            seen.sorted() shouldBe listOf(1L, 1L, 2L, 2L)
+        }
+    }
+
+    @Test
+    fun `a line of a multistream index with no offset is skipped`() {
+        runBlocking {
+            val file = directory.resolve("skipping-multistream.xml.bz2")
+            val first = bzip2(header)
+            val pages = bzip2(page(1) + page(2))
+            file.outputStream().use { out -> listOf(first, pages, bzip2("</mediawiki>")).forEach(out::write) }
+            directory
+                .resolve("skipping-multistream-index.txt.bz2")
+                .writeBytes(bzip2("garbled\n${first.size}:1:page 1\n${first.size}:2:page 2\n"))
+            val seen = Collections.synchronizedList(mutableListOf<Long>())
+
+            XmlDump.scan(file, workers = 2) { seen += it.pageId }
+
+            seen.sorted() shouldBe listOf(1L, 2L)
+        }
+    }
+
+    @Test
     fun `an exception in a worker ends the scan and is thrown`() {
         val file = directory.resolve("dump.xml")
         file.writeBytes((header + page(1) + page(2) + "</mediawiki>").toByteArray())

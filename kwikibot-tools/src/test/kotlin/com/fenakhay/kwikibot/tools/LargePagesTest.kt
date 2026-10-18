@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.tools
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 import kotlin.io.path.inputStream
 import kotlin.test.Test
@@ -128,8 +129,20 @@ class LargePagesTest {
         read().getValue("pages").jsonArray.map { it.jsonObject.text("title") } shouldBe listOf("Zqx café")
     }
 
-    private fun read(): JsonObject =
-        Json.parseToJsonElement(GZIPInputStream(target.inputStream()).bufferedReader().use { it.readText() })
+    @Test
+    fun `without a file named, the pages are written under their own name in the working directory`() =
+        runTest {
+            val wikis = FakeWikis(this) { respondJson(pages(emptyList())) }
+
+            recordLargePages(emptyArray(), wikis.environment)
+
+            val written = wikis.workingDirectory.resolve("large-pages.json.gz")
+            read(written).getValue("pages").jsonArray.size shouldBe 0
+            wikis.output.toString() shouldBe "wrote $written\n"
+        }
+
+    private fun read(file: Path = target): JsonObject =
+        Json.parseToJsonElement(GZIPInputStream(file.inputStream()).bufferedReader().use { it.readText() })
             .jsonObject
 
     private fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content

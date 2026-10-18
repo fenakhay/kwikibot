@@ -526,6 +526,112 @@ class EntityServiceTest {
         urlDecode(body).contains("to=Q42") shouldBe true
     }
 
+    @Test
+    fun `asking for nothing sends nothing`() = runTest {
+        var requests = 0
+        val service = service {
+            requests++
+            respondJson("{}")
+        }
+
+        service.entities(emptyList()) shouldBe emptyMap()
+        service.forPages("enwiki", emptyList()) shouldBe emptyMap()
+        service.parseValues("time", emptyList()) shouldBe emptyList()
+        requests shouldBe 0
+    }
+
+    @Test
+    fun `an id that was merged away comes back absent rather than as the item it was merged into`() =
+        runTest {
+            val service = service {
+                respondJson("""{"entities":{"Q42":{"id":"Q42","redirects":{"from":"Q42","to":"Q5"}}}}""")
+            }
+
+            service.entities(listOf(EntityId("Q42"))) shouldBe emptyMap()
+        }
+
+    @Test
+    fun `a page is matched to its item exactly, then whatever the case, and not at all without a sitelink`() =
+        runTest {
+            val service = service {
+                respondJson(
+                    """{"entities":{
+                       "Q42":{"type":"item","id":"Q42",
+                         "sitelinks":{"enwiki":{"site":"enwiki","title":"Douglas Adams"}}},
+                       "Q5":{"type":"item","id":"Q5",
+                         "sitelinks":{"frwiki":{"site":"frwiki","title":"Humain"}}},
+                       "P31":{"type":"property","id":"P31","datatype":"wikibase-item"}}}"""
+                )
+            }
+
+            val found = service.forPages("enwiki", listOf("Douglas Adams", "DOUGLAS ADAMS", "Human"))
+
+            found.mapValues { it.value.id } shouldBe
+                mapOf("Douglas Adams" to EntityId("Q42"), "DOUGLAS ADAMS" to EntityId("Q42"))
+        }
+
+    @Test
+    fun `a search names the type, language and page size it asks for`() = runTest {
+        var asked = mapOf<String, String>()
+        val service = service { request ->
+            asked = request.url.parameters.names().associateWith { request.url.parameters[it].orEmpty() }
+            respondJson("""{"search":[{"id":"L7"}]}""")
+        }
+
+        val matches = service.search("volcano", language = "de", kind = EntityId.Kind.LEXEME, limit = 3)
+
+        matches shouldBe listOf(EntityMatch(EntityId("L7"), label = null, description = null))
+        asked.filterKeys { it in setOf("search", "language", "uselang", "type", "limit") } shouldBe
+            mapOf(
+                "search" to "volcano",
+                "language" to "de",
+                "uselang" to "de",
+                "type" to "lexeme",
+                "limit" to "3",
+            )
+    }
+
+    @Test
+    fun `a search for a kind of entity Wikibase cannot name is refused rather than sent`() = runTest {
+        var requests = 0
+        val service = service {
+            requests++
+            respondJson("""{"search":[]}""")
+        }
+
+        assertFailsWith<IllegalArgumentException> { service.search("x", kind = EntityId.Kind.UNKNOWN) }
+            .message shouldBe
+            "wbsearchentities cannot search for UNKNOWN entities; search the File namespace with list=search"
+        requests shouldBe 0
+    }
+
+    @Test
+    fun `answers that carry no results read as none`() = runTest {
+        val service = service { respondJson("""{"success":1}""") }
+
+        service.search("nothing") shouldBe emptyList()
+        service.parseValues("time", listOf("not a date")) shouldBe emptyList()
+    }
+
+    @Test
+    fun `a statement write names the revision it was computed from`() = runTest {
+        val bodies = mutableListOf<String>()
+        val service = service { request ->
+            if (request.url.parameters["meta"] == "tokens") {
+                respondJson("""{"query":{"tokens":{"csrftoken":"T"}}}""")
+            } else {
+                bodies += urlDecode(request.body.toByteArray().decodeToString())
+                respondJson("""{"claim":{"mainsnak":{"snaktype":"novalue","property":"P40"}},"success":1}""")
+            }
+        }
+
+        service.setStatement(EntityId("Q42"), Statement(Snak.NoValue(EntityId("P40"))), baseRevision = 7)
+        service.removeStatements(listOf("Q42${'$'}abc"), baseRevision = 8)
+
+        bodies.map { body -> body.split("&").first { it.startsWith("baserevid=") } } shouldBe
+            listOf("baserevid=7", "baserevid=8")
+    }
+
     private fun TestScope.service(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
     ): EntityService {

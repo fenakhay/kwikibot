@@ -6,21 +6,21 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.util.zip.GZIPOutputStream
-import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
@@ -81,7 +81,7 @@ public fun main(args: Array<String>) {
 
 /** What [main] does with [args], asking the wikis and printing through [environment]. */
 internal suspend fun recordRealPages(args: Array<String>, environment: ToolEnvironment) {
-    val target = Path(args.firstOrNull() ?: "roundtrip-pages.json.gz")
+    val target = environment.workingDirectory.resolve(args.firstOrNull() ?: "roundtrip-pages.json.gz")
     val document = record(environment)
 
     withContext(Dispatchers.IO) {
@@ -175,26 +175,26 @@ private suspend fun randomPages(
             )
             .throwOnError()
 
-    val pages = response["query"]?.jsonObject?.get("pages") as? JsonArray ?: return emptyList()
+    return wikitexts(response)
+}
 
-    return pages.mapNotNull { entry ->
-        val page = entry.jsonObject
-        val title = page["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
+/**
+ * The title and text of each page in [response], a query for `prop=revisions` with `rvprop=content` and
+ * `rvslots=main`.
+ *
+ * A page the answer gives no title, no main slot or no content for is left out, and so is one whose content
+ * is not wikitext.
+ */
+internal fun wikitexts(response: JsonObject): List<Pair<String, String>> =
+    response.obj("query")?.array("pages").objects().mapNotNull { page ->
+        val title = page.string("title") ?: return@mapNotNull null
         val slot =
-            (page["revisions"] as? JsonArray)
-                ?.firstOrNull()
-                ?.jsonObject
-                ?.get("slots")
-                ?.jsonObject
-                ?.get("main")
-                ?.jsonObject ?: return@mapNotNull null
-
-        // Anything that is not wikitext is somebody else's parser's problem.
-        if (slot["contentmodel"]?.jsonPrimitive?.content != "wikitext") return@mapNotNull null
-        val text = slot["content"]?.jsonPrimitive?.content ?: return@mapNotNull null
+            page.array("revisions").objects().firstOrNull()?.obj("slots")?.obj("main")
+                ?: return@mapNotNull null
+        if (slot.string("contentmodel") != "wikitext") return@mapNotNull null
+        val text = slot.string("content") ?: return@mapNotNull null
 
         title to text
     }
-}
 
 private val PLAIN = Json { prettyPrint = false }

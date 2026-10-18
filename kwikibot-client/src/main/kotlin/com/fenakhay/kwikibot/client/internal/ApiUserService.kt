@@ -16,13 +16,12 @@ import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.decode.ActivityDecoder
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.OptionSet
+import com.fenakhay.kwikibot.protocol.decode.obj
 import com.fenakhay.kwikibot.protocol.throwOnError
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.take
-import kotlinx.serialization.json.jsonObject
 
 internal class ApiUserService(
     private val transport: MediaWikiTransport,
@@ -77,9 +76,7 @@ internal class ApiUserService(
                 )
                 .throwOnError()
 
-        val info =
-            response["query"]?.jsonObject?.get("userinfo")?.jsonObject
-                ?: return UserInfo(name = "", isAnonymous = true)
+        val info = response.obj("query")?.obj("userinfo") ?: return UserInfo(name = "", isAnonymous = true)
         return activity.decodeCurrentUser(info)
     }
 
@@ -104,12 +101,12 @@ internal class ApiUserService(
                     "auwitheditsonly" to if (withEditsOnly) "1" else null,
                     "auexcludetemp" to if (excludeTemporary) "1" else null,
                     "auprop" to Registry.ALL_USERS.joined,
-                    "aulimit" to apiLimit(limit),
+                    "aulimit" to limitParam(limit),
                 ),
                 "allusers",
             )
             .map { activity.decodeUser(it) }
-            .let { if (limit == null) it else it.take(limit) }
+            .limitedTo(limit)
 
     override fun contributions(
         user: String,
@@ -119,29 +116,26 @@ internal class ApiUserService(
         show: OptionSet,
         tag: String?,
         limit: Int?,
-    ): Flow<Contribution> {
-        val flow =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "usercontribs",
-                        "ucuser" to user,
-                        "ucprop" to "ids|title|timestamp|comment|size|sizediff|flags|tags",
-                        "ucnamespace" to
-                            namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
-                        "ucstart" to start?.let { MwTimestamp.format(it) },
-                        "ucend" to end?.let { MwTimestamp.format(it) },
-                        "ucshow" to show.toParam(),
-                        "uctag" to tag,
-                        "uclimit" to apiLimit(limit),
-                    ),
-                    "usercontribs",
-                )
-                .mapNotNull { activity.decodeContribution(it) }
-
-        return if (limit == null) flow else flow.take(limit)
-    }
+    ): Flow<Contribution> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "usercontribs",
+                    "ucuser" to user,
+                    "ucprop" to "ids|title|timestamp|comment|size|sizediff|flags|tags",
+                    "ucnamespace" to
+                        namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
+                    "ucstart" to start?.let { MwTimestamp.format(it) },
+                    "ucend" to end?.let { MwTimestamp.format(it) },
+                    "ucshow" to show.toParam(),
+                    "uctag" to tag,
+                    "uclimit" to limitParam(limit),
+                ),
+                "usercontribs",
+            )
+            .mapNotNull { activity.decodeContribution(it) }
+            .limitedTo(limit)
 
     override suspend fun changeRights(
         user: String,
@@ -233,32 +227,25 @@ internal class ApiUserService(
         start: Instant?,
         end: Instant?,
         limit: Int?,
-    ): Flow<BlockRecord> {
-        val flow =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "blocks",
-                        "bkusers" to users.takeIf { it.isNotEmpty() }?.joinToString("|"),
-                        "bkshow" to show.toParam(),
-                        "bkstart" to start?.let { MwTimestamp.format(it) },
-                        "bkend" to end?.let { MwTimestamp.format(it) },
-                        "bkprop" to Registry.BLOCKS.joined,
-                        "bklimit" to apiLimit(limit),
-                    ),
-                    "blocks",
-                )
-                .map { activity.decodeBlockRecord(it) }
-
-        return if (limit == null) flow else flow.take(limit)
-    }
-
-    private fun apiLimit(limit: Int?): String =
-        if (limit != null && limit < MAX_BATCH) limit.toString() else "max"
+    ): Flow<BlockRecord> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "blocks",
+                    "bkusers" to users.takeIf { it.isNotEmpty() }?.joinToString("|"),
+                    "bkshow" to show.toParam(),
+                    "bkstart" to start?.let { MwTimestamp.format(it) },
+                    "bkend" to end?.let { MwTimestamp.format(it) },
+                    "bkprop" to Registry.BLOCKS.joined,
+                    "bklimit" to limitParam(limit),
+                ),
+                "blocks",
+            )
+            .map { activity.decodeBlockRecord(it) }
+            .limitedTo(limit)
 
     private companion object {
         const val DEFAULT_BATCH = 50
-        const val MAX_BATCH = 500
     }
 }

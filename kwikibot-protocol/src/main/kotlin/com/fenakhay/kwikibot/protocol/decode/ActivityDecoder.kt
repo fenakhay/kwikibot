@@ -12,17 +12,7 @@ import com.fenakhay.kwikibot.model.user.BlockInfo
 import com.fenakhay.kwikibot.model.user.BlockRecord
 import com.fenakhay.kwikibot.model.user.Contribution
 import com.fenakhay.kwikibot.model.user.UserInfo
-import kotlin.time.Instant
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 /**
  * Decodes the things a wiki reports about its own activity: logs, recent changes, users.
@@ -35,30 +25,30 @@ public class ActivityDecoder(private val pages: PageDecoder) {
 
     /** Decodes one entry from `list=logevents`. */
     public fun decodeLogEvent(entry: JsonObject): LogEvent {
-        val type = entry.text("type").orEmpty()
+        val type = entry.string("type").orEmpty()
         return LogEvent(
             id = entry.long("logid") ?: 0L,
             type = type,
-            action = entry.text("action").orEmpty(),
+            action = entry.string("action").orEmpty(),
             page = entry.pageRef(),
-            user = entry.text("user"),
+            user = entry.string("user"),
             timestamp = entry.time("timestamp") ?: MwTimestamp.parse(EPOCH),
-            comment = entry.text("comment"),
-            tags = entry.strings("tags"),
-            details = decodeDetails(type, entry.params(type)),
+            comment = entry.string("comment"),
+            tags = entry.array("tags").strings(),
+            details = decodeDetails(type, entry.obj("params") ?: EMPTY),
         )
     }
 
     /** Decodes one entry from `list=recentchanges`. */
     public fun decodeRecentChange(entry: JsonObject): RecentChange {
-        val type = entry.text("type").orEmpty()
+        val type = entry.string("type").orEmpty()
         return RecentChange(
             id = entry.long("rcid") ?: 0L,
             type = type,
             page = entry.pageRef(),
-            user = entry.text("user"),
+            user = entry.string("user"),
             timestamp = entry.time("timestamp") ?: MwTimestamp.parse(EPOCH),
-            comment = entry.text("comment"),
+            comment = entry.string("comment"),
             revisionId = entry.long("revid")?.takeIf { it != 0L }?.let { RevisionId(it) },
             previousRevisionId = entry.long("old_revid")?.takeIf { it != 0L }?.let { RevisionId(it) },
             sizeChange = (entry.int("newlen") ?: 0) - (entry.int("oldlen") ?: 0),
@@ -70,10 +60,10 @@ public class ActivityDecoder(private val pages: PageDecoder) {
             // fields differently when it does: logtype, not type. Rebuilding the entry here
             // spares callers a second query, and spares them that trap.
             logEvent = if (type == "log") logEventOf(entry) else null,
-            tags = entry.strings("tags"),
+            tags = entry.array("tags").strings(),
             // Present, true or false, when the query asked for it, which the wiki refuses to a session
             // that may not patrol. Absent otherwise, which is not the same as unpatrolled.
-            patrolled = entry.flagOrNull("patrolled"),
+            patrolled = entry.boolean("patrolled"),
         )
     }
 
@@ -87,11 +77,11 @@ public class ActivityDecoder(private val pages: PageDecoder) {
                     id = RevisionId(entry.long("revid") ?: 0L),
                     parentId = entry.long("parentid")?.takeIf { it != 0L }?.let { RevisionId(it) },
                     timestamp = entry.time("timestamp") ?: MwTimestamp.parse(EPOCH),
-                    user = entry.text("user"),
-                    comment = entry.text("comment"),
+                    user = entry.string("user"),
+                    comment = entry.string("comment"),
                     isMinor = entry.flag("minor"),
                     size = entry.int("size") ?: 0,
-                    tags = entry.strings("tags"),
+                    tags = entry.array("tags").strings(),
                 ),
             isNew = entry.flag("new"),
             isTop = entry.flag("top"),
@@ -110,28 +100,24 @@ public class ActivityDecoder(private val pages: PageDecoder) {
             info =
                 BlockInfo(
                     id = entry.long("id"),
-                    by = entry.text("by"),
-                    reason = entry.text("reason"),
+                    by = entry.string("by"),
+                    reason = entry.string("reason"),
                     since = entry.time("timestamp"),
-                    expiry =
-                        entry
-                            .text("expiry")
-                            ?.takeUnless { MwTimestamp.isNever(it) }
-                            ?.let { MwTimestamp.parseOrNull(it) },
+                    expiry = entry.time("expiry"),
                     isPartial = entry.flag("partial"),
                 ),
             // Hidden when the block itself is suppressed, which is why this is nullable.
-            target = entry.text("user"),
+            target = entry.string("user"),
             isAutomatic = entry.flag("automatic"),
         )
 
     /** Decodes one entry from `list=users`. */
     public fun decodeUser(entry: JsonObject): UserInfo =
         UserInfo(
-            name = entry.text("name").orEmpty(),
+            name = entry.string("name").orEmpty(),
             id = entry.long("userid")?.takeIf { it != 0L },
-            groups = entry.strings("groups"),
-            rights = entry.strings("rights"),
+            groups = entry.array("groups").strings(),
+            rights = entry.array("rights").strings(),
             editCount = entry.long("editcount") ?: 0L,
             registration = entry.time("registration"),
             block = entry.blockInfo(),
@@ -140,9 +126,9 @@ public class ActivityDecoder(private val pages: PageDecoder) {
             isAnonymous = entry.flag("invalid") || entry.containsKey("anon"),
             // A temporary account is auto-created for a logged-out editor and reports itself through
             // the "temp" group, so no name pattern is needed for a user row.
-            isTemporary = TEMP_GROUP in entry.strings("groups"),
+            isTemporary = TEMP_GROUP in entry.array("groups").strings(),
             isMissing = entry.flag("missing"),
-            gender = entry.text("gender")?.takeIf { it != "unknown" },
+            gender = entry.string("gender")?.takeIf { it != "unknown" },
             emailable = entry.flag("emailable"),
         )
 
@@ -154,10 +140,10 @@ public class ActivityDecoder(private val pages: PageDecoder) {
      */
     public fun decodeCurrentUser(entry: JsonObject): UserInfo =
         UserInfo(
-            name = entry.text("name").orEmpty(),
+            name = entry.string("name").orEmpty(),
             id = entry.long("id")?.takeIf { it != 0L },
-            groups = entry.strings("groups"),
-            rights = entry.strings("rights"),
+            groups = entry.array("groups").strings(),
+            rights = entry.array("rights").strings(),
             editCount = entry.long("editcount") ?: 0L,
             registration = entry.time("registrationdate"),
             block = entry.blockInfo(),
@@ -172,34 +158,25 @@ public class ActivityDecoder(private val pages: PageDecoder) {
      * action `logaction`, and the type-specific fields `logparams`.
      */
     private fun logEventOf(entry: JsonObject): LogEvent {
-        val type = entry.text("logtype").orEmpty()
+        val type = entry.string("logtype").orEmpty()
         return LogEvent(
             id = entry.long("logid") ?: 0L,
             type = type,
-            action = entry.text("logaction").orEmpty(),
+            action = entry.string("logaction").orEmpty(),
             page = entry.pageRef(),
-            user = entry.text("user"),
+            user = entry.string("user"),
             timestamp = entry.time("timestamp") ?: MwTimestamp.parse(EPOCH),
-            comment = entry.text("comment"),
-            tags = entry.strings("tags"),
-            details = decodeDetails(type, entry["logparams"]?.jsonObject ?: EMPTY),
+            comment = entry.string("comment"),
+            tags = entry.array("tags").strings(),
+            details = decodeDetails(type, entry.obj("logparams") ?: EMPTY),
         )
     }
-
-    /**
-     * The type-specific fields of a log entry.
-     *
-     * `formatversion=2` nests them under `params`; older responses put them under a key named after the log
-     * type.
-     */
-    private fun JsonObject.params(type: String): JsonObject =
-        this["params"]?.jsonObject ?: this[type]?.jsonObject ?: EMPTY
 
     private fun decodeDetails(type: String, params: JsonObject): LogDetails {
         return when (type) {
             "move" -> decodeMove(params)
             "block" -> decodeBlock(params)
-            "upload" -> LogDetails.Upload(sha1 = params.text("img_sha1"))
+            "upload" -> LogDetails.Upload(sha1 = params.string("img_sha1"))
             "protect" -> decodeProtect(params)
             "rights" -> decodeRights(params)
             "patrol" -> decodePatrol(params)
@@ -209,36 +186,31 @@ public class ActivityDecoder(private val pages: PageDecoder) {
 
     private fun decodeBlock(params: JsonObject) =
         LogDetails.Block(
-            duration = params.text("duration"),
-            expiry =
-                params
-                    .text("expiry")
-                    ?.takeUnless { MwTimestamp.isNever(it) }
-                    ?.let { MwTimestamp.parseOrNull(it) },
-            flags = params.strings("flags"),
+            duration = params.string("duration"),
+            expiry = params.time("expiry"),
+            flags = params.array("flags").strings(),
             // A block is sitewide unless it names what it covers, so an absent flag is not partial.
-            isPartial = params["sitewide"]?.jsonPrimitive?.booleanOrNull == false,
+            isPartial = params.boolean("sitewide") == false,
         )
 
     private fun decodeProtect(params: JsonObject) =
         LogDetails.Protect(
             protections =
-                params["details"]?.jsonArray.orEmpty().mapNotNull { entry ->
-                    val fields = entry.jsonObject
-                    val action = fields.text("type") ?: return@mapNotNull null
+                params.array("details").objects().mapNotNull { fields ->
+                    val action = fields.string("type") ?: return@mapNotNull null
                     Protection(
                         action = action,
-                        level = fields.text("level").orEmpty(),
-                        expiry = fields.text("expiry")?.let { Expiry.parse(it) } ?: Expiry.Never,
+                        level = fields.string("level").orEmpty(),
+                        expiry = fields.string("expiry")?.let { Expiry.parse(it) } ?: Expiry.Never,
                         cascading = fields.flag("cascade"),
                     )
                 },
-            description = params.text("description"),
+            description = params.string("description"),
         )
 
     private fun decodeRights(params: JsonObject): LogDetails {
-        val before = params.strings("oldgroups")
-        val after = params.strings("newgroups")
+        val before = params.array("oldgroups").strings()
+        val after = params.array("newgroups").strings()
         return LogDetails.Rights(added = after - before.toSet(), removed = before - after.toSet())
     }
 
@@ -259,71 +231,38 @@ public class ActivityDecoder(private val pages: PageDecoder) {
             LogDetails.None
         } else {
             LogDetails.Unknown(
-                params.entries
-                    .mapNotNull { (key, value) ->
-                        (value as? JsonPrimitive)?.let { key to it.content }
-                    }
-                    .toMap()
+                params.keys.mapNotNull { key -> params.string(key)?.let { key to it } }.toMap()
             )
         }
 
+    /**
+     * A move, or the fields the wiki sent when they name no target: none at all when the action was
+     * suppressed, or a target that is not a title.
+     */
     private fun decodeMove(params: JsonObject): LogDetails {
-        val title = params.text("target_title") ?: params.text("new_title")
-        val namespace = params.int("target_ns") ?: params.int("new_ns") ?: 0
-        val target =
-            title?.let { pages.refOf(it, namespace) }
-                ?: return LogDetails.Unknown(mapOf("target_title" to title.orEmpty()))
+        val title = params.string("target_title")
+        val namespace = params.int("target_ns") ?: 0
+        val target = title?.let { pages.refOf(it, namespace) } ?: return otherDetails(params)
 
         return LogDetails.Move(
             target = target.title,
-            suppressedRedirect = params.flag("suppressredirect") || params.flag("suppressedredirect"),
+            suppressedRedirect = params.flag("suppressredirect"),
         )
     }
 
     private fun JsonObject.blockInfo(): BlockInfo? {
-        if (!containsKey("blockid") && text("blockedby") == null) return null
+        if (!containsKey("blockid") && string("blockedby") == null) return null
         return BlockInfo(
             id = long("blockid"),
-            by = text("blockedby"),
-            reason = text("blockreason"),
+            by = string("blockedby"),
+            reason = string("blockreason"),
             since = time("blockedtimestamp"),
-            expiry =
-                text("blockexpiry")
-                    ?.takeUnless { MwTimestamp.isNever(it) }
-                    ?.let { MwTimestamp.parseOrNull(it) },
+            expiry = time("blockexpiry"),
             isPartial = flag("blockpartial"),
         )
     }
 
     private fun JsonObject.pageRef() = pages.refOf(this)
-
-    private fun JsonObject.text(key: String): String? =
-        (this[key] as? JsonPrimitive)?.takeUnless { it is JsonNull }?.content
-
-    private fun JsonObject.long(key: String): Long? = this[key]?.jsonPrimitive?.longOrNull
-
-    private fun JsonObject.int(key: String): Int? = this[key]?.jsonPrimitive?.intOrNull
-
-    private fun JsonObject.time(key: String): Instant? =
-        this[key]?.jsonPrimitive?.content?.let { MwTimestamp.parseOrNull(it) }
-
-    private fun JsonObject.strings(key: String): List<String> =
-        this[key]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty()
-
-    /**
-     * Whether a presence flag is set.
-     *
-     * `formatversion=2` sends `true`, older responses send an empty string, and both mean the same thing;
-     * only an explicit `false` counts as unset.
-     */
-    private fun JsonObject.flag(key: String): Boolean {
-        val value: JsonElement = this[key] ?: return false
-        val primitive = value as? JsonPrimitive ?: return true
-        return primitive.booleanOrNull ?: true
-    }
-
-    /** [flag], or `null` where the field is absent. */
-    private fun JsonObject.flagOrNull(key: String): Boolean? = if (containsKey(key)) flag(key) else null
 
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"

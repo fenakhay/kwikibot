@@ -1,7 +1,9 @@
 package com.fenakhay.kwikibot.bot
 
 import com.fenakhay.kwikibot.bot.run.BotRunBuilder
+import com.fenakhay.kwikibot.bot.run.Edit
 import com.fenakhay.kwikibot.bot.run.PageOutcome
+import com.fenakhay.kwikibot.bot.run.StopPolicy
 import com.fenakhay.kwikibot.client.WikiConfig
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.testkit.FakePageService
@@ -63,6 +65,15 @@ class CommonOptionsTest {
     }
 
     @Test
+    fun `a number that is not positive names the flag`() {
+        listOf("--limit" to "0", "--limit" to "-3", "--http-connections" to "0", "--http-connections" to "x")
+            .forEach { (flag, value) ->
+                assertFailsWith<IllegalArgumentException> { CommonOptions.parse(listOf(flag, value)) }
+                    .message shouldBe "$flag needs a positive number, not '$value'"
+            }
+    }
+
+    @Test
     fun `the client takes its pace, connections and contact from the flags`() {
         val base = WikiConfig(UserAgent("Bot", "1.0", "https://example.org/old"))
         val (options, _) =
@@ -95,6 +106,33 @@ class CommonOptionsTest {
         builder.limit shouldBe 5
         builder.state.shouldNotBeNull().close()
         builder.resume shouldBe false
+    }
+
+    @Test
+    fun `a run the flags say nothing about is left as it was, except that it does not save`() {
+        val builder = BotRunBuilder().apply { dryRun = false }
+
+        CommonOptions().applyTo(builder, FakeWiki())
+
+        builder.dryRun shouldBe true
+        builder.limit shouldBe null
+        builder.stopPolicy shouldBe StopPolicy.NONE
+        builder.state shouldBe null
+    }
+
+    @Test
+    fun `a diff log alone gets the diffs, and nothing is written for skips`() {
+        val directory = Files.createTempDirectory("kwikibot-options")
+        val wiki = FakeWiki(FakePageService("a" to "x"))
+        val diffs = directory.resolve("diffs.txt")
+
+        CommonOptions(diffLog = diffs).runLog(wiki).let { log ->
+            log(PageOutcome.Pending(wiki.ref("a"), Edit("y", "s"), "x"))
+            log(PageOutcome.Skipped(wiki.ref("a"), "nothing to do"))
+        }
+
+        diffs.readText() shouldContain "+y"
+        directory.toFile().list().orEmpty().toList() shouldBe listOf("diffs.txt")
     }
 
     @Test

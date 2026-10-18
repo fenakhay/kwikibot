@@ -77,7 +77,7 @@ private fun Node.replaceTextIn(
 
         is Argument ->
             copy(
-                name = name.replaceText(pattern, scope, replacement),
+                name = if (scope.templates) name.replaceText(pattern, scope, replacement) else name,
                 default = default?.replaceText(pattern, scope, replacement),
             )
 
@@ -141,15 +141,19 @@ private fun Node.scoped(scope: TextScope): List<Markup> =
         is Template -> if (scope.templates) children() else emptyList()
         is WikiLink -> listOfNotNull(text, target.takeIf { scope.linkTargets })
         is Heading -> if (scope.headings) listOf(title) else emptyList()
-        is Tag ->
-            when {
-                isRaw && !scope.rawTags -> emptyList()
-                scope.tagAttributes -> children()
-                else -> listOfNotNull(contents)
-            }
-
+        is Tag -> scopedInTag(scope)
         is Comment -> if (scope.comments) listOf(Markup.of(contents)) else emptyList()
+        is ExternalLink -> listOfNotNull(title)
+        is Argument -> listOfNotNull(name.takeIf { scope.templates }, default)
         else -> children()
+    }
+
+/** The wikicode inside this tag, its attributes included, that [scope] allows reading. */
+private fun Tag.scopedInTag(scope: TextScope): List<Markup> =
+    when {
+        isRaw && !scope.rawTags -> emptyList()
+        scope.tagAttributes -> children()
+        else -> listOfNotNull(contents)
     }
 
 /**

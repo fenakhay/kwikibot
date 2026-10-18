@@ -188,7 +188,8 @@ public data class Template(
      * quietly reformat the template. Appends the parameter otherwise. Returns a new template: nodes are
      * values.
      *
-     * A key that is a number produces a positional parameter, matching how templates are usually written.
+     * A key that is the number of the next position produces a positional parameter, matching how templates
+     * are usually written; any other number is written as a name, `3=…`, so that it keeps its number.
      *
      * [value] is wikitext, and is written so that it stays one parameter when the wiki reads it back. A `|`
      * that would split the template there, one inside an external link or plain text, is written `{{!}}`,
@@ -201,7 +202,7 @@ public data class Template(
     public fun withParameter(key: String, value: String): Template {
         val existing = parameter(key)
         val safe = ParameterValue.of(value)
-        val positional = existing?.let { !it.showKey } ?: (key.toIntOrNull() != null)
+        val positional = if (existing != null) !existing.showKey else key == nextPosition()
         val named = !positional || safe.splitsAtEquals
         val replacement =
             Parameter(
@@ -215,6 +216,9 @@ public data class Template(
             copy(parameters = parameters.map { if (it == existing) replacement else it })
         }
     }
+
+    /** The number a positional parameter appended to this template would have. */
+    private fun nextPosition(): String = (parameters.count { !it.showKey } + 1).toString()
 
     /** [value] wrapped in the whitespace this wikicode had around its own content. */
     private fun Markup.spacedLike(value: String): String {

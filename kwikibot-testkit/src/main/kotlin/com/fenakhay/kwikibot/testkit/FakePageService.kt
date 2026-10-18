@@ -86,7 +86,7 @@ public class FakePageService(
     /** The revision a page is at, or `null` if it does not exist. */
     public fun revision(title: String): RevisionId? {
         val key = key(title)
-        return if (key in texts) revisions[key]?.let(::RevisionId) else null
+        return if (key in texts) RevisionId(revisions.getValue(key)) else null
     }
 
     /** A reference to a page on this fake wiki. */
@@ -120,7 +120,7 @@ public class FakePageService(
         }
 
         val updated = updated(current, builder)
-        if (updated == current) return EditOutcome.NoChange(ref, revisions[key]?.let(::RevisionId))
+        if (updated == current) return EditOutcome.NoChange(ref, RevisionId(revisions.getValue(key)))
 
         val previous = revisions[key]?.takeIf { current != null }?.let(::RevisionId)
         edits += ref to builder
@@ -162,7 +162,7 @@ public class FakePageService(
                 // Without a section title, a wiki uses the summary as the heading.
                 val title = builder.sectionTitle ?: builder.summary
                 val heading = if (title.isEmpty()) "" else "== $title ==\n"
-                val body = heading + (text ?: builder.appendText.orEmpty())
+                val body = heading + (text ?: builder.prependText.orEmpty() + builder.appendText.orEmpty())
                 if (current.isNullOrEmpty()) body else "$current\n\n$body"
             }
 
@@ -329,7 +329,8 @@ public class FakePageService(
         namespaces: Set<Namespace>,
     ): Map<PageRef, List<PageRef>> {
         val redirects = texts.mapNotNull { (key, text) ->
-            val target = REDIRECT.find(text)?.groupValues?.get(1)?.trim() ?: return@mapNotNull null
+            val match = REDIRECT.find(text) ?: return@mapNotNull null
+            val target = match.groupValues[1].trim()
             val from = PageRef(wiki, Title.Local(Namespace(key.namespace), key.text))
             key(target) to from
         }

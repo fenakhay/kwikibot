@@ -19,7 +19,6 @@ import com.fenakhay.kwikibot.client.service.AbuseFilterOrder
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.NewPagesOrder
-import com.fenakhay.kwikibot.model.MwTimestamp
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.page.PageRef
@@ -34,6 +33,16 @@ import com.fenakhay.kwikibot.protocol.SiteInfo
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.OptionSet
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.boolean
+import com.fenakhay.kwikibot.protocol.decode.double
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
+import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -42,16 +51,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 internal class ApiExtensionService(
     private val transport: MediaWikiTransport,
@@ -70,14 +70,13 @@ internal class ApiExtensionService(
     override suspend fun coordinates(refs: Collection<PageRef>): Map<PageRef, List<Coordinate>> {
         requireExtension(ExtensionService.GEO_DATA)
         return byPage(refs, "coordinates", "coprop" to "type|globe", "coprimary" to "all") { page ->
-            page["coordinates"]?.jsonArray?.map { entry ->
-                val fields = entry.jsonObject
+            page.array("coordinates")?.objects()?.map { fields ->
                 Coordinate(
-                    latitude = fields["lat"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
-                    longitude = fields["lon"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
-                    globe = fields["globe"]?.jsonPrimitive?.content ?: "earth",
+                    latitude = fields.double("lat") ?: 0.0,
+                    longitude = fields.double("lon") ?: 0.0,
+                    globe = fields.string("globe") ?: "earth",
                     isPrimary = fields.containsKey("primary"),
-                    type = fields["type"]?.jsonPrimitive?.content,
+                    type = fields.string("type"),
                 )
             }
         }
@@ -110,7 +109,7 @@ internal class ApiExtensionService(
     override suspend fun pageImages(refs: Collection<PageRef>): Map<PageRef, String> {
         requireExtension(ExtensionService.PAGE_IMAGES)
         return byPage(refs, "pageimages", "piprop" to "name") { page ->
-            page["pageimage"]?.jsonPrimitive?.content
+            page.string("pageimage")
         }
     }
 
@@ -128,14 +127,14 @@ internal class ApiExtensionService(
             // Without this the API silently drops all but the first page of a batch.
             "exlimit" to "max",
         ) { page ->
-            page["extract"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+            page.string("extract")?.takeIf { it.isNotBlank() }
         }
     }
 
     override suspend fun wikibaseItems(refs: Collection<PageRef>): Map<PageRef, String> {
         requireExtension(ExtensionService.WIKIBASE_CLIENT)
         return byPage(refs, "pageprops", "ppprop" to "wikibase_item") { page ->
-            page["pageprops"]?.jsonObject?.get("wikibase_item")?.jsonPrimitive?.content
+            page.obj("pageprops")?.string("wikibase_item")
         }
     }
 
@@ -152,33 +151,31 @@ internal class ApiExtensionService(
                         "query",
                         "list" to "linterrors",
                         "lntcategories" to category,
-                        "lntlimit" to (limit?.takeIf { it < MAX_BATCH }?.toString() ?: "max"),
+                        "lntlimit" to limitParam(limit),
                     ),
                     "linterrors",
                 )
                 .map { entry ->
                     LintError(
-                        id = entry["lintId"]?.jsonPrimitive?.longOrNull ?: 0L,
-                        category = entry["category"]?.jsonPrimitive?.content.orEmpty(),
+                        id = entry.long("lintId") ?: 0L,
+                        category = entry.string("category").orEmpty(),
                         page = decoder.refOf(entry),
                         range =
-                            entry["location"]
-                                ?.jsonArray
-                                ?.takeIf { it.size >= 2 }
-                                ?.let { location ->
-                                    val start = location[0].jsonPrimitive.content.toIntOrNull() ?: 0
-                                    val end = location[1].jsonPrimitive.content.toIntOrNull() ?: 0
-                                    start..end
-                                },
+                            entry
+                                .array("location")
+                                .strings()
+                                .mapNotNull { it.toIntOrNull() }
+                                .takeIf { it.size >= 2 }
+                                ?.let { (start, end) -> start..end },
                         details =
-                            entry["params"]
-                                ?.jsonObject
+                            entry
+                                .obj("params")
                                 ?.mapValues { (_, value) -> value.toString().trim('"') }
                                 .orEmpty(),
                     )
                 }
 
-        emitAll(if (limit == null) errors else errors.take(limit))
+        emitAll(errors.limitedTo(limit))
     }
 
     override suspend fun notifications(unreadOnly: Boolean, limit: Int): List<Notification> {
@@ -197,21 +194,13 @@ internal class ApiExtensionService(
                 )
                 .throwOnError()
 
-        val list =
-            response["query"]?.jsonObject?.get("notifications")?.jsonObject?.get("list")?.jsonArray
-                ?: return emptyList()
-
-        return list.map { entry ->
-            val fields = entry.jsonObject
+        return response.obj("query")?.obj("notifications")?.array("list").objects().map { fields ->
             Notification(
-                id = fields["id"]?.jsonPrimitive?.longOrNull ?: 0L,
-                type = fields["type"]?.jsonPrimitive?.content.orEmpty(),
-                title = fields["title"]?.jsonObject?.get("full")?.jsonPrimitive?.content,
-                agent = fields["agent"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
-                timestamp =
-                    fields["timestamp"]?.jsonObject?.get("utciso8601")?.jsonPrimitive?.content?.let {
-                        MwTimestamp.parseOrNull(it)
-                    },
+                id = fields.long("id") ?: 0L,
+                type = fields.string("type").orEmpty(),
+                title = fields.obj("title")?.string("full"),
+                agent = fields.obj("agent")?.string("name"),
+                timestamp = fields.obj("timestamp")?.time("utciso8601"),
                 // Echo marks a notification read by giving it a read timestamp.
                 isRead = fields.containsKey("read"),
             )
@@ -248,23 +237,22 @@ internal class ApiExtensionService(
                 .call(ApiRequest(mapOf("action" to "shortenurl", "url" to url), RequestKind.WRITE))
                 .throwOnError()
 
-        return response["shortenurl"]?.jsonObject?.get("shorturl")?.jsonPrimitive?.content
+        return response.obj("shortenurl")?.string("shorturl")
             ?: throw WikiError.Api("noshorturl", "the wiki returned no short URL", "shortenurl")
     }
 
     override suspend fun flagged(refs: Collection<PageRef>): Map<PageRef, FlaggedInfo> {
         requireExtension(ExtensionService.FLAGGED_REVS)
         return byPage(refs, "flagged") { page ->
-            val flagged = page["flagged"]?.jsonObject ?: return@byPage null
-            val stable = flagged["stable_revid"]?.jsonPrimitive?.longOrNull ?: return@byPage null
+            val flagged = page.obj("flagged") ?: return@byPage null
+            val stable = flagged.long("stable_revid") ?: return@byPage null
 
             FlaggedInfo(
                 stableRevisionId = stable,
-                level = flagged["level"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                levelText = flagged["level_text"]?.jsonPrimitive?.content,
+                level = flagged.int("level") ?: 0,
+                levelText = flagged.string("level_text"),
                 // Sent only while edits are waiting, which is what makes it the signal.
-                pendingSince =
-                    flagged["pending_since"]?.jsonPrimitive?.content?.let { MwTimestamp.parseOrNull(it) },
+                pendingSince = flagged.time("pending_since"),
             )
         }
     }
@@ -313,13 +301,13 @@ internal class ApiExtensionService(
                         "abfprop" to asked.flatMap { wire(it) }.distinct().joinToString("|"),
                         "abfshow" to show.toParam(),
                         "abfdir" to order.apiValue,
-                        "abflimit" to (limit?.takeIf { it < MAX_BATCH }?.toString() ?: "max"),
+                        "abflimit" to limitParam(limit),
                     ),
                     "abusefilters",
                 )
                 .map { decodeAbuseFilter(it, flags = asked.any { property -> property.choice != null }) }
 
-        emitAll(if (limit == null) filters else filters.take(limit))
+        emitAll(filters.limitedTo(limit))
     }
 
     override fun newPages(
@@ -357,16 +345,16 @@ internal class ApiExtensionService(
                             *resume,
                         )
                     )
-                    .throwOnError()["pagetriagelist"]
-                    ?.jsonObject
+                    .throwOnError()
+                    .obj("pagetriagelist")
 
-            val pages = response?.get("pages")?.jsonArray?.map { it.jsonObject }.orEmpty()
+            val pages = response?.array("pages").objects()
             pages.forEach { entry -> decodeTriagePage(entry, namespace)?.let { emit(it) } }
             sent += pages.size
 
             // A page with no metadata is left out of the list but counts towards the batch, so a short
             // batch means the feed ran out only when those are counted too.
-            val answered = pages.size + (response?.get("pages_missing_metadata")?.jsonArray?.size ?: 0)
+            val answered = pages.size + response?.array("pages_missing_metadata").orEmpty().size
             val done = answered < wanted || (limit != null && sent >= limit)
             val last = pages.lastOrNull()
             val offsetKey = order.offsetKey
@@ -374,8 +362,8 @@ internal class ApiExtensionService(
 
             resume =
                 arrayOf(
-                    "offset" to last[offsetKey]?.jsonPrimitive?.content,
-                    "pageoffset" to last["pageid"]?.jsonPrimitive?.content,
+                    "offset" to last.string(offsetKey),
+                    "pageoffset" to last.string("pageid"),
                 )
         }
     }
@@ -401,10 +389,9 @@ internal class ApiExtensionService(
                         "showdeleted" to "1",
                     )
                 )
-                .throwOnError()["pagetriagestats"]
-                ?.jsonObject
-                ?.get("stats")
-                ?.jsonObject
+                .throwOnError()
+                .obj("pagetriagestats")
+                ?.obj("stats")
                 ?: throw WikiError.Api(
                     "nostats",
                     "the wiki returned no new page statistics",
@@ -417,7 +404,7 @@ internal class ApiExtensionService(
             unreviewedDrafts = stats.backlog("unrevieweddraft"),
             reviewedArticles = stats.reviewedCount("reviewedarticle"),
             reviewedRedirects = stats.reviewedCount("reviewedredirect"),
-            matching = stats["filteredarticle"]?.jsonPrimitive?.longOrNull ?: 0,
+            matching = stats.long("filteredarticle") ?: 0,
         )
     }
 
@@ -427,54 +414,51 @@ internal class ApiExtensionService(
 
     private fun decodeAbuseFilter(entry: JsonObject, flags: Boolean) =
         AbuseFilter(
-            id = entry["id"]?.jsonPrimitive?.longOrNull ?: 0L,
-            description = entry.text("description"),
+            id = entry.long("id") ?: 0L,
+            description = entry.string("description"),
             actions = entry.actions(),
-            pattern = entry.text("pattern"),
-            comments = entry.text("comments"),
-            hits = entry["hits"]?.jsonPrimitive?.longOrNull,
-            lastEditor = entry.text("lasteditor"),
-            lastEdited = entry.text("lastedittime")?.let { MwTimestamp.parseOrNull(it) },
+            pattern = entry.string("pattern"),
+            comments = entry.string("comments"),
+            hits = entry.long("hits"),
+            lastEditor = entry.string("lasteditor"),
+            lastEdited = entry.time("lastedittime"),
             flags =
                 AbuseFilterFlags(
-                        isEnabled = entry.flag("enabled"),
-                        isDeleted = entry.flag("deleted"),
-                        isPrivate = entry.flag("private"),
-                        isProtected = entry.flag("protected"),
-                        isSuppressed = entry.flag("suppressed"),
+                        isEnabled = entry.lenientFlag("enabled"),
+                        isDeleted = entry.lenientFlag("deleted"),
+                        isPrivate = entry.lenientFlag("private"),
+                        isProtected = entry.lenientFlag("protected"),
+                        isSuppressed = entry.lenientFlag("suppressed"),
                     )
                     .takeIf { flags },
-            redacted = REDACTIONS.filterKeys { entry.flag(it) }.values.toSet(),
+            redacted = REDACTIONS.filterKeys { entry.lenientFlag(it) }.values.toSet(),
         )
 
     /** An array of names from MediaWiki 1.47 (T435835), and one comma-separated string before it. */
     private fun JsonObject.actions(): List<String> =
-        when (val actions = this["actions"]) {
-            is JsonArray -> actions.map { it.jsonPrimitive.content }
-            is JsonPrimitive -> actions.content.split(',').filter { it.isNotEmpty() }
-            else -> emptyList()
-        }
+        array("actions")?.strings() ?: string("actions").orEmpty().split(',').filter { it.isNotEmpty() }
 
     /** One feed entry, or `null` for one whose title cannot be read, which is skipped rather than fatal. */
     private fun decodeTriagePage(entry: JsonObject, namespace: Namespace): TriagePage? {
         val page =
             decoder.refOf(
-                entry.text("title").orEmpty(),
+                entry.string("title").orEmpty(),
                 namespace.id,
-                entry["pageid"]?.jsonPrimitive?.longOrNull,
+                entry.long("pageid"),
             ) ?: return null
 
         return TriagePage(
             page = page,
-            created = entry.text("creation_date_utc")?.let { MwTimestamp.parseOrNull(it) },
-            creator = entry.text("user_name").takeUnless { entry.flag("creator_hidden") },
-            creatorIsTemporary = entry.flag("creator_is_temp_account"),
-            status = TRIAGE_STATUS[entry.text("patrol_status")],
-            reviewer = entry.text("reviewer")?.takeIf { it.isNotEmpty() && !entry.flag("reviewer_hidden") },
-            reviewUpdated = entry.text("ptrp_reviewed_updated")?.let { MwTimestamp.parseOrNull(it) },
-            isRedirect = entry.flag("is_redirect"),
+            created = entry.time("creation_date_utc"),
+            creator = entry.string("user_name").takeUnless { entry.lenientFlag("creator_hidden") },
+            creatorIsTemporary = entry.lenientFlag("creator_is_temp_account"),
+            status = TRIAGE_STATUS[entry.string("patrol_status")],
+            reviewer =
+                entry.string("reviewer")?.takeIf { it.isNotEmpty() && !entry.lenientFlag("reviewer_hidden") },
+            reviewUpdated = entry.time("ptrp_reviewed_updated"),
+            isRedirect = entry.lenientFlag("is_redirect"),
             // The feed sends the inbound link count it compiled; `is_orphan` comes only for a single page.
-            isOrphan = entry.text("linkcount")?.toLongOrNull() == 0L,
+            isOrphan = entry.long("linkcount") == 0L,
         )
     }
 
@@ -497,27 +481,25 @@ internal class ApiExtensionService(
 
     private fun JsonObject.backlog(key: String): TriageBacklog? {
         // A queue the wiki does not keep comes back as an empty list rather than as nothing.
-        val queue = this[key] as? JsonObject ?: return null
-        val count = queue["count"]?.jsonPrimitive?.longOrNull ?: 0
+        val queue = obj(key) ?: return null
+        val count = queue.long("count") ?: 0
         // For an empty queue PageTriage sends the current time as the oldest entry.
-        val oldest = queue.text("oldest")?.takeIf { count > 0 }?.let { MwTimestamp.parseOrNull(it) }
+        val oldest = queue.time("oldest")?.takeIf { count > 0 }
         return TriageBacklog(count, oldest)
     }
 
-    private fun JsonObject.reviewedCount(key: String): Long =
-        (this[key] as? JsonObject)?.get("reviewed_count")?.jsonPrimitive?.longOrNull ?: 0
-
-    private fun JsonObject.text(key: String): String? =
-        (this[key] as? JsonPrimitive)?.takeUnless { it is JsonNull }?.content
+    private fun JsonObject.reviewedCount(key: String): Long = obj(key)?.long("reviewed_count") ?: 0
 
     /**
-     * A flag, in either shape MediaWiki has sent one: a real boolean, or present and empty for true.
+     * A flag in any shape these extensions send one: a boolean, or a string that is set unless it is `"0"` or
+     * `"false"`.
      *
-     * AbuseFilter sent empty strings until MediaWiki 1.47 (T435835), and absence meant false.
+     * AbuseFilter sent an empty string for true until MediaWiki 1.47 (T435835), and PageTriage sends its
+     * flags as the `"0"` or `"1"` of the database column. Absence is false in both.
      */
-    private fun JsonObject.flag(key: String): Boolean {
-        val value = this[key] as? JsonPrimitive ?: return false
-        return value !is JsonNull && value.booleanOrNull != false && value.content != "0"
+    private fun JsonObject.lenientFlag(key: String): Boolean {
+        val value = string(key) ?: return false
+        return boolean(key) != false && value != "0"
     }
 
     /**
@@ -563,7 +545,6 @@ internal class ApiExtensionService(
 
     private companion object {
         const val DEFAULT_BATCH = 50
-        const val MAX_BATCH = 500
 
         /** The most pages `pagetriagelist` returns to one request. */
         const val MAX_TRIAGE_BATCH = 200

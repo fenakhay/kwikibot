@@ -4,7 +4,11 @@ import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.net.array
 import com.fenakhay.kwikibot.net.cache.ResponseCache
+import com.fenakhay.kwikibot.net.obj
+import com.fenakhay.kwikibot.net.objects
+import com.fenakhay.kwikibot.net.string
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -26,9 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 private val log = KotlinLogging.logger {}
 
@@ -181,14 +183,19 @@ public class KtorTransport(
                 )
             }
 
-        val code = parsed.errorCode()
+        return answered(parsed, response)
+    }
+
+    /** What an answer in JSON calls for: waiting out the error it reports, or handing it back. */
+    private fun answered(body: JsonObject, response: HttpResponse): Attempt {
+        val error = body.firstError() ?: return Attempt.Done(body)
+        val code = error.string("code")
         return when {
             code == MAXLAG_CODE ->
-                Attempt.Deferred.Lag(parsed.lagSeconds(), parsed.lagHost(), response.retryAfter())
-
+                Attempt.Deferred.Lag(error.lagSeconds(), error.lagHost(), response.retryAfter())
             code == RATELIMIT_CODE -> Attempt.Deferred.RateLimited(response.retryAfter())
-            code in TRANSIENT_CODES -> Attempt.Deferred.Transient(parsed, response.retryAfter(), code)
-            else -> Attempt.Done(parsed)
+            code in TRANSIENT_CODES -> Attempt.Deferred.Transient(body, response.retryAfter(), code)
+            else -> Attempt.Done(body)
         }
     }
 
@@ -238,6 +245,7 @@ public class KtorTransport(
     private fun queryLength(params: List<Pair<String, String>>): Int =
         endpoint.apiUrl.length + params.encode().length
 
+    /** How long the server asked us to wait, when it said so in seconds rather than as a date. */
     private fun HttpResponse.retryAfter(): Duration? =
         headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.seconds
 
@@ -258,21 +266,18 @@ public class KtorTransport(
      * with `info` instead of `text`. Both are read, because a wiki can be configured or proxied in ways that
      * change which one comes back.
      */
-    private fun JsonObject.firstError(): JsonObject? =
-        this["errors"]?.jsonArray?.firstOrNull()?.jsonObject ?: this["error"]?.jsonObject
+    private fun JsonObject.firstError(): JsonObject? = array("errors").objects().firstOrNull() ?: obj("error")
 
-    private fun JsonObject.errorCode(): String? = firstError()?.get("code")?.jsonPrimitive?.content
+    /** The message of an error, under `text` in an `errors` entry and under `info` in an `error` object. */
+    private fun JsonObject.errorText(): String = string("text") ?: string("info").orEmpty()
 
-    private fun JsonObject.errorText(): String {
-        val error = firstError() ?: return ""
-        val text = error["text"] ?: error["info"]
-        return text?.jsonPrimitive?.content.orEmpty()
+    /** How far behind the replica was, from a `maxlag` error's message: `0s` when it does not say. */
+    private fun JsonObject.lagSeconds(): Duration {
+        val lag = LAG_SECONDS.find(errorText())?.let { it.groupValues[1].toDoubleOrNull() }
+        return (lag ?: 0.0).seconds
     }
 
-    private fun JsonObject.lagSeconds(): Duration =
-        (LAG_SECONDS.find(errorText())?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0).seconds
-
-    private fun JsonObject.lagHost(): String? = LAG_HOST.find(errorText())?.groupValues?.get(1)
+    private fun JsonObject.lagHost(): String? = LAG_HOST.find(errorText())?.let { it.groupValues[1] }
 
     /** The result of one attempt: either a response, or a reason to try again. */
     private sealed interface Attempt {

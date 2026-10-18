@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.protocol.decode
 
 import app.cash.turbine.test
 import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
@@ -165,6 +166,82 @@ class ContinuationTest {
 
         asList.map { it["title"]!!.jsonPrimitive.content } shouldBe listOf("A")
         asMap.map { it["title"]!!.jsonPrimitive.content } shouldBe listOf("A")
+    }
+
+    @Test
+    fun `a write cannot be continued, and is refused before anything is sent`() = runTest {
+        var requests = 0
+        val continuation =
+            Continuation(
+                transport {
+                    requests++
+                    respondJson("{}")
+                }
+            )
+        val write = ApiRequest(mapOf("action" to "edit", "title" to "A"), RequestKind.WRITE)
+
+        val refused = assertFailsWith<IllegalArgumentException> { continuation.batches(write).toList() }
+
+        refused.message shouldBe "only read queries continue"
+        requests shouldBe 0
+    }
+
+    @Test
+    fun `a batch carrying no results for the list or the pages asked for yields nothing`() = runTest {
+        val bodies =
+            listOf(
+                """{"batchcomplete":true}""",
+                """{"batchcomplete":true,"query":{}}""",
+                """{"batchcomplete":true,"query":{"allpages":"none","pages":"none"}}""",
+            )
+
+        val listed = bodies.map { body ->
+            Continuation(transport { respondJson(body) }).list(query(), "allpages")
+        }
+        val paged = bodies.map { body -> Continuation(transport { respondJson(body) }).pages(query()) }
+
+        listed.map { it.toList() } shouldBe bodies.map { emptyList() }
+        paged.map { it.toList() } shouldBe bodies.map { emptyList() }
+    }
+
+    @Test
+    fun `a continue value that is not text is left out of the next request`() = runTest {
+        val queries = mutableListOf<String>()
+        val continuation =
+            Continuation(
+                transport { request ->
+                    queries += request.url.encodedQuery
+                    if (queries.size == 1) {
+                        respondJson(
+                            """{"continue":{"apcontinue":"B","extra":{"a":1},"none":null},""" +
+                                """"query":{"allpages":[{"title":"A"}]}}"""
+                        )
+                    } else {
+                        respondJson("""{"batchcomplete":true,"query":{"allpages":[{"title":"B"}]}}""")
+                    }
+                }
+            )
+
+        continuation.list(query(), "allpages").toList().size shouldBe 2
+
+        queries[1].contains("apcontinue=B") shouldBe true
+        queries[1].contains("extra") shouldBe false
+        queries[1].contains("none") shouldBe false
+    }
+
+    @Test
+    fun `an empty continue object ends the query`() = runTest {
+        var requests = 0
+        val continuation =
+            Continuation(
+                transport {
+                    requests++
+                    respondJson("""{"continue":{},"query":{"allpages":[{"title":"A"}]}}""")
+                }
+            )
+
+        continuation.list(query(), "allpages").toList().size shouldBe 1
+        requests shouldBe 1
     }
 
     private fun query() = ApiRequest.of("query", "list" to "allpages", "aplimit" to "2")

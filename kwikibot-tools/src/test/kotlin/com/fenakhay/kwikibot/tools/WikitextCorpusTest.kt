@@ -133,6 +133,57 @@ class WikitextCorpusTest {
     }
 
     @Test
+    fun `without a file named, the corpus is written under its own name in the working directory`() =
+        runTest {
+            val wikis = wiki()
+
+            recordCorpus(emptyArray(), wikis.environment)
+
+            val written = wikis.workingDirectory.resolve("wikitext-cases.json")
+            Json.parseToJsonElement(written.readText()).jsonObject.getValue("cases").jsonArray.size shouldBe
+                cases.size
+            wikis.output.toString() shouldBe
+                "wrote $written: ${cases.size} cases, ${cases.size} recorded now\n"
+        }
+
+    @Test
+    fun `asked for all without a file named, the corpus is still written under its own name`() = runTest {
+        val wikis = wiki()
+        val written = wikis.workingDirectory.resolve("wikitext-cases.json")
+        written.writeText(corpus(cases.map { it.name to it.input }))
+
+        recordCorpus(arrayOf("--all"), wikis.environment)
+
+        wikis.sent.size shouldBe cases.size
+        wikis.output.toString() shouldBe "wrote $written: ${cases.size} cases, ${cases.size} recorded now\n"
+        wikis.workingDirectory.resolve("--all").exists() shouldBe false
+    }
+
+    @Test
+    fun `a recorded case missing its name or its input is recorded again`() = runTest {
+        target.writeText(
+            buildJsonObject {
+                putJsonArray("cases") {
+                    addJsonObject { put("input", cases[0].input) }
+                    addJsonObject { put("name", cases[1].name) }
+                    cases.drop(2).forEach { case ->
+                        addJsonObject {
+                            put("name", case.name)
+                            put("input", case.input)
+                        }
+                    }
+                }
+            }
+                .toString()
+        )
+        val wikis = wiki()
+
+        recordCorpus(arrayOf(target.toString()), wikis.environment)
+
+        wikis.sent.map { it["text"] } shouldBe listOf(cases[0].input, cases[1].input)
+    }
+
+    @Test
     fun `a file without a list of cases is recorded afresh`() = runTest {
         target.writeText("""{"wiki":"en.wiktionary.org"}""")
         val wikis = wiki()

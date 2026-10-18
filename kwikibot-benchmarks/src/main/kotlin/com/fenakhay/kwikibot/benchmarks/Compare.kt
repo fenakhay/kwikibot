@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.benchmarks
 
+import java.util.Locale
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlin.math.abs
@@ -33,9 +34,17 @@ private data class Result(val score: Double, val error: Double, val unit: String
  * Exits non-zero when something got slower, so this can gate a change rather than only describe one.
  */
 public fun main(args: Array<String>) {
+    exitProcess(compare(args, System.out, System.err))
+}
+
+/**
+ * What [main] does with [args], printing the table to [out] and a usage line to [err]. Returns the status to
+ * exit with: 2 when the arguments are wrong, 1 when something got slower, 0 otherwise.
+ */
+internal fun compare(args: Array<String>, out: Appendable, err: Appendable): Int {
     if (args.size != 2) {
-        System.err.println(USAGE)
-        exitProcess(2)
+        err.appendLine(USAGE)
+        return 2
     }
 
     val baseline = read(args[0])
@@ -46,18 +55,20 @@ public fun main(args: Array<String>) {
 
     // Every benchmark here is an average in the same unit, so naming it once in the header is
     // enough; a mixed-mode report would need it per row.
-    val unit = (baseline.values + current.values).firstOrNull()?.unit ?: "?"
+    val results = baseline.values + current.values
+    val unit = if (results.isEmpty()) "?" else results.first().unit
 
-    println("%-52s %12s %12s %10s".format("benchmark", "baseline ($unit)", "current ($unit)", "change"))
-    println("-".repeat(RULE_WIDTH))
+    out.appendLine(row("%-52s %12s %12s %10s", "benchmark", "baseline ($unit)", "current ($unit)", "change"))
+    out.appendLine("-".repeat(RULE_WIDTH))
 
     for (name in names) {
         val before = baseline[name]
         val after = current[name]
 
         when {
-            before == null -> println("%-52s %12s %12.3f %10s".format(name, "-", after!!.score, "new"))
-            after == null -> println("%-52s %12.3f %12s %10s".format(name, before.score, "-", "gone"))
+            before == null ->
+                out.appendLine(row("%-52s %12s %12.3f %10s", name, "-", current.getValue(name).score, "new"))
+            after == null -> out.appendLine(row("%-52s %12.3f %12s %10s", name, before.score, "-", "gone"))
 
             else -> {
                 val change = (after.score - before.score) / before.score * PERCENT
@@ -68,15 +79,15 @@ public fun main(args: Array<String>) {
                         change > 0 -> "SLOWER".also { regressions++ }
                         else -> "faster"
                     }
-                println(
-                    "%-52s %12.3f %12.3f %+9.1f%% %s".format(name, before.score, after.score, change, verdict)
+                out.appendLine(
+                    row("%-52s %12.3f %12.3f %+9.1f%% %s", name, before.score, after.score, change, verdict)
                 )
             }
         }
     }
 
-    println()
-    println(
+    out.appendLine()
+    out.appendLine(
         if (regressions == 0) {
             "nothing got measurably slower"
         } else {
@@ -85,22 +96,25 @@ public fun main(args: Array<String>) {
     )
 
     // These are averages: lower is better, so a rise is the regression.
-    if (regressions > 0) exitProcess(1)
+    return if (regressions > 0) 1 else 0
 }
+
+/** One line of the table, with the decimal point the same on every machine. */
+private fun row(format: String, vararg values: Any): String = format.format(Locale.ROOT, *values)
 
 /** Reads a JMH JSON report into scores by benchmark name, with the package prefix dropped. */
 private fun read(path: String): Map<String, Result> =
     Json.parseToJsonElement(Path(path).readText()).jsonArray.associate { element ->
         val entry = element.jsonObject
-        val metric = entry["primaryMetric"]!!.jsonObject
-        val name = entry["benchmark"]!!.jsonPrimitive.content.removePrefix(PACKAGE_PREFIX)
+        val metric = entry.getValue("primaryMetric").jsonObject
+        val name = entry.getValue("benchmark").jsonPrimitive.content.removePrefix(PACKAGE_PREFIX)
 
         name to
             Result(
-                score = metric["score"]!!.jsonPrimitive.double,
+                score = metric.getValue("score").jsonPrimitive.double,
                 // JMH reports NaN when a run had too few iterations to say anything about spread.
-                error = metric["scoreError"]!!.jsonPrimitive.double.takeIf { it.isFinite() } ?: 0.0,
-                unit = metric["scoreUnit"]!!.jsonPrimitive.content,
+                error = metric.getValue("scoreError").jsonPrimitive.double.takeIf { it.isFinite() } ?: 0.0,
+                unit = metric.getValue("scoreUnit").jsonPrimitive.content,
             )
     }
 

@@ -173,6 +173,19 @@ class SectionTest {
 
         assertFailsWith<IndexOutOfBoundsException> { english.withSubsectionAt(2, pronunciation()) }
         assertFailsWith<IndexOutOfBoundsException> { english.withSubsectionAt(-1, pronunciation()) }
+        val lead = code.outline()
+        assertFailsWith<IndexOutOfBoundsException> { lead.withSubsectionAt(2, pronunciation()) }
+            .message shouldBe "index 2 is outside the 1 subsections of the lead"
+    }
+
+    @Test
+    fun `the children with a heading are the direct ones only`() {
+        val outline = Wikitext.parse(entry).outline()
+
+        outline.children(" English ").map { it.level } shouldBe listOf(2)
+        outline.children("Noun") shouldBe emptyList()
+        checkNotNull(outline.find("Swedish")).children("Noun").single().content.serialize() shouldBe
+            "\n{{sv-noun}}"
     }
 
     @Test

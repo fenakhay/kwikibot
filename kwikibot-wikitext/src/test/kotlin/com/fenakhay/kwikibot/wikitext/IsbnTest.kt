@@ -19,6 +19,22 @@ class IsbnTest {
     }
 
     @Test
+    fun `a letter other than a check X is not an isbn`() {
+        Isbn.parse("043942089Y").shouldBeNull()
+        Isbn.parse("978030640615X").shouldBeNull()
+    }
+
+    @Test
+    fun `isbns are equal by their digits, however they were written`() {
+        val isbn = checkNotNull(Isbn.parse("0-19-853737-9"))
+
+        isbn shouldBe Isbn.parse("0198537379")
+        isbn.hashCode() shouldBe Isbn.parse("0 19 853737 9").hashCode()
+        isbn.toString() shouldBe "0198537379"
+        isbn.equals("0198537379") shouldBe false
+    }
+
+    @Test
     fun `a wrong check digit is not an isbn`() {
         Isbn.parse("0-19-853737-8").shouldBeNull()
         Isbn.isValid("978-0-306-40615-7") shouldBe true

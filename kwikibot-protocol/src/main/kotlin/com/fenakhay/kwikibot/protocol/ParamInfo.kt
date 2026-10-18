@@ -2,13 +2,16 @@ package com.fenakhay.kwikibot.protocol
 
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /** One parameter of an API module, as the wiki describes it. */
 public data class ParamDescription(
@@ -234,7 +237,7 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
                 .call(ApiRequest.of("paraminfo", "modules" to modules, "helpformat" to "none"))
                 .throwOnError()
 
-        return response["paraminfo"]?.jsonObject?.get("modules")?.jsonArray?.map { it.jsonObject }.orEmpty()
+        return response.obj("paraminfo")?.array("modules").objects()
     }
 
     private fun JsonObject.toModule(fallback: String) =
@@ -242,14 +245,10 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
             name = string("name") ?: fallback,
             path = string("path") ?: fallback,
             parameters =
-                this["parameters"]
-                    ?.jsonArray
-                    ?.map { it.jsonObject }
-                    ?.associate { parameter ->
-                        val name = parameter.string("name").orEmpty()
-                        name to parameter.toDescription(name)
-                    }
-                    .orEmpty(),
+                array("parameters").objects().associate { parameter ->
+                    val name = parameter.string("name").orEmpty()
+                    name to parameter.toDescription(name)
+                },
             isWrite = flag("writerights") || flag("mustbeposted"),
             mustBePosted = flag("mustbeposted"),
             source = string("source"),
@@ -264,46 +263,22 @@ public class ParamInfo(private val transport: MediaWikiTransport) {
         ParamDescription(
             name = name,
             // "type" is a string for a simple type and a list when the parameter takes a fixed set.
-            type =
-                this["type"]?.let { element ->
-                    runCatching { element.jsonPrimitive.content }.getOrNull()
-                },
-            values =
-                this["type"]
-                    ?.let { element ->
-                        runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
-                    }
-                    .orEmpty(),
+            type = string("type"),
+            values = array("type").strings(),
             // "limit" and "highlimit" count the values a multi-valued parameter takes, not the results a
             // query returns; a type=limit parameter reports those as "max" and "highmax".
-            limit = this["max"]?.jsonPrimitive?.intOrNull,
-            highLimit = this["highmax"]?.jsonPrimitive?.intOrNull,
+            limit = int("max"),
+            highLimit = int("highmax"),
             required = flag("required"),
             multiValued = flag("multi"),
-            default =
-                this["default"]?.let { element ->
-                    runCatching { element.jsonPrimitive.content }.getOrNull()
-                },
+            default = string("default"),
             deprecated = flag("deprecated"),
-            deprecatedValues = strings("deprecatedvalues"),
+            deprecatedValues = array("deprecatedvalues").strings(),
             sensitive = flag("sensitive"),
-            valueLimit = this["limit"]?.jsonPrimitive?.intOrNull,
-            highValueLimit = this["highlimit"]?.jsonPrimitive?.intOrNull,
-            internalValues = strings("internalvalues"),
+            valueLimit = int("limit"),
+            highValueLimit = int("highlimit"),
+            internalValues = array("internalvalues").strings(),
         )
-
-    private fun JsonObject.strings(key: String): List<String> =
-        this[key]
-            ?.let { element ->
-                runCatching { element.jsonArray.map { it.jsonPrimitive.content } }.getOrNull()
-            }
-            .orEmpty()
-
-    private fun JsonObject.string(key: String): String? =
-        this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
-
-    private fun JsonObject.flag(key: String): Boolean =
-        this[key]?.let { runCatching { it.jsonPrimitive.content != "false" }.getOrDefault(true) } ?: false
 
     /** How many modules one request may name. */
     public companion object {

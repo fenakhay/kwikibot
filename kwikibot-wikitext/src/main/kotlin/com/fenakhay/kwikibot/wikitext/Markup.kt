@@ -65,7 +65,8 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
      * The visible text, with markup removed.
      *
      * Templates and comments contribute nothing, since neither is text a reader sees; a wikilink contributes
-     * its display text. Use this for comparing content, never for writing back.
+     * its display text, and an external link its label, or the URL itself when it is a bare one in running
+     * text. Use this for comparing content, never for writing back.
      */
     public val text: String
         get() =
@@ -73,7 +74,7 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
                 when (node) {
                     is TextNode -> node.text
                     is WikiLink -> (node.text ?: node.target).text
-                    is ExternalLink -> node.title?.text.orEmpty()
+                    is ExternalLink -> if (node.brackets) node.title?.text.orEmpty() else node.url.text
                     is Heading -> node.title.text
                     is Tag -> node.contents?.text.orEmpty()
                     is HtmlEntity -> node.serialize()
@@ -162,12 +163,10 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
      * Nested occurrences are replaced too, so a template inside a link can be edited without the caller
      * having to find and rebuild the link.
      */
-    public fun replace(target: Node, replacement: Node): Markup =
-        Markup(nodes.map { it.rewrite(target, replacement) })
+    public fun replace(target: Node, replacement: Node): Markup = rewrite(target, replacement)
 
     /** This wikitext with [target] removed. */
-    public fun remove(target: Node): Markup =
-        Markup(nodes.filterNot { it == target }.map { it.rewrite(target, null) })
+    public fun remove(target: Node): Markup = rewrite(target, null)
 
     /**
      * This wikitext with every template named [name] passed through [transform].
@@ -312,15 +311,14 @@ internal fun Node.children(): List<Markup> =
     }
 
 /**
- * This node with [target] replaced by [replacement] wherever it appears inside it.
+ * This node with [target] replaced by [replacement], or removed where [replacement] is `null`, wherever it
+ * appears inside it.
  *
  * Returns the node unchanged when it contains no occurrence, so untouched subtrees keep their identity and
  * their exact text.
  */
-private fun Node.rewrite(target: Node, replacement: Node?): Node {
-    if (this == target) return replacement ?: TextNode("")
-
-    return when (this) {
+private fun Node.rewrite(target: Node, replacement: Node?): Node =
+    when (this) {
         is Template ->
             copy(
                 name = name.rewrite(target, replacement),
@@ -369,8 +367,8 @@ private fun Node.rewrite(target: Node, replacement: Node?): Node {
         is Comment,
         is HtmlEntity -> this
     }
-}
 
+/** This wikitext with [target] rewritten as [Node.rewrite] does, or itself when [target] is not in it. */
 private fun Markup.rewrite(target: Node, replacement: Node?): Markup {
     if (target !in allNodes()) return this
     val rewritten = nodes.mapNotNull { node ->

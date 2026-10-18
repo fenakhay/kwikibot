@@ -3,19 +3,21 @@ package com.fenakhay.kwikibot.client.internal
 import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.boolean
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.throwOnError
 import com.fenakhay.kwikibot.wikitext.MagicWords
 import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.TitleRules
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * How one wiki's wikitext parses and how it names pages, read from its site info once and kept.
@@ -57,7 +59,7 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
                         ApiRequest.of("query", "meta" to "siteinfo", "siprop" to Registry.PARSER_INFO.joined)
                     )
                     .throwOnError()
-            return decode(response["query"] as? JsonObject ?: JsonObject(emptyMap()))
+            return decode(response.obj("query") ?: JsonObject(emptyMap()))
         }
 
         /**
@@ -66,31 +68,30 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
          */
         fun decode(query: JsonObject): Settings {
             val namespaces = namespaceNames(query)
-            val magicWords = (query["magicwords"] as? JsonArray).orEmpty().map { it.jsonObject }
+            val magicWords = query.array("magicwords").objects()
 
             val defaults = ParseOptions.DEFAULT
             val options =
                 ParseOptions(
                     extensionTags =
-                        query.strings("extensiontags")?.mapTo(HashSet()) {
+                        query.array("extensiontags")?.strings()?.mapTo(HashSet()) {
                             it.removePrefix("<").removeSuffix(">")
                         } ?: defaults.extensionTags,
                     parsedTags = defaults.parsedTags,
                     htmlTags = defaults.htmlTags,
-                    protocols = query.strings("protocols") ?: defaults.protocols,
+                    protocols = query.array("protocols")?.strings() ?: defaults.protocols,
                     languageConversion =
-                        (query["general"] as? JsonObject)?.get("langconversion")?.jsonPrimitive?.booleanOrNull
-                            ?: defaults.languageConversion,
+                        query.obj("general")?.boolean("langconversion") ?: defaults.languageConversion,
                     fileNamespaces =
                         namespaces.filterValues { it == FILE }.keys.ifEmpty { defaults.fileNamespaces },
                 )
 
-            val functionHooks = query.strings("functionhooks")?.toSet()
-            val variableIds = query.strings("variables")?.toSet()
-            fun words(of: Set<String>): List<JsonObject> = magicWords.filter { it.text("name") in of }
+            val functionHooks = query.array("functionhooks")?.strings()?.toSet()
+            val variableIds = query.array("variables")?.strings()?.toSet()
+            fun words(of: Set<String>): List<JsonObject> = magicWords.filter { it.string("name") in of }
             fun prefixes(of: Set<String>): Set<String> =
                 words(of)
-                    .flatMap { it.strings("aliases").orEmpty() }
+                    .flatMap { it.array("aliases").strings() }
                     .mapTo(HashSet()) { it.removeSuffix(":") }
                     .ifEmpty { of }
 
@@ -126,8 +127,8 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
         private fun functions(words: List<JsonObject>): MagicWords =
             magicWordsOf(words) { word, alias ->
                 val noHash =
-                    word.text("name") in TitleRules.CORE_FUNCTION_IDS ||
-                        word.strings("aliases").orEmpty().any { it.endsWith(COLON) }
+                    word.string("name") in TitleRules.CORE_FUNCTION_IDS ||
+                        word.array("aliases").strings().any { it.endsWith(COLON) }
                 (if (noHash) "" else "#") + alias.removeSuffix(COLON).removeSuffix(WIDE_COLON)
             }
 
@@ -136,53 +137,40 @@ internal class ParserSettings(private val transport: MediaWikiTransport) {
             val exact = HashSet<String>()
             val folded = HashSet<String>()
             for (word in words) {
-                val target = if (word.isCaseSensitive()) exact else folded
-                word.strings("aliases").orEmpty().mapTo(target) { name(word, it) }
+                val target = if (word.flag("case-sensitive")) exact else folded
+                word.array("aliases").strings().mapTo(target) { name(word, it) }
             }
             return MagicWords(exact, folded)
-        }
-
-        /**
-         * Whether a `magicwords` entry is case-sensitive, a flag that is `true` or, in the old format, empty.
-         */
-        private fun JsonObject.isCaseSensitive(): Boolean {
-            val flag = this["case-sensitive"] as? JsonPrimitive ?: return false
-            return flag.booleanOrNull ?: true
         }
 
         /** Every name and alias of every namespace, with the namespace it names. */
         private fun namespaceNames(query: JsonObject): Map<String, Int> = buildMap {
             for (namespace in namespaceEntries(query)) {
-                val id = namespace["id"]?.jsonPrimitive?.intOrNull ?: continue
-                namespace.text("name")?.takeIf { it.isNotEmpty() }?.let { put(it, id) }
-                namespace.text("canonical")?.takeIf { it.isNotEmpty() }?.let { put(it, id) }
+                val id = namespace.int("id") ?: continue
+                namespace.string("name")?.takeIf { it.isNotEmpty() }?.let { put(it, id) }
+                namespace.string("canonical")?.takeIf { it.isNotEmpty() }?.let { put(it, id) }
             }
-            for (alias in (query["namespacealiases"] as? JsonArray).orEmpty().map { it.jsonObject }) {
-                val id = alias["id"]?.jsonPrimitive?.intOrNull ?: continue
-                alias.text("alias")?.let { put(it, id) }
+            for (alias in query.array("namespacealiases").objects()) {
+                val id = alias.int("id") ?: continue
+                alias.string("alias")?.let { put(it, id) }
             }
         }
 
         private fun canonicalNames(query: JsonObject): Map<Int, String> = buildMap {
             for (namespace in namespaceEntries(query)) {
-                val id = namespace["id"]?.jsonPrimitive?.intOrNull
-                val name = namespace.text("canonical") ?: namespace.text("name")
+                val id = namespace.int("id")
+                val name = namespace.string("canonical") ?: namespace.string("name")
                 if (id != null && !name.isNullOrEmpty()) put(id, name)
             }
         }
 
         private fun caseSensitive(query: JsonObject): Set<Int> =
             namespaceEntries(query)
-                .filter { it.text("case") == "case-sensitive" }
-                .mapNotNullTo(HashSet()) { it["id"]?.jsonPrimitive?.intOrNull }
+                .filter { it.string("case") == "case-sensitive" }
+                .mapNotNullTo(HashSet()) { it.int("id") }
 
         private fun namespaceEntries(query: JsonObject): List<JsonObject> =
-            (query["namespaces"] as? JsonObject)?.values?.mapNotNull { it as? JsonObject }.orEmpty()
-
-        private fun JsonObject.strings(key: String): List<String>? =
-            (this[key] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content }
-
-        private fun JsonObject.text(key: String): String? = (this[key] as? JsonPrimitive)?.content
+            query.obj("namespaces")?.values.orEmpty().filterIsInstance<JsonObject>()
 
         private const val FILE = 6
 

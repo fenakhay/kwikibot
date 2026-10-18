@@ -7,6 +7,7 @@ dependencies {
     api(project(":kwikibot-client"))
     api(libs.diff.utils)
 
+    implementation(libs.cldr.plural.rules)
     implementation(libs.kotlin.logging)
     implementation(libs.ktoml.core)
 

@@ -2,7 +2,10 @@ package com.fenakhay.kwikibot.bot.fix
 
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.Title
+import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.Wikitext
+import com.fenakhay.kwikibot.wikitext.node.TextNode
+import com.fenakhay.kwikibot.wikitext.node.WikiLink
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
@@ -10,6 +13,24 @@ class UnlinkerTest {
 
     private val unlinker = Unlinker()
     private val target = Title.Local(Namespace.MAIN, "volcano")
+
+    @Test
+    fun `a link built with empty text shows its target, so that is what it becomes`() {
+        val built =
+            Markup(listOf(TextNode("A "), WikiLink(Markup.of("volcano"), Markup(emptyList())), TextNode(".")))
+
+        unlinker.unlink(built, target).serialize() shouldBe "A volcano."
+    }
+
+    @Test
+    fun `an unexpanded pipe trick is not a link, so it is left as written`() {
+        unlinker.unlink("A [[volcano|]].", target) shouldBe "A [[volcano|]]."
+    }
+
+    @Test
+    fun `a link to a section of the page it is on is not a link to the target`() {
+        unlinker.unlink("See [[#English]].", target) shouldBe "See [[#English]]."
+    }
 
     @Test
     fun `a plain link becomes the word it was showing`() {

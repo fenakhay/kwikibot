@@ -1,8 +1,11 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.node.Tag
+import com.fenakhay.kwikibot.wikitext.node.TextNode
 import com.fenakhay.kwikibot.wikitext.node.WikiLink
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
@@ -20,6 +23,11 @@ class MarkupTest {
         val code = Wikitext.parse("{{col|en}} {{l|en|x}} {{col|fr}}")
 
         code.templates("col").size shouldBe 2
+    }
+
+    @Test
+    fun `a blank name finds no template`() {
+        Wikitext.parse("{{col|en}}").templates(" ") shouldBe emptyList()
     }
 
     @Test
@@ -88,6 +96,24 @@ class MarkupTest {
     }
 
     @Test
+    fun `visible text keeps what each kind of node shows a reader`() {
+        Wikitext.parse("==Lava==").text shouldBe "Lava"
+        Wikitext.parse("[[vog]] and [[vog|smog]]").text shouldBe "vog and smog"
+        Wikitext.parse("[https://example.org the site]").text shouldBe "the site"
+        Wikitext.parse("[https://example.org]").text shouldBe ""
+        Wikitext.parse("<ref>a note</ref> and<br/> more").text shouldBe "a note and more"
+        Wikitext.parse("{{{1|default}}}").text shouldBe ""
+        Wikitext.parse("caf&eacute;").text shouldBe "caf&eacute;"
+    }
+
+    @Test
+    fun `a bare URL in running text is text a reader sees`() {
+        Wikitext.parse("see https://example.org now").text shouldBe "see https://example.org now"
+        Wikitext.parse("{{cite|url=https://example.org/a}}").templates().single().value("url") shouldBe
+            "https://example.org/a"
+    }
+
+    @Test
     fun `a node can be replaced anywhere in the tree`() {
         val code = Wikitext.parse("see [[volcano]] and [[vog]]")
         val target = code.wikilinks().first { it.title == "vog" }
@@ -95,6 +121,63 @@ class MarkupTest {
         val updated = code.replace(target, WikiLink(Markup.of("volcanic smog")))
 
         updated.serialize() shouldBe "see [[volcano]] and [[volcanic smog]]"
+    }
+
+    @Test
+    fun `a node can be removed from inside every kind of node that holds wikitext`() {
+        val code =
+            Wikitext.parse(
+                "=={{x}} h==\n{{{a}}} {{{a|{{x}}}}} [[b]] [[{{x}}|c]] [https://example.org] " +
+                    "[https://example.org {{x}}] <br/><span title=\"{{x}}\" hidden>{{x}}</span> {{t|{{x}}}}"
+            )
+
+        code.remove(code.templates("x").first()).serialize() shouldBe
+            "== h==\n{{{a}}} {{{a|}}} [[b]] [[|c]] [https://example.org] " +
+                "[https://example.org ] <br/><span title=\"\" hidden></span> {{t|}}"
+    }
+
+    @Test
+    fun `removing a node that is not there changes nothing`() {
+        val code = Wikitext.parse("[[a]] {{t|b}}")
+
+        code.remove(TextNode("absent")) shouldBe code
+        code.replace(TextNode("absent"), TextNode("x")).serialize() shouldBe "[[a]] {{t|b}}"
+    }
+
+    @Test
+    fun `a top-level node is removed outright, and the nodes around it stay as they were`() {
+        val code = Wikitext.parse("a {{x}} <!-- c --> &amp;")
+
+        code.remove(code.templates().single()).serialize() shouldBe "a  <!-- c --> &amp;"
+    }
+
+    @Test
+    fun `every template can be passed through one transform`() {
+        val code = Wikitext.parse("{{a|1}} [[{{b|2}}]]")
+
+        code.mapTemplates { it.withParameter("1", "x") }.serialize() shouldBe "{{a|x}} [[{{b|x}}]]"
+        code.mapTemplates { it } shouldBe code
+    }
+
+    @Test
+    fun `markup is a value, equal to markup with equal nodes, and prints as its wikitext`() {
+        val code = Wikitext.parse("a [[b]]")
+
+        code shouldBe Markup(code.nodes)
+        code.hashCode() shouldBe Markup(code.nodes).hashCode()
+        code shouldNotBe Markup.of("a")
+        code.equals("a [[b]]") shouldBe false
+        code.toString() shouldBe "a [[b]]"
+        (code + Wikitext.parse(" {{c}}")).serialize() shouldBe "a [[b]] {{c}}"
+        Markup.EMPTY.serialize() shouldBe ""
+    }
+
+    @Test
+    fun `a template name is read without the transclusion markers around part of it`() {
+        Wikitext.parse("{{a<includeonly>b</includeonly>|x}}").templates().single().title shouldBe "ab"
+        Wikitext.parse("{{a<noinclude/>|x}}").templates().single().title shouldBe "a"
+        Wikitext.parse("{{a<span>b</span>|x}}").templates().single().title shouldBe "a<span>b</span>"
+        Wikitext.parse("{{a'''b'''|x}}").templates().single().title shouldBe "a'''b'''"
     }
 
     @Test
@@ -134,6 +217,62 @@ class MarkupTest {
         equals.serialize() shouldBe "{{t|1=x=y|key=old}}"
         linked.serialize() shouldBe "{{t|[[page|text]] and {{tpl|z}}|key=old}}"
         Wikitext.parse(linked.serialize()).templates().first().parameters.size shouldBe 2
+    }
+
+    @Test
+    fun `a parameter the template lacks is added at the end`() {
+        val template = Wikitext.parse("{{t|a|key=old}}").templates().single()
+
+        template.withParameter("new", "v").serialize() shouldBe "{{t|a|key=old|new=v}}"
+        template.withParameter("2", "v").serialize() shouldBe "{{t|a|key=old|v}}"
+        ("new" in template) shouldBe false
+    }
+
+    @Test
+    fun `a number past the next position is added by name, so that it keeps its number`() {
+        val template = Wikitext.parse("{{t|a|key=old}}").templates().single()
+
+        val added = template.withParameter("3", "v")
+
+        added.serialize() shouldBe "{{t|a|key=old|3=v}}"
+        Wikitext.parse(added.serialize()).templates().single().value("3") shouldBe "v"
+    }
+
+    @Test
+    fun `a value that was only whitespace is replaced whole`() {
+        val template = Wikitext.parse("{{t|key= }}").templates().single()
+
+        template.withParameter("key", "x").serialize() shouldBe "{{t|key=x}}"
+    }
+
+    @Test
+    fun `a pipe inside an HTML tag is escaped, and an attribute makes the value a named one`() {
+        val template = Wikitext.parse("{{t|a}}").templates().single()
+
+        template.withParameter("1", "<span class=\"x\">a|b</span>").serialize() shouldBe
+            "{{t|1=<span class=\"x\">a{{!}}b</span>}}"
+        template
+            .withParameter("2", "[https://example.org] a|b <br/> <span hidden>c</span>")
+            .serialize() shouldBe "{{t|a|[https://example.org] a{{!}}b <br/> <span hidden>c</span>}}"
+    }
+
+    @Test
+    fun `an extension tag holds its pipes and equals signs itself`() {
+        val template = Wikitext.parse("{{t|a}}").templates().single()
+
+        template.withParameter("2", "<ref name=x>a|b=c</ref>").serialize() shouldBe
+            "{{t|a|<ref name=x>a|b=c</ref>}}"
+    }
+
+    @Test
+    fun `a closing tag is written as it was only while it still names the tag`() {
+        val tag = Tag("ref", contents = Markup.of("a"), closing = "</REF >")
+
+        tag.serialize() shouldBe "<ref>a</REF >"
+        tag.copy(name = "note").serialize() shouldBe "<note>a</note>"
+        tag.copy(closing = "</refs>").serialize() shouldBe "<ref>a</ref>"
+        tag.copy(closing = "</r>").serialize() shouldBe "<ref>a</ref>"
+        tag.copy(closing = "<ref >").serialize() shouldBe "<ref>a</ref>"
     }
 
     @Test

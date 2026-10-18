@@ -21,6 +21,14 @@ class BotPolicyTest {
     }
 
     @Test
+    fun `a nobots that allows this bot lets it edit, and denies every other`() {
+        val page = "{{nobots|allow=FenaBot}}"
+
+        policy.check(page).isAllowed shouldBe true
+        BotPolicy("OtherBot").check(page).isAllowed shouldBe false
+    }
+
+    @Test
     fun `a bare nobots denies every bot`() {
         val denied = policy.check("{{nobots}}\n\nText.").shouldBeInstanceOf<EditPermission.Denied>()
 

@@ -224,6 +224,20 @@ public final class com/fenakhay/kwikibot/protocol/decode/Continuation {
 	public static synthetic fun pages$default (Lcom/fenakhay/kwikibot/protocol/decode/Continuation;Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 }
 
+public final class com/fenakhay/kwikibot/protocol/decode/JsonFieldsKt {
+	public static final fun array (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Lkotlinx/serialization/json/JsonArray;
+	public static final fun boolean (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Ljava/lang/Boolean;
+	public static final fun double (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Ljava/lang/Double;
+	public static final fun flag (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Z
+	public static final fun int (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Ljava/lang/Integer;
+	public static final fun long (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Ljava/lang/Long;
+	public static final fun obj (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Lkotlinx/serialization/json/JsonObject;
+	public static final fun objects (Lkotlinx/serialization/json/JsonArray;)Ljava/util/List;
+	public static final fun string (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun strings (Lkotlinx/serialization/json/JsonArray;)Ljava/util/List;
+	public static final fun time (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Lkotlin/time/Instant;
+}
+
 public final class com/fenakhay/kwikibot/protocol/decode/OptionSet {
 	public static final field Companion Lcom/fenakhay/kwikibot/protocol/decode/OptionSet$Companion;
 	public fun <init> ()V

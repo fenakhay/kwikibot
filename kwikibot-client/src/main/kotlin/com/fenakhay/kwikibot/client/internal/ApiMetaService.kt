@@ -10,16 +10,18 @@ import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.throwOnError
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 internal class ApiMetaService(
     private val transport: MediaWikiTransport,
@@ -39,7 +41,7 @@ internal class ApiMetaService(
             val response =
                 transport.call(ApiRequest.of("query", "meta" to "siteinfo", "siprop" to name)).throwOnError()
 
-            response["query"]?.jsonObject?.get(name).also { properties[name] = it }
+            response.obj("query")?.get(name).also { properties[name] = it }
         }
     }
 
@@ -67,12 +69,11 @@ internal class ApiMetaService(
                     )
                     .throwOnError()
 
-            response["query"]?.jsonObject?.get("allmessages")?.jsonArray.orEmpty().forEach { entry ->
-                val message = entry.jsonObject
-                val name = message["name"]?.jsonPrimitive?.content ?: return@forEach
+            response.obj("query")?.array("allmessages").objects().forEach { message ->
+                val name = message.string("name") ?: return@forEach
                 // A message the wiki does not have comes back flagged rather than omitted.
                 if (message.containsKey("missing")) return@forEach
-                message["content"]?.jsonPrimitive?.content?.let { messageCache[name] = it }
+                message.string("content")?.let { messageCache[name] = it }
             }
         }
 
@@ -83,10 +84,8 @@ internal class ApiMetaService(
         messages(listOf(key), language)[key]
 
     override suspend fun magicWords(): Map<String, List<String>> =
-        property("magicwords")?.jsonArray.orEmpty().associate { entry ->
-            val word = entry.jsonObject
-            word["name"]?.jsonPrimitive?.content.orEmpty() to
-                word["aliases"]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty()
+        (property("magicwords") as? JsonArray).objects().associate { word ->
+            word.string("name").orEmpty() to word.array("aliases").strings()
         }
 
     override suspend fun languages(codes: Collection<LangCode>): Map<LangCode, LanguageInfo> {
@@ -103,40 +102,28 @@ internal class ApiMetaService(
                 .throwOnError()
 
         // An object keyed by code, not the array every other list module answers with.
-        val block = response["query"]?.jsonObject?.get("languageinfo")?.jsonObject ?: return emptyMap()
+        val block = response.obj("query")?.obj("languageinfo") ?: return emptyMap()
 
-        return block
-            .mapNotNull { (code, described) ->
-                val entry = described.jsonObject
+        return block.keys
+            .mapNotNull { code ->
+                val entry = block.obj(code) ?: return@mapNotNull null
                 LangCode(code) to
                     LanguageInfo(
                         code = LangCode(code),
-                        name = entry.text("name"),
-                        autonym = entry.text("autonym"),
-                        direction = TextDirection.of(entry.text("dir")),
-                        fallbacks =
-                            (entry["fallbacks"] as? JsonArray)
-                                .orEmpty()
-                                .mapNotNull { runCatching { it.jsonPrimitive.content }.getOrNull() }
-                                .map { LangCode(it) },
-                        bcp47 = entry.text("bcp47").takeIf { it.isNotEmpty() },
+                        name = entry.string("name").orEmpty(),
+                        autonym = entry.string("autonym").orEmpty(),
+                        direction = TextDirection.of(entry.string("dir")),
+                        fallbacks = entry.array("fallbacks").strings().map { LangCode(it) },
+                        bcp47 = entry.string("bcp47")?.takeIf { it.isNotEmpty() },
                     )
             }
             .toMap()
     }
 
-    private fun JsonObject.text(key: String): String =
-        this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }.orEmpty()
-
-    override suspend fun statistics(): Map<String, Long> =
-        (property("statistics") as? JsonObject)
-            .orEmpty()
-            .mapNotNull { (key, value) ->
-                value.jsonPrimitive.longOrNull?.let { key to it }
-            }
-            .toMap()
-
-    private fun JsonObject?.orEmpty(): Map<String, JsonElement> = this ?: emptyMap()
+    override suspend fun statistics(): Map<String, Long> {
+        val counts = property("statistics") as? JsonObject ?: return emptyMap()
+        return counts.keys.mapNotNull { key -> counts.long(key)?.let { key to it } }.toMap()
+    }
 
     override suspend fun applyTags(
         add: Set<String>,

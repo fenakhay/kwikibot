@@ -44,6 +44,27 @@ class PageFurnitureTest {
     }
 
     @Test
+    fun `a category on the first or the last line takes its line break with it`() {
+        parse("[[Category:A]]\nText").removeCategory("A").serialize() shouldBe "Text"
+        parse("Text\n[[Category:A]]").removeCategory("A").serialize() shouldBe "Text"
+        parse("[[Category:A]]").removeCategory("A").serialize() shouldBe ""
+    }
+
+    @Test
+    fun `a category sharing its line leaves the line breaks around it alone`() {
+        parse("Text [[Category:A]]\nmore").removeCategory("A").serialize() shouldBe "Text \nmore"
+        parse("Text\n[[Category:A]] more").removeCategory("A").serialize() shouldBe "Text\n more"
+        parse("{{t}}[[Category:A]]\nx").removeCategory("A").serialize() shouldBe "{{t}}\nx"
+    }
+
+    @Test
+    fun `only category links are removed or changed`() {
+        parse("[[A]] [[Category:A]]").removeCategory("A").serialize() shouldBe "[[A]] "
+        parse("[[B]] text [[Category:B]] [[Category:C]]").changeCategory("B", "D").serialize() shouldBe
+            "[[B]] text [[Category:D]] [[Category:C]]"
+    }
+
+    @Test
     fun `removing a category that is not there changes nothing`() {
         val before = "Text.\n[[Category:A]]\n"
 

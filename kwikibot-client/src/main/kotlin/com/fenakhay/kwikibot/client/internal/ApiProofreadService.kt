@@ -13,10 +13,10 @@ import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.SiteInfo
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.string
 import kotlinx.coroutines.flow.toList
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 internal class ApiProofreadService(
     transport: MediaWikiTransport,
@@ -45,7 +45,7 @@ internal class ApiProofreadService(
                 .toList()
                 .forEach { page ->
                     val ref = decoder.refOf(page) ?: return@forEach
-                    val level = page["proofread"]?.jsonObject?.get("quality")?.jsonPrimitive?.intOrNull
+                    val level = page.obj("proofread")?.int("quality")
                     ProofreadQuality.of(level ?: return@forEach)?.let { found[ref.title] = it }
                 }
         }
@@ -68,7 +68,7 @@ internal class ApiProofreadService(
                 .toList()
                 .firstOrNull() ?: return null
 
-        val index = page["proofread"]?.jsonObject?.get("index")?.jsonPrimitive?.content
+        val index = page.obj("proofread")?.string("index")
         return index?.let { decoder.refOf(it, INDEX_NAMESPACE) }
     }
 

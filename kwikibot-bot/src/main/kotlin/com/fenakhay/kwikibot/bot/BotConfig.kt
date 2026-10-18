@@ -372,12 +372,15 @@ public data class BotConfig(
          * Searched in the order of [searchPath]: the working directory first, so a bot in a checkout uses
          * that checkout's configuration rather than whatever is in the home directory.
          */
-        public fun find(explicit: Path? = null): BotConfig? {
+        public fun find(explicit: Path? = null): BotConfig? = find(explicit, searchPath())
+
+        /** [find] with [candidates] in place of [searchPath]. */
+        internal fun find(explicit: Path?, candidates: List<Path>): BotConfig? {
             explicit?.let {
                 check(it.exists()) { "no configuration at $it" }
                 return read(it)
             }
-            return searchPath().firstOrNull { it.exists() }?.let { read(it) }
+            return candidates.firstOrNull { it.exists() }?.let { read(it) }
         }
 
         /**

@@ -91,7 +91,7 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
                     // A `<b>` nothing closes would become a `'''` nothing closes, which means something else.
                     tag.selfClosing -> node
                     // `'''` ends at the end of its line, where a `<b>` goes on.
-                    tag.contents?.serialize()?.contains('\n') == true -> node
+                    tag.contents?.serialize().let { it.isNullOrEmpty() || '\n' in it } -> node
                     tag.name.equals("b", ignoreCase = true) -> tag.asMarkup("'''")
                     tag.name.equals("i", ignoreCase = true) -> tag.asMarkup("''")
                     else -> node
@@ -102,9 +102,11 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
         /**
          * `&nbsp;` and its kind left alone; everything else decoded.
          *
-         * Four of the five that stay mean something as markup — decoding `&lt;` would turn text into a tag.
-         * The fifth is `&nbsp;`, where decoding turns a deliberate non-breaking space into a character no
-         * later editor can tell from an ordinary one.
+         * Four of the five named ones that stay mean something as markup: decoding `&lt;` would turn text
+         * into a tag. The fifth is `&nbsp;`, where decoding turns a deliberate non-breaking space into a
+         * character no later editor can tell from an ordinary one. A numeric reference stays for the same
+         * reasons when it names an ASCII character, which is where all wiki markup lives (`&#124;` is a `|`
+         * that splits no template), a space, a control or formatting character, or no character at all.
          */
         public val HTML_ENTITIES: CosmeticPass = CosmeticPass { code ->
             code.mapNodes { node ->
@@ -191,7 +193,8 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
         private fun HtmlEntity.decoded(): String? =
             when {
                 value.lowercase() in KEEP_ENCODED -> null
-                numeric -> codePoint()?.let { String(Character.toChars(it)) }
+                numeric ->
+                    codePoint()?.takeIf { it.isPlainCharacter() }?.let { String(Character.toChars(it)) }
                 else -> NAMED[value.lowercase()]
             }
 
@@ -199,6 +202,25 @@ public class CosmeticChanges(private val passes: List<CosmeticPass>) {
             if (hexChar != null) value.toIntOrNull(HEX) else value.toIntOrNull()
 
         private const val HEX = 16
+
+        /** Whether this code point can be written out in place of its reference: a visible one past ASCII. */
+        private fun Int.isPlainCharacter(): Boolean =
+            this >= ASCII &&
+                Character.isValidCodePoint(this) &&
+                !Character.isSpaceChar(this) &&
+                Character.getType(this).toByte() !in UNSEEN
+
+        private const val ASCII = 128
+
+        /** The kinds of code point that show nothing an editor can see, or stand for no character. */
+        private val UNSEEN =
+            setOf(
+                Character.CONTROL,
+                Character.FORMAT,
+                Character.SURROGATE,
+                Character.PRIVATE_USE,
+                Character.UNASSIGNED,
+            )
 
         /**
          * The named entities worth decoding.

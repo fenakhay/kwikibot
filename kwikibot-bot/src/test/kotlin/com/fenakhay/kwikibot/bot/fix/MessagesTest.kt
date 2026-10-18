@@ -155,6 +155,198 @@ class MessagesTest {
     }
 
     @Test
+    fun `polish takes the many form for 21, where the slavic rule would take the one form`() {
+        val polish = Messages.of(mapOf("pl" to mapOf("n" to "{{PLURAL:$1|plik|pliki|plików}}")))
+
+        listOf(0, 1, 2, 4, 5, 12, 21, 22, 101, 112, 122).map { polish["n", "pl", it] } shouldBe
+            listOf(
+                "plików",
+                "plik",
+                "pliki",
+                "pliki",
+                "plików",
+                "plików",
+                "plików",
+                "pliki",
+                "plików",
+                "plików",
+                "pliki",
+            )
+    }
+
+    private fun twoForms(language: String) =
+        Messages.of(mapOf(language to mapOf("n" to "{{PLURAL:$1|one|other}}")))
+
+    private fun threeForms(language: String) =
+        Messages.of(mapOf(language to mapOf("n" to "{{PLURAL:$1|one|few|many}}")))
+
+    @Test
+    fun `french, armenian, lingala and brazilian portuguese take the singular for zero`() {
+        listOf("fr", "hy", "ln", "pt-br").forEach { language ->
+            val messages = twoForms(language)
+
+            listOf(0, 1, 2).map { messages["n", language, it] } shouldBe listOf("one", "one", "other")
+        }
+    }
+
+    @Test
+    fun `every slavic language picks one, few or many by the last two digits`() {
+        listOf("ru", "uk", "be", "sr", "hr", "bs").forEach { language ->
+            val messages = threeForms(language)
+
+            listOf(0, 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 111, 112, 122).map {
+                messages["n", language, it]
+            } shouldBe
+                listOf(
+                    "many",
+                    "one",
+                    "few",
+                    "few",
+                    "many",
+                    "many",
+                    "many",
+                    "many",
+                    "one",
+                    "few",
+                    "many",
+                    "many",
+                    "many",
+                    "few",
+                )
+        }
+    }
+
+    @Test
+    fun `japanese, chinese, korean, vietnamese and thai take their one form for any count`() {
+        listOf("ja", "zh", "ko", "vi", "th").forEach { language ->
+            val messages = twoForms(language)
+
+            listOf(1, 2, 7).map { messages["n", language, it] } shouldBe listOf("one", "one", "one")
+        }
+    }
+
+    @Test
+    fun `a language with no rule anywhere along its chain takes the english one`() {
+        val messages = twoForms("tlh")
+
+        listOf(0, 1, 2).map { messages["n", "tlh", it] } shouldBe listOf("other", "one", "other")
+    }
+
+    @Test
+    fun `a language with no rule of its own takes the rule of the language it falls back to`() {
+        val fallen =
+            Messages.of(
+                mapOf(
+                    "ar" to mapOf("n" to "{{PLURAL:$1|zero|one|two|few|many|other}}"),
+                    "be" to mapOf("n" to "{{PLURAL:$1|one|few|many}}"),
+                    "sr" to mapOf("n" to "{{PLURAL:$1|one|few|many}}"),
+                )
+            )
+
+        fallen["n", "arz", 0] shouldBe "zero"
+        fallen["n", "ary", 3] shouldBe "few"
+        fallen["n", "be-tarask", 5] shouldBe "many"
+        fallen["n", "sr-ec", 5] shouldBe "many"
+        fallen["n", "sr-el", 2] shouldBe "few"
+    }
+
+    private fun forms(language: String, vararg names: String) =
+        Messages.of(mapOf(language to mapOf("n" to names.joinToString("|", "{{PLURAL:$1|", "}}"))))
+
+    @Test
+    fun `a category only a fraction takes still holds its place among the forms`() {
+        val lithuanian = forms("lt", "one", "few", "many", "other")
+        val czech = forms("cs", "one", "few", "many", "other")
+
+        listOf(1, 2, 10, 21).map { lithuanian["n", "lt", it] } shouldBe listOf("one", "few", "other", "one")
+        listOf(1, 3, 5).map { czech["n", "cs", it] } shouldBe listOf("one", "few", "other")
+    }
+
+    @Test
+    fun `maltese has five forms, numbered as mediawiki numbers them`() {
+        val maltese = forms("mt", "one", "two", "few", "many", "other")
+
+        listOf(0, 1, 2, 3, 11, 20, 102, 103, 111).map { maltese["n", "mt", it] } shouldBe
+            listOf("few", "one", "two", "few", "many", "other", "other", "few", "many")
+    }
+
+    @Test
+    fun `welsh has a form for each of zero, one, two, few, many and other`() {
+        val welsh = forms("cy", "zero", "one", "two", "few", "many", "other")
+
+        listOf(0, 1, 2, 3, 4, 6).map { welsh["n", "cy", it] } shouldBe
+            listOf("zero", "one", "two", "few", "other", "many")
+    }
+
+    @Test
+    fun `french keeps its many form for millions`() {
+        val french = forms("fr", "one", "many", "other")
+
+        listOf(1, 2, 1_000_000).map { french["n", "fr", it] } shouldBe listOf("one", "other", "many")
+    }
+
+    @Test
+    fun `hebrew has a form for one, for two and for every other count`() {
+        val hebrew = forms("he", "one", "two", "other")
+
+        listOf(0, 1, 2, 20).map { hebrew["n", "he", it] } shouldBe listOf("other", "one", "two", "other")
+    }
+
+    @Test
+    fun `a variant takes its language's rule without a fallback naming it`() {
+        val variants =
+            Messages(
+                mapOf(
+                    "sr-ec" to mapOf("n" to "{{PLURAL:$1|one|few|other}}"),
+                    "be-tarask" to mapOf("n" to "{{PLURAL:$1|one|few|many}}"),
+                    "de-formal" to mapOf("n" to "{{PLURAL:$1|one|other}}"),
+                ),
+                fallbacks = emptyMap(),
+            )
+
+        variants["n", "sr-ec", 5] shouldBe "other"
+        variants["n", "be-tarask", 5] shouldBe "many"
+        variants["n", "de-formal", 0] shouldBe "other"
+    }
+
+    @Test
+    fun `bhojpuri under its old code and interslavic take the rules mediawiki gives them`() {
+        val bhojpuri = forms("bh", "one", "other")
+        val interslavic = forms("isv-latn", "one", "few", "other")
+
+        listOf(0, 1, 2).map { bhojpuri["n", "bh", it] } shouldBe listOf("one", "one", "other")
+        listOf(1, 2, 5).map { interslavic["n", "isv-latn", it] } shouldBe listOf("one", "few", "other")
+    }
+
+    @Test
+    fun `a message is there when its language or one it falls back to has it`() {
+        messages.has("added", "fr") shouldBe true
+        messages.has("english-only", "fr") shouldBe true
+    }
+
+    @Test
+    fun `a count naming no argument takes the last form, and a plural with no forms is empty`() {
+        val odd =
+            Messages.of(
+                mapOf(
+                    "en" to mapOf("named" to "{{PLURAL:${'$'}count|one|many}}", "bare" to "[{{PLURAL:$1}}]")
+                )
+            )
+
+        odd["named", "en", 1] shouldBe "many"
+        odd["bare", "en", 1] shouldBe "[]"
+    }
+
+    @Test
+    fun `a plural form containing a piped link is not cut at the link's pipe`() {
+        val linked =
+            Messages.of(mapOf("en" to mapOf("k" to "{{PLURAL:$1|[[term|one term]]|[[term|$1 terms]]}}")))
+
+        linked["k", "en", 1] shouldBe "[[term|one term]]"
+        linked["k", "en", 4] shouldBe "[[term|4 terms]]"
+    }
+
+    @Test
     fun `the languages a bundle carries are the ones it was given`() {
         messages.languages shouldBe setOf("en", "fr", "ru", "pt")
     }

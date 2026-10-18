@@ -9,11 +9,15 @@ import com.fenakhay.kwikibot.model.title.NamespaceInfo
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.TitleCase
 import com.fenakhay.kwikibot.model.user.TempAccountConfig
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.int
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -83,51 +87,58 @@ public data class SiteInfo(
          * Decodes a `meta=siteinfo` response.
          *
          * Tolerates a partial response: a query that asked for fewer properties yields empty namespace and
-         * interwiki maps rather than failing, since some callers only want the general block.
+         * interwiki maps rather than failing, since some callers only want the general block. The general
+         * block itself is required, since it is what names the wiki.
+         *
+         * @throws WikiError.Api with code `nositeinfo` for a response that does not name the wiki.
          */
         public fun decode(response: JsonObject): SiteInfo {
-            val query =
-                response["query"]?.jsonObject
-                    ?: throw WikiError.Api(
-                        "nositeinfo",
-                        "no query block in the siteinfo response",
-                        "query+siteinfo",
-                    )
-            val general = query["general"]?.jsonObject
+            val query = response.obj("query") ?: throw incomplete("no query block in the siteinfo response")
+            val general = query.obj("general") ?: JsonObject(emptyMap())
+            val siteName = general.string("sitename").orEmpty()
+            val wikiId = general.string("wikiid").orEmpty().ifEmpty { siteName }
+            if (wikiId.isEmpty()) throw incomplete("the siteinfo response names no wiki")
+            val host =
+                general
+                    .string("server")
+                    .orEmpty()
+                    .removePrefix("https:")
+                    .removePrefix("http:")
+                    .removePrefix("//")
 
             return SiteInfo(
-                id = WikiId(general.string("wikiid").ifEmpty { general.string("sitename") }),
-                siteName = general.string("sitename"),
-                language = LangCode(general.string("lang").ifEmpty { "en" }),
-                // The server is protocol-relative in the API ("//en.wikipedia.org").
-                server =
-                    general.string("server").removePrefix("https:").removePrefix("http:").removePrefix("//"),
-                articlePath = general.string("articlepath"),
-                mainPage = general.string("mainpage"),
-                generator = general.string("generator"),
+                id = WikiId(wikiId),
+                siteName = siteName,
+                language = LangCode(general.string("lang").orEmpty().ifEmpty { "en" }),
+                server = host,
+                articlePath = general.string("articlepath").orEmpty(),
+                mainPage = general.string("mainpage").orEmpty(),
+                generator = general.string("generator").orEmpty(),
                 namespaces = decodeNamespaces(query),
-                interwiki = decodeInterwiki(query, general.string("server")),
-                timezone = general.string("timezone").ifEmpty { "UTC" },
-                timeOffsetMinutes = general?.get("timeoffset")?.jsonPrimitive?.intOrNull ?: 0,
+                interwiki = decodeInterwiki(query, host),
+                timezone = general.string("timezone").orEmpty().ifEmpty { "UTC" },
+                timeOffsetMinutes = general.int("timeoffset") ?: 0,
                 extensions =
-                    query["extensions"]
-                        ?.jsonArray
-                        ?.map { it.jsonObject.string("name") }
-                        ?.filter { it.isNotEmpty() }
-                        .orEmpty(),
+                    query
+                        .array("extensions")
+                        .objects()
+                        .mapNotNull { it.string("name") }
+                        .filter { it.isNotEmpty() },
                 tempAccounts = decodeTempAccounts(query),
             )
         }
 
         private fun decodeNamespaces(query: JsonObject): NamespaceMap {
-            val entries = query["namespaces"]?.jsonObject ?: return NamespaceMap(emptyList())
+            val entries = query.obj("namespaces") ?: return NamespaceMap(emptyList())
 
             val aliases: Map<Int, List<String>> =
-                query["namespacealiases"]
-                    ?.jsonArray
-                    ?.map { it.jsonObject }
-                    ?.groupBy({ it["id"]!!.jsonPrimitive.int }, { it.string("alias") })
-                    .orEmpty()
+                query
+                    .array("namespacealiases")
+                    .objects()
+                    .groupBy(
+                        { it["id"]!!.jsonPrimitive.int },
+                        { it.string("alias").orEmpty() },
+                    )
 
             return NamespaceMap(
                 entries.values.map { element ->
@@ -135,11 +146,11 @@ public data class SiteInfo(
                     val id = namespace["id"]!!.jsonPrimitive.int
                     NamespaceInfo(
                         id = Namespace(id),
-                        canonicalName = namespace.string("canonical"),
-                        localName = namespace.string("name"),
+                        canonicalName = namespace.string("canonical").orEmpty(),
+                        localName = namespace.string("name").orEmpty(),
                         aliases = aliases[id].orEmpty(),
                         case = namespace.titleCase(),
-                        subpages = namespace["subpages"]?.jsonPrimitive?.booleanOrNull ?: false,
+                        subpages = namespace.flag("subpages"),
                     )
                 }
             )
@@ -151,13 +162,14 @@ public data class SiteInfo(
          * MediaWiki resolves a self-pointing prefix locally — `wikt:volcano` on en.wiktionary is the page
          * `volcano` — so the parser has to know which prefixes those are.
          */
-        private fun decodeInterwiki(query: JsonObject, server: String): InterwikiMap {
-            val rows = query["interwikimap"]?.jsonArray?.map { it.jsonObject } ?: return InterwikiMap.EMPTY
+        private fun decodeInterwiki(query: JsonObject, host: String): InterwikiMap {
+            val rows = query.array("interwikimap").objects()
 
-            val host = server.removePrefix("https:").removePrefix("http:").removePrefix("//")
-            val prefixes = rows.map { it.string("prefix") }
+            val prefixes = rows.mapNotNull { it.string("prefix") }
             val self =
-                rows.filter { host.isNotEmpty() && host in it.string("url") }.map { it.string("prefix") }
+                rows
+                    .filter { host.isNotEmpty() && host in it.string("url").orEmpty() }
+                    .mapNotNull { it.string("prefix") }
 
             return InterwikiMap(prefixes, self)
         }
@@ -169,15 +181,15 @@ public data class SiteInfo(
          * switched off.
          */
         private fun decodeTempAccounts(query: JsonObject): TempAccountConfig {
-            val block = query["autocreatetempuser"]?.jsonObject ?: return TempAccountConfig.DISABLED
+            val block = query.obj("autocreatetempuser") ?: return TempAccountConfig.DISABLED
 
             return TempAccountConfig(
-                enabled = block["enabled"]?.jsonPrimitive?.booleanOrNull ?: false,
-                matchPatterns = block["matchPatterns"]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty(),
+                enabled = block.flag("enabled"),
+                matchPatterns = block.array("matchPatterns").strings(),
             )
         }
 
-        private fun JsonObject?.string(key: String): String = this?.get(key)?.jsonPrimitive?.content.orEmpty()
+        private fun incomplete(reason: String) = WikiError.Api("nositeinfo", reason, "query+siteinfo")
 
         private fun JsonObject.titleCase(): TitleCase =
             if (string("case") == "case-sensitive") TitleCase.CASE_SENSITIVE else TitleCase.FIRST_LETTER

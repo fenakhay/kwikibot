@@ -7,7 +7,6 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.protocol.ParamInfo
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.appendText
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
@@ -41,7 +40,7 @@ public fun main(args: Array<String>) {
  * exit with: 1 when a wiki could not be read or a lane that fails on drift has drifted, 0 otherwise.
  */
 internal suspend fun writeOrCheckSurface(args: Array<String>, environment: ToolEnvironment): Int {
-    val options = Options.parse(args)
+    val options = Options.parse(args, environment.workingDirectory)
     val rendered =
         try {
             collect(options.lane, environment)
@@ -73,7 +72,7 @@ internal suspend fun writeOrCheckSurface(args: Array<String>, environment: ToolE
     environment
         .variables("GITHUB_STEP_SUMMARY")
         ?.takeIf { it.isNotEmpty() }
-        ?.let { Path(it).appendText(markdown + "\n") }
+        ?.let { environment.workingDirectory.resolve(it).appendText(markdown + "\n") }
 
     return if (!report.isEmpty && options.lane.failsOnDrift) 1 else 0
 }
@@ -89,7 +88,8 @@ private class Options(
         get() = if (lane == Lane.BETA) "wikiApiBetaDump" else "wikiApiDump"
 
     companion object {
-        fun parse(args: Array<String>): Options {
+        /** The options [args] give, with each file in them taken from [directory] unless it names its own. */
+        fun parse(args: Array<String>, directory: Path): Options {
             val valued = setOf("--lane", "--registry", "--report")
             val named =
                 args.toList().windowed(2).filter { (key, _) -> key in valued }.associate { (k, v) -> k to v }
@@ -100,14 +100,14 @@ private class Options(
 
             return Options(
                 target =
-                    Path(
+                    directory.resolve(
                         positional.firstOrNull()
                             ?: if (lane == Lane.BETA) "api-surface-beta.tsv" else "api-surface.tsv"
                     ),
                 checking = "--check" in args,
                 lane = lane,
-                registry = named["--registry"]?.let { Path(it) },
-                report = named["--report"]?.let { Path(it) },
+                registry = named["--registry"]?.let(directory::resolve),
+                report = named["--report"]?.let(directory::resolve),
             )
         }
     }

@@ -34,6 +34,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 class KtorTransportTest {
@@ -181,6 +182,36 @@ class KtorTransportTest {
 
         calls shouldBe 2
         currentTime shouldBe 30_000
+    }
+
+    @Test
+    fun `a Retry-After given as a date is left to the backoff curve`() = runTest {
+        val pauses = mutableListOf<Duration>()
+        val listener =
+            object : TransportListener {
+                override fun onPenalty(wait: Duration) {
+                    pauses += wait
+                }
+            }
+        var calls = 0
+        val transport =
+            transport(listener = listener) {
+                calls++
+                if (calls == 1) {
+                    respondError(
+                        HttpStatusCode.TooManyRequests,
+                        headers = headersOf(HttpHeaders.RetryAfter, "Wed, 21 Oct 2026 07:28:00 GMT"),
+                    )
+                } else {
+                    respondJson("""{"ok":true}""")
+                }
+            }
+
+        transport.call(ApiRequest.of("query"))
+
+        calls shouldBe 2
+        currentTime shouldBe 1_000
+        pauses shouldBe emptyList()
     }
 
     @Test
@@ -391,6 +422,28 @@ class KtorTransportTest {
         val body = transport.call(ApiRequest.of("query"))
 
         body.containsKey("error") shouldBe true
+    }
+
+    @Test
+    fun `an error block in a shape MediaWiki does not send is handed back once, as an answer`() = runTest {
+        val shapes =
+            listOf(
+                """{"errors":{}}""",
+                """{"errors":["maxlag"]}""",
+                """{"error":"maxlag"}""",
+                """{"errors":[{"code":null,"text":"Waiting for db1: 7 seconds lagged"}]}""",
+            )
+
+        for (shape in shapes) {
+            var calls = 0
+            val transport = transport {
+                calls++
+                respondJson(shape)
+            }
+
+            transport.call(ApiRequest.of("query")) shouldBe Json.parseToJsonElement(shape)
+            calls shouldBe 1
+        }
     }
 
     @Test
@@ -630,6 +683,22 @@ class KtorTransportTest {
         error.lag shouldBe 7.5.seconds
         error.host shouldBe "db1234"
         reasons shouldBe listOf("replication lag of 0s")
+    }
+
+    @Test
+    fun `lag the wiki reports without a message is waited out with no lag or host known`() = runTest {
+        var calls = 0
+        val transport =
+            transport(retry = RetryPolicy(maxRetries = 1, initialDelay = 1.seconds)) {
+                calls++
+                respondJson("""{"errors":[{"code":"maxlag","module":"main"}]}""")
+            }
+
+        val error = assertFailsWith<WikiError.Transport.Maxlag> { transport.call(ApiRequest.of("query")) }
+
+        error.lag shouldBe Duration.ZERO
+        error.host shouldBe null
+        calls shouldBe 2
     }
 
     @Test

@@ -147,4 +147,23 @@ class ProofreadServiceTest {
         wiki.proofread.pagesOf(wiki.ref("Index:Book.djvu")).map { it.title.text } shouldContainExactly
             listOf("Book.djvu/1", "Book.djvu/2")
     }
+
+    @Test
+    fun `a page with no title or with a level the extension does not have is left out`() = runTest {
+        val wiki = wiki {
+            """{"query":{"pages":[
+               {"ns":104,"proofread":{"quality":4}},
+               {"ns":104,"title":"Page:Book.djvu/2","proofread":{"quality":7}}]}}"""
+        }
+
+        wiki.proofread.quality(listOf(wiki.ref("Page:Book.djvu/1"), wiki.ref("Page:Book.djvu/2"))) shouldBe
+            emptyMap()
+    }
+
+    @Test
+    fun `a page the wiki says nothing about has no index`() = runTest {
+        val wiki = wiki { """{"query":{"pages":[]}}""" }
+
+        wiki.proofread.indexOf(wiki.ref("Page:Loose.djvu/1")).shouldBeNull()
+    }
 }

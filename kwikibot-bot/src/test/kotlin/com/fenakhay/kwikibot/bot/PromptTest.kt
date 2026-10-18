@@ -101,8 +101,59 @@ class PromptTest {
     }
 
     @Test
+    fun `an empty scripted answer is the enter key, and takes the default`() = runTest {
+        val prompt = ScriptedPrompt(listOf("", "", "", ""))
+
+        prompt.confirm("Save?", default = true) shouldBe true
+        prompt.confirm("Save?", default = false) shouldBe false
+        prompt.choose("What now?", choices) shouldBe "skip"
+        prompt.text("Summary?", default = "none") shouldBe "none"
+    }
+
+    @Test
     fun `a choice is matched by its key, whatever case it was typed in`() = runTest {
         ScriptedPrompt(listOf("Q")).choose("What now?", choices) shouldBe "quit"
+    }
+
+    @Test
+    fun `a terminal prompt takes yes and no in full or by their first letter`() = runTest {
+        val typed = ArrayDeque(listOf("yes", "Y", "no", "n"))
+        val prompt = TerminalPrompt(output = {}, input = { typed.removeFirst() })
+
+        listOf(
+            prompt.confirm("1?"),
+            prompt.confirm("2?"),
+            prompt.confirm("3?", true),
+            prompt.confirm("4?", true),
+        ) shouldBe listOf(true, true, false, false)
+    }
+
+    @Test
+    fun `a key that names no choice is asked again`() = runTest {
+        val typed = ArrayDeque(listOf("z", "", " Q "))
+        val shown = mutableListOf<String>()
+        val prompt = TerminalPrompt(output = { shown += it }, input = { typed.removeFirst() })
+
+        prompt.choose("What?", choices) shouldBe "quit"
+        shown.size shouldBe 3
+        shown.first() shouldBe "What? (s = skip, e = edit, q = quit) "
+    }
+
+    @Test
+    fun `a text answer is trimmed, an empty one takes the default, and the default is shown`() = runTest {
+        val typed = ArrayDeque(listOf("  lava  ", " "))
+        val shown = mutableListOf<String>()
+        val prompt = TerminalPrompt(output = { shown += it }, input = { typed.removeFirst() })
+
+        prompt.text("Title?") shouldBe "lava"
+        prompt.text("Summary?", default = "none") shouldBe "none"
+        shown shouldBe listOf("Title? ", "Summary? [none] ")
+    }
+
+    @Test
+    fun `an unattended text question takes the configured answer before the question's default`() = runTest {
+        NonInteractive(textAnswer = "unattended").text("Summary?", default = "none") shouldBe "unattended"
+        NonInteractive().text("Summary?", default = "none") shouldBe "none"
     }
 
     @Test

@@ -14,7 +14,10 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 
@@ -185,6 +188,72 @@ class ExternalSourcesTest {
         source.pages(FakeWiki()).toList().map { it.title.text } shouldBe listOf("Volcano")
         url shouldBe SparqlClient.COMMONS
         cookie shouldBe "wcqsOauth=token"
+    }
+
+    @Test
+    fun `titles the wiki rejects, blank lines and unbound rows are passed over`() = runTest {
+        val wiki = FakeWiki()
+        val answers =
+            mapOf(
+                "petscan.wmcloud.org" to "Volcano\n\n  \nBad[title\nMount Etna",
+                "pagepile.toolforge.org" to
+                    """{"status":"OK","pages":["Volcano","Bad[title","Mount Etna"]}""",
+                "query.wikidata.org" to
+                    "?title\t?item\n\"Volcano\"\t<a>\n\t<b>\n\"Bad[title\"\t<c>\n\"Mount Etna\"\t<d>",
+            )
+        val client =
+            HttpClient(
+                MockEngine { request ->
+                    respond(
+                        answers.getValue(request.url.host),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "text/plain"),
+                    )
+                }
+            )
+        val sources =
+            listOf(
+                ExternalSources.petScan("7", client, userAgent),
+                ExternalSources.petScan(mapOf("language" to "en"), client, userAgent),
+                ExternalSources.pagePile("42", client, userAgent),
+                ExternalSources.sparql("SELECT ?title ?item WHERE {}", client, userAgent),
+            )
+
+        sources.forEach { source ->
+            source.pages(wiki).toList().map { it.title.text } shouldBe listOf("Volcano", "Mount Etna")
+        }
+    }
+
+    private fun spooled(): Set<Path> =
+        Files.list(Path.of(System.getProperty("java.io.tmpdir"))).use { files ->
+            files.filter { it.fileName.toString().startsWith("petscan-") }.toList().toSet()
+        }
+
+    @Test
+    fun `the petscan answer is deleted from disk even when reading it fails`() = runTest {
+        val client = HttpClient(MockEngine { respondPlain("Volcano") })
+        val before = spooled()
+        var during = emptySet<Path>()
+
+        val failure =
+            assertFailsWith<IllegalStateException> {
+                ExternalSources.withPetScanTitles(mapOf("psid" to "7"), client, userAgent) { titles ->
+                    during = spooled()
+                    error("the bot could not use ${titles.first()}")
+                }
+            }
+
+        failure.message shouldBe "the bot could not use Volcano"
+        (during - before).size shouldBe 1
+        spooled() shouldBe before
+    }
+
+    @Test
+    fun `a pagepile answer whose pages are not all titles keeps the ones that are`() {
+        ExternalSources.titlesFromPagePile(
+            """{"pages":["Volcano",null,{"title":"x"},"Mount Etna"]}"""
+        ) shouldBe listOf("Volcano", "Mount Etna")
+        ExternalSources.titlesFromPagePile("""{"pages":"Volcano"}""") shouldBe emptyList()
     }
 
     /** What PetScan answers with `format=plain`: one title per line. */

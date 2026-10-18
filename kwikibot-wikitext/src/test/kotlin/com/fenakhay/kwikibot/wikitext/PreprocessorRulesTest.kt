@@ -253,6 +253,21 @@ class PreprocessorRulesTest {
     }
 
     @Test
+    fun `the format of a pre is read the way MediaWiki decodes tag attributes`() {
+        fun readsWikitext(attributes: String): Boolean =
+            parse("<pre$attributes>{{t}}</pre>").templates().size == 1
+
+        readsWikitext("\tformat\n=\r'wikitext'\u000C") shouldBe true
+        readsWikitext(" /format=\"wikitext\"") shouldBe true
+        readsWikitext(" format=\"&#x77;ikitext") shouldBe true
+        readsWikitext(" format=") shouldBe false
+        readsWikitext(" format/=\"wikitext\"") shouldBe false
+        readsWikitext(" formats=\"wikitext\" formal=\"wikitext\"") shouldBe false
+        readsWikitext(" format=\"wikitext&#x110000;\"") shouldBe false
+        readsWikitext(" format=\"wikitext&#99999999999;\"") shouldBe false
+    }
+
+    @Test
     fun `an inputbox expands templates in its settings and nothing else`() {
         val box = parse("<inputbox>type=search\ndefault={{t}} [[a]] '''b'''</inputbox>")
 
@@ -319,6 +334,15 @@ class PreprocessorRulesTest {
             .single()
             .shouldBeInstanceOf<ExternalLink>()
             .separator shouldBe ""
+    }
+
+    @Test
+    fun `a wiki's own URL schemes make links, and one that cannot begin a URL makes none`() {
+        val options = ParseOptions(protocols = listOf("gopher://", "", "ünï://"))
+
+        Wikitext.parse("gopher://example.org", options).nodes.single().shouldBeInstanceOf<ExternalLink>()
+        Wikitext.parse("https://example.org", options).nodes shouldBe listOf(TextNode("https://example.org"))
+        Wikitext.parse("ünï://example.org", options).nodes shouldBe listOf(TextNode("ünï://example.org"))
     }
 
     @Test

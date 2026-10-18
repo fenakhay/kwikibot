@@ -18,16 +18,17 @@ import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.ParamInfo
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.throwOnError
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 internal class ApiRenderService(
     private val transport: MediaWikiTransport,
@@ -74,18 +75,18 @@ internal class ApiRenderService(
                 )
                 .throwOnError()
 
-        val parsed = response["parse"]?.jsonObject ?: return ParsedPage()
+        val parsed = response.obj("parse") ?: return ParsedPage()
 
         return ParsedPage(
-            html = parsed["text"]?.jsonPrimitive?.content,
+            html = parsed.string("text"),
             sections = parsed.sections(),
-            links = parsed.array("links").mapNotNull { it.jsonObject.toLink() },
-            templates = parsed.array("templates").mapNotNull { it.jsonObject.toLink() },
-            categories = parsed.array("categories").mapNotNull { it.jsonObject.toCategory() },
-            images = parsed.array("images").mapNotNull { it.name()?.toFile() },
-            externalLinks = parsed.array("externallinks").mapNotNull { it.name() },
-            revision = parsed["revid"]?.jsonPrimitive?.longOrNull?.let { RevisionId(it) },
-            limitReport = (parsed["limitreportdata"] as? JsonArray)?.let { limitReport(it) },
+            links = parsed.array("links").objects().mapNotNull { it.toLink() },
+            templates = parsed.array("templates").objects().mapNotNull { it.toLink() },
+            categories = parsed.array("categories").objects().mapNotNull { it.toCategory() },
+            images = parsed.array("images").strings().filter { it.isNotEmpty() }.mapNotNull { it.toFile() },
+            externalLinks = parsed.array("externallinks").strings().filter { it.isNotEmpty() },
+            revision = parsed.long("revid")?.let { RevisionId(it) },
+            limitReport = parsed.array("limitreportdata")?.let { limitReport(it) },
         )
     }
 
@@ -95,12 +96,13 @@ internal class ApiRenderService(
      */
     private fun limitReport(rows: JsonArray): LimitReport =
         LimitReport(
-            rows
-                .mapNotNull { it as? JsonObject }
-                .associate { row ->
-                    row.text("name") to
-                        row.keys.mapNotNull { it.toIntOrNull() }.sorted().map { row.text(it.toString()) }
-                }
+            rows.objects().associate { row ->
+                row.string("name").orEmpty() to
+                    row.keys
+                        .mapNotNull { it.toIntOrNull() }
+                        .sorted()
+                        .map { row.string(it.toString()).orEmpty() }
+            }
         )
 
     /** What is parsed: a saved page, or text, which needs a title for relative links to resolve against. */
@@ -121,8 +123,6 @@ internal class ApiRenderService(
     private suspend fun wire(property: ParseProperty): List<String> =
         property.choice?.let { capabilities.resolve(it) } ?: listOf(property.apiValue)
 
-    private fun JsonObject.array(key: String): List<JsonElement> = (this[key] as? JsonArray).orEmpty()
-
     /**
      * The headings, from whichever of the two shapes the wiki answered with.
      *
@@ -131,30 +131,30 @@ internal class ApiRenderService(
      * default.
      */
     private fun JsonObject.sections(): List<RenderedSection> {
-        val toc = (this["tocdata"] as? JsonObject)?.array("sections")
-        return toc?.map { it.jsonObject.fromTocData() } ?: array("sections").map { it.jsonObject.toSection() }
+        val toc = obj("tocdata") ?: return array("sections").objects().map { it.toSection() }
+        return toc.array("sections").objects().map { it.fromTocData() }
     }
 
     private fun JsonObject.fromTocData() =
         RenderedSection(
-            index = text("index"),
-            heading = text("line"),
+            index = string("index").orEmpty(),
+            heading = string("line").orEmpty(),
             // -1 is how the table of contents says it does not know, and it then leaves the key out.
             level = int("hLevel")?.takeIf { it >= 0 } ?: 0,
             tocLevel = int("tocLevel") ?: 0,
-            number = text("number"),
-            anchor = text("anchor"),
+            number = string("number").orEmpty(),
+            anchor = string("anchor").orEmpty(),
             byteOffset = int("codepointOffset"),
         )
 
     private fun JsonObject.toSection() =
         RenderedSection(
-            index = text("index"),
-            heading = text("line"),
-            level = text("level").toIntOrNull() ?: 0,
+            index = string("index").orEmpty(),
+            heading = string("line").orEmpty(),
+            level = int("level") ?: 0,
             tocLevel = int("toclevel") ?: 0,
-            number = text("number"),
-            anchor = text("anchor"),
+            number = string("number").orEmpty(),
+            anchor = string("anchor").orEmpty(),
             byteOffset = int("byteoffset"),
         )
 
@@ -162,7 +162,7 @@ internal class ApiRenderService(
         val page = decoder.refOf(this) ?: return null
         // A real boolean, and false is sent rather than omitted. Testing for the key's presence
         // reports every red link as existing, which is the answer backwards.
-        return ResolvedLink(page = page, exists = this["exists"]?.jsonPrimitive?.booleanOrNull == true)
+        return ResolvedLink(page = page, exists = flag("exists"))
     }
 
     /**
@@ -172,23 +172,12 @@ internal class ApiRenderService(
      * normalised here rather than left for the caller to trip over.
      */
     private fun JsonObject.toCategory(): PageRef? =
-        text("category")
-            .takeIf { it.isNotEmpty() }
+        string("category")
+            ?.takeIf { it.isNotEmpty() }
             ?.let { decoder.refOf(it.replace('_', ' '), Namespace.CATEGORY.id) }
 
     /** A file entry, which arrives as a database key as a category does, and is normalised the same way. */
     private fun String.toFile(): PageRef? = decoder.refOf(replace('_', ' '), Namespace.FILE.id)
-
-    private fun JsonElement.name(): String? = runCatching {
-        jsonPrimitive.content
-    }
-        .getOrNull()
-        ?.takeIf { it.isNotEmpty() }
-
-    private fun JsonObject.text(key: String): String =
-        this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }.orEmpty()
-
-    private fun JsonObject.int(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
 
     private companion object {
         const val WIKITEXT = "wikitext"

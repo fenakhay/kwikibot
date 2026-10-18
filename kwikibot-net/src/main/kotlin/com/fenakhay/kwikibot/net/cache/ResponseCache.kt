@@ -1,5 +1,7 @@
 package com.fenakhay.kwikibot.net.cache
 
+import com.fenakhay.kwikibot.net.long
+import com.fenakhay.kwikibot.net.obj
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -16,8 +18,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 
 /**
@@ -98,16 +98,17 @@ public class DiskCache(
         if (!file.exists()) return null
 
         val entry = runCatching { json.parseToJsonElement(file.readText()).jsonObject }.getOrNull()
-        val storedAt = entry?.get("storedAt")?.jsonPrimitive?.longOrNull
+        val storedAt = entry?.long("storedAt")
+        val response = entry?.obj("response")
 
-        // A file that cannot be read, or does not say when it was written, or is older than the
-        // time to live, is a miss — and is deleted rather than left to be re-read every run.
-        if (storedAt == null || !isFresh(storedAt)) {
+        // A file that cannot be read, does not say when it was written or what was answered, or is older
+        // than the time to live, is a miss. It is deleted so the next run does not read it again.
+        if (storedAt == null || response == null || !isFresh(storedAt)) {
             file.deleteQuietly()
             return null
         }
 
-        return entry["response"]?.jsonObject
+        return response
     }
 
     /**

@@ -8,19 +8,15 @@ import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.util.zip.GZIPOutputStream
-import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
@@ -93,7 +89,7 @@ public fun main(args: Array<String>) {
 
 /** What [main] does with [args], asking the wikis and printing through [environment]. */
 internal suspend fun recordLargePages(args: Array<String>, environment: ToolEnvironment) {
-    val target = Path(args.firstOrNull() ?: "large-pages.json.gz")
+    val target = environment.workingDirectory.resolve(args.firstOrNull() ?: "large-pages.json.gz")
     val document = record(environment)
 
     withContext(Dispatchers.IO) {
@@ -162,7 +158,8 @@ private suspend fun record(environment: ToolEnvironment): String {
  * Asks for a batch of pages over [MIN_PAGE_BYTES], with their wikitext.
  *
  * `list=allpages` walks in title order, so the result is the alphabetically first large pages from [from] on.
- * The sample is biased, which is fine here: these pages are only timed.
+ * The sample is biased, which is fine here: these pages are only timed. A page is measured in bytes, as
+ * `gapminsize` measures it, and kept only from [MIN_PAGE_BYTES] to [MAX_PAGE_BYTES].
  */
 private suspend fun largePages(
     transport: MediaWikiTransport,
@@ -187,26 +184,8 @@ private suspend fun largePages(
             )
             .throwOnError()
 
-    val pages = response["query"]?.jsonObject?.get("pages") as? JsonArray ?: return emptyList()
-
-    return pages.mapNotNull { entry ->
-        val page = entry.jsonObject
-        val title = page["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
-        val slot =
-            (page["revisions"] as? JsonArray)
-                ?.firstOrNull()
-                ?.jsonObject
-                ?.get("slots")
-                ?.jsonObject
-                ?.get("main")
-                ?.jsonObject ?: return@mapNotNull null
-
-        if (slot["contentmodel"]?.jsonPrimitive?.content != "wikitext") return@mapNotNull null
-        val text = slot["content"]?.jsonPrimitive?.content ?: return@mapNotNull null
-        // In bytes, as gapminsize counts them.
-        if (text.encodeToByteArray().size !in MIN_PAGE_BYTES..MAX_PAGE_BYTES) return@mapNotNull null
-
-        title to text
+    return wikitexts(response).filter { (_, text) ->
+        text.encodeToByteArray().size in MIN_PAGE_BYTES..MAX_PAGE_BYTES
     }
 }
 

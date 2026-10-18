@@ -18,17 +18,17 @@ import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.throwOnError
 import com.fenakhay.kwikibot.wikitext.MagicWords
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 internal class ApiRevisionService(
     private val transport: MediaWikiTransport,
@@ -62,17 +62,9 @@ internal class ApiRevisionService(
                 "rvend" to end?.let { MwTimestamp.format(it) },
                 "rvuser" to user,
                 "rvexcludeuser" to excludeUser,
-                "rvlimit" to apiLimit(limit),
+                "rvlimit" to limitParam(limit),
             )
-
-        val revisions = flow {
-            continuation.pages(request).collect { entry ->
-                entry["revisions"]?.jsonArray?.forEach {
-                    emit(decoder.decodeRevision(it.jsonObject))
-                }
-            }
-        }
-        return if (limit == null) revisions else revisions.take(limit)
+        return revisionsIn(continuation.pages(request), limit)
     }
 
     override fun allRevisions(
@@ -92,7 +84,7 @@ internal class ApiRevisionService(
             "arvstart" to start?.let { MwTimestamp.format(it) },
             "arvend" to end?.let { MwTimestamp.format(it) },
             "arvprop" to Registry.ALL_REVISIONS.joined,
-            "arvlimit" to apiLimit(limit),
+            "arvlimit" to limitParam(limit),
         )
 
     override fun allDeletedRevisions(
@@ -112,7 +104,7 @@ internal class ApiRevisionService(
             "adrstart" to start?.let { MwTimestamp.format(it) },
             "adrend" to end?.let { MwTimestamp.format(it) },
             "adrprop" to Registry.ALL_DELETED_REVISIONS.joined,
-            "adrlimit" to apiLimit(limit),
+            "adrlimit" to limitParam(limit),
         )
 
     override fun deletedHistory(
@@ -127,7 +119,7 @@ internal class ApiRevisionService(
                 "titles" to namespaces.format(page.title),
                 "drvprop" to Registry.DELETED_REVISIONS.joined,
                 "drvdir" to order.apiValue,
-                "drvlimit" to apiLimit(limit),
+                "drvlimit" to limitParam(limit),
             )
         // A page module answers under its own name, where the list modules say "revisions".
         return revisionsIn(continuation.pages(request), limit, "deletedrevisions")
@@ -155,13 +147,9 @@ internal class ApiRevisionService(
         key: String = "revisions",
     ): Flow<Revision> {
         val revisions = flow {
-            pages.collect { entry ->
-                entry[key]?.jsonArray?.forEach {
-                    emit(decoder.decodeRevision(it.jsonObject))
-                }
-            }
+            pages.collect { entry -> entry.array(key).objects().forEach { emit(decoder.decodeRevision(it)) } }
         }
-        return if (limit == null) revisions else revisions.take(limit)
+        return revisions.limitedTo(limit)
     }
 
     override suspend fun contentAt(revision: RevisionId): PageContent? =
@@ -207,8 +195,8 @@ internal class ApiRevisionService(
                 )
                 .toList()
                 .forEach { entry ->
-                    entry["revisions"]?.jsonArray?.forEach {
-                        val revision = decoder.decodeRevision(it.jsonObject)
+                    entry.array("revisions").objects().forEach {
+                        val revision = decoder.decodeRevision(it)
                         found[revision.id] = revision
                     }
                 }
@@ -228,7 +216,7 @@ internal class ApiRevisionService(
                 )
                 .throwOnError()
 
-        return response["compare"]?.jsonObject?.get("body")?.jsonPrimitive?.content.orEmpty()
+        return response.obj("compare")?.string("body").orEmpty()
     }
 
     override suspend fun revisionDelete(
@@ -278,16 +266,7 @@ internal class ApiRevisionService(
             caseInsensitive.any { start.startsWith(it, ignoreCase = true) }
     }
 
-    /**
-     * How many revisions to ask for per request.
-     *
-     * `max` lets the wiki decide, which is 500 for a bot account and 50 for anyone else.
-     */
-    private fun apiLimit(limit: Int?): String =
-        if (limit != null && limit < MAX_BATCH) limit.toString() else "max"
-
     private companion object {
         const val DEFAULT_BATCH = 50
-        const val MAX_BATCH = 500
     }
 }

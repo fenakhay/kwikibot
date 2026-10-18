@@ -78,7 +78,7 @@ public class Messages(
 
             val body = text.substring(start + PLURAL_OPEN.length, end)
             val parts = splitTopLevel(body)
-            val countText = parts.firstOrNull().orEmpty().trim()
+            val countText = parts.first().trim()
             val forms = parts.drop(1)
 
             val count = resolveCount(countText, arguments)
@@ -141,7 +141,7 @@ public class Messages(
         if (!countText.startsWith("$")) return countText.toLongOrNull()
 
         val index = countText.drop(1).toIntOrNull()?.minus(1) ?: return null
-        return arguments.getOrNull(index)?.toString()?.toLongOrNull()
+        return arguments.getOrNull(index)?.let { it.toString().toLongOrNull() }
     }
 
     /**
@@ -174,76 +174,19 @@ public class Messages(
     }
 
     /**
-     * Which of [forms] a count takes in [language].
+     * Which of [forms] a count takes in [language], by its CLDR plural rule.
      *
-     * The rules are the ones that differ in a way a bot summary notices. A language this does not know uses
-     * the English rule, which is what MediaWiki does with an unconfigured language and what a two-form bundle
-     * expects anyway.
+     * A language CLDR has no rule for takes the rule of the first language in its [chain] that has one, as
+     * MediaWiki does with its fallbacks: Egyptian Arabic counts as Arabic. The chain ends in English, which
+     * has one.
      */
     private fun pluralForm(count: Long, forms: List<String>, language: String): String {
-        val index =
-            when (language) {
-                // French and Brazilian Portuguese: zero takes the singular.
-                "fr",
-                "hy",
-                "ln",
-                "pt-br" -> if (count <= 1) 0 else 1
-
-                // Russian, Ukrainian and their neighbours: one, few, many.
-                "ru",
-                "uk",
-                "be",
-                "sr",
-                "hr",
-                "bs" -> slavicIndex(count)
-
-                // Polish, which agrees with the Slavic rule but not with itself on 1.
-                "pl" -> if (count == 1L) 0 else slavicIndex(count).coerceAtLeast(1)
-
-                // Arabic distinguishes zero, one, two, few, many and other.
-                "ar" -> arabicIndex(count)
-
-                // Japanese, Chinese, Korean, Vietnamese and Thai have one form.
-                "ja",
-                "zh",
-                "ko",
-                "vi",
-                "th" -> 0
-
-                else -> if (count == 1L) 0 else 1
-            }
+        val index = chain(language).asSequence().mapNotNull { PluralForms.index(count, it) }.first()
 
         // A bundle that supplies fewer forms than the language has gets its last one, which is
         // the general case in every language that has one.
-        return forms.getOrElse(index) { forms.last() }
+        return forms.getOrNull(index) ?: forms.last()
     }
-
-    private fun slavicIndex(count: Long): Int {
-        val last = count % TEN
-        val lastTwo = count % HUNDRED
-
-        return when {
-            last == 1L && lastTwo != ELEVEN -> 0
-            last in 2..FOUR && lastTwo !in TEENS -> 1
-            else -> 2
-        }
-    }
-
-    /**
-     * Arabic has six forms: zero, one, two, few, many and other.
-     *
-     * The indices are named because "3" meaning "the few form" is exactly the kind of number that gets edited
-     * into the wrong branch a year later.
-     */
-    private fun arabicIndex(count: Long): Int =
-        when {
-            count == 0L -> ZERO_FORM
-            count == 1L -> ONE_FORM
-            count == 2L -> TWO_FORM
-            count % HUNDRED in THREE..TEN -> FEW_FORM
-            count % HUNDRED >= ELEVEN -> MANY_FORM
-            else -> OTHER_FORM
-        }
 
     /** The message bundles that ship with the library. */
     public companion object {
@@ -252,20 +195,6 @@ public class Messages(
 
         private const val PLURAL_OPEN = "{{PLURAL:"
         private const val CLOSE = "}}"
-        private const val TEN = 10L
-        private const val HUNDRED = 100L
-        private const val ELEVEN = 11L
-        private const val THREE = 3L
-        private const val FOUR = 4L
-
-        // The six Arabic plural forms, in the order a bundle lists them.
-        private const val ZERO_FORM = 0
-        private const val ONE_FORM = 1
-        private const val TWO_FORM = 2
-        private const val FEW_FORM = 3
-        private const val MANY_FORM = 4
-        private const val OTHER_FORM = 5
-        private val TEENS = 12L..14L
 
         /**
          * Which language to try when one has no message.

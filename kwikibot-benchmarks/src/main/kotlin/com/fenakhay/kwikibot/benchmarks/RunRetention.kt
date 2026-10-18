@@ -8,6 +8,7 @@ import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.Title
 import com.fenakhay.kwikibot.testkit.FakePageService
+import java.util.Locale
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.runBlocking
 
@@ -17,15 +18,22 @@ import kotlinx.coroutines.runBlocking
  * The heap is read with the report held and again with it dropped; the gap is what the report costs.
  */
 public fun main() {
-    val pages = PAGES
+    measureRetention(PAGES, SENTENCES, System.out, ::heapInUse)
+}
+
+/**
+ * What [main] does: a dry run over [pages] pages of [sentences] sentences each, printing to [out] what the
+ * report it returns holds, as the difference between two readings of [heapInUse].
+ */
+internal fun measureRetention(pages: Int, sentences: Int, out: Appendable, heapInUse: () -> Long) {
     val wiki = WikiId("testwiki")
-    val text = "the text of a page, long enough to be worth counting. ".repeat(SENTENCES)
+    val text = "the text of a page, long enough to be worth counting. ".repeat(sentences)
 
     val service = FakePageService((1..pages).associate { "page$it" to text })
     val refs = (1..pages).map { PageRef(wiki, Title.Local(Namespace.MAIN, "page$it")) }
 
     val megabytes = pages.toLong() * text.length / KB / KB
-    println("pages: $pages, ${text.length} chars each, $megabytes MB of text")
+    out.appendLine("pages: $pages, ${text.length} chars each, $megabytes MB of text")
 
     // A dry run, which is the default: a `Pending` carries the new text and the old.
     var report: BotReport? = runBlocking {
@@ -35,21 +43,23 @@ public fun main() {
         }
     }
 
-    println("run: $report")
+    out.appendLine("run: $report")
 
-    val holding = used()
+    val holding = heapInUse()
     report = null
-    val released = used()
+    val released = heapInUse()
 
-    println()
-    println("heap with the report held:    %,d KB".format(holding / KB))
-    println("heap with the report dropped: %,d KB".format(released / KB))
-    val kept = (holding - released).coerceAtLeast(0) / KB
-    println("the report was holding:       %,d KB".format(kept))
+    out.appendLine()
+    out.appendLine("heap with the report held:    ${kilobytes(holding)} KB")
+    out.appendLine("heap with the report dropped: ${kilobytes(released)} KB")
+    out.appendLine("the report was holding:       ${kilobytes((holding - released).coerceAtLeast(0))} KB")
 }
 
+/** [bytes] in whole kilobytes, grouped in thousands the same way on every machine. */
+private fun kilobytes(bytes: Long): String = "%,d".format(Locale.ROOT, bytes / KB)
+
 /** Heap in use, after requesting a collection [GC_ROUNDS] times with [GC_PAUSE] ms between each. */
-private fun used(): Long {
+internal fun heapInUse(): Long {
     val runtime = Runtime.getRuntime()
     repeat(GC_ROUNDS) {
         System.gc()

@@ -180,6 +180,105 @@ class ParamInfoTest {
         requests shouldBe 1
     }
 
+    @Test
+    fun `every question about a module this wiki does not have answers nothing`() = runTest {
+        val info = paramInfo {
+            respondJson("""{"paraminfo":{"modules":[{"name":"nope","path":"query+nope","missing":true}]}}""")
+        }
+
+        info.limit("query+nope", "limit", highLimits = true).shouldBeNull()
+        info.supports("query+nope", "limit") shouldBe false
+        info.values("query+nope", "type").shouldBeNull()
+        info.isDeprecated("query+nope", "type", "x") shouldBe false
+    }
+
+    @Test
+    fun `a parameter this wiki does not have has no limit`() = runTest {
+        val info = paramInfo { respondJson(categoryMembers) }
+
+        info.limit("query+categorymembers", "sort", highLimits = false).shouldBeNull()
+    }
+
+    @Test
+    fun `a high limit falls back to the ordinary one when the wiki gives only that`() = runTest {
+        val info = paramInfo {
+            respondJson(
+                """{"paraminfo":{"modules":[{"name":"search","path":"query+search","parameters":[
+                   {"name":"limit","type":"limit","max":500}]}]}}"""
+            )
+        }
+
+        info.limit("query+search", "limit", highLimits = true) shouldBe 500
+    }
+
+    @Test
+    fun `an answer that describes no module is no module`() = runTest {
+        val info = paramInfo { respondJson("""{"paraminfo":{"modules":[]}}""") }
+
+        info.module("query+nope").shouldBeNull()
+    }
+
+    @Test
+    fun `a module described by nothing but its existence decodes with every default`() = runTest {
+        val info = paramInfo {
+            respondJson("""{"paraminfo":{"modules":[{"parameters":[{"name":"title"}]}]}}""")
+        }
+
+        info.module("edit") shouldBe
+            ModuleDescription(
+                name = "edit",
+                path = "edit",
+                parameters = mapOf("title" to ParamDescription("title")),
+                isWrite = false,
+                mustBePosted = false,
+                source = null,
+                sourceName = null,
+                group = null,
+                prefix = "",
+                deprecated = false,
+                internal = false,
+            )
+    }
+
+    @Test
+    fun `a module that must be posted is a write, whether or not it says so`() = runTest {
+        val info = paramInfo {
+            respondJson(
+                """{"paraminfo":{"modules":[
+                   {"name":"edit","path":"edit","mustbeposted":true,"writerights":true},
+                   {"name":"login","path":"login","mustbeposted":true},
+                   {"name":"parse","path":"parse","deprecated":true,"internal":true}]}}"""
+            )
+        }
+
+        val described = info.modules("edit", "login", "parse").associateBy { it.path }
+
+        described.mapValues { (_, module) -> module.isWrite to module.mustBePosted } shouldBe
+            mapOf("edit" to (true to true), "login" to (true to true), "parse" to (false to false))
+        described.getValue("parse").deprecated shouldBe true
+        described.getValue("parse").internal shouldBe true
+    }
+
+    @Test
+    fun `a listed module without its own name is named by its path`() = runTest {
+        val info = paramInfo { respondJson("""{"paraminfo":{"modules":[{"path":"query+allpages"}]}}""") }
+
+        info.modules("query+allpages").map { it.name } shouldBe listOf("query+allpages")
+    }
+
+    @Test
+    fun `listing modules joins their descriptions to the cache`() = runTest {
+        var requests = 0
+        val info = paramInfo {
+            requests++
+            respondJson(categoryMembers)
+        }
+
+        info.modules("query+*").map { it.path } shouldBe listOf("query+categorymembers")
+        info.supports("query+categorymembers", "title") shouldBe true
+        requests shouldBe 1
+    }
+
     private fun TestScope.paramInfo(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
     ): ParamInfo =
@@ -238,5 +337,21 @@ class OptionSetTest {
     @Test
     fun `setting an option twice keeps the last word`() {
         OptionSet().on("bot").off("bot").toParam() shouldBe "!bot"
+    }
+
+    @Test
+    fun `a set prints as its parameter value, or says it constrains nothing`() {
+        OptionSet().on("bot").off("minor").toString() shouldBe "bot|!minor"
+        OptionSet().toString() shouldBe "(unconstrained)"
+    }
+
+    @Test
+    fun `two sets are equal when they constrain the same options the same way`() {
+        val options = OptionSet().on("bot").off("minor")
+
+        (options == OptionSet.parse("bot|!minor")) shouldBe true
+        (options == OptionSet().on("bot").on("minor")) shouldBe false
+        options.equals("bot|!minor") shouldBe false
+        setOf(options, OptionSet.parse("bot|!minor")).size shouldBe 1
     }
 }

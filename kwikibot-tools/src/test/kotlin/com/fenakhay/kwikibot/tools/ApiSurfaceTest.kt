@@ -223,15 +223,45 @@ class ApiSurfaceTest {
     }
 
     @Test
-    fun `without a file named, each lane checks its own file`() = runTest {
+    fun `without a file named, each lane checks its own file in the working directory`() = runTest {
         val production = wikis()
+        production.workingDirectory.resolve("api-surface.tsv").writeText(surface)
         writeOrCheckSurface(arrayOf("--check"), production.environment)
 
         val beta = wikis()
+        beta.workingDirectory.resolve("api-surface.tsv").writeText(surface)
         writeOrCheckSurface(arrayOf("--check", "--lane", "BETA"), beta.environment)
 
-        production.output.toString() shouldContain "`api-surface.tsv` differs"
+        production.output.toString() shouldContain "`api-surface.tsv` matches"
         beta.output.toString() shouldContain "`api-surface-beta.tsv` differs"
+    }
+
+    @Test
+    fun `without a file named, a dump writes the lane's own file in the working directory`() = runTest {
+        val wikis = wikis()
+
+        writeOrCheckSurface(arrayOf("--lane", "beta"), wikis.environment)
+
+        val written = wikis.workingDirectory.resolve("api-surface-beta.tsv")
+        written.readText() shouldBe surface
+        wikis.output.toString() shouldBe "wrote $written\n"
+    }
+
+    @Test
+    fun `a check takes a relative registry and report from the working directory`() = runTest {
+        val wikis = wikis()
+        wikis.workingDirectory.resolve("api-surface.tsv").writeText(earlier)
+        wikis.workingDirectory
+            .resolve("wire-registry.tsv")
+            .writeText("module\tparameter\tvalue\tsymbol\nedit\tsummary\t\tEditRequest.summary\n")
+
+        writeOrCheckSurface(
+            arrayOf("--check", "--registry", "wire-registry.tsv", "--report", "reports/production.md"),
+            wikis.environment,
+        )
+
+        wikis.workingDirectory.resolve("reports/production.md").readText() shouldContain
+            "- `edit summary` — **used by kwikibot**: EditRequest"
     }
 
     @Test

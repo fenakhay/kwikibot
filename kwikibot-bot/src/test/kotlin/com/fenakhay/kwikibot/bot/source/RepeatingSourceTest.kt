@@ -35,6 +35,20 @@ class RepeatingSourceTest {
     }
 
     @Test
+    fun `the next round emits only the pages that are new since the last`() = runTest {
+        var round = 0
+        val growing = PageSource {
+            round++
+            listOf("a", "b", "c").take(round + 1).map { ref(it) }.asFlow()
+        }
+
+        val emitted = growing.repeating().pages(fake).take(3).toList()
+
+        emitted.map { it.title.text } shouldBe listOf("a", "b", "c")
+        round shouldBe 2
+    }
+
+    @Test
     fun `the memory is bounded, so a long run does not grow without limit`() = runTest {
         val repeating = source("a", "b", "c").repeating(remember = 2)
 

@@ -32,19 +32,19 @@ import com.fenakhay.kwikibot.protocol.ApiFailure
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
 import com.fenakhay.kwikibot.protocol.decode.PageResult
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.util.UUID
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 internal class ApiPageService(
     private val transport: MediaWikiTransport,
@@ -120,8 +120,7 @@ internal class ApiPageService(
         }
 
         val edit =
-            response["edit"]?.jsonObject
-                ?: throw WikiError.Api("noedit", "no edit block in the response", "edit")
+            response.obj("edit") ?: throw WikiError.Api("noedit", "no edit block in the response", "edit")
 
         return edit.toOutcome(ref)
     }
@@ -222,12 +221,10 @@ internal class ApiPageService(
             // Without this the wiki answers yes or no, and a bot cannot say why it skipped.
             "intestactionsdetail" to "full",
         ) { entry ->
-            val tested = entry["actions"]?.jsonObject ?: return@byPage null
+            val tested = entry.obj("actions") ?: return@byPage null
             ActionChecks(
                 tested.mapValues { (_, refusals) ->
-                    (refusals as? JsonArray)
-                        ?.mapNotNull { it.jsonObject["code"]?.jsonPrimitive?.content }
-                        .orEmpty()
+                    (refusals as? JsonArray).objects().mapNotNull { it.string("code") }
                 }
             )
         }
@@ -304,10 +301,10 @@ internal class ApiPageService(
 
     override suspend fun contributors(refs: Collection<PageRef>): Map<PageRef, Contributors> =
         byPage(refs, "contributors", "pclimit" to "max") { entry ->
-            val users = (entry["contributors"] as? JsonArray).orEmpty().map { it.jsonObject }
+            val users = entry.array("contributors").objects()
             // The anonymous count is a sibling of the array, not a member of it: a decoder that
             // reads only "contributors" loses it silently.
-            val anonymous = entry["anoncontributors"]?.jsonPrimitive?.intOrNull ?: 0
+            val anonymous = entry.int("anoncontributors") ?: 0
 
             if (users.isEmpty() && anonymous == 0) {
                 null
@@ -315,8 +312,8 @@ internal class ApiPageService(
                 Contributors(
                     users =
                         users.mapNotNull { user ->
-                            val name = user["name"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                            Contributor(name, user["userid"]?.jsonPrimitive?.longOrNull ?: 0)
+                            val name = user.string("name") ?: return@mapNotNull null
+                            Contributor(name, user.long("userid") ?: 0)
                         },
                     anonymous = anonymous,
                 )
@@ -325,14 +322,14 @@ internal class ApiPageService(
 
     override suspend fun categoryInfo(refs: Collection<PageRef>): Map<PageRef, CategoryInfo> =
         byPage(refs, "categoryinfo") { entry ->
-            val info = entry["categoryinfo"]?.jsonObject ?: return@byPage null
+            val info = entry.obj("categoryinfo") ?: return@byPage null
             CategoryInfo(
-                size = info.number("size"),
-                pages = info.number("pages"),
-                files = info.number("files"),
-                subcategories = info.number("subcats"),
+                size = info.int("size") ?: 0,
+                pages = info.int("pages") ?: 0,
+                files = info.int("files") ?: 0,
+                subcategories = info.int("subcats") ?: 0,
                 // Sent on every category, as false on most: its presence says nothing.
-                hidden = info["hidden"]?.jsonPrimitive?.booleanOrNull == true,
+                hidden = info.flag("hidden"),
             )
         }
 
@@ -383,8 +380,7 @@ internal class ApiPageService(
 
             continuation.pages(request).toList().forEach { entry ->
                 val ref = decoder.refOf(entry) ?: return@forEach
-                val listed =
-                    (entry[module] as? JsonArray)?.mapNotNull { decoder.refOf(it.jsonObject) }.orEmpty()
+                val listed = entry.array(module).objects().mapNotNull { decoder.refOf(it) }
                 if (listed.isNotEmpty()) found.getOrPut(ref.title) { mutableListOf() } += listed
             }
         }
@@ -424,9 +420,6 @@ internal class ApiPageService(
 
         return refs.mapNotNull { ref -> found[ref.title]?.let { ref to it } }.toMap()
     }
-
-    private fun JsonObject.number(key: String): Int =
-        this[key]?.let { runCatching { it.jsonPrimitive.int }.getOrNull() } ?: 0
 
     override suspend fun protect(
         ref: PageRef,
@@ -497,11 +490,11 @@ internal class ApiPageService(
         }
 
         val rollback =
-            response["rollback"]?.jsonObject
+            response.obj("rollback")
                 ?: throw WikiError.Api("norollback", "no rollback block in the response", "rollback")
 
-        val newRevision = rollback["revid"]?.jsonPrimitive?.longOrNull
-        val oldRevision = rollback["old_revid"]?.jsonPrimitive?.longOrNull
+        val newRevision = rollback.long("revid")
+        val oldRevision = rollback.long("old_revid")
 
         return if (newRevision == null) {
             EditOutcome.NoChange(ref, oldRevision?.let { RevisionId(it) })
@@ -543,8 +536,7 @@ internal class ApiPageService(
         }
 
         val edit =
-            response["edit"]?.jsonObject
-                ?: throw WikiError.Api("noedit", "no edit block in the response", "edit")
+            response.obj("edit") ?: throw WikiError.Api("noedit", "no edit block in the response", "edit")
 
         return edit.toOutcome(ref)
     }
@@ -717,40 +709,35 @@ internal class ApiPageService(
                 )
                 .throwOnError()
 
-        val result = response["expandtemplates"]?.jsonObject
+        val result = response.obj("expandtemplates")
         val text =
-            result?.get("wikitext")?.jsonPrimitive?.content
+            result?.string("wikitext")
                 ?: throw WikiError.Api("noexpansion", "the wiki returned no expanded text", "expandtemplates")
         val names =
-            (result["categories"] as? JsonArray)
-                ?.mapNotNull {
-                    (it as? JsonObject)?.get("category")?.jsonPrimitive?.content?.replace('_', ' ')
-                }
-                .orEmpty()
+            result.array("categories").objects().mapNotNull { it.string("category")?.replace('_', ' ') }
         return ExpandedText(text, names)
     }
 
     /** The protection entries on a page-info result. */
     private fun JsonObject.protections(): List<Protection> =
-        this["protection"]?.jsonArray.orEmpty().mapNotNull { entry ->
-            val fields = entry.jsonObject
-            val action = fields["type"]?.jsonPrimitive?.content ?: return@mapNotNull null
+        array("protection").objects().mapNotNull { fields ->
+            val action = fields.string("type") ?: return@mapNotNull null
             Protection(
                 action = action,
-                level = fields["level"]?.jsonPrimitive?.content.orEmpty(),
-                expiry = fields["expiry"]?.jsonPrimitive?.content?.let { Expiry.parse(it) } ?: Expiry.Never,
+                level = fields.string("level").orEmpty(),
+                expiry = fields.string("expiry")?.let { Expiry.parse(it) } ?: Expiry.Never,
                 cascading = fields.containsKey("cascade"),
             )
         }
 
     private fun JsonObject.toOutcome(ref: PageRef): EditOutcome {
-        val result = this["result"]?.jsonPrimitive?.content.orEmpty()
+        val result = string("result").orEmpty()
         if (!result.equals("Success", ignoreCase = true)) {
             return EditOutcome.Rejected(ref, "edit returned $result", result.lowercase())
         }
 
-        val newRevision = this["newrevid"]?.jsonPrimitive?.longOrNull
-        val oldRevision = this["oldrevid"]?.jsonPrimitive?.longOrNull?.takeIf { it != 0L }
+        val newRevision = long("newrevid")
+        val oldRevision = long("oldrevid")?.takeIf { it != 0L }
 
         // An edit whose text matched what was already there comes back as a success with
         // nochange set and no new revision. That is a no-op, not a save.

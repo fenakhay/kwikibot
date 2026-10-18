@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.node.Tag
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
@@ -53,6 +54,15 @@ class CosmeticChangesTest {
     }
 
     @Test
+    fun `a bold or italic tag around nothing is left alone, since the apostrophes would show`() {
+        val before = "<b></b> <i></i> <b/>"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+        val built = Markup(listOf(Tag("b")))
+        CosmeticChanges.HTML_EMPHASIS.apply(built) shouldBe built
+    }
+
+    @Test
     fun `strong and em are left alone, because they say something bold and italic do not`() {
         val before = "<strong>warning</strong> <em>stress</em>"
 
@@ -73,6 +83,12 @@ class CosmeticChangesTest {
     }
 
     @Test
+    fun `a br already closed or written with a space before its end is closed once`() {
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "one<br >two") shouldBe "one<br />two"
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "<span>an unclosed span") shouldBe "<span>an unclosed span"
+    }
+
+    @Test
     fun `entities with a plain character behind them are decoded`() {
         tidy(CosmeticChanges.HTML_ENTITIES, "1990&ndash;1995 caf&eacute;") shouldBe "1990–1995 café"
     }
@@ -85,6 +101,14 @@ class CosmeticChangesTest {
     @Test
     fun `the entities that are markup are never decoded`() {
         val before = "&lt;ref&gt; &amp; a&nbsp;b &quot;q&quot;"
+
+        tidy(CosmeticChanges.HTML_ENTITIES, before) shouldBe before
+    }
+
+    @Test
+    fun `a numeric reference to markup, to a character nobody can see or to no character stays encoded`() {
+        val before =
+            "&#60;ref&#62; a&#124;b &#91;&#91;c]] d&#160;e f&#x200B;g &#xD800; &#1114112; &#99999999999;"
 
         tidy(CosmeticChanges.HTML_ENTITIES, before) shouldBe before
     }
@@ -106,6 +130,11 @@ class CosmeticChangesTest {
     @Test
     fun `dropping a heading keeps the next one at the start of its line`() {
         tidy(CosmeticChanges.EMPTY_SECTIONS, "{{t}}\n== a ==\n== b ==\nx") shouldBe "{{t}}\n== b ==\nx"
+    }
+
+    @Test
+    fun `an empty first section goes without leaving a line break behind`() {
+        tidy(CosmeticChanges.EMPTY_SECTIONS, "==a==\n==b==\nx") shouldBe "==b==\nx"
     }
 
     @Test
@@ -156,6 +185,8 @@ class CosmeticChangesTest {
 
         CosmeticChanges.SAFE.apply(before) shouldBe before
         CosmeticChanges.SAFE.wouldChange(before) shouldBe false
+        CosmeticChanges.SAFE.wouldChange(before, ParseOptions.DEFAULT) shouldBe false
+        CosmeticChanges.SAFE.wouldChange("a  \nb", ParseOptions.DEFAULT) shouldBe true
     }
 
     @Test

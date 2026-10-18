@@ -1,11 +1,16 @@
 package com.fenakhay.kwikibot.client.internal
 
+import com.fenakhay.kwikibot.testkit.MockTransport
 import com.fenakhay.kwikibot.wikitext.MagicWords
 import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.TitleRules
 import com.fenakhay.kwikibot.wikitext.Wikitext
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -99,5 +104,75 @@ class ParserSettingsTest {
         options shouldBe ParseOptions.DEFAULT
         rules shouldBe TitleRules.DEFAULT
         redirects shouldBe MagicWords(caseInsensitive = setOf("#REDIRECT"))
+    }
+
+    @Test
+    fun `the settings are asked for once, however many readers want them at the same time`() = runTest {
+        val transport = MockTransport {
+            delay(1)
+            MockTransport.json("""{"query":${wiktionary}}""")
+        }
+        val settings = ParserSettings(transport)
+
+        val (options, rules, redirects) =
+            listOf(async { settings.options() }, async { settings.rules() }, async { settings.redirects() })
+                .awaitAll()
+        settings.options()
+
+        transport.requests.size shouldBe 1
+        options shouldBe this@ParserSettingsTest.options
+        rules shouldBe this@ParserSettingsTest.rules
+        redirects shouldBe decoded.redirects
+    }
+
+    @Test
+    fun `a wiki whose answer has no query gets MediaWiki's defaults`() = runTest {
+        ParserSettings.read(MockTransport { MockTransport.json("{}") }) shouldBe
+            ParserSettings.decode(JsonObject(emptyMap()))
+    }
+
+    @Test
+    fun `a magic word is case-sensitive only when the flag is true, not when it is merely present`() {
+        val query =
+            Json.parseToJsonElement(
+                    """{"variables":["pagename","currentyear"],"magicwords":[
+                       {"name":"pagename","aliases":["PAGENAME"],"case-sensitive":""},
+                       {"name":"currentyear","aliases":["CURRENTYEAR"],"case-sensitive":true}]}"""
+                )
+                .jsonObject
+
+        ParserSettings.decode(query).rules.variables shouldBe
+            MagicWords(caseSensitive = setOf("CURRENTYEAR"), caseInsensitive = setOf("PAGENAME"))
+    }
+
+    @Test
+    fun `a namespace or an alias with no id names nothing, and an empty name is no name`() {
+        val query =
+            Json.parseToJsonElement(
+                    """{"namespaces":{
+                         "0":{"id":0,"name":"","canonical":""},
+                         "4":{"name":"Project","canonical":"Project"},
+                         "6":{"id":6,"name":"Fichier","canonical":"File"},
+                         "8":{"id":8,"name":"MediaWiki"},
+                         "14":{"id":14,"canonical":"Category"},
+                         "10":{"id":10}},
+                       "namespacealiases":[{"alias":"Image"},{"id":6},{"id":6,"alias":"Bild"}]}"""
+                )
+                .jsonObject
+
+        val (options, rules) = ParserSettings.decode(query)
+
+        rules.namespaces shouldBe
+            mapOf("Fichier" to 6, "File" to 6, "Bild" to 6, "MediaWiki" to 8, "Category" to 14)
+        rules.canonicalNames shouldBe mapOf(6 to "File", 8 to "MediaWiki", 14 to "Category")
+        options.fileNamespaces shouldBe setOf("Fichier", "File", "Bild")
+    }
+
+    @Test
+    fun `a wiki that says nothing of language conversion keeps the default`() {
+        val query = Json.parseToJsonElement("""{"general":{"sitename":"Wiktionary"}}""").jsonObject
+
+        ParserSettings.decode(query).options.languageConversion shouldBe
+            ParseOptions.DEFAULT.languageConversion
     }
 }

@@ -100,8 +100,8 @@ public class TerminalPrompt(
         val hint = if (default) "[Y/n]" else "[y/N]"
         output("$question $hint ")
 
-        return when (input()?.trim()?.lowercase()) {
-            null -> default
+        val typed = input() ?: return default
+        return when (typed.trim().lowercase()) {
             "" -> default
             "y",
             "yes" -> true
@@ -117,17 +117,21 @@ public class TerminalPrompt(
         val keys = choices.joinToString(", ") { "${it.key} = ${it.label}" }
         output("$question ($keys) ")
 
-        val typed = input()?.trim()?.lowercase() ?: return choices.first().value
+        val typed = input() ?: return choices.first().value
+        val key = typed.trim().lowercase()
 
-        val chosen = choices.firstOrNull { it.key.lowercaseChar().toString() == typed }
-        return chosen?.value ?: choose(question, choices)
+        val chosen =
+            choices.firstOrNull { it.key.lowercaseChar().toString() == key }
+                ?: return choose(question, choices)
+        return chosen.value
     }
 
     override suspend fun text(question: String, default: String): String {
         val hint = if (default.isEmpty()) "" else " [$default]"
         output("$question$hint ")
 
-        return input()?.trim()?.ifEmpty { default } ?: default
+        val typed = input() ?: return default
+        return typed.trim().ifEmpty { default }
     }
 }
 
@@ -135,7 +139,8 @@ public class TerminalPrompt(
  * A prompt with the answers written down in advance.
  *
  * For tests, and for a run that has been through the questions once already and knows what it wants. Running
- * out of answers falls back to [fallback] rather than blocking.
+ * out of answers falls back to [fallback] rather than blocking. An empty answer is the Enter key, as it is at
+ * a terminal: it takes the question's default, or the first choice.
  */
 public class ScriptedPrompt(
     answers: List<String>,
@@ -149,15 +154,17 @@ public class ScriptedPrompt(
 
     override suspend fun confirm(question: String, default: Boolean): Boolean {
         val answer = remaining.removeFirstOrNull() ?: return fallback.confirm(question, default)
-        return answer.lowercase() in setOf("y", "yes", "true")
+        return if (answer.isEmpty()) default else answer.lowercase() in setOf("y", "yes", "true")
     }
 
     override suspend fun choose(question: String, choices: List<Choice<String>>): String {
         val answer = remaining.removeFirstOrNull() ?: return fallback.choose(question, choices)
-        return choices.firstOrNull { it.key.lowercaseChar() == answer.first().lowercaseChar() }?.value
-            ?: choices.first().value
+        val chosen = choices.firstOrNull { answer.startsWith(it.key, ignoreCase = true) }
+        return (chosen ?: choices.first()).value
     }
 
-    override suspend fun text(question: String, default: String): String =
-        remaining.removeFirstOrNull() ?: fallback.text(question, default)
+    override suspend fun text(question: String, default: String): String {
+        val answer = remaining.removeFirstOrNull() ?: return fallback.text(question, default)
+        return answer.ifEmpty { default }
+    }
 }

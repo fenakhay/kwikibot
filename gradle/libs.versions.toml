@@ -9,6 +9,7 @@ kotlinLogging = "8.0.4"
 slf4j = "2.0.20"
 ktoml = "0.7.1"
 diffUtils = "4.17"
+cldrPluralRules = "48.2"
 commonsCompress = "1.28.0"
 junit = "6.1.3"
 kotest = "6.2.5"
@@ -49,6 +50,7 @@ ktoml-core = { module = "com.akuleshov7:ktoml-core", version.ref = "ktoml" }
 ktoml-file = { module = "com.akuleshov7:ktoml-file", version.ref = "ktoml" }
 
 diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diffUtils" }
+cldr-plural-rules = { module = "net.xyzsd.plurals:cldr-plural-rules", version.ref = "cldrPluralRules" }
 
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }

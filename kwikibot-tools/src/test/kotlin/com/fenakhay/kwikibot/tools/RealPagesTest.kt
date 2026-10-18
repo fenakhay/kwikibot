@@ -3,17 +3,21 @@ package com.fenakhay.kwikibot.tools
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 import kotlin.io.path.inputStream
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 
 class RealPagesTest {
 
@@ -138,8 +142,60 @@ class RealPagesTest {
         wikis.log.toString() shouldContain "kept 20, skipped 20 over 80000 bytes"
     }
 
-    private fun read(): JsonObject =
-        Json.parseToJsonElement(GZIPInputStream(target.inputStream()).bufferedReader().use { it.readText() })
+    @Test
+    fun `without a file named, the pages are written under their own name in the working directory`() =
+        runTest {
+            val wikis = FakeWikis(this) { respondJson(pages(emptyList())) }
+
+            recordRealPages(emptyArray(), wikis.environment)
+
+            val written = wikis.workingDirectory.resolve("roundtrip-pages.json.gz")
+            read(written).getValue("pages").jsonArray.size shouldBe 0
+            wikis.output.toString() shouldBe "wrote $written\n"
+        }
+
+    @Test
+    fun `a page whose revision is not in the shape asked for is left out`() {
+        val response =
+            pages(
+                listOf(
+                    buildJsonObject {
+                        put("title", "Zqx no revision")
+                        putJsonArray("revisions") {}
+                    },
+                    buildJsonObject {
+                        put("title", "Zqx revisions not a list")
+                        putJsonObject("revisions") {}
+                    },
+                    buildJsonObject {
+                        put("title", "Zqx no slots")
+                        putJsonArray("revisions") { addJsonObject { put("revid", 1) } }
+                    },
+                    buildJsonObject {
+                        put("title", "Zqx slots not an object")
+                        putJsonArray("revisions") { addJsonObject { putJsonArray("slots") {} } }
+                    },
+                    buildJsonObject {
+                        put("title", "Zqx no main slot")
+                        putJsonArray("revisions") { addJsonObject { putJsonObject("slots") {} } }
+                    },
+                    JsonObject(page("Zqx title not text", "text") + ("title" to JsonObject(emptyMap()))),
+                    page("Zqx kept", "text"),
+                )
+            )
+
+        wikitexts(Json.parseToJsonElement(response).jsonObject) shouldBe listOf("Zqx kept" to "text")
+    }
+
+    @Test
+    fun `an answer whose pages are not a list has no pages`() {
+        val response = buildJsonObject { putJsonObject("query") { put("pages", "none") } }
+
+        wikitexts(response) shouldBe emptyList()
+    }
+
+    private fun read(file: Path = target): JsonObject =
+        Json.parseToJsonElement(GZIPInputStream(file.inputStream()).bufferedReader().use { it.readText() })
             .jsonObject
 
     private fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content

@@ -1,12 +1,12 @@
 package com.fenakhay.kwikibot.net.auth
 
 import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.net.obj
+import com.fenakhay.kwikibot.net.string
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Fetches and caches the CSRF and action tokens MediaWiki requires for writes.
@@ -65,13 +65,7 @@ public class TokenStore(private val transport: MediaWikiTransport) {
         val response = transport.call(ApiRequest.of("query", "meta" to "tokens", "type" to type))
 
         val value =
-            response["query"]
-                ?.jsonObject
-                ?.get("tokens")
-                ?.jsonObject
-                ?.get("${type}token")
-                ?.jsonPrimitive
-                ?.content
+            response.obj("query")?.obj("tokens")?.string("${type}token")
                 ?: throw WikiError.Api(
                     code = "notoken",
                     info = "wiki returned no '$type' token",

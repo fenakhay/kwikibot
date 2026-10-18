@@ -166,11 +166,3 @@ tasks.register<JavaExec>("compareFiles") {
     val after = providers.gradleProperty("after")
     argumentProviders.add { listOf(before.get(), after.get()) }
 }
-
-kover {
-    currentProject {
-        instrumentation {
-            disabledForAll = true
-        }
-    }
-}

@@ -8,7 +8,7 @@ package com.fenakhay.kwikibot.wikitext
  * choice.
  */
 public data class TextScope(
-    /** Text inside `{{template}}` names and parameters. */
+    /** Text inside `{{template}}` names and parameters, and the names of `{{{arguments}}}`. */
     val templates: Boolean = false,
     /** The target of a `[[link|text]]`, as opposed to its display text. */
     val linkTargets: Boolean = false,

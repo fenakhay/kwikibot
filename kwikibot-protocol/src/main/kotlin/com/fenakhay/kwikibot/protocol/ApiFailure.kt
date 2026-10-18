@@ -3,11 +3,11 @@ package com.fenakhay.kwikibot.protocol
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.page.PageRef
-import kotlinx.serialization.json.JsonArray
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * An error block as the API reported it.
@@ -147,15 +147,12 @@ public data class ApiFailure(
          */
         public fun from(response: JsonObject): ApiFailure? {
             val error =
-                response["errors"]?.jsonArray?.firstOrNull()?.jsonObject
-                    ?: response["error"]?.jsonObject
-                    ?: return null
+                response.array("errors").objects().firstOrNull() ?: response.obj("error") ?: return null
 
-            val code = error["code"]?.jsonPrimitive?.content ?: return null
-            val text = (error["text"] ?: error["info"])?.jsonPrimitive?.content.orEmpty()
-            val module = error["module"]?.jsonPrimitive?.content
+            val code = error.string("code") ?: return null
+            val text = error.string("text") ?: error.string("info").orEmpty()
 
-            return ApiFailure(code, text, module)
+            return ApiFailure(code, text, error.string("module"))
         }
     }
 }
@@ -170,17 +167,17 @@ public data class ApiFailure(
 public data class ApiWarning(
     /** The module that warned. */
     val module: String,
-    /** What it said, in whichever of the two shapes the wiki used. */
+    /** What it said, in the wiki's own language. */
     val text: String,
     /**
      * The machine-readable code, such as `deprecation` or `truncatedresult`.
      *
      * Branch on this, not the text: the text is a translated message that changes between releases and
-     * languages. `null` when the wiki answered in the legacy format, which has none.
+     * languages. `null` for a warning that carries none.
      */
     val code: String? = null,
 ) {
-    /** A warning without a code, as the legacy format reports one. */
+    /** A warning without a code, for code compiled against 1.1. */
     public constructor(module: String, text: String) : this(module, text, null)
 
     /**
@@ -211,30 +208,17 @@ public data class ApiWarning(
 /**
  * Every warning on a response, in the order the wiki listed them.
  *
- * Both shapes are read, as with errors: `errorformat=plaintext` produces a `warnings` array whose entries
- * carry a code, a module and text, and the legacy format an object keyed by module.
+ * Every request sends `errorformat=plaintext`, so the warnings come as a `warnings` array whose entries each
+ * carry a code, a module and text.
  */
-public fun JsonObject.warnings(): List<ApiWarning> {
-    val array = this["warnings"] as? JsonArray
-    if (array != null) {
-        return array.map { entry ->
-            val warning = entry.jsonObject
-            ApiWarning(
-                module = warning["module"]?.jsonPrimitive?.content.orEmpty(),
-                text =
-                    warning["text"]?.jsonPrimitive?.content ?: warning["*"]?.jsonPrimitive?.content.orEmpty(),
-                code = warning["code"]?.jsonPrimitive?.content,
-            )
-        }
+public fun JsonObject.warnings(): List<ApiWarning> =
+    array("warnings").objects().map { warning ->
+        ApiWarning(
+            module = warning.string("module").orEmpty(),
+            text = warning.string("text").orEmpty(),
+            code = warning.string("code"),
+        )
     }
-
-    val legacy = this["warnings"] as? JsonObject ?: return emptyList()
-    return legacy.entries.map { (module, value) ->
-        val fields = value as? JsonObject
-        val text = fields?.let { it["warnings"]?.jsonPrimitive?.content ?: it["*"]?.jsonPrimitive?.content }
-        ApiWarning(module, text.orEmpty(), fields?.get("code")?.jsonPrimitive?.content)
-    }
-}
 
 /**
  * Returns the response, or raises the typed error it carries.

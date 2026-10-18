@@ -17,11 +17,13 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
 import io.ktor.http.headersOf
 import javax.xml.stream.XMLStreamException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.currentTime
@@ -87,6 +89,71 @@ class EventStreamsTest {
         val events = streams(withGarbage).recentChanges().toList()
 
         events.single().title shouldBe "volcano"
+    }
+
+    @Test
+    fun `an event with a field of the wrong shape does not end the stream`() = runTest {
+        val misshapen =
+            """
+            data: {"wiki":"enwiktionary","title":"volcano","meta":"none","revision":7}
+
+            data: {"wiki":"enwiktionary","title":"mountain","revision":{"old":1,"new":2}}
+            """
+                .trimIndent() + BLANK_LINE
+
+        val events = streams(misshapen).recentChanges().toList()
+
+        events.map { it.title } shouldBe listOf("volcano", "mountain")
+        events.first().revisionId.shouldBeNull()
+        events.last().revisionId shouldBe 2L
+    }
+
+    @Test
+    fun `an event naming no wiki is filed under its domain, and one with no time takes the time sent`() =
+        runTest {
+            val sparse =
+                """
+                event: message
+                data: {"title":"volcano","meta":{"domain":"en.wiktionary.org","dt":"2026-10-01T12:00:00Z"}}
+
+                data: {"wiki":"enwiki"}
+
+                data: {"title":"lava"}
+                """
+                    .trimIndent() + BLANK_LINE
+
+            val events = streams(sparse).recentChanges().toList()
+
+            events.map { it.title } shouldBe listOf("volcano", "lava")
+            events.map { it.wiki } shouldBe listOf("en.wiktionary.org", "")
+            events.map { it.timestamp } shouldBe listOf(Instant.parse("2026-10-01T12:00:00Z"), null)
+            events.last().type shouldBe ""
+            events.last().namespace shouldBe 0
+        }
+
+    @Test
+    fun `page creations are their own stream, and a stream resumes from where it was asked to`() = runTest {
+        val asked = mutableListOf<Url>()
+        val streams =
+            EventStreams(
+                HttpClient(
+                    MockEngine { request ->
+                        asked += request.url
+                        respond(
+                            "",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, "text/event-stream"),
+                        )
+                    }
+                ),
+                userAgent,
+            )
+
+        streams.pageCreations(since = "2026-10-01T00:00:00Z").toList()
+        streams.recentChanges().toList()
+
+        asked.map { it.encodedPath } shouldBe listOf("/v2/stream/page-create", "/v2/stream/recentchange")
+        asked.map { it.parameters["since"] } shouldBe listOf("2026-10-01T00:00:00Z", null)
     }
 
     @Test
@@ -273,6 +340,54 @@ class SparqlClientTest {
         error.info.contains("429") shouldBe true
     }
 
+    @Test
+    fun `entity ids are read from the variable asked for, and a variable holding no entity yields none`() =
+        runTest {
+            val client = client { respondJson(results) }
+
+            client.entityIds("SELECT ?item WHERE {}") shouldBe listOf("Q7889", "Q42")
+            client.entityIds("SELECT ?item WHERE {}", variable = "itemLabel") shouldBe emptyList()
+        }
+
+    @Test
+    fun `an answer with no results block or no bindings is a failed query`() = runTest {
+        for (answer in listOf("""{"head":{"vars":[]}}""", """{"results":{}}""")) {
+            assertFailsWith<WikiError.Api> { client { respondJson(answer) }.select("SELECT ?item WHERE {}") }
+                .code shouldBe "sparqlfailed"
+        }
+    }
+
+    @Test
+    fun `a cell that is not a term is left out, and a term that says nothing is empty`() = runTest {
+        val rows = client {
+            respondJson("""{"results":{"bindings":[{"item":"oops","label":{}},"not a row"]}}""")
+        }
+            .select("SELECT ?item WHERE {}")
+
+        rows shouldBe listOf(mapOf("label" to SparqlValue(value = "", type = "")))
+    }
+
+    @Test
+    fun `a wait the service names as a date rather than in seconds is not honoured`() = runTest {
+        var attempts = 0
+        val client = client {
+            attempts++
+            if (attempts == 1) {
+                respond(
+                    "",
+                    HttpStatusCode.TooManyRequests,
+                    headersOf(HttpHeaders.RetryAfter, "Wed, 21 Oct 2026 07:28:00 GMT"),
+                )
+            } else {
+                respondJson(results)
+            }
+        }
+
+        client.select("SELECT ?item WHERE {}")
+
+        currentTime shouldBe RetryPolicy().initialDelay.inWholeMilliseconds
+    }
+
     private fun client(
         auth: SparqlAuth = SparqlAuth.None,
         retry: RetryPolicy = RetryPolicy(),
@@ -408,6 +523,35 @@ class SparqlStreamingTest {
     }
 
     @Test
+    fun `a row shorter than its header leaves the variables it does not reach unbound`() = runTest {
+        val read = read(rows("?item${tab}?label", "<http://www.wikidata.org/entity/Q1>"))
+
+        read.single().keys shouldBe setOf("item")
+    }
+
+    @Test
+    fun `a bare number or an unclosed URI is a literal as it stands`() = runTest {
+        val read = read(rows("?count${tab}?broken", "42$tab<http://example.org"))
+
+        read.single() shouldBe
+            mapOf(
+                "count" to SparqlValue(value = "42", type = "literal"),
+                "broken" to SparqlValue(value = "<http://example.org", type = "literal"),
+            )
+    }
+
+    @Test
+    fun `a failure in what reads the rows reaches the caller`() = runTest {
+        val failure =
+            shouldThrow<IllegalStateException> {
+                client { respondTsv(rows("?item", "<http://www.wikidata.org/entity/Q1>")) }
+                    .selectStreamed("SELECT ?item WHERE {}") { error("the bot stopped") }
+            }
+
+        failure.message shouldBe "the bot stopped"
+    }
+
+    @Test
     fun `the query is asked for as tsv by header`() = runTest {
         var accept = ""
 
@@ -539,6 +683,28 @@ class XmlDumpTest {
 
         page.revisionId shouldBe 1L
         page.text shouldBe "oldest"
+    }
+
+    @Test
+    fun `an id or namespace that is not a number reads as zero, and an address names an anonymous editor`() {
+        val odd =
+            """
+            <mediawiki>
+              <page>
+                <title>volcano</title><ns>main</ns><id>first</id>
+                <revision><id>9</id><contributor><ip>192.0.2.1</ip></contributor><text>lava</text></revision>
+              </page>
+            </mediawiki>
+            """
+                .trimIndent()
+
+        val page = XmlDump.pages(odd.byteInputStream()).single()
+
+        page.namespace shouldBe 0
+        page.pageId shouldBe 0L
+        page.revisionId shouldBe 9L
+        page.contributor shouldBe "192.0.2.1"
+        page.inNamespaces(emptySet()) shouldBe true
     }
 
     @Test

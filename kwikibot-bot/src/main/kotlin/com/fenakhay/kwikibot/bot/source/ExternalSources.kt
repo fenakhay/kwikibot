@@ -5,6 +5,8 @@ import com.fenakhay.kwikibot.client.model.SparqlAuth
 import com.fenakhay.kwikibot.client.model.SparqlClient
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.strings
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormDataContent
@@ -27,9 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Page lists built somewhere other than the wiki.
@@ -234,14 +234,9 @@ public object ExternalSources {
             }
         }
 
-    /** Titles out of a PagePile result. */
+    /** Titles out of a PagePile result, passing over whatever in its list is not one. */
     internal fun titlesFromPagePile(body: String): List<String> =
-        json
-            .parseToJsonElement(body)
-            .jsonObject["pages"]
-            ?.jsonArray
-            ?.map { it.jsonPrimitive.content }
-            .orEmpty()
+        json.parseToJsonElement(body).jsonObject.array("pages").strings()
 
     /**
      * A title the wiki accepts, or `null` if it does not.

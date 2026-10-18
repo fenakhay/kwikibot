@@ -217,6 +217,18 @@ class BotConfigTest {
     }
 
     @Test
+    fun `a write concurrency alone changes only the writes`() {
+        val config = BotConfig.parse("$minimal\n\n[run]\nwriteConcurrency = 2\n")
+        val builder = BotRunBuilder()
+
+        config.applyTo(builder)
+
+        builder.writeConcurrency shouldBe 2
+        builder.readConcurrency shouldBe BotRunBuilder().readConcurrency
+        builder.readBatch shouldBe 1
+    }
+
+    @Test
     fun `connections, timeouts, retries and relogins reach the client`() {
         val config =
             BotConfig.parse(
@@ -230,6 +242,7 @@ class BotConfigTest {
                 [retry]
                 maxRetries = 2
                 initialDelay = "500ms"
+                maxDelay = "30s"
                 relogins = 0
                 """
                         .trimIndent()
@@ -240,6 +253,7 @@ class BotConfigTest {
         config.http.timeout shouldBe 2.minutes
         config.retry.maxRetries shouldBe 2
         config.retry.initialDelay shouldBe 500.milliseconds
+        config.retry.maxDelay shouldBe 30.seconds
         config.relogins shouldBe 0
     }
 
@@ -341,6 +355,21 @@ class BotConfigTest {
     }
 
     @Test
+    fun `without an explicit path, the first file on the search path that exists is read`() {
+        val file = kotlin.io.path.createTempFile("kwikibot", ".toml")
+        file.writeText(minimal)
+        val missing = Path("no-such-file-anywhere.toml")
+
+        try {
+            BotConfig.find(null, listOf(missing, file))?.bot?.name shouldBe "FenaBot"
+        } finally {
+            file.deleteExisting()
+        }
+
+        BotConfig.find(null, listOf(missing)) shouldBe null
+    }
+
+    @Test
     fun `reading a file gives the same result as parsing its text`() {
         val file = kotlin.io.path.createTempFile("kwikibot", ".toml")
         file.writeText(minimal)
@@ -373,6 +402,15 @@ class BotConfigTest {
                 "/home/a/.config/kwikibot/kwikibot.toml",
                 "C:/Users/a/AppData/Roaming/kwikibot/kwikibot.toml",
             )
+    }
+
+    @Test
+    fun `with no home directory, the search path keeps only what the environment names`() {
+        val environment = mapOf("XDG_CONFIG_HOME" to "/home/a/.xdg")
+
+        BotConfig.searchPath(environment::get, null).map { it.toString().replace('\\', '/') } shouldBe
+            listOf("kwikibot.toml", "/home/a/.xdg/kwikibot/kwikibot.toml")
+        BotConfig.searchPath({ null }, null).map { it.toString() } shouldBe listOf("kwikibot.toml")
     }
 
     @Test

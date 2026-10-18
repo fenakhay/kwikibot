@@ -91,6 +91,45 @@ class SurfaceTest {
     }
 
     @Test
+    fun `merging keeps what only a later wiki reports`() {
+        val header = COLUMNS.split('\t')
+
+        val merged =
+            Surface.merge(
+                mapOf(
+                    "enwiki" to listOf(Row.parse(header, "parse\tpage\taction\t\t\ttype=string")),
+                    "wikidatawiki" to
+                        listOf(
+                            Row.parse(
+                                header,
+                                "parse\tpage\taction\tMediaWiki\t\ttype=string default=Main Page",
+                            )
+                        ),
+                )
+            )
+
+        merged.single() shouldBe
+            Row(
+                module = "parse",
+                parameter = "page",
+                group = "action",
+                source = "MediaWiki",
+                detail = mapOf("type" to "string", "default" to "Main Page"),
+            )
+    }
+
+    @Test
+    fun `a module the wiki names no source for is recorded without one`() = runTest {
+        val rows =
+            rows(
+                """{"paraminfo":{"modules":[{"name":"zqx","path":"zqx","group":"action","prefix":"",
+                   "parameters":[{"name":"mode","type":"string"}]}]}}"""
+            )
+
+        rows.map { it.render() } shouldBe listOf("zqx\t-\taction", "zqx\tmode\taction\t\t\ttype=string")
+    }
+
+    @Test
     fun `a file reads back as the rows it was written from`() = runTest {
         val rows = Surface.merge(mapOf("commonswiki" to rows(commons), "wikidatawiki" to rows(wikidata)))
         val text = Surface.render(rows)
@@ -237,6 +276,46 @@ class SurfaceTest {
         report.deprecated shouldBe emptyList()
         report.changed.single().render() shouldBe
             "- `edit summary`: source MediaWiki → CheckUser; no longer deprecated: old; wikis (all) → enwiki"
+    }
+
+    @Test
+    fun `a report leaves out the sections it has nothing for`() {
+        val before = Surface.parse("$COLUMNS\nquery+gone\t-\tlist\tMediaWiki\nquery+moved\t-\t\tMediaWiki\n")
+        val after = Surface.parse("$COLUMNS\nquery+moved\t-\tprop\tMediaWiki\n")
+
+        val report = SurfaceReport.compare(before, after)
+
+        report.render("API surface: production", "api-surface.tsv") shouldBe
+            """
+            ## API surface: production
+
+            `api-surface.tsv` differs from what the reference wikis report: 0 added, 1 removed, 1 changed, 0 newly deprecated.
+
+            ### Removed
+
+            - `query+gone` (module)
+
+            ### Changed
+
+            - `query+moved` (module): group (none) → prop
+
+            """
+                .trimIndent()
+    }
+
+    @Test
+    fun `a row added without a source is described by what it does say`() {
+        val after = Surface.parse("$COLUMNS\nmain\tformat\t\t\t\tenum=json|xml\nmain\tzqx\n")
+
+        SurfaceReport.compare(emptyList(), after).added.map { it.render() } shouldBe
+            listOf("- `main format`: enum=json|xml", "- `main zqx`")
+    }
+
+    @Test
+    fun `a registry line without its empty last cell still names what sends the parameter`() {
+        val usage = Usage.parse("module\tparameter\tsymbol\tvalue\nedit\tsummary\tEditRequest.summary\n")
+
+        usage.of("edit", "summary") shouldBe listOf("EditRequest")
     }
 
     @Test

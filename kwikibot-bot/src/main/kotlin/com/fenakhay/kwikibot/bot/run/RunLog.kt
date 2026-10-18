@@ -116,7 +116,7 @@ public class Progress(
     private val total: Int?,
     private val sink: Appendable = System.err.writer(),
     private val enabled: Boolean = true,
-    private val width: Int = terminalWidth(),
+    private val width: Int = terminalWidth(otherwise = DEFAULT_WIDTH),
     private val timeSource: TimeSource = TimeSource.Monotonic,
 ) : (PageOutcome) -> Unit {
 
@@ -126,7 +126,7 @@ public class Progress(
         total: Int?,
         sink: Appendable = System.err.writer(),
         enabled: Boolean = true,
-    ) : this(total, sink, enabled, terminalWidth(), TimeSource.Monotonic)
+    ) : this(total, sink, enabled, terminalWidth(otherwise = DEFAULT_WIDTH), TimeSource.Monotonic)
 
     private val started = timeSource.markNow()
     private var drawn: TimeMark? = null
@@ -255,11 +255,17 @@ public class Progress(
         val REDRAW = 200.milliseconds
         val RATE_WINDOW = 10.seconds
         val MIN_WINDOW = 1.seconds
-
-        /** The terminal's width as the shell reports it in `COLUMNS`, or a width most terminals have. */
-        fun terminalWidth(): Int = System.getenv("COLUMNS")?.toIntOrNull()?.takeIf { it > 0 } ?: DEFAULT_WIDTH
     }
 }
+
+/**
+ * The terminal's width as the shell reports it in `COLUMNS`.
+ *
+ * @param otherwise the width to use when the shell reports none that makes sense.
+ * @param variables reads an environment variable; the process's own environment unless a test says otherwise.
+ */
+internal fun terminalWidth(otherwise: Int, variables: (String) -> String? = System::getenv): Int =
+    variables("COLUMNS")?.toIntOrNull()?.takeIf { it > 0 } ?: otherwise
 
 /** Reports each outcome to every one of [handlers], in order. */
 public fun reportTo(vararg handlers: (PageOutcome) -> Unit): (PageOutcome) -> Unit = { outcome ->

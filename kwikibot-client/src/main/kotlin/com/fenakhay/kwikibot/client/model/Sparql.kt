@@ -4,6 +4,10 @@ import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.UserAgent
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.cookies.HttpCookies
@@ -29,9 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * One cell of a SPARQL result.
@@ -173,19 +175,22 @@ public class SparqlClient(
             }
 
         val bindings =
-            parsed["results"]?.jsonObject?.get("bindings")?.jsonArray
+            parsed.obj("results")?.array("bindings")
                 ?: throw WikiError.Api("sparqlfailed", "no results block in the response", "sparql")
 
-        return bindings.map { row ->
-            row.jsonObject.mapValues { (_, cell) ->
-                val fields = cell.jsonObject
-                SparqlValue(
-                    value = fields["value"]?.jsonPrimitive?.content.orEmpty(),
-                    type = fields["type"]?.jsonPrimitive?.content.orEmpty(),
-                    language = fields["xml:lang"]?.jsonPrimitive?.content,
-                    dataType = fields["datatype"]?.jsonPrimitive?.content,
-                )
-            }
+        return bindings.objects().map { row ->
+            row.keys
+                .mapNotNull { name ->
+                    val cell = row.obj(name) ?: return@mapNotNull null
+                    name to
+                        SparqlValue(
+                            value = cell.string("value").orEmpty(),
+                            type = cell.string("type").orEmpty(),
+                            language = cell.string("xml:lang"),
+                            dataType = cell.string("datatype"),
+                        )
+                }
+                .toMap()
         }
     }
 

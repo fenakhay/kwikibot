@@ -48,15 +48,17 @@ internal object Corpus {
     /** Total characters across [large]. */
     val largeCharacters: Int by lazy { large.sumOf { it.length } }
 
-    private fun load(resource: String): List<String> {
+    /** The texts of the pages recorded in [resource], a gzipped dump on the classpath, shortest first. */
+    internal fun load(resource: String): List<String> {
         val stream =
             checkNotNull(Corpus::class.java.getResourceAsStream(resource)) {
                 "$resource missing: run the recorder in :kwikibot-tools"
             }
         return Json.parseToJsonElement(GZIPInputStream(stream).reader().readText())
-            .jsonObject["pages"]!!
+            .jsonObject
+            .getValue("pages")
             .jsonArray
-            .map { it.jsonObject["text"]!!.jsonPrimitive.content }
+            .map { it.jsonObject.getValue("text").jsonPrimitive.content }
             .sortedBy { it.length }
     }
 

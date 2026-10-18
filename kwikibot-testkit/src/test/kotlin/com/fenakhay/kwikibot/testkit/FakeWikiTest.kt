@@ -389,6 +389,52 @@ class FakeWikiTest {
     }
 
     @Test
+    fun `a new section with no title or summary has no heading, and one may be appended rather than given`() =
+        runTest {
+            val pages = FakePageService("talk" to "First.")
+
+            pages.edit(pages.ref("talk")) {
+                section = "new"
+                text = "Untitled."
+            }
+            pages.edit(pages.ref("talk")) {
+                section = "new"
+                sectionTitle = "Added"
+                appendText = "Appended."
+            }
+
+            pages.text("talk") shouldBe "First.\n\nUntitled.\n\n== Added ==\nAppended."
+        }
+
+    @Test
+    fun `a new section given as prepended text holds that text, as a wiki makes it`() = runTest {
+        val pages = FakePageService("talk" to "First.")
+
+        pages.edit(pages.ref("talk")) {
+            section = "new"
+            sectionTitle = "Prepended"
+            prependText = "Before."
+        }
+
+        pages.text("talk") shouldBe "First.\n\n== Prepended ==\nBefore."
+    }
+
+    @Test
+    fun `a new section or appended text on a page that does not exist creates it with only that`() = runTest {
+        val pages = FakePageService()
+
+        pages.edit(pages.ref("talk")) {
+            section = "new"
+            sectionTitle = "First"
+            text = "Hi."
+        }
+        pages.edit(pages.ref("log")) { appendText = "entry" }
+
+        pages.text("talk") shouldBe "== First ==\nHi."
+        pages.text("log") shouldBe "entry"
+    }
+
+    @Test
     fun `a numbered section edit is not something the fake can do, so it says so`() = runTest {
         val pages = FakePageService("volcano" to "== a ==\nx")
 

@@ -120,26 +120,28 @@ private fun WikiLink.isCategory(prefix: String): Boolean =
 private fun WikiLink.categoryName(): String = title.trimStart(':').substringAfter(':').trim()
 
 /**
- * The nodes without a category link, and without the blank line it was sitting on.
+ * The nodes without a category link, and without the line break that held it on a line of its own.
  *
  * Leaving the newline behind turns a removal into a growing gap at the bottom of the page, one blank line per
  * category ever removed.
  */
 private fun List<Node>.withoutCategory(target: WikiLink): List<Node> {
     val index = indexOf(target)
-    if (index < 0) return this
-
-    val before = getOrNull(index - 1) as? TextNode
-    val after = getOrNull(index + 1) as? TextNode
+    val before = getOrNull(index - 1)
+    val after = getOrNull(index + 1)
+    val ownLine =
+        (before == null || before.endsWithLineBreak()) && (after == null || after.startsWithLineBreak())
 
     return when {
-        // On its own line: the newline before it goes with it.
-        before != null && before.text.endsWith("\n") && after?.text?.startsWith("\n") == true ->
-            take(index - 1) + TextNode(before.text.dropLast(1)) + drop(index + 1)
-
+        ownLine && before is TextNode -> take(index - 1) + TextNode(before.text.dropLast(1)) + drop(index + 1)
+        ownLine && after is TextNode -> listOf(TextNode(after.text.drop(1))) + drop(index + 2)
         else -> take(index) + drop(index + 1)
     }
 }
+
+private fun Node.endsWithLineBreak(): Boolean = this is TextNode && text.endsWith('\n')
+
+private fun Node.startsWithLineBreak(): Boolean = this is TextNode && text.startsWith('\n')
 
 /** The canonical English category namespace, which the wikitext module knows nothing beyond. */
 private const val CATEGORY = "Category"

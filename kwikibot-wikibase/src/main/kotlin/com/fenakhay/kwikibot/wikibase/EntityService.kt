@@ -8,6 +8,10 @@ import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.protocol.ApiFailure
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.throwOnError
 import com.fenakhay.kwikibot.wikibase.entity.Entity
 import com.fenakhay.kwikibot.wikibase.entity.LanguageValue
@@ -17,9 +21,6 @@ import com.fenakhay.kwikibot.wikibase.value.EntityId
 import com.fenakhay.kwikibot.wikibase.value.Statement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /** One hit from an entity search: enough to choose between candidates, not the whole entity. */
 public data class EntityMatch(
@@ -323,12 +324,11 @@ internal class ApiEntityService(
                 )
                 .throwOnError()
 
-        return response["search"]?.jsonArray.orEmpty().map { hit ->
-            val entry = hit.jsonObject
+        return response.array("search").objects().map { hit ->
             EntityMatch(
-                id = EntityId(entry["id"]?.jsonPrimitive?.content.orEmpty()),
-                label = entry["label"]?.jsonPrimitive?.content,
-                description = entry["description"]?.jsonPrimitive?.content,
+                id = EntityId(hit.string("id")!!),
+                label = hit.string("label"),
+                description = hit.string("description"),
             )
         }
     }
@@ -360,7 +360,7 @@ internal class ApiEntityService(
             }
 
         val saved =
-            response["claim"]?.jsonObject
+            response.obj("claim")
                 ?: throw WikiError.Api(
                     "noclaim",
                     "wbsetclaim returned no claim for ${target.value}",
@@ -432,9 +432,7 @@ internal class ApiEntityService(
                 )
                 .throwOnError()
 
-        return response["results"]?.jsonArray.orEmpty().map { result ->
-            EntityDecoder.decodeValue(result.jsonObject)
-        }
+        return response.array("results").objects().map { EntityDecoder.decodeValue(it) }
     }
 
     private suspend fun editEntity(
@@ -452,7 +450,7 @@ internal class ApiEntityService(
             }
 
         val entity =
-            response["entity"]?.jsonObject
+            response.obj("entity")
                 ?: throw WikiError.Api(
                     "noentity",
                     "wbeditentity returned no entity",

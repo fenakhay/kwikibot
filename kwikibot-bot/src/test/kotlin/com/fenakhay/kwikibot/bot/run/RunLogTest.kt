@@ -11,6 +11,7 @@ import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import java.io.StringWriter
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -159,12 +160,80 @@ class RunLogTest {
     }
 
     @Test
+    fun `a page the transform left as it was is not logged`() {
+        val diffs = StringBuilder()
+        val skips = StringBuilder()
+
+        RunLog(diffs = diffs, skips = skips)(PageOutcome.Unchanged(ref("volcano")))
+
+        diffs.toString() shouldBe ""
+        skips.toString() shouldBe ""
+    }
+
+    @Test
+    fun `a saved page the edit created is diffed against nothing`() {
+        val diffs = StringBuilder()
+
+        RunLog(diffs = diffs)(
+            PageOutcome.Saved(ref("lava"), RevisionId(2), edit = Edit("new page", "create"))
+        )
+
+        diffs.toString() shouldContain "=== saved: lava ==="
+        diffs.toString() shouldContain "+new page"
+    }
+
+    @Test
+    fun `an edit that changes nothing writes no diff`() {
+        val diffs = StringBuilder()
+
+        RunLog(diffs = diffs)(PageOutcome.Pending(ref("volcano"), Edit("same", "s"), "same"))
+
+        diffs.toString() shouldBe ""
+    }
+
+    @Test
+    fun `a log with nowhere to put a record drops it, and writes the other kind where it was asked`() {
+        val diffs = StringBuilder()
+        val skips = StringBuilder()
+
+        RunLog(skips = skips)(PageOutcome.Pending(ref("volcano"), Edit("new", "s"), "old"))
+        RunLog(diffs = diffs)(PageOutcome.Missing(ref("lava")))
+
+        diffs.toString() shouldBe ""
+        skips.toString() shouldBe ""
+    }
+
+    @Test
+    fun `each record is flushed as it is written, so an interrupted run keeps it`() {
+        val diffs = FlushCounting()
+        val skips = FlushCounting()
+        val log = RunLog(diffs = diffs, skips = skips)
+
+        log(PageOutcome.Pending(ref("volcano"), Edit("new", "s"), "old"))
+        log(PageOutcome.Missing(ref("lava")))
+
+        diffs.flushes shouldBe 1
+        skips.flushes shouldBe 1
+        skips.toString() shouldContain "\"kind\":\"missing\""
+    }
+
+    @Test
     fun `a skip reason containing quotes stays valid JSON`() {
         val skips = StringBuilder()
 
         RunLog(skips = skips)(PageOutcome.Skipped(ref("volcano"), """ambiguous_pos:"Noun","Verb""""))
 
         skips.toString() shouldContain """\"Noun\",\"Verb\""""
+    }
+}
+
+/** A writer that counts how often it was flushed. */
+class FlushCounting : StringWriter() {
+    var flushes = 0
+        private set
+
+    override fun flush() {
+        flushes++
     }
 }
 
@@ -261,6 +330,72 @@ class ProgressTest {
 
         // One column is left free, so the cursor does not wrap onto the next line.
         out.toString().removePrefix("\r") shouldBe "1/10  unchanged 1".take(11)
+    }
+
+    @Test
+    fun `a refusal is counted with the failures`() {
+        val out = StringBuilder()
+        val progress = progress(total = 1, out)
+
+        progress(PageOutcome.Refused(ref("a"), EditOutcome.Protected(ref("a"), "page is protected")))
+
+        out.toString() shouldContain "failed 1"
+    }
+
+    @Test
+    fun `each drawing is flushed, so the terminal shows it at once`() {
+        val out = FlushCounting()
+        val progress = Progress(total = 1, sink = out, width = 200, timeSource = clock)
+
+        progress(PageOutcome.Unchanged(ref("a")))
+        progress.finish()
+
+        out.flushes shouldBe 2
+    }
+
+    @Test
+    fun `the rate leaves out what happened more than ten seconds ago`() {
+        val out = StringBuilder()
+        val progress = progress(total = null, out)
+
+        clock += 1.seconds
+        repeat(20) { progress(PageOutcome.Unchanged(ref("burst$it"))) }
+        repeat(12) {
+            clock += 1.seconds
+            progress(PageOutcome.Unchanged(ref("p$it")))
+        }
+
+        out.toString().split("\r").last() shouldContain "32 pages  1.0/s"
+    }
+
+    @Test
+    fun `a run over no pages shows a full bar`() {
+        val out = StringBuilder()
+        val progress = progress(total = 0, out)
+
+        progress.finish()
+
+        out.toString() shouldBe "\r[####################] 0/0\n"
+    }
+
+    @Test
+    fun `the time left is shown in minutes and seconds when it is under an hour`() {
+        val out = StringBuilder()
+        val progress = progress(total = 1000, out)
+
+        repeat(5) {
+            clock += 1.seconds
+            progress(PageOutcome.Unchanged(ref("p$it")))
+        }
+
+        out.toString().split("\r").last() shouldContain "16m35s left"
+    }
+
+    @Test
+    fun `the width is the one the shell reports, or the fallback when it reports none that makes sense`() {
+        terminalWidth(otherwise = 100) { if (it == "COLUMNS") "80" else null } shouldBe 80
+        listOf(null, "0", "-5", "wide").map { columns -> terminalWidth(otherwise = 100) { columns } } shouldBe
+            listOf(100, 100, 100, 100)
     }
 
     @Test

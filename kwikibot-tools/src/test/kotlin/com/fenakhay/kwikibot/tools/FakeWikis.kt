@@ -10,6 +10,8 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.http.parseQueryString
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -26,10 +28,11 @@ internal data class Sent(val host: String, val parameters: Map<String, String>) 
 
 /**
  * Wikis that answer from [answer] rather than over the network, and everything a tool sent and printed while
- * it asked them.
+ * it asked them. A relative path the tool is given is taken from [workingDirectory], a directory of its own.
  */
 internal class FakeWikis(
     scope: TestScope,
+    val workingDirectory: Path = Files.createTempDirectory("kwikibot-tools"),
     private val answer: MockRequestHandleScope.(Sent) -> HttpResponseData,
 ) {
     /** Every request, in the order it was sent. */
@@ -55,6 +58,7 @@ internal class FakeWikis(
             variables = { variables[it] },
             output = output,
             log = log,
+            workingDirectory = workingDirectory,
         )
 }
 

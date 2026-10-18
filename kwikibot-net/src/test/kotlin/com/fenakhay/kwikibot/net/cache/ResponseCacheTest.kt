@@ -147,6 +147,7 @@ class ResponseCacheTest {
         val cache = DiskCache(tempRoot())
 
         cache.put(read, body("""{"errors":[{"code":"maxlag","text":"lagged"}]}"""))
+        cache.put(read, body("""{"error":{"code":"readonly","info":"The wiki is read-only."}}"""))
 
         cache.get(read).shouldBeNull()
     }
@@ -160,6 +161,30 @@ class ResponseCacheTest {
         root.walk().filter { it.toString().endsWith(".json") }.forEach { it.writeText("{not json") }
 
         cache.get(read).shouldBeNull()
+    }
+
+    @Test
+    fun `an entry that is JSON of the wrong shape is a miss, not a crash, and is removed`() = runTest {
+        val clock = FixedClock()
+        val storedAt = clock.now.toEpochMilliseconds()
+        val shapes =
+            listOf(
+                """{"storedAt":$storedAt,"response":[]}""",
+                """{"storedAt":$storedAt,"response":null}""",
+                """{"storedAt":$storedAt}""",
+                """{"storedAt":{},"response":{"ok":1}}""",
+                """{"storedAt":null,"response":{"ok":1}}""",
+            )
+
+        for (shape in shapes) {
+            val root = tempRoot()
+            val cache = DiskCache(root, clock = clock)
+            cache.put(read, body("""{"ok":1}"""))
+            root.walk().filter { it.toString().endsWith(".json") }.forEach { it.writeText(shape) }
+
+            cache.get(read).shouldBeNull()
+            filesUnder(root) shouldBe 0
+        }
     }
 
     @Test

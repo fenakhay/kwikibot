@@ -32,7 +32,7 @@ class ApiFailureTest {
     }
 
     @Test
-    fun `reads the legacy error object too`() {
+    fun `reads the error object an errorformat=bc answer carries too`() {
         val failure =
             ApiFailure.from(
                 response("""{"error":{"code":"editconflict","info":"Edit conflict.","module":"edit"}}""")
@@ -44,6 +44,25 @@ class ApiFailureTest {
     @Test
     fun `a response with no error yields nothing`() {
         ApiFailure.from(response("""{"batchcomplete":true,"query":{"pages":[]}}""")).shouldBeNull()
+    }
+
+    @Test
+    fun `an error block in a shape MediaWiki does not send reads as no error`() {
+        val shapes =
+            listOf(
+                """{"errors":{}}""",
+                """{"errors":[]}""",
+                """{"errors":["readonly"]}""",
+                """{"error":"readonly"}""",
+                """{"errors":[{"code":null,"text":"no code"}]}""",
+            )
+
+        shapes.map { ApiFailure.from(response(it)) } shouldBe shapes.map { null }
+    }
+
+    @Test
+    fun `an error without a message keeps its code and an empty text`() {
+        ApiFailure.from(response("""{"errors":[{"code":"readonly"}]}""")) shouldBe ApiFailure("readonly", "")
     }
 
     @Test
@@ -182,6 +201,159 @@ class ApiFailureTest {
     }
 
     @Test
+    fun `every edit refusal code maps to the outcome a bot acts on`() {
+        val text = "Refused."
+        val expected =
+            listOf("editconflict", "undofailure").associateWith { EditOutcome.Conflict(ref, text) } +
+                mapOf(
+                    "pagedeleted" to EditOutcome.PageStateChanged(ref, text, wasDeleted = true),
+                    "articleexists" to EditOutcome.PageStateChanged(ref, text, wasDeleted = false),
+                    "cascadeprotected" to EditOutcome.Protected(ref, text, cascading = true),
+                    "ratelimited" to EditOutcome.RateLimited(ref, text),
+                ) +
+                listOf(
+                        "protectedpage",
+                        "protectedtitle",
+                        "protectednamespace",
+                        "protectednamespace-interface",
+                    )
+                    .associateWith { EditOutcome.Protected(ref, text) } +
+                listOf(
+                        "abusefilter-disallowed",
+                        "abusefilter-warning",
+                        "spamblacklist",
+                        "titleblacklist-forbidden",
+                        "filtered",
+                        "spamdetected",
+                    )
+                    .associateWith { EditOutcome.Filtered(ref, text) } +
+                listOf("captcha", "captchacreate", "captchaneeded").associateWith {
+                    EditOutcome.CaptchaRequired(ref, text)
+                } +
+                listOf(
+                        "permissiondenied",
+                        "permissionerror",
+                        "writeapidenied",
+                        "noapiwrite",
+                        "noedit",
+                        "cantcreate",
+                        "noimageredirect",
+                        "protectedpage-ns",
+                        "readapidenied",
+                        "blocked",
+                        "autoblocked",
+                        "blockedfrommail",
+                        "noedit-anon",
+                        "cantcreate-anon",
+                        "noimageredirect-anon",
+                    )
+                    .associateWith { EditOutcome.PermissionDenied(ref, text) } +
+                listOf(
+                        "missingtitle",
+                        "contenttoobig",
+                        "nocreate-missing",
+                        "badmd5",
+                        "emptypage",
+                        "emptynewsection",
+                        "hookaborted",
+                        "unknownerror",
+                    )
+                    .associateWith { EditOutcome.Rejected(ref, text, it) }
+
+        expected.mapValues { (code, _) -> ApiFailure(code, text).toEditRefusal(ref) } shouldBe expected
+    }
+
+    @Test
+    fun `a filter refusal whose message names no filter has none`() {
+        ApiFailure("spamblacklist", "Blocked by the spam blacklist.")
+            .toEditRefusal(ref)
+            .shouldBeInstanceOf<EditOutcome.Filtered>()
+            .filter
+            .shouldBeNull()
+    }
+
+    @Test
+    fun `every code that means the session is gone names the module that needed one`() {
+        val codes =
+            listOf("notloggedin", "mustbeloggedin", "assertuserfailed", "assertbotfailed", "mustbeposted")
+
+        codes.map {
+            ApiFailure(it, "Log in first.", "edit")
+                .toWikiError()
+                .shouldBeInstanceOf<WikiError.Auth.NotLoggedIn>()
+                .action
+        } shouldBe codes.map { "edit" }
+    }
+
+    @Test
+    fun `a session failure that names no module says what was refused in general terms`() {
+        val error =
+            ApiFailure("assertuserfailed", "Assertion failed")
+                .toWikiError()
+                .shouldBeInstanceOf<WikiError.Auth.NotLoggedIn>()
+
+        error.action shouldBe "this action"
+        error.message shouldBe "not logged in, which this action requires"
+    }
+
+    @Test
+    fun `every block and permission code raises its typed error with the wiki's own message`() {
+        val blocked = listOf("blocked", "autoblocked", "blockedfrommail")
+        val denied =
+            listOf(
+                "permissiondenied",
+                "permissionerror",
+                "writeapidenied",
+                "noapiwrite",
+                "noedit",
+                "cantcreate",
+                "noimageredirect",
+                "protectedpage-ns",
+                "readapidenied",
+            )
+
+        blocked.map {
+            ApiFailure(it, "Blocked until Friday.")
+                .toWikiError()
+                .shouldBeInstanceOf<WikiError.Auth.AccountBlocked>()
+                .detail
+        } shouldBe blocked.map { "Blocked until Friday." }
+        denied.map {
+            ApiFailure(it, "Not for you.")
+                .toWikiError()
+                .shouldBeInstanceOf<WikiError.Auth.PermissionDenied>()
+                .detail
+        } shouldBe denied.map { "Not for you." }
+    }
+
+    @Test
+    fun `a read-only wiki and a rejected token raise their own errors`() {
+        ApiFailure("readonly", "Database maintenance.")
+            .toWikiError()
+            .shouldBeInstanceOf<WikiError.ReadOnly>()
+            .reason shouldBe "Database maintenance."
+        ApiFailure("badtoken", "Invalid CSRF token.")
+            .toWikiError()
+            .shouldBeInstanceOf<WikiError.Auth.BadToken>()
+            .tokenType shouldBe "csrf"
+    }
+
+    @Test
+    fun `an unmapped failure that names no module is raised without one`() {
+        val error =
+            ApiFailure("badvalue", "Unrecognised value.").toWikiError().shouldBeInstanceOf<WikiError.Api>()
+
+        error.module.shouldBeNull()
+        error.message shouldBe "API error [badvalue]: Unrecognised value."
+    }
+
+    @Test
+    fun `a failure read from a response keeps the absence of a module`() {
+        ApiFailure.from(response("""{"errors":[{"code":"badvalue","text":"Bad."}]}""")) shouldBe
+            ApiFailure("badvalue", "Bad.", module = null)
+    }
+
+    @Test
     fun `warnings are read from the array errorformat=plaintext returns`() {
         val warnings =
             response(
@@ -196,25 +368,16 @@ class ApiFailureTest {
     }
 
     @Test
-    fun `warnings are read from the legacy object keyed by module`() {
-        val warnings =
-            response("""{"warnings":{"query":{"*":"Truncated to the limit for your account."}}}""").warnings()
-
-        warnings.single().module shouldBe "query"
-        warnings.single().text shouldBe "Truncated to the limit for your account."
+    fun `a warning with no module or text is kept, with empty ones rather than dropped`() {
+        response("""{"warnings":[{"module":"parse"},{}]}""").warnings() shouldBe
+            listOf(ApiWarning("parse", ""), ApiWarning("", ""))
     }
 
     @Test
-    fun `the legacy shape reads either key MediaWiki uses for the message`() {
-        response("""{"warnings":{"main":{"warnings":"Deprecated parameter."}}}""")
-            .warnings()
-            .single()
-            .text shouldBe "Deprecated parameter."
-    }
-
-    @Test
-    fun `a warning with neither key is kept, with no text rather than dropped`() {
-        response("""{"warnings":{"parse":{}}}""").warnings().single() shouldBe ApiWarning("parse", "")
+    fun `warnings in a shape MediaWiki does not send are left out`() {
+        response("""{"warnings":{"query":{"*":"Truncated."}}}""").warnings().shouldBeEmpty()
+        response("""{"warnings":[null,"Truncated.",{"module":"query","text":"Truncated."}]}""")
+            .warnings() shouldBe listOf(ApiWarning("query", "Truncated."))
     }
 
     @Test
@@ -243,9 +406,11 @@ class ApiFailureTest {
     }
 
     @Test
-    fun `the legacy shape has no code, so nothing in it reads as a deprecation`() {
+    fun `a warning without a code is not a deprecation, whatever its text says`() {
         val warning =
-            response("""{"warnings":{"main":{"warnings":"Deprecated parameter."}}}""").warnings().single()
+            response("""{"warnings":[{"module":"main","text":"Deprecated parameter."}]}""")
+                .warnings()
+                .single()
 
         warning.code shouldBe null
         warning.isDeprecation shouldBe false

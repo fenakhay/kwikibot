@@ -170,6 +170,15 @@ class BotMainTest {
     }
 
     @Test
+    fun `an error opening the wiki that is not about the login or the connection is not passed off as one`() =
+        runTest {
+            assertFailsWith<WikiError.ReadOnly> {
+                start(environment = environment(open = { throw WikiError.ReadOnly("maintenance") }))
+            }
+            errors.toString() shouldBe ""
+        }
+
+    @Test
     fun `a failure in the bot's own work is the bot's to report`() = runTest {
         assertFailsWith<WikiError.Auth.NotLoggedIn> {
             start { throw WikiError.Auth.NotLoggedIn("editing") }

@@ -68,6 +68,94 @@ class TextOpsTest {
     }
 
     @Test
+    fun `an external link's label is prose and its URL is never touched`() {
+        val code =
+            Wikitext.parse("[https://colour.example colour] [https://colour.example] https://colour.example")
+
+        code.replaceText(Regex("colour"), "color", TextScope.EVERYWHERE).serialize() shouldBe
+            "[https://colour.example color] [https://colour.example] https://colour.example"
+    }
+
+    @Test
+    fun `text a replacement never touches is not reported as matching`() {
+        val code = Wikitext.parse("see https://colour.example")
+
+        code.containsText(Regex("colour"), TextScope.EVERYWHERE) shouldBe false
+        code.textIn(TextScope.EVERYWHERE) shouldBe listOf("see ")
+    }
+
+    @Test
+    fun `headings can be left out`() {
+        val code = Wikitext.parse("==colour==\ncolour")
+        val scope = TextScope(headings = false)
+
+        code.replaceText(Regex("colour"), "color", scope).serialize() shouldBe "==colour==\ncolor"
+        code.textIn(scope) shouldBe listOf("\ncolour")
+        code.textIn(TextScope.PROSE) shouldBe listOf("colour", "\ncolour")
+    }
+
+    @Test
+    fun `tag attributes are only touched when asked for`() {
+        val code = Wikitext.parse("<span title=\"colour\" hidden>colour</span><br/>")
+        val scope = TextScope(tagAttributes = true)
+
+        code.replaceText(Regex("colour"), "color").serialize() shouldBe
+            "<span title=\"colour\" hidden>color</span><br/>"
+        code.replaceText(Regex("colour"), "color", scope).serialize() shouldBe
+            "<span title=\"color\" hidden>color</span><br/>"
+        code.textIn(TextScope.PROSE) shouldBe listOf("colour")
+        code.textIn(scope) shouldBe listOf("colour", "title", "colour", "hidden")
+    }
+
+    @Test
+    fun `the inside of a raw tag is touched only when asked for`() {
+        val code = Wikitext.parse("<nowiki>colour</nowiki>")
+        val scope = TextScope(rawTags = true)
+
+        code.replaceText(Regex("colour"), "color", scope).serialize() shouldBe "<nowiki>color</nowiki>"
+        code.containsText(Regex("colour")) shouldBe false
+        code.containsText(Regex("colour"), scope) shouldBe true
+    }
+
+    @Test
+    fun `link targets are touched only when asked for`() {
+        val code = Wikitext.parse("[[colour]]")
+        val scope = TextScope(linkTargets = true)
+
+        code.replaceText(Regex("colour"), "color").serialize() shouldBe "[[colour]]"
+        code.replaceText(Regex("colour"), "color", scope).serialize() shouldBe "[[color]]"
+        code.textIn(TextScope.PROSE) shouldBe emptyList()
+        code.textIn(scope) shouldBe listOf("colour")
+    }
+
+    @Test
+    fun `comments are read only when asked for`() {
+        val code = Wikitext.parse("<!-- colour -->")
+
+        code.containsText(Regex("colour")) shouldBe false
+        code.containsText(Regex("colour"), TextScope(comments = true)) shouldBe true
+    }
+
+    @Test
+    fun `an argument's default is prose and an entity is left as written`() {
+        val code = Wikitext.parse("{{{1}}} {{{2|colour}}} &amp;colour")
+
+        code.replaceText(Regex("colour"), "color").serialize() shouldBe "{{{1}}} {{{2|color}}} &amp;color"
+        code.textIn(TextScope.PROSE) shouldBe listOf(" ", "colour", " ", "colour")
+    }
+
+    @Test
+    fun `an argument's name names a parameter, so prose leaves it alone`() {
+        val code = Wikitext.parse("{{{colour|colour}}}")
+
+        code.replaceText(Regex("colour"), "color").serialize() shouldBe "{{{colour|color}}}"
+        code.containsText(Regex("^colour$"), TextScope.PROSE) shouldBe true
+        code.textIn(TextScope.PROSE) shouldBe listOf("colour")
+        code.replaceText(Regex("colour"), "color", TextScope.EVERYWHERE).serialize() shouldBe
+            "{{{color|color}}}"
+    }
+
+    @Test
     fun `a replacement can be computed from the match`() {
         val code = Wikitext.parse("volcano and vog")
 

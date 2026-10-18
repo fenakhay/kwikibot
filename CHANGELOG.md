@@ -7,6 +7,89 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [Unreleased]
+
+A value of the wrong JSON type now reads as absent instead of throwing, and the accessors that
+read it are public. `Messages` takes its plural rules from CLDR. The build requires every module to
+cover 90% of its branches as well as 95% of its lines.
+
+Source- and binary-compatible. Decoding behaves differently in the cases listed under Changed, and
+`kwikibot-bot` depends on `net.xyzsd.plurals:cldr-plural-rules`.
+
+### Added
+
+- JSON accessors in `com.fenakhay.kwikibot.protocol.decode`: `string`, `long`, `int`, `double`,
+  `boolean`, `flag`, `time`, `obj` and `array` on `JsonObject`, and `strings` and `objects` on
+  `JsonArray?`. An absent key, JSON `null` and a value of the wrong type all read as absent.
+
+### Changed
+
+- JSON `null` reads as absent. It used to read as the text `"null"`, in a login failure's reason,
+  a user name, a group list such as `["bot", null]`, a statement id or a PagePile entry.
+- An object, array or element of the wrong type reads as absent, or is skipped, instead of
+  throwing. This covers the API services, Wikibase entities, SPARQL, EventStreams, PagePile lists
+  and the disk cache. A field kwikibot cannot do without still fails.
+- A response of `{"errors":{}}`, or any other error shape MediaWiki does not send, reads as no
+  error.
+- A flag sent as `""` or `1` reads as false, a revision timestamp that is not a MediaWiki
+  timestamp reads as absent, and an interwiki row without a prefix is skipped. AbuseFilter's and
+  PageTriage's flags are still read in every shape those extensions send.
+- A magic word is case-sensitive only when its `case-sensitive` flag is `true`.
+- `EventStreams` reads a `wiki`, `title`, `user`, `comment` or `type` sent as a number or a
+  boolean as text.
+- `ExtensionService.lintErrors` gives no `range` for a location that is not two numbers, instead
+  of a range that starts or ends at 0.
+- `Messages` reads plural rules from CLDR 48 through `cldr-plural-rules`, a 27 kB library with no
+  dependencies of its own. Each language CLDR covers gets its own rule. The hand-written table had
+  seventeen, and the rest took English's, Czech, Lithuanian, Maltese, Hebrew and Welsh among them.
+  Forms are numbered as MediaWiki numbers them, by the categories the language has, and a variant
+  code such as `sr-ec` or `de-formal` takes its language's rule.
+- `replaceText`, `containsText` and `textIn` leave an argument's name alone unless the scope
+  includes templates. In `{{{colour|colour}}}`, prose reaches only the default.
+
+### Removed
+
+- Decoding of formatversion=1 shapes: content and warning text under `"*"`, warnings keyed by
+  module, log parameters under the log type's key, an empty `case-sensitive` flag, and the move
+  parameters `new_ns`, `new_title` and `suppressedredirect`. kwikibot asks for formatversion=2.
+  The errorformat=bc `error` object is still read.
+
+### Fixed
+
+- One `EventStreams` event whose `meta` or `revision` was not an object ended the stream.
+- `lists.languageLinksOn` failed on a link without a language code. It now skips it.
+- `SiteInfo.decode` threw `IllegalArgumentException` on a response that names no wiki, such as one
+  sent without `siprop=general`. It now throws `WikiError.Api` with the code `nositeinfo`.
+- A suppressed move decoded to `LogDetails.Unknown` with an empty `target_title`, and a move whose
+  target is not a title lost its `target_ns`. The first is now `LogDetails.None`, and the second
+  keeps every field the wiki sent.
+- Wikibase entities failed to decode when labels, descriptions, aliases, claims, statements or
+  sitelinks came as `[]`, which is how PHP writes an empty map.
+- A Wikibase data value not in the shape its type takes threw. It is now `DataValue.Unknown`.
+- The disk cache threw on an entry of the wrong shape, and never deleted an entry without a
+  response.
+- A response of `{"errors":["maxlag"]}` or `{"error":"maxlag"}` threw `IllegalArgumentException`
+  instead of a `WikiError`.
+- `whoAmI` and token requests threw `IllegalArgumentException` on a `userinfo` or `tokens` block of
+  the wrong shape, instead of `WikiError.Api`.
+- A PagePile list failed as a whole when one entry was not a title.
+- `Messages` gave Polish 21, 31, 101 and the like the few form instead of the many form, and gave
+  `arz`, `ary`, `be-tarask`, `sr-ec` and `sr-el` the English plural rule. A language without a rule
+  of its own now takes the rule of the language it falls back to, as MediaWiki does.
+- `ScriptedPrompt` threw on an empty answer to `choose`, and ignored the default on an empty answer
+  to `confirm` or `text`. An empty answer now takes the default, or the first choice, as Enter
+  does at a terminal.
+- `Markup.text` dropped a bare URL, so `Template.value` of `url=https://…` was empty.
+- `Template.withParameter("3", value)` on a call with one positional parameter added the value as
+  the second.
+- `removeCategory` left the line break of a category on the first or last line.
+- `containsText` and `textIn` read an external link's URL, which `replaceText` never changes.
+- `CosmeticChanges.HTML_EMPHASIS` turned an empty `<b></b>` or `<i></i>` into apostrophes.
+- `CosmeticChanges.HTML_ENTITIES` threw on `&#1114112;`. It also decoded numeric references that
+  have to stay as written: ASCII such as `&#124;`, spaces, and control, format, private-use and
+  unassigned code points.
+- `FakePageService` dropped the text of a new section added with `prependText`.
+
 ## [1.3.0] — 2026-10-18
 
 `botMain` sets up a bot in one call. `renderer.parse` takes a revision and a parser and reports
@@ -327,6 +410,7 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[Unreleased]: https://github.com/fenakhay/kwikibot/compare/v1.3.0...HEAD
 [1.3.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.2.0
 [1.1.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.1

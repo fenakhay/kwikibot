@@ -9,6 +9,7 @@ import com.fenakhay.kwikibot.testkit.FakePageService
 import com.fenakhay.kwikibot.testkit.FakeWiki
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
@@ -20,6 +21,11 @@ import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 
 class PreloadingTest {
+    @Test
+    fun `a batch of no pages is refused`() {
+        assertFailsWith<IllegalArgumentException> { flowOf(1).chunked(0) }
+    }
+
     private val pages =
         FakePageService(
             "volcano" to "==English==",

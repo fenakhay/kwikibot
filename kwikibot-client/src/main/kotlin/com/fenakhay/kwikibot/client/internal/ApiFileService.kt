@@ -3,7 +3,6 @@ package com.fenakhay.kwikibot.client.internal
 import com.fenakhay.kwikibot.client.internal.wire.Registry
 import com.fenakhay.kwikibot.client.raiseBadToken
 import com.fenakhay.kwikibot.client.service.FileService
-import com.fenakhay.kwikibot.model.MwTimestamp
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.file.FileInfo
 import com.fenakhay.kwikibot.model.file.FileRepository
@@ -24,6 +23,14 @@ import com.fenakhay.kwikibot.net.transport.TransportListener
 import com.fenakhay.kwikibot.protocol.ApiFailure
 import com.fenakhay.kwikibot.protocol.decode.Continuation
 import com.fenakhay.kwikibot.protocol.decode.PageDecoder
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.flag
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -53,17 +60,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 internal class ApiFileService(
     private val transport: MediaWikiTransport,
@@ -103,7 +104,7 @@ internal class ApiFileService(
                 .toList()
                 .forEach { page ->
                     val ref = decoder.refOf(page) ?: return@forEach
-                    val versionsOf = page["imageinfo"]?.jsonArray?.map { decodeInfo(it.jsonObject) }.orEmpty()
+                    val versionsOf = page.array("imageinfo").objects().map { decodeInfo(it) }
                     if (versionsOf.isNotEmpty()) found[ref.title] = versionsOf
                 }
         }
@@ -113,22 +114,19 @@ internal class ApiFileService(
 
     override suspend fun latest(ref: PageRef): FileInfo? = info(listOf(ref))[ref]?.firstOrNull()
 
-    override fun usage(file: PageRef, limit: Int?): Flow<PageRef> {
-        val pages =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "imageusage",
-                        "iutitle" to namespaces.format(file.title),
-                        "iulimit" to apiLimit(limit),
-                    ),
-                    "imageusage",
-                )
-                .mapNotNull { decoder.refOf(it) }
-
-        return if (limit == null) pages else pages.take(limit)
-    }
+    override fun usage(file: PageRef, limit: Int?): Flow<PageRef> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "imageusage",
+                    "iutitle" to namespaces.format(file.title),
+                    "iulimit" to limitParam(limit),
+                ),
+                "imageusage",
+            )
+            .mapNotNull { decoder.refOf(it) }
+            .limitedTo(limit)
 
     override fun globalUsage(file: PageRef, limit: Int?): Flow<GlobalUsage> {
         val batches =
@@ -137,26 +135,25 @@ internal class ApiFileService(
                     "query",
                     "prop" to "globalusage",
                     "titles" to namespaces.format(file.title),
-                    "gulimit" to apiLimit(limit),
+                    "gulimit" to limitParam(limit),
                 )
             )
 
         val uses = flow {
             batches.collect { page ->
-                page["globalusage"]?.jsonArray?.forEach { entry ->
-                    val fields = entry.jsonObject
+                page.array("globalusage").objects().forEach { entry ->
                     emit(
                         GlobalUsage(
-                            wiki = fields["wiki"]?.jsonPrimitive?.content.orEmpty(),
-                            title = fields["title"]?.jsonPrimitive?.content.orEmpty(),
-                            url = fields["url"]?.jsonPrimitive?.content,
+                            wiki = entry.string("wiki").orEmpty(),
+                            title = entry.string("title").orEmpty(),
+                            url = entry.string("url"),
                         )
                     )
                 }
             }
         }
 
-        return if (limit == null) uses else uses.take(limit)
+        return uses.limitedTo(limit)
     }
 
     override fun deletedFiles(
@@ -164,24 +161,21 @@ internal class ApiFileService(
         to: String?,
         prefix: String?,
         limit: Int?,
-    ): Flow<PageRef> {
-        val found =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "filearchive",
-                        "fafrom" to from,
-                        "fato" to to,
-                        "faprefix" to prefix,
-                        "falimit" to if (limit != null && limit < MAX_ARCHIVE) limit.toString() else "max",
-                    ),
-                    "filearchive",
-                )
-                .mapNotNull { decoder.refOf(it) }
-
-        return if (limit == null) found else found.take(limit)
-    }
+    ): Flow<PageRef> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "filearchive",
+                    "fafrom" to from,
+                    "fato" to to,
+                    "faprefix" to prefix,
+                    "falimit" to limitParam(limit),
+                ),
+                "filearchive",
+            )
+            .mapNotNull { decoder.refOf(it) }
+            .limitedTo(limit)
 
     override suspend fun repositories(): List<FileRepository> {
         val response =
@@ -196,24 +190,17 @@ internal class ApiFileService(
                 .throwOnError()
 
         // Answered under "repos", not under the module's own name as every list module is.
-        val repos = response["query"]?.jsonObject?.get("repos") as? JsonArray ?: return emptyList()
-
-        return repos
-            .map { it.jsonObject }
-            .map { entry ->
-                FileRepository(
-                    name = entry.repoText("name"),
-                    displayName = entry.repoText("displayname"),
-                    isLocal = entry["local"]?.jsonPrimitive?.booleanOrNull == true,
-                    url = entry.repoText("url").takeIf { it.isNotEmpty() },
-                    rootUrl = entry.repoText("rootUrl").takeIf { it.isNotEmpty() },
-                    canUpload = entry["canUpload"]?.jsonPrimitive?.booleanOrNull == true,
-                )
-            }
+        return response.obj("query")?.array("repos").objects().map { entry ->
+            FileRepository(
+                name = entry.string("name").orEmpty(),
+                displayName = entry.string("displayname").orEmpty(),
+                isLocal = entry.flag("local"),
+                url = entry.string("url")?.takeIf { it.isNotEmpty() },
+                rootUrl = entry.string("rootUrl")?.takeIf { it.isNotEmpty() },
+                canUpload = entry.flag("canUpload"),
+            )
+        }
     }
-
-    private fun JsonObject.repoText(key: String): String =
-        this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }.orEmpty()
 
     override suspend fun duplicatesOf(sha1: String, limit: Int): List<PageRef> =
         continuation
@@ -228,8 +215,7 @@ internal class ApiFileService(
             )
             .map { entry ->
                 // allimages reports a bare file name, without the namespace the rest of the API uses.
-                val name =
-                    entry["title"]?.jsonPrimitive?.content ?: entry["name"]?.jsonPrimitive?.content.orEmpty()
+                val name = entry.string("title") ?: entry.string("name").orEmpty()
                 decoder.refOf(name, Namespace.FILE.id)
             }
             .toList()
@@ -310,16 +296,15 @@ internal class ApiFileService(
                     text?.let { put("text", it) }
                     if (ignoreWarnings) put("ignorewarnings", "1")
                 },
-            partName = "file",
-            partFileName = file.name,
-            bytes = file.readBytes(),
+            part = Part("file", file.name, file.readBytes()),
         )
 
     /**
      * Sends a file in chunks, returning the key that names it on the server.
      *
      * Each chunk after the first carries the key the wiki gave for the one before, which is what ties them
-     * together and what makes an interrupted upload resumable rather than wasted.
+     * together and what makes an interrupted upload resumable rather than wasted. The key of the last chunk
+     * names the whole file.
      */
     private suspend fun uploadInChunks(
         file: Path,
@@ -334,7 +319,7 @@ internal class ApiFileService(
         val reading = withContext(Dispatchers.IO) { Files.newByteChannel(file, StandardOpenOption.READ) }
 
         reading.use { channel ->
-            while (offset < size) {
+            while (true) {
                 val end = minOf(offset + chunkSize, size)
                 val chunk = read(channel, (end - offset).toInt())
 
@@ -350,17 +335,15 @@ internal class ApiFileService(
                                 put("ignorewarnings", "1")
                                 fileKey?.let { put("filekey", it) }
                             },
-                        partName = "chunk",
-                        partFileName = file.name,
-                        bytes = chunk,
+                        part = Part("chunk", file.name, chunk),
                     )
 
-                fileKey = response.fileKeyOrFail()
+                val key = response.fileKeyOrFail()
+                if (end == size) return key
+                fileKey = key
                 offset = end
             }
         }
-
-        return checkNotNull(fileKey) { "an empty file has no chunks" }
     }
 
     /**
@@ -387,7 +370,7 @@ internal class ApiFileService(
     private fun JsonObject.fileKeyOrFail(): String {
         ApiFailure.from(this)?.let { throw it.toWikiError() }
 
-        return this["upload"]?.jsonObject?.get("filekey")?.jsonPrimitive?.content
+        return obj("upload")?.string("filekey")
             ?: throw WikiError.Api("nofilekey", "the wiki returned no file key", "upload")
     }
 
@@ -408,9 +391,7 @@ internal class ApiFileService(
                     text?.let { put("text", it) }
                     if (ignoreWarnings) put("ignorewarnings", "1")
                 },
-            partName = null,
-            partFileName = null,
-            bytes = null,
+            part = null,
         )
 
     /**
@@ -419,55 +400,57 @@ internal class ApiFileService(
      * The token retry is here rather than in the transport because uploads do not go through it: a long
      * chunked upload is exactly the case where a session expires mid-way.
      */
-    private suspend fun multipart(
-        fields: Map<String, String>,
-        partName: String?,
-        partFileName: String?,
-        bytes: ByteArray?,
-    ): JsonObject = tokens.withFreshToken { token ->
-        val body =
-            MultiPartFormDataContent(
-                formData {
-                    fields.forEach { (key, value) -> append(key, value) }
-                    KtorTransport.DEFAULT_PARAMS.forEach { (key, value) -> append(key, value) }
-                    if (assertion != null && "assert" !in fields) append("assert", assertion)
-                    if (partName != null && bytes != null) {
-                        append(
-                            partName,
-                            bytes,
-                            Headers.build {
-                                append(
-                                    HttpHeaders.ContentDisposition,
-                                    "filename=\"${partFileName.orEmpty()}\"",
-                                )
-                            },
-                        )
+    private suspend fun multipart(fields: Map<String, String>, part: Part?): JsonObject =
+        tokens.withFreshToken { token ->
+            val body =
+                MultiPartFormDataContent(
+                    formData {
+                        fields.forEach { (key, value) -> append(key, value) }
+                        KtorTransport.DEFAULT_PARAMS.forEach { (key, value) -> append(key, value) }
+                        if (assertion != null) append("assert", assertion)
+                        if (part != null) {
+                            append(
+                                part.name,
+                                part.bytes,
+                                Headers.build {
+                                    append(HttpHeaders.ContentDisposition, "filename=\"${part.fileName}\"")
+                                },
+                            )
+                        }
+                        // Last, as MediaWiki requires of anything following a token.
+                        append("token", token)
                     }
-                    // Last, as MediaWiki requires of anything following a token.
-                    append("token", token)
-                }
-            )
+                )
 
-        val text =
-            http
-                .post(endpoint.apiUrl) {
-                    header(HttpHeaders.UserAgent, userAgent.headerValue)
-                    setBody(body)
-                }
-                .bodyAsText()
+            val text =
+                http
+                    .post(endpoint.apiUrl) {
+                        header(HttpHeaders.UserAgent, userAgent.headerValue)
+                        setBody(body)
+                    }
+                    .bodyAsText()
 
-        val response = runCatching {
-            json.parseToJsonElement(text).jsonObject
-        }
-            .getOrElse {
-                throw WikiError.Api("badresponse", "upload returned a non-JSON body", "upload")
+            val response = runCatching {
+                json.parseToJsonElement(text).jsonObject
             }
+                .getOrElse {
+                    throw WikiError.Api("badresponse", "upload returned a non-JSON body", "upload")
+                }
 
-        // Uploads skip the transport, so they are shown to the listener here instead.
-        onWarning.onResponse(ApiRequest(fields, RequestKind.WRITE), response)
-        response.raiseBadToken()
-        response
-    }
+            // Uploads skip the transport, so they are shown to the listener here instead.
+            onWarning.onResponse(ApiRequest(fields, RequestKind.WRITE), response)
+            response.raiseBadToken()
+            response
+        }
+
+    /**
+     * The file in a multipart upload.
+     *
+     * @param name the form field it goes in: `file` for a whole file, `chunk` for part of one.
+     * @param fileName the name it is sent under.
+     * @param bytes what is sent.
+     */
+    private class Part(val name: String, val fileName: String, val bytes: ByteArray)
 
     private fun JsonObject.toOutcome(to: PageRef): UploadOutcome {
         ApiFailure.from(this)?.let {
@@ -475,29 +458,28 @@ internal class ApiFileService(
         }
 
         val upload =
-            this["upload"]?.jsonObject
-                ?: return UploadOutcome.Refused("noupload", "no upload block in the response")
+            obj("upload") ?: return UploadOutcome.Refused("noupload", "no upload block in the response")
 
-        return when (upload["result"]?.jsonPrimitive?.content) {
+        return when (val result = upload.string("result")) {
             "Success" ->
                 UploadOutcome.Uploaded(
                     title = to.title,
-                    info = upload["imageinfo"]?.jsonObject?.let { decodeInfo(it) },
+                    info = upload.obj("imageinfo")?.let { decodeInfo(it) },
                 )
 
             "Warning" ->
                 UploadOutcome.Warned(
                     warnings =
-                        upload["warnings"]
-                            ?.jsonObject
+                        upload
+                            .obj("warnings")
                             ?.mapValues { (_, value) -> value.toString().trim('"') }
                             .orEmpty(),
-                    fileKey = upload["filekey"]?.jsonPrimitive?.content,
+                    fileKey = upload.string("filekey"),
                 )
 
             else ->
                 UploadOutcome.Refused(
-                    upload["result"]?.jsonPrimitive?.content.orEmpty().ifEmpty { "unknown" },
+                    result.orEmpty().ifEmpty { "unknown" },
                     "the wiki did not report a successful upload",
                 )
         }
@@ -507,25 +489,20 @@ internal class ApiFileService(
 
     private fun decodeInfo(entry: JsonObject) =
         FileInfo(
-            url = entry["url"]?.jsonPrimitive?.content.orEmpty(),
-            descriptionUrl = entry["descriptionurl"]?.jsonPrimitive?.content,
-            size = entry["size"]?.jsonPrimitive?.longOrNull ?: 0L,
-            width = entry["width"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-            height = entry["height"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-            mimeType = entry["mime"]?.jsonPrimitive?.content,
-            mediaType = entry["mediatype"]?.jsonPrimitive?.content,
-            sha1 = entry["sha1"]?.jsonPrimitive?.content,
-            timestamp = entry["timestamp"]?.jsonPrimitive?.content?.let { MwTimestamp.parseOrNull(it) },
-            user = entry["user"]?.jsonPrimitive?.content,
-            comment = entry["comment"]?.jsonPrimitive?.content,
+            url = entry.string("url").orEmpty(),
+            descriptionUrl = entry.string("descriptionurl"),
+            size = entry.long("size") ?: 0L,
+            width = entry.int("width") ?: 0,
+            height = entry.int("height") ?: 0,
+            mimeType = entry.string("mime"),
+            mediaType = entry.string("mediatype"),
+            sha1 = entry.string("sha1"),
+            timestamp = entry.time("timestamp"),
+            user = entry.string("user"),
+            comment = entry.string("comment"),
         )
 
-    private fun apiLimit(limit: Int?): String =
-        if (limit != null && limit < MAX_BATCH) limit.toString() else "max"
-
     private companion object {
-        const val MAX_ARCHIVE = 500
         const val DEFAULT_BATCH = 50
-        const val MAX_BATCH = 500
     }
 }

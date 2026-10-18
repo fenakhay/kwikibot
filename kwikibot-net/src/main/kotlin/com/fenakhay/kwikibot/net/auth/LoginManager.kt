@@ -2,16 +2,18 @@ package com.fenakhay.kwikibot.net.auth
 
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.RequestKind
+import com.fenakhay.kwikibot.net.array
+import com.fenakhay.kwikibot.net.long
+import com.fenakhay.kwikibot.net.obj
+import com.fenakhay.kwikibot.net.string
+import com.fenakhay.kwikibot.net.strings
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 private val log = KotlinLogging.logger {}
 
@@ -129,14 +131,14 @@ public class LoginManager(
         val response =
             transport.call(ApiRequest.of("query", "meta" to "userinfo", "uiprop" to "groups|rights"))
         val info =
-            response["query"]?.jsonObject?.get("userinfo")?.jsonObject
+            response.obj("query")?.obj("userinfo")
                 ?: throw WikiError.Api("nouserinfo", "no userinfo in response", "query+userinfo")
 
         return Identity(
-            name = info["name"]?.jsonPrimitive?.content.orEmpty(),
-            id = info["id"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L,
-            groups = info.stringSet("groups"),
-            rights = info.stringSet("rights"),
+            name = info.string("name").orEmpty(),
+            id = info.long("id") ?: 0L,
+            groups = info.array("groups").strings().toSet(),
+            rights = info.array("rights").strings().toSet(),
         )
     }
 
@@ -170,10 +172,9 @@ public class LoginManager(
             )
 
         val login =
-            response["login"]?.jsonObject
-                ?: throw WikiError.Auth.LoginFailed("no login block in the response")
+            response.obj("login") ?: throw WikiError.Auth.LoginFailed("no login block in the response")
 
-        val result = login["result"]?.jsonPrimitive?.content.orEmpty()
+        val result = login.string("result").orEmpty()
         if (!result.equals("Success", ignoreCase = true)) {
             throw WikiError.Auth.LoginFailed(login.reasonText() ?: result.ifEmpty { "unknown" })
         }
@@ -184,15 +185,13 @@ public class LoginManager(
      *
      * With `errorformat=plaintext` — which this library always sends — `reason` is an object carrying a code
      * and a message, not a string. Reading it as a string throws, which turns a wrong password into a crash
-     * inside the library instead of "wrong password".
+     * inside the library instead of "wrong password". Anything else the wiki sends is reported as it came.
      */
     private fun JsonObject.reasonText(): String? =
         when (val reason = this["reason"]) {
-            null -> null
-            is JsonPrimitive -> reason.content
-            is JsonObject -> reason["text"]?.jsonPrimitive?.content ?: reason["code"]?.jsonPrimitive?.content
-
-            else -> reason.toString()
+            is JsonObject -> reason.string("text") ?: reason.string("code")
+            is JsonArray -> reason.toString()
+            else -> string("reason")
         }
 
     private fun verifyNotAnonymous(identity: Identity) {
@@ -203,7 +202,4 @@ public class LoginManager(
         }
         log.info { "logged in as ${identity.name}" + if (identity.isBot) " (bot)" else "" }
     }
-
-    private fun JsonObject.stringSet(key: String): Set<String> =
-        this[key]?.jsonArray?.mapTo(mutableSetOf()) { it.jsonPrimitive.content } ?: emptySet()
 }

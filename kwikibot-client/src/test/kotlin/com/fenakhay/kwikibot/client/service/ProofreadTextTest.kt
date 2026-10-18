@@ -82,4 +82,16 @@ class ProofreadTextTest {
 
         ProofreadText.parse(half).body shouldBe half
     }
+
+    @Test
+    fun `a marker set by nobody names no proofreader, and is rebuilt that way`() {
+        val unsigned =
+            """<noinclude><pagequality level="1" user="" /></noinclude>Text<noinclude></noinclude>"""
+
+        val parsed = ProofreadText.parse(unsigned)
+
+        parsed.quality shouldBe ProofreadQuality.of(1)
+        parsed.proofreader.shouldBeNull()
+        parsed.serialize() shouldBe unsigned
+    }
 }

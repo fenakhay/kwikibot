@@ -6,22 +6,24 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.throwOnError
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -59,8 +61,8 @@ private const val PROPERTIES = "text|templates|links|tocdata|externallinks|parse
 /**
  * Records the corpus and writes it as JSON.
  *
- * The first argument is the file to write. A case already in that file with the same input is kept as it was
- * recorded, so adding cases does not re-record the rest; `--all` records every case again.
+ * The first argument other than `--all` is the file to write. A case already in that file with the same input
+ * is kept as it was recorded, so adding cases does not re-record the rest; `--all` records every case again.
  */
 public fun main(args: Array<String>) {
     runBlocking { recordCorpus(args, ToolEnvironment.SYSTEM) }
@@ -68,7 +70,8 @@ public fun main(args: Array<String>) {
 
 /** What [main] does with [args], asking the wiki and printing through [environment]. */
 internal suspend fun recordCorpus(args: Array<String>, environment: ToolEnvironment) {
-    val target = Path(args.firstOrNull() ?: "wikitext-cases.json")
+    val target =
+        environment.workingDirectory.resolve(args.firstOrNull { it != "--all" } ?: "wikitext-cases.json")
     val known = if ("--all" in args || !target.exists()) emptyMap() else recorded(target)
     val document = record(known, environment)
 
@@ -77,17 +80,14 @@ internal suspend fun recordCorpus(args: Array<String>, environment: ToolEnvironm
     environment.output.appendLine("wrote $target: ${WikitextCases.ALL.size} cases, $added recorded now")
 }
 
-/** The cases [target] already holds, by name and input. */
-private fun recorded(target: Path): Map<Pair<String, String>, JsonObject> =
-    (Json.parseToJsonElement(target.readText()).jsonObject["cases"] as? JsonArray)
-        .orEmpty()
-        .map { it.jsonObject }
-        .associateBy { it.text("name") to it.text("input") }
-
-private fun JsonObject.text(key: String): String = this[key]?.jsonPrimitive?.content.orEmpty()
+/** The cases [target] already holds, by name and input; one missing either matches no case. */
+private fun recorded(target: Path): Map<Pair<String?, String?>, JsonObject> =
+    Json.parseToJsonElement(target.readText()).jsonObject.array("cases").objects().associateBy {
+        it.string("name") to it.string("input")
+    }
 
 private suspend fun record(
-    known: Map<Pair<String, String>, JsonObject>,
+    known: Map<Pair<String?, String?>, JsonObject>,
     environment: ToolEnvironment,
 ): String {
     val userAgent =
@@ -153,7 +153,7 @@ private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Ca
             )
             .throwOnError()
 
-    val parsed = response["parse"]?.jsonObject ?: JsonObject(emptyMap())
+    val parsed = response.obj("parse") ?: JsonObject(emptyMap())
 
     return buildJsonObject {
         put("name", case.name)
@@ -163,8 +163,8 @@ private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Ca
             putJsonArray("templates") { parsed.titles("templates").forEach { add(it) } }
             putJsonArray("links") { parsed.titles("links").forEach { add(it) } }
             putJsonArray("sections") { parsed.headings().forEach { add(it) } }
-            putJsonArray("externallinks") { parsed.strings("externallinks").forEach { add(it) } }
-            put("parsetree", parsed["parsetree"]?.jsonPrimitive?.content.orEmpty())
+            putJsonArray("externallinks") { parsed.array("externallinks").strings().forEach { add(it) } }
+            put("parsetree", parsed.string("parsetree").orEmpty())
         }
     }
 }
@@ -175,14 +175,10 @@ private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Ca
  * MediaWiki varies the paragraph padding and the trailing newline between releases; keeping those would make
  * the corpus churn on a wiki upgrade rather than on a behaviour change.
  */
-private fun JsonObject.html(): String =
-    this["text"]?.jsonPrimitive?.content.orEmpty().replace(Regex("\\s+"), " ").trim()
+private fun JsonObject.html(): String = string("text").orEmpty().replace(Regex("\\s+"), " ").trim()
 
 private fun JsonObject.titles(key: String): List<String> =
-    (this[key] as? JsonArray)
-        .orEmpty()
-        .map { it.jsonObject }
-        .mapNotNull { it["title"]?.jsonPrimitive?.content }
+    array(key).objects().mapNotNull { it.string("title") }
 
 /**
  * The headings as `level:text`, the form the corpus records.
@@ -191,17 +187,11 @@ private fun JsonObject.titles(key: String): List<String> =
  * heading missing either is skipped.
  */
 private fun JsonObject.headings(): List<String> =
-    ((this["tocdata"] as? JsonObject)?.get("sections") as? JsonArray)
-        .orEmpty()
-        .map { it.jsonObject }
-        .mapNotNull { entry ->
-            val line = entry["line"]?.jsonPrimitive?.content ?: return@mapNotNull null
-            val level = entry["hLevel"]?.jsonPrimitive?.content ?: return@mapNotNull null
-            "$level:$line"
-        }
-
-private fun JsonObject.strings(key: String): List<String> =
-    (this[key] as? JsonArray).orEmpty().map { it.jsonPrimitive.content }
+    obj("tocdata")?.array("sections").objects().mapNotNull { entry ->
+        val line = entry.string("line") ?: return@mapNotNull null
+        val level = entry.string("hLevel") ?: return@mapNotNull null
+        "$level:$line"
+    }
 
 private const val PROGRESS_EVERY = 20
 

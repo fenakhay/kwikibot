@@ -376,6 +376,24 @@ class AuthTest {
     }
 
     @Test
+    fun `a token answer missing any of its levels is no token`() = runTest {
+        val answers =
+            listOf(
+                """{}""",
+                """{"query":{}}""",
+                """{"query":{"tokens":[]}}""",
+                """{"query":{"tokens":{"csrftoken":null}}}""",
+            )
+
+        val codes = answers.map { answer ->
+            val store = TokenStore(transport { respondJson(answer) })
+            assertFailsWith<WikiError.Api> { store.token() }.code
+        }
+
+        codes shouldBe answers.map { "notoken" }
+    }
+
+    @Test
     fun `the identity a login established is remembered, and nothing before it`() = runTest {
         val transport = transport { respondJson("""{"query":{"userinfo":{"id":0,"name":"1.2.3.4"}}}""") }
         val manager = LoginManager(transport, Credentials.Anonymous)
@@ -412,11 +430,53 @@ class AuthTest {
 
     @Test
     fun `an answer with no userinfo in it is an error, not an anonymous user`() = runTest {
-        val transport = transport { respondJson("""{"query":{}}""") }
+        val answers = listOf("""{"query":{}}""", """{}""", """{"query":{"userinfo":"FenaBot"}}""")
 
-        val error = assertFailsWith<WikiError.Api> { LoginManager(transport, Credentials.Anonymous).whoAmI() }
+        val codes = answers.map { answer ->
+            val transport = transport { respondJson(answer) }
+            assertFailsWith<WikiError.Api> { LoginManager(transport, Credentials.Anonymous).whoAmI() }.code
+        }
 
-        error.code shouldBe "nouserinfo"
+        codes shouldBe answers.map { "nouserinfo" }
+    }
+
+    @Test
+    fun `a userinfo block that says nothing describes an anonymous session with no name`() = runTest {
+        val transport = transport { respondJson("""{"query":{"userinfo":{"name":null}}}""") }
+
+        LoginManager(transport, Credentials.Anonymous).whoAmI() shouldBe Identity(name = "", id = 0L)
+    }
+
+    @Test
+    fun `an id sent as text is read as the number it holds, and a null group as no group`() = runTest {
+        val transport = transport {
+            respondJson("""{"query":{"userinfo":{"id":"42","name":"FenaBot","groups":["bot",null]}}}""")
+        }
+
+        LoginManager(transport, Credentials.Anonymous).whoAmI() shouldBe
+            Identity(name = "FenaBot", id = 42L, groups = setOf("bot"))
+    }
+
+    @Test
+    fun `a logout the wiki gives no token for still ends the session locally`() = runTest {
+        val calls = mutableListOf<String>()
+        val transport = transport { request ->
+            val body = request.url.encodedQuery + "&" + request.body.toByteArray().decodeToString()
+            calls += body
+            when {
+                "type=csrf" in body -> respondJson("""{"query":{"tokens":{}}}""")
+                "meta=tokens" in body -> respondJson("""{"query":{"tokens":{"logintoken":"L+\\"}}}""")
+                "action=login" in body -> respondJson("""{"login":{"result":"Success"}}""")
+                else -> respondJson("""{"query":{"userinfo":{"id":7,"name":"FenaBot"}}}""")
+            }
+        }
+        val manager = LoginManager(transport, botPassword, TokenStore(transport))
+        manager.login()
+
+        manager.logout()
+
+        manager.currentIdentity shouldBe null
+        calls.none { "action=logout" in it } shouldBe true
     }
 
     @Test
@@ -428,6 +488,9 @@ class AuthTest {
                 """{"login":{}}""" to "unknown",
                 """{"login":{"result":"Failed","reason":{"code":"wrongpassword"}}}""" to "wrongpassword",
                 """{"login":{"result":"Failed","reason":["throttled",300]}}""" to """["throttled",300]""",
+                """{"login":{"result":"Failed","reason":null}}""" to "Failed",
+                """{"login":{"result":"Failed","reason":{"text":null}}}""" to "Failed",
+                """{"login":["Success"]}""" to "no login block in the response",
             )
 
         for ((answer, reason) in answers) {
@@ -527,5 +590,21 @@ class CredentialsFromEnvironmentTest {
 
         val partial = mapOf("KWIKIBOT_ACCOUNT" to "FenaBot")
         assertFailsWith<IllegalStateException> { Credentials.fromEnvironment(environment = partial::get) }
+    }
+
+    @Test
+    fun `a bot password missing any one of its three variables is a mistake`() {
+        val complete =
+            mapOf("KWIKIBOT_ACCOUNT" to "FenaBot", "KWIKIBOT_BOT_NAME" to "ety", "KWIKIBOT_PASSWORD" to "p")
+
+        for (missing in complete.keys) {
+            val partial = complete - missing
+            val error =
+                assertFailsWith<IllegalStateException> {
+                    Credentials.fromEnvironment(environment = partial::get)
+                }
+
+            error.message shouldContain "set only in part"
+        }
     }
 }

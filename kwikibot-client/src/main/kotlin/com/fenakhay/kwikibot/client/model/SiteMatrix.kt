@@ -5,11 +5,12 @@ import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.throwOnError
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /** One wiki in the Wikimedia site matrix. */
 public data class MatrixWiki(
@@ -83,30 +84,29 @@ public class SiteMatrix(
 
         /** Reads a recorded `action=sitematrix` response. */
         public fun decode(response: JsonObject): SiteMatrix {
-            val matrix = response["sitematrix"]?.jsonObject ?: return SiteMatrix(emptyList())
+            val matrix = response.obj("sitematrix") ?: return SiteMatrix(emptyList())
 
             val byLanguage =
-                matrix.entries
+                matrix.values
                     // The block is keyed by number per language, plus "count" and "specials", which
                     // are not languages and have to be told apart by shape rather than by name.
-                    .mapNotNull { (_, value) -> (value as? JsonObject) }
+                    .filterIsInstance<JsonObject>()
                     .flatMap { group ->
-                        val language = group["code"]?.jsonPrimitive?.content?.let { LangCode(it) }
-                        group["site"]?.jsonArray.orEmpty().map { it.jsonObject.toWiki(language) }
+                        val language = group.string("code")?.let { LangCode(it) }
+                        group.array("site").objects().map { it.toWiki(language) }
                     }
 
-            val specials =
-                matrix["specials"]?.jsonArray.orEmpty().map { it.jsonObject.toWiki(language = null) }
+            val specials = matrix.array("specials").objects().map { it.toWiki(language = null) }
 
             return SiteMatrix(byLanguage + specials)
         }
 
         private fun JsonObject.toWiki(language: LangCode?) =
             MatrixWiki(
-                id = WikiId(this["dbname"]?.jsonPrimitive?.content.orEmpty().ifEmpty { "unknown" }),
-                url = this["url"]?.jsonPrimitive?.content.orEmpty(),
+                id = WikiId(string("dbname").orEmpty().ifEmpty { "unknown" }),
+                url = string("url").orEmpty(),
                 language = language,
-                project = this["code"]?.jsonPrimitive?.content,
+                project = string("code"),
                 // Both arrive as presence flags rather than booleans.
                 isClosed = containsKey("closed"),
                 isPrivate = containsKey("private"),

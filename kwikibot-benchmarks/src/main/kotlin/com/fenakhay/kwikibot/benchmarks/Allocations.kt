@@ -3,21 +3,20 @@ package com.fenakhay.kwikibot.benchmarks
 import com.fenakhay.kwikibot.wikitext.Wikitext
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.util.Locale
 
 /**
  * How many bytes each thing allocates, which the timing benchmarks do not say.
  *
  * kotlinx-benchmark exposes no JMH profiler, so `-prof gc` is out of reach. This asks HotSpot's
  * `ThreadMXBean` instead, which counts a thread's allocation cumulatively and makes bytes per operation a
- * subtraction.
+ * subtraction. A JVM without it fails here, at the first measurement.
  *
  * Allocation, not heap occupancy: occupancy depends on when the collector last ran, allocation does not.
  */
 public object Allocations {
 
-    private val threads =
-        ManagementFactory.getThreadMXBean() as? com.sun.management.ThreadMXBean
-            ?: error("this JVM does not report per-thread allocation; run it on HotSpot")
+    private val threads = ManagementFactory.getPlatformMXBean(com.sun.management.ThreadMXBean::class.java)
 
     /** What one workload costs, in bytes the JVM was asked for. */
     public data class Measurement(
@@ -81,43 +80,64 @@ public object Allocations {
     private const val OVERHEAD_RUNS = 11
 }
 
+/** Something worth measuring: what it is called, how much input it gets through, and the work itself. */
+internal class Workload(val name: String, val units: Long, val work: () -> Any?) {
+
+    /** What [work] allocates, by [Allocations.measure]. */
+    fun measure(): Allocations.Measurement = Allocations.measure(name, units, work = work)
+}
+
+/** The workloads worth watching, each over the corpus it is named for, counted in characters. */
+internal fun workloads(): List<Workload> =
+    listOf(
+        Workload("parse", Corpus.characters.toLong()) { Corpus.pages.map { Wikitext.parse(it) } },
+        Workload("parseShort", Corpus.short.sumOf { it.length }.toLong()) {
+            Corpus.short.map { Wikitext.parse(it) }
+        },
+        Workload("parseLong", Corpus.long.sumOf { it.length }.toLong()) {
+            Corpus.long.map { Wikitext.parse(it) }
+        },
+        Workload("parseLarge", Corpus.largeCharacters.toLong()) { Corpus.large.map { Wikitext.parse(it) } },
+        Workload("roundTrip", Corpus.characters.toLong()) {
+            Corpus.pages.map { Wikitext.parse(it).serialize() }
+        },
+    )
+
 /**
  * Measures the workloads worth watching and writes them down for a later run to compare against.
  *
- * Run through `:kwikibot-benchmarks:recordAllocations` or `:kwikibot-benchmarks:compareAllocations`.
+ * Run through `:kwikibot-benchmarks:measureAllocations`, which prints the figures, or
+ * `:kwikibot-benchmarks:recordAllocations`, which also writes them over `allocations.json`.
  */
 public fun main(args: Array<String>) {
-    val measurements =
-        listOf(
-            Allocations.measure("parse", Corpus.characters.toLong()) {
-                Corpus.pages.map { Wikitext.parse(it) }
-            },
-            Allocations.measure("parseShort", Corpus.short.sumOf { it.length }.toLong()) {
-                Corpus.short.map { Wikitext.parse(it) }
-            },
-            Allocations.measure("parseLong", Corpus.long.sumOf { it.length }.toLong()) {
-                Corpus.long.map { Wikitext.parse(it) }
-            },
-            Allocations.measure("parseLarge", Corpus.largeCharacters.toLong()) {
-                Corpus.large.map { Wikitext.parse(it) }
-            },
-            Allocations.measure("roundTrip", Corpus.characters.toLong()) {
-                Corpus.pages.map { Wikitext.parse(it).serialize() }
-            },
-        )
+    recordAllocations(args, System.out) { workloads().map { it.measure() } }
+}
 
-    println("%-14s %14s %12s".format("workload", "bytes", "per char"))
-    measurements.forEach { println("%-14s %,14d %12.2f".format(it.name, it.bytes, it.perUnit)) }
+/**
+ * What [main] does with [args]: prints [measurements] to [out] as a table, and when [args] names a file,
+ * writes them there as JSON.
+ */
+internal fun recordAllocations(
+    args: Array<String>,
+    out: Appendable,
+    measurements: () -> List<Allocations.Measurement>,
+) {
+    val measured = measurements()
+
+    out.appendLine("%-14s %14s %12s".format(Locale.ROOT, "workload", "bytes", "per char"))
+    measured.forEach {
+        out.appendLine("%-14s %,14d %12.2f".format(Locale.ROOT, it.name, it.bytes, it.perUnit))
+    }
 
     args.firstOrNull()?.let { path ->
         File(path)
             .writeText(
-                measurements.joinToString(",\n", "[\n", "\n]\n") { measurement ->
+                measured.joinToString(",\n", "[\n", "\n]\n") { measurement ->
                     """  {"name": "${measurement.name}", "bytes": ${measurement.bytes}, """ +
                         """"units": ${measurement.units}}"""
                 }
             )
-        println()
-        println("written to $path")
+        out.appendLine()
+        out.appendLine("written to $path")
     }
 }

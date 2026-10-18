@@ -18,7 +18,6 @@ import com.fenakhay.kwikibot.protocol.decode.OptionSet
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
 
 internal class ApiLogService(
     transport: MediaWikiTransport,
@@ -54,32 +53,29 @@ internal class ApiLogService(
         start: Instant?,
         end: Instant?,
         limit: Int?,
-    ): Flow<LogEvent> {
-        val flow =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "logevents",
-                        // The API takes one or the other: "action" already names its log.
-                        "leaction" to action,
-                        "letype" to type?.takeIf { action == null },
-                        "leuser" to user,
-                        "letitle" to page?.let { this.namespaces.format(it.title) },
-                        "lenamespace" to
-                            namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
-                        "ledir" to order.apiValue,
-                        "lestart" to start?.let { MwTimestamp.format(it) },
-                        "leend" to end?.let { MwTimestamp.format(it) },
-                        "leprop" to Registry.LOG_EVENTS.joined,
-                        "lelimit" to apiLimit(limit),
-                    ),
-                    "logevents",
-                )
-                .map { activity.decodeLogEvent(it) }
-
-        return if (limit == null) flow else flow.take(limit)
-    }
+    ): Flow<LogEvent> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "logevents",
+                    // The API takes one or the other: "action" already names its log.
+                    "leaction" to action,
+                    "letype" to type?.takeIf { action == null },
+                    "leuser" to user,
+                    "letitle" to page?.let { this.namespaces.format(it.title) },
+                    "lenamespace" to
+                        namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
+                    "ledir" to order.apiValue,
+                    "lestart" to start?.let { MwTimestamp.format(it) },
+                    "leend" to end?.let { MwTimestamp.format(it) },
+                    "leprop" to Registry.LOG_EVENTS.joined,
+                    "lelimit" to limitParam(limit),
+                ),
+                "logevents",
+            )
+            .map { activity.decodeLogEvent(it) }
+            .limitedTo(limit)
 
     override fun recentChanges(
         namespaces: Set<Namespace>,
@@ -92,32 +88,29 @@ internal class ApiLogService(
         start: Instant?,
         end: Instant?,
         limit: Int?,
-    ): Flow<RecentChange> {
-        val flow =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "recentchanges",
-                        "rcnamespace" to
-                            namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
-                        "rctype" to types.takeIf { it.isNotEmpty() }?.joinToString("|"),
-                        "rcuser" to user,
-                        "rcshow" to show.toParam(),
-                        "rctag" to tag,
-                        "rctoponly" to if (topOnly) "1" else null,
-                        "rcdir" to order.apiValue,
-                        "rcstart" to start?.let { MwTimestamp.format(it) },
-                        "rcend" to end?.let { MwTimestamp.format(it) },
-                        "rcprop" to recentChangeProps.joined,
-                        "rclimit" to apiLimit(limit),
-                    ),
-                    "recentchanges",
-                )
-                .map { activity.decodeRecentChange(it) }
-
-        return if (limit == null) flow else flow.take(limit)
-    }
+    ): Flow<RecentChange> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "recentchanges",
+                    "rcnamespace" to
+                        namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
+                    "rctype" to types.takeIf { it.isNotEmpty() }?.joinToString("|"),
+                    "rcuser" to user,
+                    "rcshow" to show.toParam(),
+                    "rctag" to tag,
+                    "rctoponly" to if (topOnly) "1" else null,
+                    "rcdir" to order.apiValue,
+                    "rcstart" to start?.let { MwTimestamp.format(it) },
+                    "rcend" to end?.let { MwTimestamp.format(it) },
+                    "rcprop" to recentChangeProps.joined,
+                    "rclimit" to limitParam(limit),
+                ),
+                "recentchanges",
+            )
+            .map { activity.decodeRecentChange(it) }
+            .limitedTo(limit)
 
     override fun watchlistChanges(
         namespaces: Set<Namespace>,
@@ -128,37 +121,29 @@ internal class ApiLogService(
         start: Instant?,
         end: Instant?,
         limit: Int?,
-    ): Flow<RecentChange> {
-        val flow =
-            continuation
-                .list(
-                    ApiRequest.of(
-                        "query",
-                        "list" to "watchlist",
-                        "wlnamespace" to
-                            namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
-                        "wltype" to types.takeIf { it.isNotEmpty() }?.joinToString("|"),
-                        "wlshow" to show.toParam(),
-                        "wlallrev" to if (allRevisions) "1" else null,
-                        "wldir" to order.apiValue,
-                        "wlstart" to start?.let { MwTimestamp.format(it) },
-                        "wlend" to end?.let { MwTimestamp.format(it) },
-                        "wlprop" to watchlistProps.joined,
-                        "wllimit" to apiLimit(limit),
-                    ),
-                    "watchlist",
-                )
-                .map { activity.decodeRecentChange(it) }
-
-        return if (limit == null) flow else flow.take(limit)
-    }
-
-    private fun apiLimit(limit: Int?): String =
-        if (limit != null && limit < MAX_BATCH) limit.toString() else "max"
+    ): Flow<RecentChange> =
+        continuation
+            .list(
+                ApiRequest.of(
+                    "query",
+                    "list" to "watchlist",
+                    "wlnamespace" to
+                        namespaces.takeIf { it.isNotEmpty() }?.joinToString("|") { it.id.toString() },
+                    "wltype" to types.takeIf { it.isNotEmpty() }?.joinToString("|"),
+                    "wlshow" to show.toParam(),
+                    "wlallrev" to if (allRevisions) "1" else null,
+                    "wldir" to order.apiValue,
+                    "wlstart" to start?.let { MwTimestamp.format(it) },
+                    "wlend" to end?.let { MwTimestamp.format(it) },
+                    "wlprop" to watchlistProps.joined,
+                    "wllimit" to limitParam(limit),
+                ),
+                "watchlist",
+            )
+            .map { activity.decodeRecentChange(it) }
+            .limitedTo(limit)
 
     private companion object {
-        const val MAX_BATCH = 500
-
         /** Either one lets a session see the patrol flag. */
         val PATROL_RIGHTS = setOf("patrol", "patrolmarks")
     }

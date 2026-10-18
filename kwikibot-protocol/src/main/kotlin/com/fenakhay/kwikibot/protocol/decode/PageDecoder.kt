@@ -11,15 +11,7 @@ import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 /** One entry from a `query` result's `pages` collection. */
 public sealed interface PageResult {
@@ -58,7 +50,7 @@ public sealed interface PageResult {
  *
  * The awkward parts of the API shape are handled here so no caller has to: a title arrives with its namespace
  * prefix already attached, content sits two levels down inside a revision slot, and `missing`, `redirect` and
- * `minor` are presence flags whose representation changed with `formatversion`.
+ * `minor` are flags the wiki leaves out rather than sends as `false`.
  */
 public class PageDecoder(
     private val wiki: WikiId,
@@ -67,10 +59,10 @@ public class PageDecoder(
 
     /** Decodes one page entry. */
     public fun decode(page: JsonObject): PageResult {
-        val raw = page["title"]?.jsonPrimitive?.content.orEmpty()
+        val raw = page.string("title").orEmpty()
 
         if (page.flag("invalid")) {
-            val reason = page["invalidreason"]?.jsonPrimitive?.content ?: "MediaWiki rejected the title"
+            val reason = page.string("invalidreason") ?: "MediaWiki rejected the title"
             return PageResult.Invalid(raw, reason)
         }
 
@@ -78,9 +70,8 @@ public class PageDecoder(
 
         if (page.flag("missing")) return PageResult.Missing(ref)
 
-        val revision = page["revisions"]?.jsonArray?.firstOrNull()?.jsonObject
-        val contentModel =
-            page["contentmodel"]?.jsonPrimitive?.content?.let { ContentModel(it) } ?: ContentModel.WIKITEXT
+        val revision = page.array("revisions").objects().firstOrNull()
+        val contentModel = page.string("contentmodel")?.let { ContentModel(it) } ?: ContentModel.WIKITEXT
 
         return PageResult.Existing(
             ref = ref,
@@ -102,11 +93,9 @@ public class PageDecoder(
     public fun decodeContents(page: JsonObject, isRedirect: (String) -> Boolean): List<PageContent> {
         val ref = refOf(page) ?: return emptyList()
         if (page.flag("missing") || page.flag("invalid")) return emptyList()
-        val contentModel =
-            page["contentmodel"]?.jsonPrimitive?.content?.let { ContentModel(it) } ?: ContentModel.WIKITEXT
+        val contentModel = page.string("contentmodel")?.let { ContentModel(it) } ?: ContentModel.WIKITEXT
 
-        return page["revisions"]?.jsonArray.orEmpty().mapNotNull { entry ->
-            val revision = entry.jsonObject
+        return page.array("revisions").objects().mapNotNull { revision ->
             val text = revision.slotContent() ?: return@mapNotNull null
             content(ref, revision, contentModel, contentModel == ContentModel.WIKITEXT && isRedirect(text))
         }
@@ -117,17 +106,15 @@ public class PageDecoder(
         Revision(
             id = RevisionId(revision.long("revid") ?: 0L),
             parentId = revision.long("parentid")?.takeIf { it != 0L }?.let { RevisionId(it) },
-            timestamp =
-                revision["timestamp"]?.jsonPrimitive?.content?.let { MwTimestamp.parse(it) }
-                    ?: MwTimestamp.parse(EPOCH),
+            timestamp = revision.time("timestamp") ?: MwTimestamp.parse(EPOCH),
             // Absent rather than empty when revision-deleted, which is how hiding is reported.
-            user = revision["user"]?.jsonPrimitive?.content,
-            comment = revision["comment"]?.jsonPrimitive?.content,
+            user = revision.string("user"),
+            comment = revision.string("comment"),
             isMinor = revision.flag("minor"),
             isBot = revision.flag("bot"),
-            size = revision["size"]?.jsonPrimitive?.intOrNull ?: 0,
-            sha1 = revision["sha1"]?.jsonPrimitive?.content,
-            tags = revision["tags"]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty(),
+            size = revision.int("size") ?: 0,
+            sha1 = revision.string("sha1"),
+            tags = revision.array("tags").strings(),
         )
 
     /**
@@ -141,8 +128,8 @@ public class PageDecoder(
      * Novel`, survives intact.
      */
     public fun refOf(page: JsonObject): PageRef? {
-        val full = page["title"]?.jsonPrimitive?.content ?: return null
-        return refOf(full, page["ns"]?.jsonPrimitive?.intOrNull ?: 0, page.long("pageid"))
+        val full = page.string("title") ?: return null
+        return refOf(full, page.int("ns") ?: 0, page.long("pageid"))
     }
 
     /**
@@ -176,19 +163,16 @@ public class PageDecoder(
             revisionId = RevisionId(revision.long("revid") ?: 0L),
             text = text,
             contentModel = contentModel,
-            timestamp = revision["timestamp"]?.jsonPrimitive?.content?.let { MwTimestamp.parse(it) },
+            timestamp = revision.time("timestamp"),
             redirectTarget = if (isRedirect) redirectTarget(text) else null,
         )
     }
 
     /** Reads the wikitext out of a revision, from either the slot or the flat shape. */
-    private fun JsonObject.slotContent(): String? {
-        val slot = this["slots"]?.jsonObject?.get("main")?.jsonObject
-        return slot?.get("content")?.jsonPrimitive?.content
+    private fun JsonObject.slotContent(): String? =
+        obj("slots")?.obj("main")?.string("content")
             // Without rvslots the content sits directly on the revision.
-            ?: this["content"]?.jsonPrimitive?.content
-            ?: this["*"]?.jsonPrimitive?.content
-    }
+            ?: string("content")
 
     /**
      * The target of a redirect, read from the page text.
@@ -202,20 +186,6 @@ public class PageDecoder(
      */
     private fun redirectTarget(text: String): Title? =
         REDIRECT.find(text)?.groupValues?.get(1)?.let { Title.parse(it, namespaces) }
-
-    /**
-     * Whether a boolean flag is set.
-     *
-     * `formatversion=2` sends `true`, older responses send an empty string, and both mean the same thing;
-     * only an explicit `false` counts as unset.
-     */
-    private fun JsonObject.flag(key: String): Boolean {
-        val value: JsonElement = this[key] ?: return false
-        val primitive = value as? JsonPrimitive ?: return true
-        return primitive.booleanOrNull ?: true
-    }
-
-    private fun JsonObject.long(key: String): Long? = this[key]?.jsonPrimitive?.longOrNull
 
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"

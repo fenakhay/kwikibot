@@ -1,8 +1,17 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.net.UserAgent
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import java.io.IOException
 import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
 
 class ApiDetectorTest {
 
@@ -80,4 +89,37 @@ class ApiDetectorTest {
 
         ApiDetector.endpointFrom(html, "https://example.org/").shouldBeNull()
     }
+
+    @Test
+    fun `a link over plain http is kept on http`() {
+        val html = """<link rel="EditURI" href="http://wiki.example.org/w/api.php?action=rsd"/>"""
+
+        ApiDetector.endpointFrom(html, "https://wiki.example.org/wiki/A")?.server shouldBe "wiki.example.org"
+    }
+
+    @Test
+    fun `a link relative to the page, or an EditURI link with no address, names no endpoint`() {
+        val relative = """<link rel="EditURI" href="w/api.php?action=rsd"/>"""
+        val bare = """<link rel="EditURI" type="application/rsd+xml"/>"""
+
+        ApiDetector.endpointFrom(relative, "https://wiki.example.org/wiki/A").shouldBeNull()
+        ApiDetector.endpointFrom(bare, "https://wiki.example.org/wiki/A").shouldBeNull()
+    }
+
+    @Test
+    fun `the endpoint is read off the page fetched, and a page that cannot be fetched names none`() =
+        runTest {
+            val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
+            val serving =
+                HttpClient(
+                    MockEngine {
+                        respond(wikimedia, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/html"))
+                    }
+                )
+            val failing = HttpClient(MockEngine { throw IOException("connection refused") })
+
+            ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", serving, userAgent)?.server shouldBe
+                "en.wiktionary.org"
+            ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", failing, userAgent).shouldBeNull()
+        }
 }

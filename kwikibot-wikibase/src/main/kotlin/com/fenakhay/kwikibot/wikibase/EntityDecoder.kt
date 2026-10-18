@@ -1,6 +1,14 @@
 package com.fenakhay.kwikibot.wikibase
 
 import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.protocol.decode.array
+import com.fenakhay.kwikibot.protocol.decode.double
+import com.fenakhay.kwikibot.protocol.decode.int
+import com.fenakhay.kwikibot.protocol.decode.long
+import com.fenakhay.kwikibot.protocol.decode.obj
+import com.fenakhay.kwikibot.protocol.decode.objects
+import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.wikibase.entity.Entity
 import com.fenakhay.kwikibot.wikibase.entity.LanguageValue
 import com.fenakhay.kwikibot.wikibase.entity.SiteLink
@@ -10,15 +18,8 @@ import com.fenakhay.kwikibot.wikibase.value.Rank
 import com.fenakhay.kwikibot.wikibase.value.Reference
 import com.fenakhay.kwikibot.wikibase.value.Snak
 import com.fenakhay.kwikibot.wikibase.value.Statement
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 /**
  * Reads the JSON a Wikibase serves into entities.
@@ -33,7 +34,7 @@ public object EntityDecoder {
     /** Decodes one entity from a `wbgetentities` response. */
     public fun decode(json: JsonObject): Entity {
         val id = EntityId(json.string("id") ?: throw missing("id"))
-        val revision = json["lastrevid"]?.jsonPrimitive?.longOrNull
+        val revision = json.long("lastrevid")
 
         return when (val type = json.string("type")) {
             "item" ->
@@ -64,8 +65,8 @@ public object EntityDecoder {
                     lemmas = json.languageValues("lemmas"),
                     language = json.string("language")?.let { EntityId(it) },
                     lexicalCategory = json.string("lexicalCategory")?.let { EntityId(it) },
-                    forms = json["forms"]?.jsonArray?.map { decodeForm(it.jsonObject) }.orEmpty(),
-                    senses = json["senses"]?.jsonArray?.map { decodeSense(it.jsonObject) }.orEmpty(),
+                    forms = json.array("forms").objects().map { decodeForm(it) },
+                    senses = json.array("senses").objects().map { decodeSense(it) },
                     statements = json.statements(),
                     lastRevisionId = revision,
                 )
@@ -89,7 +90,7 @@ public object EntityDecoder {
 
     /** Decodes every entity in a `wbgetentities` response, keyed by id. */
     public fun decodeAll(response: JsonObject): Map<EntityId, Entity> {
-        val entities = response["entities"]?.jsonObject ?: return emptyMap()
+        val entities = response.obj("entities") ?: return emptyMap()
         return entities.values
             .map { it.jsonObject }
             // A requested id that does not exist comes back flagged rather than omitted. So does
@@ -110,14 +111,13 @@ public object EntityDecoder {
      * act on a different item.
      */
     public fun redirectTarget(json: JsonObject): EntityId? =
-        json["redirects"]?.jsonObject?.get("to")?.jsonPrimitive?.content?.let { EntityId(it) }
+        json.obj("redirects")?.string("to")?.let { EntityId(it) }
 
     private fun decodeForm(json: JsonObject) =
         Entity.Form(
             id = EntityId(json.string("id") ?: throw missing("form id")),
             representations = json.languageValues("representations"),
-            grammaticalFeatures =
-                json["grammaticalFeatures"]?.jsonArray?.map { EntityId(it.jsonPrimitive.content) }.orEmpty(),
+            grammaticalFeatures = json.array("grammaticalFeatures").strings().map { EntityId(it) },
             statements = json.statements(),
         )
 
@@ -131,7 +131,7 @@ public object EntityDecoder {
     /** Decodes one statement, with its qualifiers, references and rank. */
     public fun decodeStatement(json: JsonObject): Statement =
         Statement(
-            mainSnak = decodeSnak(json["mainsnak"]?.jsonObject ?: throw missing("mainsnak")),
+            mainSnak = decodeSnak(json.obj("mainsnak") ?: throw missing("mainsnak")),
             id = json.string("id"),
             rank =
                 when (json.string("rank")) {
@@ -139,14 +139,11 @@ public object EntityDecoder {
                     "deprecated" -> Rank.DEPRECATED
                     else -> Rank.NORMAL
                 },
-            qualifiers = json["qualifiers"]?.jsonObject?.snakGroups().orEmpty(),
+            qualifiers = json.obj("qualifiers")?.snakGroups().orEmpty(),
             references =
-                json["references"]
-                    ?.jsonArray
-                    ?.map { reference ->
-                        Reference(reference.jsonObject["snaks"]?.jsonObject?.snakGroups().orEmpty())
-                    }
-                    .orEmpty(),
+                json.array("references").objects().map { reference ->
+                    Reference(reference.obj("snaks")?.snakGroups().orEmpty())
+                },
         )
 
     /** Decodes one snak, keeping the difference between no value and an unknown value. */
@@ -159,27 +156,31 @@ public object EntityDecoder {
             else ->
                 Snak.Value(
                     property = property,
-                    value = decodeValue(json["datavalue"]?.jsonObject ?: throw missing("datavalue")),
+                    value = decodeValue(json.obj("datavalue") ?: throw missing("datavalue")),
                     dataType = json.string("datatype"),
                 )
         }
     }
 
-    /** Decodes one data value; an unmodelled type is kept whole rather than dropped. */
+    /**
+     * Decodes one data value. An unmodelled type, or a value not in the shape its type takes, is kept whole
+     * as [DataValue.Unknown].
+     */
     public fun decodeValue(json: JsonObject): DataValue {
         val type = json.string("type").orEmpty()
-        val value = json["value"] ?: return DataValue.Unknown(type, json)
+        val text = json.string("value")
+        if (type == "string" && text != null) return DataValue.Text(text)
+        val value = json.obj("value") ?: return DataValue.Unknown(type, json)
 
         return when (type) {
-            "string" -> DataValue.Text(value.jsonPrimitive.content)
-            "wikibase-entityid" -> decodeEntityRef(value.jsonObject, json)
-            "time" -> decodeTime(value.jsonObject)
-            "quantity" -> decodeQuantity(value.jsonObject)
-            "globecoordinate" -> decodeCoordinate(value.jsonObject)
+            "wikibase-entityid" -> decodeEntityRef(value, json)
+            "time" -> decodeTime(value)
+            "quantity" -> decodeQuantity(value)
+            "globecoordinate" -> decodeCoordinate(value)
             "monolingualtext" ->
                 DataValue.Monolingual(
-                    text = value.jsonObject.string("text").orEmpty(),
-                    language = value.jsonObject.string("language").orEmpty(),
+                    text = value.string("text").orEmpty(),
+                    language = value.string("language").orEmpty(),
                 )
 
             else -> DataValue.Unknown(type, json)
@@ -197,9 +198,7 @@ public object EntityDecoder {
             return DataValue.EntityRef(EntityId(it))
         }
 
-        val numeric =
-            value["numeric-id"]?.jsonPrimitive?.intOrNull
-                ?: return DataValue.Unknown("wikibase-entityid", whole)
+        val numeric = value.int("numeric-id") ?: return DataValue.Unknown("wikibase-entityid", whole)
         val prefix =
             when (value.string("entity-type")) {
                 "item" -> "Q"
@@ -213,11 +212,11 @@ public object EntityDecoder {
     private fun decodeTime(value: JsonObject) =
         DataValue.Time(
             time = value.string("time").orEmpty(),
-            precision = value["precision"]?.jsonPrimitive?.int ?: DataValue.Time.DAY,
+            precision = value.int("precision") ?: DataValue.Time.DAY,
             calendarModel = value.string("calendarmodel").orEmpty(),
-            before = value["before"]?.jsonPrimitive?.intOrNull ?: 0,
-            after = value["after"]?.jsonPrimitive?.intOrNull ?: 0,
-            timezone = value["timezone"]?.jsonPrimitive?.intOrNull ?: 0,
+            before = value.int("before") ?: 0,
+            after = value.int("after") ?: 0,
+            timezone = value.int("timezone") ?: 0,
         )
 
     private fun decodeQuantity(value: JsonObject) =
@@ -230,9 +229,9 @@ public object EntityDecoder {
 
     private fun decodeCoordinate(value: JsonObject) =
         DataValue.GlobeCoordinate(
-            latitude = value["latitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
-            longitude = value["longitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
-            precision = value["precision"]?.jsonPrimitive?.doubleOrNull,
+            latitude = value.double("latitude") ?: 0.0,
+            longitude = value.double("longitude") ?: 0.0,
+            precision = value.double("precision"),
             globe = value.string("globe").orEmpty(),
         )
 
@@ -240,51 +239,41 @@ public object EntityDecoder {
 
     private fun JsonObject.statements(): Map<EntityId, List<Statement>> {
         // Items call them "claims"; the newer serialization calls them "statements".
-        val groups = (this["claims"] ?: this["statements"])?.jsonObject ?: return emptyMap()
-        return groups.entries.associate { (property, list) ->
-            EntityId(property) to list.jsonArray.map { decodeStatement(it.jsonObject) }
+        val groups = obj("claims") ?: obj("statements") ?: return emptyMap()
+        return groups.keys.associate { property ->
+            EntityId(property) to groups.array(property).objects().map { decodeStatement(it) }
         }
     }
 
-    private fun JsonObject.snakGroups(): List<Snak> = values.flatMap { group ->
-        group.jsonArray.map { decodeSnak(it.jsonObject) }
+    private fun JsonObject.snakGroups(): List<Snak> = keys.flatMap { property ->
+        array(property).objects().map { decodeSnak(it) }
     }
 
     private fun JsonObject.languageValues(key: String): Map<String, LanguageValue> {
-        val values = this[key]?.jsonObject ?: return emptyMap()
-        return values.entries.associate { (language, entry) ->
-            language to LanguageValue(language, entry.jsonObject.string("value").orEmpty())
+        val values = obj(key) ?: return emptyMap()
+        return values.mapValues { (language, entry) ->
+            LanguageValue(language, entry.jsonObject.string("value").orEmpty())
         }
     }
 
     private fun JsonObject.aliasLists(): Map<String, List<LanguageValue>> {
-        val values = this["aliases"]?.jsonObject ?: return emptyMap()
-        return values.entries.associate { (language, entries) ->
-            language to
-                entries.jsonArray.map {
-                    LanguageValue(language, it.jsonObject.string("value").orEmpty())
-                }
+        val values = obj("aliases") ?: return emptyMap()
+        return values.keys.associateWith { language ->
+            values.array(language).objects().map { LanguageValue(language, it.string("value").orEmpty()) }
         }
     }
 
     private fun JsonObject.siteLinks(): Map<String, SiteLink> {
-        val links = this["sitelinks"]?.jsonObject ?: return emptyMap()
-        return links.entries.associate { (site, link) ->
+        val links = obj("sitelinks") ?: return emptyMap()
+        return links.mapValues { (site, link) ->
             val entry = link.jsonObject
-            site to
-                SiteLink(
-                    site = entry.string("site") ?: site,
-                    title = entry.string("title").orEmpty(),
-                    badges =
-                        (entry["badges"] as? JsonArray)?.map { EntityId(it.jsonPrimitive.content) }.orEmpty(),
-                )
+            SiteLink(
+                site = entry.string("site") ?: site,
+                title = entry.string("title").orEmpty(),
+                badges = entry.array("badges").strings().map { EntityId(it) },
+            )
         }
     }
-
-    private fun JsonObject.string(key: String): String? =
-        this[key]?.let { element ->
-            runCatching { element.jsonPrimitive.content }.getOrNull()
-        }
 
     private fun missing(what: String) =
         WikiError.Api("malformedentity", "entity JSON has no $what", "wbgetentities")

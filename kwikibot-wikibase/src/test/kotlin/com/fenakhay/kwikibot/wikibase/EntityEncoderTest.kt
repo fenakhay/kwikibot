@@ -189,6 +189,41 @@ class EntityEncoderTest {
     }
 
     @Test
+    fun `a quantity is written with its tolerance only when it has one, and reads back the same`() {
+        val measured = DataValue.Quantity("+8848", "http://www.wikidata.org/entity/Q11573", "+8849", "+8847")
+        val bare = DataValue.Quantity("+3")
+
+        val encoded = EntityEncoder.encodeValue(measured)
+
+        encoded["value"]!!.jsonObject.keys shouldBe setOf("amount", "unit", "upperBound", "lowerBound")
+        EntityEncoder.encodeValue(bare)["value"]!!.jsonObject.keys shouldBe setOf("amount", "unit")
+        EntityDecoder.decodeValue(encoded) shouldBe measured
+        EntityDecoder.decodeValue(EntityEncoder.encodeValue(bare)) shouldBe bare
+    }
+
+    @Test
+    fun `a label with no language of its own takes the one it is filed under`() {
+        val encoded =
+            EntityEncoder.encodeLanguageValues(
+                mapOf("de" to LanguageValue("", "Vulkan"), "en" to LanguageValue("en", "volcano"))
+            )
+
+        encoded["de"]!!.jsonObject["language"]!!.jsonPrimitive.content shouldBe "de"
+        encoded["en"]!!.jsonObject["language"]!!.jsonPrimitive.content shouldBe "en"
+    }
+
+    @Test
+    fun `a time is written with every part Wikibase stores, and reads back the same`() {
+        val year = DataValue.Time("+1952-00-00T00:00:00Z", DataValue.Time.YEAR, "Q1985727", before = 1)
+
+        val encoded = EntityEncoder.encodeValue(year)
+
+        encoded["value"]!!.jsonObject.keys shouldBe
+            setOf("time", "timezone", "before", "after", "precision", "calendarmodel")
+        EntityDecoder.decodeValue(encoded) shouldBe year
+    }
+
+    @Test
     fun `encoding nothing produces an empty block rather than null`() {
         EntityEncoder.encodeStatements(emptyMap()).isEmpty() shouldBe true
         EntityEncoder.encodeAliases(emptyMap()).isEmpty() shouldBe true
