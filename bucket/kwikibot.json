@@ -1,12 +1,12 @@
 {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Command-line tool for talking to a MediaWiki wiki",
     "homepage": "https://github.com/fenakhay/kwikibot",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/fenakhay/kwikibot/releases/download/v1.2.0/kwikibot-1.2.0-windows-x64.zip",
-            "hash": "32531455e3aa6d5101b7050705685aeb5d40c1441430058825eca1181d7595d8"
+            "url": "https://github.com/fenakhay/kwikibot/releases/download/v1.3.0/kwikibot-1.3.0-windows-x64.zip",
+            "hash": "6ea3130b409b71ac614c9fe2ed7f3a6ee51fb0f947eb53644f7130c496d8c6f2"
         }
     },
     "bin": "kwikibot.exe",
