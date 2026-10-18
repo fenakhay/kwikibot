@@ -23,6 +23,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
+import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
 import io.ktor.client.engine.HttpClientEngine
 import java.io.IOException
 import java.nio.file.NoSuchFileException
@@ -338,6 +339,9 @@ internal class Version : SuspendingCliktCommand(name = "version") {
 
 /** Runs the `kwikibot` command. */
 public suspend fun main(args: Array<String>) {
+    KotlinLoggingConfiguration.logStartupMessage = false
+    System.getProperties()
+        .putIfAbsent("org.slf4j.simpleLogger.log.com.fenakhay.kwikibot.net.auth.LoginManager", "warn")
     kwikibot(CliEnvironment.SYSTEM).main(args)
 }
 

@@ -13,6 +13,7 @@ configurations.runtimeClasspath {
 dependencies {
     implementation(project(":kwikibot-bot"))
     implementation(libs.clikt)
+    implementation(libs.kotlin.logging)
     runtimeOnly(libs.slf4j.simple)
 
     testImplementation(libs.ktor.client.mock)
