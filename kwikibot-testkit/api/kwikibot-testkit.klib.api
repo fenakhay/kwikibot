@@ -1,0 +1,112 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.fenakhay.kwikibot:kwikibot-testkit>
+final class com.fenakhay.kwikibot.testkit/FailOnDeprecation : com.fenakhay.kwikibot.protocol/ApiWarningListener { // com.fenakhay.kwikibot.testkit/FailOnDeprecation|null[0]
+    constructor <init>(com.fenakhay.kwikibot.protocol/ApiWarningListener = ...) // com.fenakhay.kwikibot.testkit/FailOnDeprecation.<init>|<init>(com.fenakhay.kwikibot.protocol.ApiWarningListener){}[0]
+
+    final fun onWarning(com.fenakhay.kwikibot.net.transport/ApiRequest, com.fenakhay.kwikibot.protocol/ApiWarning) // com.fenakhay.kwikibot.testkit/FailOnDeprecation.onWarning|onWarning(com.fenakhay.kwikibot.net.transport.ApiRequest;com.fenakhay.kwikibot.protocol.ApiWarning){}[0]
+}
+
+final class com.fenakhay.kwikibot.testkit/FakePageService : com.fenakhay.kwikibot.client.service/PageService { // com.fenakhay.kwikibot.testkit/FakePageService|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin/String> = ..., com.fenakhay.kwikibot.model.page/WikiId = ..., kotlin/Function1<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.edit/EditOutcome.Refused?> = ..., kotlin/Function0<com.fenakhay.kwikibot.model/WikiError>? = ..., kotlin/Function2<kotlin/String, com.fenakhay.kwikibot.model.page/PageRef?, kotlin/String> = ...) // com.fenakhay.kwikibot.testkit/FakePageService.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.String>;com.fenakhay.kwikibot.model.page.WikiId;kotlin.Function1<com.fenakhay.kwikibot.model.page.PageRef,com.fenakhay.kwikibot.model.edit.EditOutcome.Refused?>;kotlin.Function0<com.fenakhay.kwikibot.model.WikiError>?;kotlin.Function2<kotlin.String,com.fenakhay.kwikibot.model.page.PageRef?,kotlin.String>){}[0]
+    constructor <init>(kotlin/Array<out kotlin/Pair<kotlin/String, kotlin/String>>...) // com.fenakhay.kwikibot.testkit/FakePageService.<init>|<init>(kotlin.Array<out|kotlin.Pair<kotlin.String,kotlin.String>>...){}[0]
+
+    final val edits // com.fenakhay.kwikibot.testkit/FakePageService.edits|{}edits[0]
+        final fun <get-edits>(): kotlin.collections/List<kotlin/Pair<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.client.service/EditBuilder>> // com.fenakhay.kwikibot.testkit/FakePageService.edits.<get-edits>|<get-edits>(){}[0]
+
+    final fun isWatched(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.testkit/FakePageService.isWatched|isWatched(kotlin.String){}[0]
+    final fun ref(kotlin/String, com.fenakhay.kwikibot.model.title/Namespace = ...): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.testkit/FakePageService.ref|ref(kotlin.String;com.fenakhay.kwikibot.model.title.Namespace){}[0]
+    final fun revision(kotlin/String): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.testkit/FakePageService.revision|revision(kotlin.String){}[0]
+    final fun text(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.testkit/FakePageService.text|text(kotlin.String){}[0]
+    final suspend fun backlinksOf(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.page/PageRef>> // com.fenakhay.kwikibot.testkit/FakePageService.backlinksOf|backlinksOf(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun categoryInfo(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.page/CategoryInfo> // com.fenakhay.kwikibot.testkit/FakePageService.categoryInfo|categoryInfo(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun changeContentModel(com.fenakhay.kwikibot.model.page/PageRef, kotlin/String, kotlin/String) // com.fenakhay.kwikibot.testkit/FakePageService.changeContentModel|changeContentModel(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.String){}[0]
+    final suspend fun content(com.fenakhay.kwikibot.model.page/PageRef): com.fenakhay.kwikibot.model.page/PageContent? // com.fenakhay.kwikibot.testkit/FakePageService.content|content(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+    final suspend fun contents(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.testkit/FakePageService.contents|contents(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun contributors(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.user/Contributors> // com.fenakhay.kwikibot.testkit/FakePageService.contributors|contributors(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun delete(com.fenakhay.kwikibot.model.page/PageRef, kotlin/String, kotlin/Boolean, com.fenakhay.kwikibot.client.service/WatchMode) // com.fenakhay.kwikibot.testkit/FakePageService.delete|delete(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.Boolean;com.fenakhay.kwikibot.client.service.WatchMode){}[0]
+    final suspend fun edit(com.fenakhay.kwikibot.model.page/PageRef, kotlin/Function1<com.fenakhay.kwikibot.client.service/EditBuilder, kotlin/Unit>): com.fenakhay.kwikibot.model.edit/EditOutcome // com.fenakhay.kwikibot.testkit/FakePageService.edit|edit(com.fenakhay.kwikibot.model.page.PageRef;kotlin.Function1<com.fenakhay.kwikibot.client.service.EditBuilder,kotlin.Unit>){}[0]
+    final suspend fun exists(com.fenakhay.kwikibot.model.page/PageRef): kotlin/Boolean // com.fenakhay.kwikibot.testkit/FakePageService.exists|exists(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+    final suspend fun expandText(kotlin/String, com.fenakhay.kwikibot.model.page/PageRef?): kotlin/String // com.fenakhay.kwikibot.testkit/FakePageService.expandText|expandText(kotlin.String;com.fenakhay.kwikibot.model.page.PageRef?){}[0]
+    final suspend fun fileUsageOf(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.page/PageRef>> // com.fenakhay.kwikibot.testkit/FakePageService.fileUsageOf|fileUsageOf(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun importPage(kotlin/String, kotlin/String, kotlin/Boolean, kotlin/Boolean, kotlin/String?, kotlin/String) // com.fenakhay.kwikibot.testkit/FakePageService.importPage|importPage(kotlin.String;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.String?;kotlin.String){}[0]
+    final suspend fun mergeHistory(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.page/PageRef, kotlin.time/Instant?, kotlin/String) // com.fenakhay.kwikibot.testkit/FakePageService.mergeHistory|mergeHistory(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.page.PageRef;kotlin.time.Instant?;kotlin.String){}[0]
+    final suspend fun move(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.page/PageRef, kotlin/String, kotlin/Boolean, kotlin/Boolean, kotlin/Boolean, com.fenakhay.kwikibot.client.service/WatchMode): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.testkit/FakePageService.move|move(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;com.fenakhay.kwikibot.client.service.WatchMode){}[0]
+    final suspend fun protect(com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.edit/Protection>, kotlin/String, kotlin/Boolean, com.fenakhay.kwikibot.client.service/WatchMode) // com.fenakhay.kwikibot.testkit/FakePageService.protect|protect(com.fenakhay.kwikibot.model.page.PageRef;kotlin.collections.List<com.fenakhay.kwikibot.model.edit.Protection>;kotlin.String;kotlin.Boolean;com.fenakhay.kwikibot.client.service.WatchMode){}[0]
+    final suspend fun protections(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.edit/Protection>> // com.fenakhay.kwikibot.testkit/FakePageService.protections|protections(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun purge(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin/Boolean) // com.fenakhay.kwikibot.testkit/FakePageService.purge|purge(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.Boolean){}[0]
+    final suspend fun redirectsTo(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin.collections/Set<com.fenakhay.kwikibot.model.title/Namespace>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.page/PageRef>> // com.fenakhay.kwikibot.testkit/FakePageService.redirectsTo|redirectsTo(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.collections.Set<com.fenakhay.kwikibot.model.title.Namespace>){}[0]
+    final suspend fun rollback(com.fenakhay.kwikibot.model.page/PageRef, kotlin/String, kotlin/String, kotlin/Boolean, com.fenakhay.kwikibot.client.service/WatchMode): com.fenakhay.kwikibot.model.edit/EditOutcome // com.fenakhay.kwikibot.testkit/FakePageService.rollback|rollback(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.String;kotlin.Boolean;com.fenakhay.kwikibot.client.service.WatchMode){}[0]
+    final suspend fun setLanguage(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model/LangCode, kotlin/String) // com.fenakhay.kwikibot.testkit/FakePageService.setLanguage|setLanguage(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.LangCode;kotlin.String){}[0]
+    final suspend fun testActions(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin.collections/Set<kotlin/String>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.edit/ActionChecks> // com.fenakhay.kwikibot.testkit/FakePageService.testActions|testActions(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.collections.Set<kotlin.String>){}[0]
+    final suspend fun transclusionsOf(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.model.page/PageRef>> // com.fenakhay.kwikibot.testkit/FakePageService.transclusionsOf|transclusionsOf(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final suspend fun undelete(com.fenakhay.kwikibot.model.page/PageRef, kotlin/String, kotlin/Boolean, com.fenakhay.kwikibot.client.service/WatchMode) // com.fenakhay.kwikibot.testkit/FakePageService.undelete|undelete(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.Boolean;com.fenakhay.kwikibot.client.service.WatchMode){}[0]
+    final suspend fun undo(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model/RevisionId, kotlin/String, com.fenakhay.kwikibot.model/RevisionId?): com.fenakhay.kwikibot.model.edit/EditOutcome // com.fenakhay.kwikibot.testkit/FakePageService.undo|undo(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.RevisionId;kotlin.String;com.fenakhay.kwikibot.model.RevisionId?){}[0]
+    final suspend fun watch(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin/Boolean, kotlin/String?) // com.fenakhay.kwikibot.testkit/FakePageService.watch|watch(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.Boolean;kotlin.String?){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.testkit/FakePageService.Companion|null[0]
+        final const val INITIAL_REVISION // com.fenakhay.kwikibot.testkit/FakePageService.Companion.INITIAL_REVISION|{}INITIAL_REVISION[0]
+            final fun <get-INITIAL_REVISION>(): kotlin/Long // com.fenakhay.kwikibot.testkit/FakePageService.Companion.INITIAL_REVISION.<get-INITIAL_REVISION>|<get-INITIAL_REVISION>(){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.testkit/FakeWiki : com.fenakhay.kwikibot.client/Wiki { // com.fenakhay.kwikibot.testkit/FakeWiki|null[0]
+    constructor <init>(com.fenakhay.kwikibot.client.service/PageService, com.fenakhay.kwikibot.model.page/WikiId = ..., com.fenakhay.kwikibot.model.title/NamespaceMap = ..., com.fenakhay.kwikibot.net.auth/Identity = ..., com.fenakhay.kwikibot.client.service/ListService? = ..., com.fenakhay.kwikibot.client.service/RevisionService? = ..., com.fenakhay.kwikibot.client.service/UserService? = ..., com.fenakhay.kwikibot.client.service/LogService? = ..., com.fenakhay.kwikibot.client.service/RenderService? = ..., com.fenakhay.kwikibot.client.service/MetaService? = ..., com.fenakhay.kwikibot.net.transport/MediaWikiTransport? = ...) // com.fenakhay.kwikibot.testkit/FakeWiki.<init>|<init>(com.fenakhay.kwikibot.client.service.PageService;com.fenakhay.kwikibot.model.page.WikiId;com.fenakhay.kwikibot.model.title.NamespaceMap;com.fenakhay.kwikibot.net.auth.Identity;com.fenakhay.kwikibot.client.service.ListService?;com.fenakhay.kwikibot.client.service.RevisionService?;com.fenakhay.kwikibot.client.service.UserService?;com.fenakhay.kwikibot.client.service.LogService?;com.fenakhay.kwikibot.client.service.RenderService?;com.fenakhay.kwikibot.client.service.MetaService?;com.fenakhay.kwikibot.net.transport.MediaWikiTransport?){}[0]
+    constructor <init>(kotlin/Array<out kotlin/Pair<kotlin/String, kotlin/String>>...) // com.fenakhay.kwikibot.testkit/FakeWiki.<init>|<init>(kotlin.Array<out|kotlin.Pair<kotlin.String,kotlin.String>>...){}[0]
+
+    final val extensions // com.fenakhay.kwikibot.testkit/FakeWiki.extensions|{}extensions[0]
+        final fun <get-extensions>(): com.fenakhay.kwikibot.client.service/ExtensionService // com.fenakhay.kwikibot.testkit/FakeWiki.extensions.<get-extensions>|<get-extensions>(){}[0]
+    final val files // com.fenakhay.kwikibot.testkit/FakeWiki.files|{}files[0]
+        final fun <get-files>(): com.fenakhay.kwikibot.client.service/FileService // com.fenakhay.kwikibot.testkit/FakeWiki.files.<get-files>|<get-files>(){}[0]
+    final val id // com.fenakhay.kwikibot.testkit/FakeWiki.id|{}id[0]
+        final fun <get-id>(): com.fenakhay.kwikibot.model.page/WikiId // com.fenakhay.kwikibot.testkit/FakeWiki.id.<get-id>|<get-id>(){}[0]
+    final val identity // com.fenakhay.kwikibot.testkit/FakeWiki.identity|{}identity[0]
+        final fun <get-identity>(): com.fenakhay.kwikibot.net.auth/Identity // com.fenakhay.kwikibot.testkit/FakeWiki.identity.<get-identity>|<get-identity>(){}[0]
+    final val info // com.fenakhay.kwikibot.testkit/FakeWiki.info|{}info[0]
+        final fun <get-info>(): com.fenakhay.kwikibot.protocol/SiteInfo // com.fenakhay.kwikibot.testkit/FakeWiki.info.<get-info>|<get-info>(){}[0]
+    final val lists // com.fenakhay.kwikibot.testkit/FakeWiki.lists|{}lists[0]
+        final fun <get-lists>(): com.fenakhay.kwikibot.client.service/ListService // com.fenakhay.kwikibot.testkit/FakeWiki.lists.<get-lists>|<get-lists>(){}[0]
+    final val logs // com.fenakhay.kwikibot.testkit/FakeWiki.logs|{}logs[0]
+        final fun <get-logs>(): com.fenakhay.kwikibot.client.service/LogService // com.fenakhay.kwikibot.testkit/FakeWiki.logs.<get-logs>|<get-logs>(){}[0]
+    final val meta // com.fenakhay.kwikibot.testkit/FakeWiki.meta|{}meta[0]
+        final fun <get-meta>(): com.fenakhay.kwikibot.client.service/MetaService // com.fenakhay.kwikibot.testkit/FakeWiki.meta.<get-meta>|<get-meta>(){}[0]
+    final val pages // com.fenakhay.kwikibot.testkit/FakeWiki.pages|{}pages[0]
+        final fun <get-pages>(): com.fenakhay.kwikibot.client.service/PageService // com.fenakhay.kwikibot.testkit/FakeWiki.pages.<get-pages>|<get-pages>(){}[0]
+    final val paramInfo // com.fenakhay.kwikibot.testkit/FakeWiki.paramInfo|{}paramInfo[0]
+        final fun <get-paramInfo>(): com.fenakhay.kwikibot.protocol/ParamInfo // com.fenakhay.kwikibot.testkit/FakeWiki.paramInfo.<get-paramInfo>|<get-paramInfo>(){}[0]
+    final val proofread // com.fenakhay.kwikibot.testkit/FakeWiki.proofread|{}proofread[0]
+        final fun <get-proofread>(): com.fenakhay.kwikibot.client.service/ProofreadService // com.fenakhay.kwikibot.testkit/FakeWiki.proofread.<get-proofread>|<get-proofread>(){}[0]
+    final val renderer // com.fenakhay.kwikibot.testkit/FakeWiki.renderer|{}renderer[0]
+        final fun <get-renderer>(): com.fenakhay.kwikibot.client.service/RenderService // com.fenakhay.kwikibot.testkit/FakeWiki.renderer.<get-renderer>|<get-renderer>(){}[0]
+    final val revisions // com.fenakhay.kwikibot.testkit/FakeWiki.revisions|{}revisions[0]
+        final fun <get-revisions>(): com.fenakhay.kwikibot.client.service/RevisionService // com.fenakhay.kwikibot.testkit/FakeWiki.revisions.<get-revisions>|<get-revisions>(){}[0]
+    final val tokens // com.fenakhay.kwikibot.testkit/FakeWiki.tokens|{}tokens[0]
+        final fun <get-tokens>(): com.fenakhay.kwikibot.net.auth/TokenStore // com.fenakhay.kwikibot.testkit/FakeWiki.tokens.<get-tokens>|<get-tokens>(){}[0]
+    final val transport // com.fenakhay.kwikibot.testkit/FakeWiki.transport|{}transport[0]
+        final fun <get-transport>(): com.fenakhay.kwikibot.net.transport/MediaWikiTransport // com.fenakhay.kwikibot.testkit/FakeWiki.transport.<get-transport>|<get-transport>(){}[0]
+    final val users // com.fenakhay.kwikibot.testkit/FakeWiki.users|{}users[0]
+        final fun <get-users>(): com.fenakhay.kwikibot.client.service/UserService // com.fenakhay.kwikibot.testkit/FakeWiki.users.<get-users>|<get-users>(){}[0]
+
+    final suspend fun parseOptions(): com.fenakhay.kwikibot.wikitext/ParseOptions // com.fenakhay.kwikibot.testkit/FakeWiki.parseOptions|parseOptions(){}[0]
+    final suspend fun titleRules(): com.fenakhay.kwikibot.wikitext/TitleRules // com.fenakhay.kwikibot.testkit/FakeWiki.titleRules|titleRules(){}[0]
+}
+
+final class com.fenakhay.kwikibot.testkit/MockTransport : com.fenakhay.kwikibot.net.transport/MediaWikiTransport { // com.fenakhay.kwikibot.testkit/MockTransport|null[0]
+    constructor <init>(com.fenakhay.kwikibot.net.transport/ApiEndpoint = ..., kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.net.transport/ApiRequest, kotlinx.serialization.json/JsonObject>) // com.fenakhay.kwikibot.testkit/MockTransport.<init>|<init>(com.fenakhay.kwikibot.net.transport.ApiEndpoint;kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.net.transport.ApiRequest,kotlinx.serialization.json.JsonObject>){}[0]
+
+    final val endpoint // com.fenakhay.kwikibot.testkit/MockTransport.endpoint|{}endpoint[0]
+        final fun <get-endpoint>(): com.fenakhay.kwikibot.net.transport/ApiEndpoint // com.fenakhay.kwikibot.testkit/MockTransport.endpoint.<get-endpoint>|<get-endpoint>(){}[0]
+    final val requests // com.fenakhay.kwikibot.testkit/MockTransport.requests|{}requests[0]
+        final fun <get-requests>(): kotlin.collections/List<com.fenakhay.kwikibot.net.transport/ApiRequest> // com.fenakhay.kwikibot.testkit/MockTransport.requests.<get-requests>|<get-requests>(){}[0]
+
+    final suspend fun call(com.fenakhay.kwikibot.net.transport/ApiRequest): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.testkit/MockTransport.call|call(com.fenakhay.kwikibot.net.transport.ApiRequest){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.testkit/MockTransport.Companion|null[0]
+        final fun json(kotlin/String): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.testkit/MockTransport.Companion.json|json(kotlin.String){}[0]
+    }
+}

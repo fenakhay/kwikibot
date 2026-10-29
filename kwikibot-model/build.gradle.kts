@@ -1,10 +1,12 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-multiplatform")
     id("kwikibot.published")
 }
 
-dependencies {
-    api(libs.kotlinx.datetime)
+kotlin {
+    sourceSets {
+        commonMain.dependencies { api(libs.kotlinx.datetime) }
 
-    testImplementation(libs.kotlinx.serialization.json)
+        commonTest.dependencies { implementation(libs.kotlinx.serialization.json) }
+    }
 }

@@ -1,3 +1,7 @@
+public final class com/fenakhay/kwikibot/net/Environment {
+	public static final fun environmentVariable (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public final class com/fenakhay/kwikibot/net/Kwikibot {
 	public static final field INSTANCE Lcom/fenakhay/kwikibot/net/Kwikibot;
 	public static final field NAME Ljava/lang/String;
@@ -77,6 +81,10 @@ public final class com/fenakhay/kwikibot/net/UserAgent {
 
 public final class com/fenakhay/kwikibot/net/UserAgent$Companion {
 	public final fun getLIBRARY_VERSION ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/net/UserAgentKt {
+	public static final fun identifyAs (Lio/ktor/http/HttpMessageBuilder;Lcom/fenakhay/kwikibot/net/UserAgent;)V
 }
 
 public abstract interface class com/fenakhay/kwikibot/net/auth/Credentials {
@@ -183,8 +191,8 @@ public final class com/fenakhay/kwikibot/net/auth/TokenStore$Companion {
 
 public final class com/fenakhay/kwikibot/net/cache/DiskCache : com/fenakhay/kwikibot/net/cache/ResponseCache {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/cache/DiskCache$Companion;
-	public synthetic fun <init> (Ljava/nio/file/Path;JLkotlin/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/nio/file/Path;JLkotlin/time/Clock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlinx/io/files/Path;JLkotlin/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlinx/io/files/Path;JLkotlin/time/Clock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun clear ()V
 	public fun get (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun put (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -231,8 +239,6 @@ public final class com/fenakhay/kwikibot/net/transport/ApiEndpoint$Companion {
 
 public final class com/fenakhay/kwikibot/net/transport/ApiRequest {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/ApiRequest$Companion;
-	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;)V
-	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;Z)V
 	public synthetic fun <init> (Ljava/util/Map;Lcom/fenakhay/kwikibot/net/RequestKind;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/Map;
@@ -259,6 +265,7 @@ public final class com/fenakhay/kwikibot/net/transport/ApiRequest$Companion {
 
 public final class com/fenakhay/kwikibot/net/transport/HttpSettings {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/HttpSettings$Companion;
+	public static final field DEFAULT_CONCURRENT_REQUESTS I
 	public static final field DEFAULT_CONNECTIONS I
 	public fun <init> ()V
 	public synthetic fun <init> (IIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -269,8 +276,8 @@ public final class com/fenakhay/kwikibot/net/transport/HttpSettings {
 	public final fun copy-SxA4cEA (IIJ)Lcom/fenakhay/kwikibot/net/transport/HttpSettings;
 	public static synthetic fun copy-SxA4cEA$default (Lcom/fenakhay/kwikibot/net/transport/HttpSettings;IIJILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/HttpSettings;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxConcurrentRequests ()I
 	public final fun getMaxIdleConnections ()I
-	public final fun getMaxRequestsPerHost ()I
 	public final fun getTimeout-UwyO8pc ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -283,8 +290,6 @@ public final class com/fenakhay/kwikibot/net/transport/KtorTransport : com/fenak
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/KtorTransport$Companion;
 	public static final field DEFAULT_MAXLAG I
 	public static final field MAX_GET_LENGTH I
-	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;)V
-	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/net/transport/TransportListener;)V
 	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/net/transport/TransportListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun call (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -327,5 +332,9 @@ public final class com/fenakhay/kwikibot/net/transport/WikiHttpClient {
 	public final fun create-SxA4cEA (Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;J)Lio/ktor/client/HttpClient;
 	public static synthetic fun create-SxA4cEA$default (Lcom/fenakhay/kwikibot/net/transport/WikiHttpClient;Lcom/fenakhay/kwikibot/net/auth/Credentials;Lio/ktor/client/engine/HttpClientEngine;JILjava/lang/Object;)Lio/ktor/client/HttpClient;
 	public final fun getDEFAULT_TIMEOUT-UwyO8pc ()J
+}
+
+public final class com/fenakhay/kwikibot/net/transport/WikiHttpClientKt {
+	public static final fun withRequestPermit (Lio/ktor/client/HttpClient;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

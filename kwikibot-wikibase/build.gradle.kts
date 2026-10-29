@@ -1,10 +1,13 @@
 plugins {
+    id("kwikibot.kotlin-multiplatform")
     id("kwikibot.kotlin-serialization")
     id("kwikibot.published")
 }
 
-dependencies {
-    api(project(":kwikibot-client"))
+kotlin {
+    sourceSets {
+        commonMain.dependencies { api(project(":kwikibot-client")) }
 
-    testImplementation(project(":kwikibot-testkit"))
+        commonTest.dependencies { implementation(project(":kwikibot-testkit")) }
+    }
 }

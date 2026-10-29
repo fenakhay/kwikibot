@@ -1,23 +1,29 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-multiplatform")
     id("kwikibot.published")
 }
 
-dependencies {
-    api(project(":kwikibot-model"))
-    api(project(":kwikibot-protocol"))
-    api(project(":kwikibot-wikitext"))
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":kwikibot-model"))
+            api(project(":kwikibot-protocol"))
+            api(project(":kwikibot-wikitext"))
 
-    implementation(libs.ktoml.core)
-    implementation(libs.ktoml.file)
-    // For bzip2, which Wikimedia publishes its dumps in and the JDK cannot read. Pure Java, so it
-    // also builds into a native image.
-    implementation(libs.commons.compress)
-    implementation(libs.kotlin.logging)
+            implementation(libs.kotlin.logging)
+        }
 
-    testImplementation(project(":kwikibot-testkit"))
-    testImplementation(libs.ktor.client.mock)
-    testImplementation(libs.turbine)
+        // For bzip2, which Wikimedia publishes its dumps in and the JDK cannot read.
+        jvmMain.dependencies { implementation(libs.commons.compress) }
+
+        commonTest.dependencies {
+            implementation(project(":kwikibot-testkit"))
+            implementation(libs.ktor.client.mock)
+            implementation(libs.turbine)
+        }
+
+        jsTest.dependencies { npm("@js-joda/timezone", libs.versions.jsJodaTimezone.get()) }
+    }
 }
 
 // WireContractTest checks every value the client sends against the surface the reference wikis report.
@@ -43,12 +49,15 @@ tasks.named<Test>("liveTest") {
 
 val wireRegistry = layout.buildDirectory.file("wire-registry.tsv")
 
+val jvmTestCompilation = kotlin.jvm().compilations.getByName("test")
+
 tasks.register<Test>("wireContractTest") {
     description = "Checks the values the client sends against api-surface.tsv, and lists them for the report."
     group = "verification"
 
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
+    testClassesDirs = jvmTestCompilation.output.classesDirs
+    classpath = files(jvmTestCompilation.output.allOutputs, jvmTestCompilation.runtimeDependencyFiles)
+    useJUnitPlatform()
     filter { includeTestsMatching("*.WireContractTest") }
     outputs.file(wireRegistry)
     systemProperty("kwikibot.wireRegistry", wireRegistry.get().asFile.absolutePath)

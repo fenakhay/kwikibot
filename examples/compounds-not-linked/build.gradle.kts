@@ -1,5 +1,5 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-jvm")
     application
 }
 

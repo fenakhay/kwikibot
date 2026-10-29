@@ -103,8 +103,6 @@ public final class com/fenakhay/kwikibot/protocol/ModuleDescription {
 }
 
 public final class com/fenakhay/kwikibot/protocol/ParamDescription {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/Integer;ZZLjava/lang/String;ZLjava/util/List;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/Integer;ZZLjava/lang/String;ZLjava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/Integer;ZZLjava/lang/String;ZLjava/util/List;ZLjava/lang/Integer;Ljava/lang/Integer;Ljava/util/List;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/Integer;ZZLjava/lang/String;ZLjava/util/List;ZLjava/lang/Integer;Ljava/lang/Integer;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -203,8 +201,6 @@ public final class com/fenakhay/kwikibot/protocol/SiteInfo$Companion {
 }
 
 public final class com/fenakhay/kwikibot/protocol/decode/ActivityDecoder {
-	public static final field EPOCH Ljava/lang/String;
-	public static final field TEMP_GROUP Ljava/lang/String;
 	public fun <init> (Lcom/fenakhay/kwikibot/protocol/decode/PageDecoder;)V
 	public final fun decodeBlockRecord (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/model/user/BlockRecord;
 	public final fun decodeContribution (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/model/user/Contribution;
@@ -241,7 +237,6 @@ public final class com/fenakhay/kwikibot/protocol/decode/JsonFieldsKt {
 public final class com/fenakhay/kwikibot/protocol/decode/OptionSet {
 	public static final field Companion Lcom/fenakhay/kwikibot/protocol/decode/OptionSet$Companion;
 	public fun <init> ()V
-	public synthetic fun <init> (Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun get (Ljava/lang/String;)Ljava/lang/Boolean;
 	public final fun getNames ()Ljava/util/Set;
@@ -259,7 +254,6 @@ public final class com/fenakhay/kwikibot/protocol/decode/OptionSet$Companion {
 }
 
 public final class com/fenakhay/kwikibot/protocol/decode/PageDecoder {
-	public static final field EPOCH Ljava/lang/String;
 	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun decode (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/protocol/decode/PageResult;
 	public final fun decodeContents (Lkotlinx/serialization/json/JsonObject;Lkotlin/jvm/functions/Function1;)Ljava/util/List;

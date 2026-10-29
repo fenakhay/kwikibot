@@ -9,21 +9,91 @@ cannot reach a release without showing up as a diff first.
 
 ## [Unreleased]
 
-A value of the wrong JSON type now reads as absent instead of throwing, and the accessors that
-read it are public. `Messages` takes its plural rules from CLDR. The build requires every module to
-cover 90% of its branches as well as 95% of its lines.
+kwikibot is a Kotlin Multiplatform library. Every library module builds for the JVM, macOS on
+Apple Silicon, Linux (x64), Windows (x64) and JavaScript. The parser, the client and bot runs are
+on npm as `@fenakhay/kwikibot`, and the `kwikibot` tool is a Kotlin/Native binary. A value of the
+wrong JSON type now reads as absent instead of throwing, and the accessors that read it are public.
+`Messages` takes its plural rules from CLDR 49. The build requires every module to cover 90% of
+its branches as well as 95% of its lines.
 
-Source- and binary-compatible. Decoding behaves differently in the cases listed under Changed, and
-`kwikibot-bot` depends on `net.xyzsd.plurals:cldr-plural-rules`.
+Neither source- nor binary-compatible with 1.3.0, although the version is a minor one. Paths are
+kotlinx-io's, the run logs write to a kotlinx-io `Sink`, `RunState` suspends, the declarations
+kept for 1.1 and 1.2 are gone, and Maven projects depend on the `-jvm` artifacts. Changed and
+Removed list every break, and the cases where decoding behaves differently. A JVM project compiles
+against this release with Kotlin 2.4 or newer.
 
 ### Added
 
+- The targets `macosArm64`, `linuxX64`, `mingwX64` and `js` for every library module, alongside
+  `jvm`. On JavaScript the library runs on Node, and in browsers without the file APIs. XML dumps
+  stay on the JVM.
+- `@fenakhay/kwikibot` on npm, CommonJS with TypeScript definitions, for Node 26 or newer and for
+  browsers through a bundler. It has `parse`, with templates, sections, links, categories and
+  `replaceText`; `parseTitle` and `signatureTimes`; `connect` and `detect`; reading and editing
+  pages; category members, search, transclusions and history as async iterables; Wikibase
+  entities; `sparql`; and bot runs with a JavaScript transform, which are dry runs unless told to
+  save.
+- `environmentVariable(name)` in `kwikibot-net`, which `Credentials.fromEnvironment` and
+  `kwikibot-bot` read through. On JavaScript it reads `process.env`, and nothing in a browser.
+- `HttpMessageBuilder.identifyAs(userAgent)`, which sets `User-Agent`, and on JavaScript
+  `Api-User-Agent` as well.
+- `Spool` and `spool(prefix)` in `kwikibot-client`, which hold a streamed response so it can be
+  read line by line: in a temporary file on the JVM and the native platforms, and in memory on
+  JavaScript.
+- `KWIKIBOT_MODULES` in the `kwikibot` umbrella, the artifact ids it brings in. Kotlin/Native
+  writes no klib for a module without sources (KT-47345), so the umbrella needs one declaration
+  to be published for macOS, Linux and Windows.
 - JSON accessors in `com.fenakhay.kwikibot.protocol.decode`: `string`, `long`, `int`, `double`,
   `boolean`, `flag`, `time`, `obj` and `array` on `JsonObject`, and `strings` and `objects` on
   `JsonArray?`. An absent key, JSON `null` and a value of the wrong type all read as absent.
+- `--trial`, `CommonOptions.trial`: with `--save` and `--limit`, `botMain` saves as an account
+  outside the bot group, for the trial edits a wiki asks for before it grants the bot flag, and
+  says so on standard error. Without `--save` or `--limit` it does not start.
+- `HttpClient.withRequestPermit` in `kwikibot-net`, where a request waits for room among the
+  client's requests in flight.
 
 ### Changed
 
+- Gradle resolves each platform's build from the same coordinates as before. Maven does not read
+  Gradle's metadata, so a Maven project depends on the `-jvm` artifacts, such as
+  `com.fenakhay.kwikibot:kwikibot-jvm`.
+- Paths are `kotlinx.io.files.Path` instead of `java.nio.file.Path`: `DiskCache`,
+  `FileService.download` and `upload`, `BotConfig.read` and `find`, `CommonOptions.diffLog`,
+  `skipLog` and `state`, and `RunState` and its `directory`. On JavaScript they work on Node only.
+  `XmlDump` keeps `java.nio.file.Path` and `InputStream`. `kotlinx-io-core` is part of
+  `kwikibot-net`'s API.
+- `RunLog` and `Progress` write to a `kotlinx.io.Sink` instead of an `Appendable`. They are no
+  longer functions, so `onOutcome` and `reportTo` take `runLog::record` and `progress::record`.
+- `RunState.finishedCount`, `isFinished`, `pin` and `record` suspend, and `finishedCount` is a
+  function instead of a property.
+- `botMain` is declared to return `Unit` instead of `Nothing`. On the JVM and the native platforms
+  it still ends the process with the bot's status; on JavaScript it returns at once, and Node exits
+  with the status when the bot is done. A failure the bot lets through prints its stack trace and exits
+  with status 1 on every platform. Java calls it as `BotMain.botMain` instead of `BotMainKt.botMain`.
+- `TerminalPrompt`'s `input` is a suspending function. On Node, the default reads standard input
+  through `readline`, keeping the lines it has read ahead for the next question.
+- `Diffs` renders unified diffs itself, over `kotlin-multiplatform-diff`, and gives the output
+  `java-diff-utils` gave.
+- `Kwikibot.runtime` and `platform` describe Kotlin/Native and the system, Node and the system, or
+  the browser, off the JVM.
+- On JavaScript, every request also carries `Api-User-Agent`, since a browser will not send a
+  page's own `User-Agent`. A request from a page on a site other than the wiki's sends `origin=*`,
+  which MediaWiki answers as it would a logged-out reader.
+- Each logger is named after its class on every platform, as on the JVM, such as
+  `com.fenakhay.kwikibot.net.auth.LoginManager`.
+- The `kwikibot` tool is a Kotlin/Native binary instead of a GraalVM native image, and logs to
+  standard error on every system. `appArchive` is one task per target: `macosArm64AppArchive`,
+  `linuxX64AppArchive` and `mingwX64AppArchive`. The archives keep their names.
+- Release native executables, the tool and the native benchmarks, are linked with Kotlin/Native's
+  experimental inlining pass, `preCodegenInlineThreshold=40`. Parsing runs about 10% faster, and the
+  tool is about 11% larger.
+- The parser benchmarks run on the JVM and as a native macOS binary: `mainBenchmark` is
+  `jvmBenchmark`, joined by `macosArm64Benchmark`, and `large-pages.json.gz` moved to
+  `kwikibot-benchmarks/corpus`.
+- Kotlin's own ABI validation records the API. `checkKotlinAbi` and `updateKotlinAbi` replace
+  `apiCheck` and `apiDump`, and each module has a `.klib.api` dump for its other platforms beside
+  the JVM one.
+- Built with Kotlin 2.5.0-Beta2 and Gradle 9.8.2.
 - JSON `null` reads as absent. It used to read as the text `"null"`, in a login failure's reason,
   a user name, a group list such as `["bot", null]`, a statement id or a PagePile entry.
 - An object, array or element of the wrong type reads as absent, or is skipped, instead of
@@ -39,16 +109,42 @@ Source- and binary-compatible. Decoding behaves differently in the cases listed 
   boolean as text.
 - `ExtensionService.lintErrors` gives no `range` for a location that is not two numbers, instead
   of a range that starts or ends at 0.
-- `Messages` reads plural rules from CLDR 48 through `cldr-plural-rules`, a 27 kB library with no
-  dependencies of its own. Each language CLDR covers gets its own rule. The hand-written table had
-  seventeen, and the rest took English's, Czech, Lithuanian, Maltese, Hebrew and Welsh among them.
-  Forms are numbered as MediaWiki numbers them, by the categories the language has, and a variant
-  code such as `sr-ec` or `de-formal` takes its language's rule.
+- `Messages` takes its plural rules from CLDR 49, compiled into `kwikibot-bot` from CLDR's own data
+  with no library behind it. Each language CLDR covers gets its own rule. The hand-written table
+  had seventeen, and the rest took English's, Czech, Lithuanian, Maltese, Hebrew and Welsh among
+  them. Forms are numbered as MediaWiki numbers them, by the categories the language has, and a
+  variant code such as `sr-ec` or `de-formal` takes its language's rule. Against CLDR 48, Tajik
+  has a rule of its own, Galician a many form and Vietnamese a one form.
 - `replaceText`, `containsText` and `textIn` leave an argument's name alone unless the scope
   includes templates. In `{{{colour|colour}}}`, prose reaches only the default.
+- `Markup.allNodes()` walks the tree without a coroutine for each level, in the same order. It
+  and `templates` and `wikilinks`, which are built on it like `tags` and `comments`, run 2 to 2.6
+  times as fast on the JVM and 3.5 to 3.8 times as fast natively.
+- A client from `WikiHttpClient`, and so every `WikiClient`, has at most
+  `HttpSettings.maxConcurrentRequests` requests in flight at once, 3 unless told otherwise, which is
+  what [Wikimedia's rate limits](https://www.mediawiki.org/wiki/Wikimedia_APIs/Rate_limits) ask.
+  The limit holds on every platform, for API requests, uploads and file downloads to every wiki of
+  the client together, and `--http-connections` sets it. A run's `readConcurrency` stays 4, the
+  pages it works on at once, whose requests wait for room. Before, nothing held a run to three
+  requests, and the per-host limit of 32 applied only on the JVM and macOS.
+- `HttpSettings.maxRequestsPerHost` is `maxConcurrentRequests`, and so is the `[http]` key in
+  `kwikibot.toml`. The old key is now unknown, which is a warning, and the client keeps to 3.
+  `kwikibot show-config` prints the limit as requests at once.
+- `botMain` names `--trial` when it refuses to save as an account outside the bot group.
+- `FakePageService.edits` is a `List` instead of a `MutableList`. Each read gives the edits applied
+  so far, and does not grow as later edits are applied.
 
 ### Removed
 
+- The declarations kept so code compiled against 1.1 and 1.2 still links, 22 in all: the old
+  constructors of `BotConfig`, `BotConfig.WikiSelection`, `BotConfig.LoginSettings`, `Edit`,
+  `PageOutcome.Pending`, `PageOutcome.Saved`, `BotReport`, `RunLog`, `Progress`, `WikiConfig`,
+  `DumpPage`, `RecentChange`, `ApiRequest`, `KtorTransport`, `ParamDescription`,
+  `FakePageService`, `FakeWiki`, `Comment`, `ExternalLink` and `Tag`, and both of the old
+  `Flow<PageRef>.withContent` overloads.
+- `java-diff-utils`, which was part of `kwikibot-bot`'s API, `ktoml-file`, and `kwikibot-client`'s
+  unused `ktoml-core`. `kotlin-logging-jvm` is now `kotlin-logging`.
+- The tool's JVM application tasks, such as `:kwikibot-cli:run`, and its GraalVM build.
 - Decoding of formatversion=1 shapes: content and warning text under `"*"`, warnings keyed by
   module, log parameters under the log type's key, an empty `case-sensitive` flag, and the move
   parameters `new_ns`, `new_title` and `suppressedredirect`. kwikibot asks for formatversion=2.
@@ -56,6 +152,9 @@ Source- and binary-compatible. Decoding behaves differently in the cases listed 
 
 ### Fixed
 
+- A chunked upload of a file cut short while it was being sent went on sending chunks whose offset
+  passed the bytes the wiki had. The short chunk is now the last one sent, and the wiki refuses the
+  incomplete file when it is published.
 - One `EventStreams` event whose `meta` or `revision` was not an object ended the stream.
 - `lists.languageLinksOn` failed on a link without a language code. It now skips it.
 - `SiteInfo.decode` threw `IllegalArgumentException` on a response that names no wiki, such as one
@@ -89,6 +188,12 @@ Source- and binary-compatible. Decoding behaves differently in the cases listed 
   have to stay as written: ASCII such as `&#124;`, spaces, and control, format, private-use and
   unassigned code points.
 - `FakePageService` dropped the text of a new section added with `prependText`.
+- `Credentials.OAuth2` and `WikiHttpClient` said an OAuth 2 token has no session cookie to keep.
+  The client has always kept the cookies the wiki sets and sent them back with the token, which
+  Wikimedia asks of owner-only tokens so that the account's own rate limit applies, and a test now
+  holds it to that.
+- `FakePageService` could lose edits, or hang a Kotlin/Native test, when a bot run called it from
+  several threads at once. It can now be called from any number of threads.
 
 ## [1.3.0] — 2026-10-18
 

@@ -76,7 +76,6 @@ public final class com/fenakhay/kwikibot/client/GuardsKt {
 
 public final class com/fenakhay/kwikibot/client/MediaWikiVersion : java/lang/Comparable {
 	public static final field Companion Lcom/fenakhay/kwikibot/client/MediaWikiVersion$Companion;
-	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun compareTo (Lcom/fenakhay/kwikibot/client/MediaWikiVersion;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public fun equals (Ljava/lang/Object;)Z
@@ -143,8 +142,6 @@ public final class com/fenakhay/kwikibot/client/WikiClient : java/lang/AutoClose
 public final class com/fenakhay/kwikibot/client/WikiConfig {
 	public static final field Companion Lcom/fenakhay/kwikibot/client/WikiConfig$Companion;
 	public static final field DEFAULT_RELOGINS I
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;)V
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/protocol/ApiWarningListener;ILcom/fenakhay/kwikibot/net/transport/HttpSettings;Lcom/fenakhay/kwikibot/net/transport/TransportListener;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/Throttle;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/Integer;Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/protocol/ApiWarningListener;ILcom/fenakhay/kwikibot/net/transport/HttpSettings;Lcom/fenakhay/kwikibot/net/transport/TransportListener;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/fenakhay/kwikibot/net/UserAgent;
@@ -251,8 +248,6 @@ public final class com/fenakhay/kwikibot/client/model/Coordinate {
 }
 
 public final class com/fenakhay/kwikibot/client/model/DumpPage {
-	public synthetic fun <init> (Ljava/lang/String;IJJLjava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;IJJLjava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;IJJLjava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;IJJLjava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -461,6 +456,15 @@ public final class com/fenakhay/kwikibot/client/model/SparqlValue {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class com/fenakhay/kwikibot/client/model/Spool : java/lang/AutoCloseable {
+	public abstract fun fill (Lio/ktor/utils/io/ByteReadChannel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun lines ()Lkotlin/sequences/Sequence;
+}
+
+public final class com/fenakhay/kwikibot/client/model/Spools {
+	public static final fun spool (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/Spool;
+}
+
 public final class com/fenakhay/kwikibot/client/model/TriageBacklog {
 	public fun <init> (JLkotlin/time/Instant;)V
 	public final fun component1 ()J
@@ -628,7 +632,6 @@ public final class com/fenakhay/kwikibot/client/service/CategorySort : java/lang
 }
 
 public final class com/fenakhay/kwikibot/client/service/EditBuilder {
-	public static final field NEW_SECTION Ljava/lang/String;
 	public fun <init> ()V
 	public final fun getAppendText ()Ljava/lang/String;
 	public final fun getBaseRevision-_t8enN0 ()Lcom/fenakhay/kwikibot/model/RevisionId;
@@ -748,7 +751,7 @@ public abstract interface class com/fenakhay/kwikibot/client/service/FileService
 	public static final field DUPLICATE_LIMIT I
 	public abstract fun deletedFiles (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun deletedFiles$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
-	public abstract fun download (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/nio/file/Path;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun download (Lcom/fenakhay/kwikibot/model/page/PageRef;Lkotlinx/io/files/Path;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun duplicatesOf (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun duplicatesOf$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun globalUsage (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/Integer;)Lkotlinx/coroutines/flow/Flow;
@@ -759,8 +762,8 @@ public abstract interface class com/fenakhay/kwikibot/client/service/FileService
 	public abstract fun publishStashed (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun publishStashed$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun repositories (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun upload (Ljava/nio/file/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun upload$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/nio/file/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun upload (Lkotlinx/io/files/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun upload$default (Lcom/fenakhay/kwikibot/client/service/FileService;Lkotlinx/io/files/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun usage (Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/Integer;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun usage$default (Lcom/fenakhay/kwikibot/client/service/FileService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 }
@@ -776,7 +779,7 @@ public final class com/fenakhay/kwikibot/client/service/FileService$DefaultImpls
 	public static synthetic fun globalUsage$default (Lcom/fenakhay/kwikibot/client/service/FileService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun info$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/util/Collection;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun publishStashed$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun upload$default (Lcom/fenakhay/kwikibot/client/service/FileService;Ljava/nio/file/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upload$default (Lcom/fenakhay/kwikibot/client/service/FileService;Lkotlinx/io/files/Path;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Ljava/lang/String;ZILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun usage$default (Lcom/fenakhay/kwikibot/client/service/FileService;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/Integer;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 }
 

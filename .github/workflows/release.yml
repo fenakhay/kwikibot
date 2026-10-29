@@ -24,7 +24,7 @@ jobs:
 
   maven-central:
     needs: version
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     environment: maven-central
     steps:
       - uses: actions/checkout@v7
@@ -37,7 +37,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build and check
-        run: ./gradlew build detekt apiCheck -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+        run: ./gradlew build detekt checkKotlinAbi -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
       - name: Upload to the Central Portal
         env:
@@ -47,6 +47,42 @@ jobs:
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: ./gradlew nmcpPublishAggregationToCentralPortal -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
+  npm:
+    needs: version
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          registry-url: https://registry.npmjs.org
+
+      - name: Build and test the npm package
+        run: ./gradlew :kwikibot-js:check :kwikibot-js:jsNodeProductionLibraryDistribution -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+
+      - name: Smoke-test the npm package
+        run: |
+          npm pack ./kwikibot-js/build/dist/js/productionLibrary --pack-destination "$RUNNER_TEMP"
+          cd kwikibot-js/smoke
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/fenakhay-kwikibot-*.tgz
+          node detect.mjs https://example.org/kwikibot-release
+
+      - name: Publish to npm
+        working-directory: kwikibot-js/build/dist/js/productionLibrary
+        run: npm publish --provenance --access public
+
   package:
     needs: version
     strategy:
@@ -55,10 +91,16 @@ jobs:
         include:
           - os: windows-latest
             name: windows-x64
+            target: mingwX64
+            binary: kwikibot-cli/build/bin/mingwX64/releaseExecutable/kwikibot.exe
           - os: macos-26
             name: macos-arm64
+            target: macosArm64
+            binary: kwikibot-cli/build/bin/macosArm64/releaseExecutable/kwikibot.kexe
           - os: ubuntu-latest
             name: linux-x64
+            target: linuxX64
+            binary: kwikibot-cli/build/bin/linuxX64/releaseExecutable/kwikibot.kexe
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
@@ -68,16 +110,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: graalvm/setup-graalvm@v1
+      - uses: actions/setup-java@v6
         with:
-          version: '25.4'
-          distribution: graalvm
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          distribution: temurin
+          java-version: 25
 
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build the native binary
-        run: ./gradlew :kwikibot-cli:appArchive -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+        run: ./gradlew :kwikibot-cli:${{ matrix.target }}AppArchive -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
       - name: Build the Linux packages
         if: matrix.os == 'ubuntu-latest'
@@ -90,13 +131,11 @@ jobs:
 
       - name: Smoke-test the native binary
         env:
-          MATRIX_OS: ${{ matrix.os }}
+          binary: ${{ matrix.binary }}
         run: |
-          binary=kwikibot-cli/build/native/nativeCompile/kwikibot
-          case "$MATRIX_OS" in windows-*) binary="$binary.exe" ;; esac
           if [[ ! -x "$binary" ]]; then
             echo "::error::No native binary at $binary"
-            ls -la kwikibot-cli/build/native/nativeCompile || true
+            ls -la "$(dirname "$binary")" || true
             exit 1
           fi
           "$binary" version

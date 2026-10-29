@@ -6,20 +6,48 @@ complexity:
     allowedFunctionsPerInterface: 29
     allowedFunctionsPerClass: 59
     allowedFunctionsPerObject: 29
+    excludes: &tests ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/nativeTest/**']
 
 style:
   MaxLineLength:
     maxLineLength: 110
   ReturnCount:
     max: 4
+  MagicNumber:
+    excludes: *tests
 
 comments:
   UndocumentedPublicClass:
     active: true
+    excludes: *tests
   UndocumentedPublicFunction:
     active: true
+    excludes: *tests
   UndocumentedPublicProperty:
     active: true
+    excludes: *tests
   OutdatedDocumentation:
     active: true
     allowParamOnConstructorProperties: true
+
+exceptions:
+  InstanceOfCheckForException:
+    excludes: *tests
+  ThrowingExceptionsWithoutMessageOrCause:
+    excludes: *tests
+  TooGenericExceptionCaught:
+    excludes: *tests
+
+naming:
+  FunctionNaming:
+    excludes: *tests
+
+performance:
+  ForEachOnRange:
+    excludes: *tests
+  SpreadOperator:
+    excludes: *tests
+
+potential-bugs:
+  UnsafeCallOnNullableType:
+    excludes: *tests

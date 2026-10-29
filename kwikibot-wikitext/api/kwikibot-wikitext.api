@@ -26,7 +26,6 @@ public abstract interface class com/fenakhay/kwikibot/wikitext/CosmeticPass {
 
 public final class com/fenakhay/kwikibot/wikitext/Isbn {
 	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/Isbn$Companion;
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getNormalised ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -59,7 +58,6 @@ public final class com/fenakhay/kwikibot/wikitext/MagicWords {
 public final class com/fenakhay/kwikibot/wikitext/Markup {
 	public static final field Companion Lcom/fenakhay/kwikibot/wikitext/Markup$Companion;
 	public fun <init> (Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun allNodes ()Lkotlin/sequences/Sequence;
 	public final fun comments ()Ljava/util/List;
 	public fun equals (Ljava/lang/Object;)Z
@@ -264,7 +262,6 @@ public final class com/fenakhay/kwikibot/wikitext/node/Attribute {
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/Comment : com/fenakhay/kwikibot/wikitext/node/Node {
-	public synthetic fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
 	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -280,8 +277,6 @@ public final class com/fenakhay/kwikibot/wikitext/node/Comment : com/fenakhay/kw
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/ExternalLink : com/fenakhay/kwikibot/wikitext/node/Node {
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;Z)V
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/Markup;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/fenakhay/kwikibot/wikitext/Markup;
@@ -355,8 +350,6 @@ public final class com/fenakhay/kwikibot/wikitext/node/Parameter {
 }
 
 public final class com/fenakhay/kwikibot/wikitext/node/Tag : com/fenakhay/kwikibot/wikitext/node/Node {
-	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;Z)V
 	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/util/List;ZLjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;

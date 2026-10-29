@@ -6,10 +6,11 @@ import kotlinx.kover.gradle.plugin.dsl.GroupingEntityType
 plugins {
     base
     alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.binary.compatibility.validator)
+    alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.nmcp.aggregation)
     alias(libs.plugins.kover)
     alias(libs.plugins.spotless) apply false
+    id("kwikibot.nodejs")
 }
 
 group = "com.fenakhay.kwikibot"
@@ -26,10 +27,6 @@ version =
 subprojects {
     group = rootProject.group
     version = rootProject.version
-}
-
-apiValidation {
-    ignoredProjects += listOf("kwikibot-cli", "kwikibot-tools", "kwikibot-benchmarks", "compounds-not-linked")
 }
 
 nmcpAggregation {

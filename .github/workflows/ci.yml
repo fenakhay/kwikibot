@@ -13,8 +13,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  check:
+    name: Check on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linuxX64
+            binary: kwikibot-cli/build/bin/linuxX64/releaseExecutable/kwikibot.kexe
+          - os: macos-26
+            target: macosArm64
+            binary: kwikibot-cli/build/bin/macosArm64/releaseExecutable/kwikibot.kexe
+          - os: windows-latest
+            target: mingwX64
+            binary: kwikibot-cli/build/bin/mingwX64/releaseExecutable/kwikibot.exe
+    runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
 
@@ -25,11 +44,33 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Build and test
-        run: ./gradlew build detekt apiCheck koverXmlReport -x liveTest --stacktrace
+      - name: Check, and link the release kwikibot
+        run: ./gradlew check detekt checkKotlinAbi koverXmlReport :kwikibot-cli:${{ matrix.target }}AppArchive -x liveTest --stacktrace
+
+      - name: Smoke-test the release kwikibot
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: |
+          "$BINARY" version
+          "$BINARY" detect https://en.wiktionary.org
+          "$BINARY" whoami --contact https://example.org/kwikibot-ci
+
+      - uses: actions/setup-node@v7
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          node-version: 26
+
+      - name: Smoke-test the npm package
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ./gradlew :kwikibot-js:jsNodeProductionLibraryDistribution --stacktrace
+          npm pack ./kwikibot-js/build/dist/js/productionLibrary --pack-destination "$RUNNER_TEMP"
+          cd kwikibot-js/smoke
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/fenakhay-kwikibot-*.tgz
+          node detect.mjs https://example.org/kwikibot-ci
 
       - name: Upload coverage to Codecov
-        if: always()
+        if: always() && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v7
         with:
           files: build/reports/kover/report.xml
@@ -41,7 +82,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-reports
+          name: test-reports-${{ matrix.os }}
           path: '**/build/reports/tests/**'
 
   # Wikimedia runs this week's MediaWiki; third-party wikis run releases going back years. This job starts
@@ -82,39 +123,6 @@ jobs:
         with:
           name: mediawiki-${{ matrix.mediawiki }}-test-reports
           path: kwikibot-client/build/reports/tests/liveTest/
-
-  native:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    env:
-      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          version: '25.4'
-          distribution: graalvm
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: gradle/actions/setup-gradle@v6
-
-      - name: Build the native binary
-        run: ./gradlew :kwikibot-cli:nativeCompile --stacktrace
-
-      - name: Smoke-test the native binary
-        run: |
-          binary=kwikibot-cli/build/native/nativeCompile/kwikibot
-          case "$RUNNER_OS" in Windows) binary="$binary.exe" ;; esac
-          "$binary" version
-          "$binary" detect https://en.wiktionary.org
-          "$binary" whoami --contact https://example.org/kwikibot-ci
 
   dependency-graph:
     if: github.ref == 'refs/heads/main'

@@ -21,10 +21,10 @@ run.
 
 ## What it is here to show
 
-The library carries the weight. The bot is 1,213 lines including comments, and none of them are
-about reading pages, pacing requests, retrying, detecting an edit conflict, honouring an emergency
-stop, or writing diffs and skip logs. Those are library concerns. What is left is the part that is
-actually about Wiktionary entries.
+The library carries the weight. The bot is 1,493 lines across the six files in `src/main`, comments
+and blank lines included, and none of them are about reading pages, pacing requests, retrying,
+detecting an edit conflict, honouring an emergency stop, or writing diffs and skip logs. Those are
+library concerns. What is left is the part that is actually about Wiktionary entries.
 
 The front end belongs to the bot. kwikibot ships no command base class to subclass, because how a
 program starts is the program's own business. `Compounds.kt` reads its own arguments and assembles
@@ -50,7 +50,7 @@ list, it reached a defensible verdict on all ten, including the refusals
 | `Container.kt` | Term lists however they are written, and the sort `Module:columns` applies |
 | `DerivedTerms.kt` | The transform: merge into an existing list, or create the section |
 | `Summaries.kt` | Edit summaries that name the todo page and admit to reformatting |
-| `Main.kt` | The command line, and the wiring between the four |
+| `Compounds.kt` | The command line, and the wiring between the four |
 
 ## What it will not touch
 

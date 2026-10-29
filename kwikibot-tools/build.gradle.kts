@@ -1,5 +1,5 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-jvm")
     application
 }
 
@@ -78,7 +78,7 @@ tasks.register<JavaExec>("wikiApiBetaCheck") {
 }
 
 val corpusFile =
-    rootProject.layout.projectDirectory.file("kwikibot-wikitext/src/test/resources/wikitext-cases.json")
+    rootProject.layout.projectDirectory.file("kwikibot-wikitext/src/commonTest/resources/wikitext-cases.json")
 
 tasks.register<JavaExec>("wikitextCorpusDump") {
     group = "verification"
@@ -92,7 +92,9 @@ tasks.register<JavaExec>("wikitextCorpusDump") {
 }
 
 val roundTripFile =
-    rootProject.layout.projectDirectory.file("kwikibot-wikitext/src/test/resources/roundtrip-pages.json.gz")
+    rootProject.layout.projectDirectory.file(
+        "kwikibot-wikitext/src/commonTest/resources/roundtrip-pages.json.gz"
+    )
 
 tasks.register<JavaExec>("wikitextRoundTripDump") {
     group = "verification"
@@ -104,7 +106,7 @@ tasks.register<JavaExec>("wikitextRoundTripDump") {
 }
 
 val largePagesFile =
-    rootProject.layout.projectDirectory.file("kwikibot-benchmarks/src/main/resources/large-pages.json.gz")
+    rootProject.layout.projectDirectory.file("kwikibot-benchmarks/corpus/large-pages.json.gz")
 
 tasks.register<JavaExec>("wikitextLargePageDump") {
     group = "verification"

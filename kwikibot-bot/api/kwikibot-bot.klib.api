@@ -1,0 +1,986 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.fenakhay.kwikibot:kwikibot-bot>
+final enum class com.fenakhay.kwikibot.bot.run/StopReason : kotlin/Enum<com.fenakhay.kwikibot.bot.run/StopReason> { // com.fenakhay.kwikibot.bot.run/StopReason|null[0]
+    enum entry AUTH // com.fenakhay.kwikibot.bot.run/StopReason.AUTH|null[0]
+    enum entry CONFIGURATION // com.fenakhay.kwikibot.bot.run/StopReason.CONFIGURATION|null[0]
+    enum entry POLICY // com.fenakhay.kwikibot.bot.run/StopReason.POLICY|null[0]
+    enum entry POLICY_UNREACHABLE // com.fenakhay.kwikibot.bot.run/StopReason.POLICY_UNREACHABLE|null[0]
+    enum entry READ_ONLY // com.fenakhay.kwikibot.bot.run/StopReason.READ_ONLY|null[0]
+    enum entry REFUSED // com.fenakhay.kwikibot.bot.run/StopReason.REFUSED|null[0]
+
+    final val entries // com.fenakhay.kwikibot.bot.run/StopReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.bot.run/StopReason> // com.fenakhay.kwikibot.bot.run/StopReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.bot.run/StopReason // com.fenakhay.kwikibot.bot.run/StopReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.bot.run/StopReason> // com.fenakhay.kwikibot.bot.run/StopReason.values|values#static(){}[0]
+}
+
+abstract fun interface com.fenakhay.kwikibot.bot.run/StopPolicy { // com.fenakhay.kwikibot.bot.run/StopPolicy|null[0]
+    abstract suspend fun mayContinue(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/StopPolicy.mayContinue|mayContinue(){}[0]
+    open suspend fun check() // com.fenakhay.kwikibot.bot.run/StopPolicy.check|check(){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion|null[0]
+        final val NONE // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.NONE|{}NONE[0]
+            final fun <get-NONE>(): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.NONE.<get-NONE>|<get-NONE>(){}[0]
+
+        final fun page(com.fenakhay.kwikibot.client.service/PageService, com.fenakhay.kwikibot.model.page/PageRef): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.page|page(com.fenakhay.kwikibot.client.service.PageService;com.fenakhay.kwikibot.model.page.PageRef){}[0]
+    }
+}
+
+abstract fun interface com.fenakhay.kwikibot.bot.source/PageSource { // com.fenakhay.kwikibot.bot.source/PageSource|null[0]
+    abstract fun pages(com.fenakhay.kwikibot.client/Wiki): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/PageSource.pages|pages(com.fenakhay.kwikibot.client.Wiki){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.bot.source/PageSource.Companion|null[0]
+        final val EMPTY // com.fenakhay.kwikibot.bot.source/PageSource.Companion.EMPTY|{}EMPTY[0]
+            final fun <get-EMPTY>(): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/PageSource.Companion.EMPTY.<get-EMPTY>|<get-EMPTY>(){}[0]
+
+        final fun concat(kotlin.collections/List<com.fenakhay.kwikibot.bot.source/PageSource>): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/PageSource.Companion.concat|concat(kotlin.collections.List<com.fenakhay.kwikibot.bot.source.PageSource>){}[0]
+        final fun titles(kotlin.collections/List<kotlin/String>): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/PageSource.Companion.titles|titles(kotlin.collections.List<kotlin.String>){}[0]
+    }
+}
+
+abstract interface com.fenakhay.kwikibot.bot/Prompt { // com.fenakhay.kwikibot.bot/Prompt|null[0]
+    abstract val isInteractive // com.fenakhay.kwikibot.bot/Prompt.isInteractive|{}isInteractive[0]
+        abstract fun <get-isInteractive>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/Prompt.isInteractive.<get-isInteractive>|<get-isInteractive>(){}[0]
+
+    abstract suspend fun choose(kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.bot/Choice<kotlin/String>>): kotlin/String // com.fenakhay.kwikibot.bot/Prompt.choose|choose(kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.Choice<kotlin.String>>){}[0]
+    abstract suspend fun confirm(kotlin/String, kotlin/Boolean = ...): kotlin/Boolean // com.fenakhay.kwikibot.bot/Prompt.confirm|confirm(kotlin.String;kotlin.Boolean){}[0]
+    abstract suspend fun text(kotlin/String, kotlin/String = ...): kotlin/String // com.fenakhay.kwikibot.bot/Prompt.text|text(kotlin.String;kotlin.String){}[0]
+}
+
+sealed interface com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome|null[0]
+    abstract val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.ref|{}ref[0]
+        abstract fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.ref.<get-ref>|<get-ref>(){}[0]
+
+    final class Failed : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, kotlin/Throwable) // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;kotlin.Throwable){}[0]
+
+        final val error // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.error|{}error[0]
+            final fun <get-error>(): kotlin/Throwable // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.error.<get-error>|<get-error>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.component1|component1(){}[0]
+        final fun component2(): kotlin/Throwable // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.component2|component2(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., kotlin/Throwable = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Failed // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;kotlin.Throwable){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Failed.toString|toString(){}[0]
+    }
+
+    final class Missing : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef) // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.component1|component1(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Missing // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.copy|copy(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Missing.toString|toString(){}[0]
+    }
+
+    final class NotAttempted : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.bot.run/StopReason) // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.bot.run.StopReason){}[0]
+
+        final val reason // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.reason|{}reason[0]
+            final fun <get-reason>(): com.fenakhay.kwikibot.bot.run/StopReason // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.reason.<get-reason>|<get-reason>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.component1|component1(){}[0]
+        final fun component2(): com.fenakhay.kwikibot.bot.run/StopReason // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.component2|component2(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., com.fenakhay.kwikibot.bot.run/StopReason = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.bot.run.StopReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.NotAttempted.toString|toString(){}[0]
+    }
+
+    final class Pending : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.bot.run/Edit, kotlin/String, com.fenakhay.kwikibot.model/RevisionId? = ...) // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.bot.run.Edit;kotlin.String;com.fenakhay.kwikibot.model.RevisionId?){}[0]
+
+        final val baseRevision // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.baseRevision|{}baseRevision[0]
+            final fun <get-baseRevision>(): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.baseRevision.<get-baseRevision>|<get-baseRevision>(){}[0]
+        final val before // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.before|{}before[0]
+            final fun <get-before>(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.before.<get-before>|<get-before>(){}[0]
+        final val edit // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.edit|{}edit[0]
+            final fun <get-edit>(): com.fenakhay.kwikibot.bot.run/Edit // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.edit.<get-edit>|<get-edit>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.component1|component1(){}[0]
+        final fun component2(): com.fenakhay.kwikibot.bot.run/Edit // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.component3|component3(){}[0]
+        final fun component4(): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.component4|component4(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., com.fenakhay.kwikibot.bot.run/Edit = ..., kotlin/String = ..., com.fenakhay.kwikibot.model/RevisionId? = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Pending // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.bot.run.Edit;kotlin.String;com.fenakhay.kwikibot.model.RevisionId?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Pending.toString|toString(){}[0]
+    }
+
+    final class Refused : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model.edit/EditOutcome.Refused) // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.edit.EditOutcome.Refused){}[0]
+
+        final val outcome // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.outcome|{}outcome[0]
+            final fun <get-outcome>(): com.fenakhay.kwikibot.model.edit/EditOutcome.Refused // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.outcome.<get-outcome>|<get-outcome>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.component1|component1(){}[0]
+        final fun component2(): com.fenakhay.kwikibot.model.edit/EditOutcome.Refused // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.component2|component2(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., com.fenakhay.kwikibot.model.edit/EditOutcome.Refused = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Refused // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.edit.EditOutcome.Refused){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Refused.toString|toString(){}[0]
+    }
+
+    final class Saved : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.model/RevisionId? = ..., com.fenakhay.kwikibot.bot.run/Edit? = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.RevisionId;com.fenakhay.kwikibot.model.RevisionId?;com.fenakhay.kwikibot.bot.run.Edit?;kotlin.String?){}[0]
+
+        final val before // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.before|{}before[0]
+            final fun <get-before>(): kotlin/String? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.before.<get-before>|<get-before>(){}[0]
+        final val edit // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.edit|{}edit[0]
+            final fun <get-edit>(): com.fenakhay.kwikibot.bot.run/Edit? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.edit.<get-edit>|<get-edit>(){}[0]
+        final val previousRevision // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.previousRevision|{}previousRevision[0]
+            final fun <get-previousRevision>(): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.previousRevision.<get-previousRevision>|<get-previousRevision>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.ref.<get-ref>|<get-ref>(){}[0]
+        final val revision // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.revision|{}revision[0]
+            final fun <get-revision>(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.revision.<get-revision>|<get-revision>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.component1|component1(){}[0]
+        final fun component2(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.component2|component2(){}[0]
+        final fun component3(): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.component3|component3(){}[0]
+        final fun component4(): com.fenakhay.kwikibot.bot.run/Edit? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.component4|component4(){}[0]
+        final fun component5(): kotlin/String? // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.component5|component5(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., com.fenakhay.kwikibot.model/RevisionId = ..., com.fenakhay.kwikibot.model/RevisionId? = ..., com.fenakhay.kwikibot.bot.run/Edit? = ..., kotlin/String? = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Saved // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;com.fenakhay.kwikibot.model.RevisionId;com.fenakhay.kwikibot.model.RevisionId?;com.fenakhay.kwikibot.bot.run.Edit?;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Saved.toString|toString(){}[0]
+    }
+
+    final class Skipped : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef, kotlin/String) // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String){}[0]
+
+        final val reason // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.reason|{}reason[0]
+            final fun <get-reason>(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.reason.<get-reason>|<get-reason>(){}[0]
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.component2|component2(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.copy|copy(com.fenakhay.kwikibot.model.page.PageRef;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Skipped.toString|toString(){}[0]
+    }
+
+    final class Unchanged : com.fenakhay.kwikibot.bot.run/PageOutcome { // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model.page/PageRef) // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.<init>|<init>(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+
+        final val ref // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.ref|{}ref[0]
+            final fun <get-ref>(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.ref.<get-ref>|<get-ref>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model.page/PageRef // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.component1|component1(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model.page/PageRef = ...): com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.copy|copy(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/PageOutcome.Unchanged.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.bot/EditPermission { // com.fenakhay.kwikibot.bot/EditPermission|null[0]
+    open val isAllowed // com.fenakhay.kwikibot.bot/EditPermission.isAllowed|{}isAllowed[0]
+        open fun <get-isAllowed>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/EditPermission.isAllowed.<get-isAllowed>|<get-isAllowed>(){}[0]
+
+    final class Denied : com.fenakhay.kwikibot.bot/EditPermission { // com.fenakhay.kwikibot.bot/EditPermission.Denied|null[0]
+        constructor <init>(kotlin/String) // com.fenakhay.kwikibot.bot/EditPermission.Denied.<init>|<init>(kotlin.String){}[0]
+
+        final val reason // com.fenakhay.kwikibot.bot/EditPermission.Denied.reason|{}reason[0]
+            final fun <get-reason>(): kotlin/String // com.fenakhay.kwikibot.bot/EditPermission.Denied.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/EditPermission.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.fenakhay.kwikibot.bot/EditPermission.Denied // com.fenakhay.kwikibot.bot/EditPermission.Denied.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/EditPermission.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/EditPermission.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/EditPermission.Denied.toString|toString(){}[0]
+    }
+
+    final object Allowed : com.fenakhay.kwikibot.bot/EditPermission { // com.fenakhay.kwikibot.bot/EditPermission.Allowed|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/EditPermission.Allowed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/EditPermission.Allowed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/EditPermission.Allowed.toString|toString(){}[0]
+    }
+}
+
+final class <#A: out kotlin/Any?> com.fenakhay.kwikibot.bot/Choice { // com.fenakhay.kwikibot.bot/Choice|null[0]
+    constructor <init>(kotlin/Char, kotlin/String, #A) // com.fenakhay.kwikibot.bot/Choice.<init>|<init>(kotlin.Char;kotlin.String;1:0){}[0]
+
+    final val key // com.fenakhay.kwikibot.bot/Choice.key|{}key[0]
+        final fun <get-key>(): kotlin/Char // com.fenakhay.kwikibot.bot/Choice.key.<get-key>|<get-key>(){}[0]
+    final val label // com.fenakhay.kwikibot.bot/Choice.label|{}label[0]
+        final fun <get-label>(): kotlin/String // com.fenakhay.kwikibot.bot/Choice.label.<get-label>|<get-label>(){}[0]
+    final val value // com.fenakhay.kwikibot.bot/Choice.value|{}value[0]
+        final fun <get-value>(): #A // com.fenakhay.kwikibot.bot/Choice.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): kotlin/Char // com.fenakhay.kwikibot.bot/Choice.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/Choice.component2|component2(){}[0]
+    final fun component3(): #A // com.fenakhay.kwikibot.bot/Choice.component3|component3(){}[0]
+    final fun copy(kotlin/Char = ..., kotlin/String = ..., #A = ...): com.fenakhay.kwikibot.bot/Choice<#A> // com.fenakhay.kwikibot.bot/Choice.copy|copy(kotlin.Char;kotlin.String;1:0){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/Choice.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/Choice.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/Choice.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.fix/Fix { // com.fenakhay.kwikibot.bot.fix/Fix|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.bot.fix/Replacement>, com.fenakhay.kwikibot.wikitext/TextScope = ...) // com.fenakhay.kwikibot.bot.fix/Fix.<init>|<init>(kotlin.String;kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.fix.Replacement>;com.fenakhay.kwikibot.wikitext.TextScope){}[0]
+
+    final val description // com.fenakhay.kwikibot.bot.fix/Fix.description|{}description[0]
+        final fun <get-description>(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.description.<get-description>|<get-description>(){}[0]
+    final val name // com.fenakhay.kwikibot.bot.fix/Fix.name|{}name[0]
+        final fun <get-name>(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.name.<get-name>|<get-name>(){}[0]
+    final val replacements // com.fenakhay.kwikibot.bot.fix/Fix.replacements|{}replacements[0]
+        final fun <get-replacements>(): kotlin.collections/List<com.fenakhay.kwikibot.bot.fix/Replacement> // com.fenakhay.kwikibot.bot.fix/Fix.replacements.<get-replacements>|<get-replacements>(){}[0]
+    final val scope // com.fenakhay.kwikibot.bot.fix/Fix.scope|{}scope[0]
+        final fun <get-scope>(): com.fenakhay.kwikibot.wikitext/TextScope // com.fenakhay.kwikibot.bot.fix/Fix.scope.<get-scope>|<get-scope>(){}[0]
+
+    final fun apply(com.fenakhay.kwikibot.wikitext/Markup): com.fenakhay.kwikibot.wikitext/Markup // com.fenakhay.kwikibot.bot.fix/Fix.apply|apply(com.fenakhay.kwikibot.wikitext.Markup){}[0]
+    final fun apply(kotlin/String): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.apply|apply(kotlin.String){}[0]
+    final fun apply(kotlin/String, com.fenakhay.kwikibot.wikitext/ParseOptions): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.apply|apply(kotlin.String;com.fenakhay.kwikibot.wikitext.ParseOptions){}[0]
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<com.fenakhay.kwikibot.bot.fix/Replacement> // com.fenakhay.kwikibot.bot.fix/Fix.component3|component3(){}[0]
+    final fun component4(): com.fenakhay.kwikibot.wikitext/TextScope // com.fenakhay.kwikibot.bot.fix/Fix.component4|component4(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin.collections/List<com.fenakhay.kwikibot.bot.fix/Replacement> = ..., com.fenakhay.kwikibot.wikitext/TextScope = ...): com.fenakhay.kwikibot.bot.fix/Fix // com.fenakhay.kwikibot.bot.fix/Fix.copy|copy(kotlin.String;kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.fix.Replacement>;com.fenakhay.kwikibot.wikitext.TextScope){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Fix.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.fix/Fix.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Fix.toString|toString(){}[0]
+    final fun wouldChange(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Fix.wouldChange|wouldChange(kotlin.String){}[0]
+    final fun wouldChange(kotlin/String, com.fenakhay.kwikibot.wikitext/ParseOptions): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Fix.wouldChange|wouldChange(kotlin.String;com.fenakhay.kwikibot.wikitext.ParseOptions){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.fix/Messages { // com.fenakhay.kwikibot.bot.fix/Messages|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/String>>, kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> = ...) // com.fenakhay.kwikibot.bot.fix/Messages.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.collections.Map<kotlin.String,kotlin.String>>;kotlin.collections.Map<kotlin.String,kotlin.collections.List<kotlin.String>>){}[0]
+
+    final val languages // com.fenakhay.kwikibot.bot.fix/Messages.languages|{}languages[0]
+        final fun <get-languages>(): kotlin.collections/Set<kotlin/String> // com.fenakhay.kwikibot.bot.fix/Messages.languages.<get-languages>|<get-languages>(){}[0]
+
+    final fun chain(kotlin/String): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot.fix/Messages.chain|chain(kotlin.String){}[0]
+    final fun get(kotlin/String, kotlin/String, kotlin/Array<out kotlin/Any?>...): kotlin/String // com.fenakhay.kwikibot.bot.fix/Messages.get|get(kotlin.String;kotlin.String;kotlin.Array<out|kotlin.Any?>...){}[0]
+    final fun has(kotlin/String, kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Messages.has|has(kotlin.String;kotlin.String){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.bot.fix/Messages.Companion|null[0]
+        final const val DEFAULT // com.fenakhay.kwikibot.bot.fix/Messages.Companion.DEFAULT|{}DEFAULT[0]
+            final fun <get-DEFAULT>(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Messages.Companion.DEFAULT.<get-DEFAULT>|<get-DEFAULT>(){}[0]
+
+        final val FALLBACKS // com.fenakhay.kwikibot.bot.fix/Messages.Companion.FALLBACKS|{}FALLBACKS[0]
+            final fun <get-FALLBACKS>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> // com.fenakhay.kwikibot.bot.fix/Messages.Companion.FALLBACKS.<get-FALLBACKS>|<get-FALLBACKS>(){}[0]
+
+        final fun fromJson(kotlin.collections/Map<kotlin/String, kotlin/String>): com.fenakhay.kwikibot.bot.fix/Messages // com.fenakhay.kwikibot.bot.fix/Messages.Companion.fromJson|fromJson(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+        final fun of(kotlin.collections/Map<kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/String>>): com.fenakhay.kwikibot.bot.fix/Messages // com.fenakhay.kwikibot.bot.fix/Messages.Companion.of|of(kotlin.collections.Map<kotlin.String,kotlin.collections.Map<kotlin.String,kotlin.String>>){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.bot.fix/Replacement { // com.fenakhay.kwikibot.bot.fix/Replacement|null[0]
+    constructor <init>(kotlin.text/Regex, kotlin/String) // com.fenakhay.kwikibot.bot.fix/Replacement.<init>|<init>(kotlin.text.Regex;kotlin.String){}[0]
+
+    final val pattern // com.fenakhay.kwikibot.bot.fix/Replacement.pattern|{}pattern[0]
+        final fun <get-pattern>(): kotlin.text/Regex // com.fenakhay.kwikibot.bot.fix/Replacement.pattern.<get-pattern>|<get-pattern>(){}[0]
+    final val replacement // com.fenakhay.kwikibot.bot.fix/Replacement.replacement|{}replacement[0]
+        final fun <get-replacement>(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Replacement.replacement.<get-replacement>|<get-replacement>(){}[0]
+
+    final fun component1(): kotlin.text/Regex // com.fenakhay.kwikibot.bot.fix/Replacement.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Replacement.component2|component2(){}[0]
+    final fun copy(kotlin.text/Regex = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot.fix/Replacement // com.fenakhay.kwikibot.bot.fix/Replacement.copy|copy(kotlin.text.Regex;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Replacement.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.fix/Replacement.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.fix/Replacement.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.fix/Unlinker { // com.fenakhay.kwikibot.bot.fix/Unlinker|null[0]
+    constructor <init>(kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot.fix/Unlinker.<init>|<init>(kotlin.Boolean){}[0]
+
+    final fun linksTo(com.fenakhay.kwikibot.wikitext/Markup, com.fenakhay.kwikibot.model.title/Title.Local): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Unlinker.linksTo|linksTo(com.fenakhay.kwikibot.wikitext.Markup;com.fenakhay.kwikibot.model.title.Title.Local){}[0]
+    final fun linksTo(kotlin/String, com.fenakhay.kwikibot.model.title/Title.Local): kotlin/Boolean // com.fenakhay.kwikibot.bot.fix/Unlinker.linksTo|linksTo(kotlin.String;com.fenakhay.kwikibot.model.title.Title.Local){}[0]
+    final fun unlink(com.fenakhay.kwikibot.wikitext/Markup, com.fenakhay.kwikibot.model.title/Title.Local): com.fenakhay.kwikibot.wikitext/Markup // com.fenakhay.kwikibot.bot.fix/Unlinker.unlink|unlink(com.fenakhay.kwikibot.wikitext.Markup;com.fenakhay.kwikibot.model.title.Title.Local){}[0]
+    final fun unlink(kotlin/String, com.fenakhay.kwikibot.model.title/Title.Local): kotlin/String // com.fenakhay.kwikibot.bot.fix/Unlinker.unlink|unlink(kotlin.String;com.fenakhay.kwikibot.model.title.Title.Local){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.run/BotReport { // com.fenakhay.kwikibot.bot.run/BotReport|null[0]
+    constructor <init>(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin.collections/List<com.fenakhay.kwikibot.bot.run/PageOutcome> = ..., kotlin/Boolean = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot.run/StopReason? = ...) // com.fenakhay.kwikibot.bot.run/BotReport.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.collections.List<com.fenakhay.kwikibot.bot.run.PageOutcome>;kotlin.Boolean;kotlin.Int;com.fenakhay.kwikibot.bot.run.StopReason?){}[0]
+
+    final val clean // com.fenakhay.kwikibot.bot.run/BotReport.clean|{}clean[0]
+        final fun <get-clean>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotReport.clean.<get-clean>|<get-clean>(){}[0]
+    final val failed // com.fenakhay.kwikibot.bot.run/BotReport.failed|{}failed[0]
+        final fun <get-failed>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.failed.<get-failed>|<get-failed>(){}[0]
+    final val notAttempted // com.fenakhay.kwikibot.bot.run/BotReport.notAttempted|{}notAttempted[0]
+        final fun <get-notAttempted>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.notAttempted.<get-notAttempted>|<get-notAttempted>(){}[0]
+    final val pending // com.fenakhay.kwikibot.bot.run/BotReport.pending|{}pending[0]
+        final fun <get-pending>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.pending.<get-pending>|<get-pending>(){}[0]
+    final val problems // com.fenakhay.kwikibot.bot.run/BotReport.problems|{}problems[0]
+        final fun <get-problems>(): kotlin.collections/List<com.fenakhay.kwikibot.bot.run/PageOutcome> // com.fenakhay.kwikibot.bot.run/BotReport.problems.<get-problems>|<get-problems>(){}[0]
+    final val problemsTruncated // com.fenakhay.kwikibot.bot.run/BotReport.problemsTruncated|{}problemsTruncated[0]
+        final fun <get-problemsTruncated>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotReport.problemsTruncated.<get-problemsTruncated>|<get-problemsTruncated>(){}[0]
+    final val processed // com.fenakhay.kwikibot.bot.run/BotReport.processed|{}processed[0]
+        final fun <get-processed>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.processed.<get-processed>|<get-processed>(){}[0]
+    final val refused // com.fenakhay.kwikibot.bot.run/BotReport.refused|{}refused[0]
+        final fun <get-refused>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.refused.<get-refused>|<get-refused>(){}[0]
+    final val saved // com.fenakhay.kwikibot.bot.run/BotReport.saved|{}saved[0]
+        final fun <get-saved>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.saved.<get-saved>|<get-saved>(){}[0]
+    final val skipped // com.fenakhay.kwikibot.bot.run/BotReport.skipped|{}skipped[0]
+        final fun <get-skipped>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.skipped.<get-skipped>|<get-skipped>(){}[0]
+    final val stopReason // com.fenakhay.kwikibot.bot.run/BotReport.stopReason|{}stopReason[0]
+        final fun <get-stopReason>(): com.fenakhay.kwikibot.bot.run/StopReason? // com.fenakhay.kwikibot.bot.run/BotReport.stopReason.<get-stopReason>|<get-stopReason>(){}[0]
+    final val stopped // com.fenakhay.kwikibot.bot.run/BotReport.stopped|{}stopped[0]
+        final fun <get-stopped>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotReport.stopped.<get-stopped>|<get-stopped>(){}[0]
+
+    final fun component1(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component1|component1(){}[0]
+    final fun component10(): com.fenakhay.kwikibot.bot.run/StopReason? // com.fenakhay.kwikibot.bot.run/BotReport.component10|component10(){}[0]
+    final fun component2(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component6|component6(){}[0]
+    final fun component7(): kotlin.collections/List<com.fenakhay.kwikibot.bot.run/PageOutcome> // com.fenakhay.kwikibot.bot.run/BotReport.component7|component7(){}[0]
+    final fun component8(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotReport.component8|component8(){}[0]
+    final fun component9(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.component9|component9(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin.collections/List<com.fenakhay.kwikibot.bot.run/PageOutcome> = ..., kotlin/Boolean = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot.run/StopReason? = ...): com.fenakhay.kwikibot.bot.run/BotReport // com.fenakhay.kwikibot.bot.run/BotReport.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.collections.List<com.fenakhay.kwikibot.bot.run.PageOutcome>;kotlin.Boolean;kotlin.Int;com.fenakhay.kwikibot.bot.run.StopReason?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotReport.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/BotReport.toString|toString(){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.bot.run/BotReport.Companion|null[0]
+        final const val PROBLEM_LIMIT // com.fenakhay.kwikibot.bot.run/BotReport.Companion.PROBLEM_LIMIT|{}PROBLEM_LIMIT[0]
+            final fun <get-PROBLEM_LIMIT>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotReport.Companion.PROBLEM_LIMIT.<get-PROBLEM_LIMIT>|<get-PROBLEM_LIMIT>(){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.bot.run/BotRunBuilder { // com.fenakhay.kwikibot.bot.run/BotRunBuilder|null[0]
+    final var dryRun // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun|{}dryRun[0]
+        final fun <get-dryRun>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun.<get-dryRun>|<get-dryRun>(){}[0]
+        final fun <set-dryRun>(kotlin/Boolean) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun.<set-dryRun>|<set-dryRun>(kotlin.Boolean){}[0]
+    final var exclusionPolicy // com.fenakhay.kwikibot.bot.run/BotRunBuilder.exclusionPolicy|{}exclusionPolicy[0]
+        final fun <get-exclusionPolicy>(): com.fenakhay.kwikibot.bot/BotPolicy? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.exclusionPolicy.<get-exclusionPolicy>|<get-exclusionPolicy>(){}[0]
+        final fun <set-exclusionPolicy>(com.fenakhay.kwikibot.bot/BotPolicy?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.exclusionPolicy.<set-exclusionPolicy>|<set-exclusionPolicy>(com.fenakhay.kwikibot.bot.BotPolicy?){}[0]
+    final var limit // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit.<get-limit>|<get-limit>(){}[0]
+        final fun <set-limit>(kotlin/Int?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit.<set-limit>|<set-limit>(kotlin.Int?){}[0]
+    final var onOutcome // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome|{}onOutcome[0]
+        final fun <get-onOutcome>(): kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit>? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome.<get-onOutcome>|<get-onOutcome>(){}[0]
+        final fun <set-onOutcome>(kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit>?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome.<set-onOutcome>|<set-onOutcome>(kotlin.Function1<com.fenakhay.kwikibot.bot.run.PageOutcome,kotlin.Unit>?){}[0]
+    final var readBatch // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readBatch|{}readBatch[0]
+        final fun <get-readBatch>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readBatch.<get-readBatch>|<get-readBatch>(){}[0]
+        final fun <set-readBatch>(kotlin/Int) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readBatch.<set-readBatch>|<set-readBatch>(kotlin.Int){}[0]
+    final var readConcurrency // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readConcurrency|{}readConcurrency[0]
+        final fun <get-readConcurrency>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readConcurrency.<get-readConcurrency>|<get-readConcurrency>(){}[0]
+        final fun <set-readConcurrency>(kotlin/Int) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.readConcurrency.<set-readConcurrency>|<set-readConcurrency>(kotlin.Int){}[0]
+    final var resume // com.fenakhay.kwikibot.bot.run/BotRunBuilder.resume|{}resume[0]
+        final fun <get-resume>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotRunBuilder.resume.<get-resume>|<get-resume>(){}[0]
+        final fun <set-resume>(kotlin/Boolean) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.resume.<set-resume>|<set-resume>(kotlin.Boolean){}[0]
+    final var state // com.fenakhay.kwikibot.bot.run/BotRunBuilder.state|{}state[0]
+        final fun <get-state>(): com.fenakhay.kwikibot.bot.run/RunState? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.state.<get-state>|<get-state>(){}[0]
+        final fun <set-state>(com.fenakhay.kwikibot.bot.run/RunState?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.state.<set-state>|<set-state>(com.fenakhay.kwikibot.bot.run.RunState?){}[0]
+    final var stopPolicy // com.fenakhay.kwikibot.bot.run/BotRunBuilder.stopPolicy|{}stopPolicy[0]
+        final fun <get-stopPolicy>(): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/BotRunBuilder.stopPolicy.<get-stopPolicy>|<get-stopPolicy>(){}[0]
+        final fun <set-stopPolicy>(com.fenakhay.kwikibot.bot.run/StopPolicy) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.stopPolicy.<set-stopPolicy>|<set-stopPolicy>(com.fenakhay.kwikibot.bot.run.StopPolicy){}[0]
+    final var writeConcurrency // com.fenakhay.kwikibot.bot.run/BotRunBuilder.writeConcurrency|{}writeConcurrency[0]
+        final fun <get-writeConcurrency>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotRunBuilder.writeConcurrency.<get-writeConcurrency>|<get-writeConcurrency>(){}[0]
+        final fun <set-writeConcurrency>(kotlin/Int) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.writeConcurrency.<set-writeConcurrency>|<set-writeConcurrency>(kotlin.Int){}[0]
+
+    final fun createMissing(kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.model.page/PageRef, com.fenakhay.kwikibot.bot.run/Edit?>) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.createMissing|createMissing(kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.model.page.PageRef,com.fenakhay.kwikibot.bot.run.Edit?>){}[0]
+    final fun skip(kotlin/String): kotlin/Nothing // com.fenakhay.kwikibot.bot.run/BotRunBuilder.skip|skip(kotlin.String){}[0]
+    final fun source(kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.source|source(kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    final fun transform(kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.model.page/PageContent, com.fenakhay.kwikibot.bot.run/Edit?>) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.transform|transform(kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.model.page.PageContent,com.fenakhay.kwikibot.bot.run.Edit?>){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.run/Edit { // com.fenakhay.kwikibot.bot.run/Edit|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/Boolean = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/String? = ..., kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot.run/Edit.<init>|<init>(kotlin.String;kotlin.String;kotlin.Boolean;kotlin.collections.List<kotlin.String>;kotlin.String?;kotlin.Boolean){}[0]
+
+    final val createOnly // com.fenakhay.kwikibot.bot.run/Edit.createOnly|{}createOnly[0]
+        final fun <get-createOnly>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/Edit.createOnly.<get-createOnly>|<get-createOnly>(){}[0]
+    final val minor // com.fenakhay.kwikibot.bot.run/Edit.minor|{}minor[0]
+        final fun <get-minor>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/Edit.minor.<get-minor>|<get-minor>(){}[0]
+    final val section // com.fenakhay.kwikibot.bot.run/Edit.section|{}section[0]
+        final fun <get-section>(): kotlin/String? // com.fenakhay.kwikibot.bot.run/Edit.section.<get-section>|<get-section>(){}[0]
+    final val summary // com.fenakhay.kwikibot.bot.run/Edit.summary|{}summary[0]
+        final fun <get-summary>(): kotlin/String // com.fenakhay.kwikibot.bot.run/Edit.summary.<get-summary>|<get-summary>(){}[0]
+    final val tags // com.fenakhay.kwikibot.bot.run/Edit.tags|{}tags[0]
+        final fun <get-tags>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot.run/Edit.tags.<get-tags>|<get-tags>(){}[0]
+    final val text // com.fenakhay.kwikibot.bot.run/Edit.text|{}text[0]
+        final fun <get-text>(): kotlin/String // com.fenakhay.kwikibot.bot.run/Edit.text.<get-text>|<get-text>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot.run/Edit.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot.run/Edit.component2|component2(){}[0]
+    final fun component3(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/Edit.component3|component3(){}[0]
+    final fun component4(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot.run/Edit.component4|component4(){}[0]
+    final fun component5(): kotlin/String? // com.fenakhay.kwikibot.bot.run/Edit.component5|component5(){}[0]
+    final fun component6(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/Edit.component6|component6(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.bot.run/Edit // com.fenakhay.kwikibot.bot.run/Edit.copy|copy(kotlin.String;kotlin.String;kotlin.Boolean;kotlin.collections.List<kotlin.String>;kotlin.String?;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/Edit.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot.run/Edit.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot.run/Edit.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.run/Progress { // com.fenakhay.kwikibot.bot.run/Progress|null[0]
+    constructor <init>(kotlin/Int?, kotlinx.io/Sink = ..., kotlin/Boolean = ..., kotlin/Int = ..., kotlin.time/TimeSource = ...) // com.fenakhay.kwikibot.bot.run/Progress.<init>|<init>(kotlin.Int?;kotlinx.io.Sink;kotlin.Boolean;kotlin.Int;kotlin.time.TimeSource){}[0]
+
+    final fun finish() // com.fenakhay.kwikibot.bot.run/Progress.finish|finish(){}[0]
+    final fun record(com.fenakhay.kwikibot.bot.run/PageOutcome) // com.fenakhay.kwikibot.bot.run/Progress.record|record(com.fenakhay.kwikibot.bot.run.PageOutcome){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.run/RunLog { // com.fenakhay.kwikibot.bot.run/RunLog|null[0]
+    constructor <init>(kotlinx.io/Sink? = ..., kotlinx.io/Sink? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.model.title/NamespaceMap? = ...) // com.fenakhay.kwikibot.bot.run/RunLog.<init>|<init>(kotlinx.io.Sink?;kotlinx.io.Sink?;kotlin.Int;com.fenakhay.kwikibot.model.title.NamespaceMap?){}[0]
+
+    final fun record(com.fenakhay.kwikibot.bot.run/PageOutcome) // com.fenakhay.kwikibot.bot.run/RunLog.record|record(com.fenakhay.kwikibot.bot.run.PageOutcome){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot.run/RunState : kotlin/AutoCloseable { // com.fenakhay.kwikibot.bot.run/RunState|null[0]
+    constructor <init>(kotlinx.io.files/Path) // com.fenakhay.kwikibot.bot.run/RunState.<init>|<init>(kotlinx.io.files.Path){}[0]
+
+    final val directory // com.fenakhay.kwikibot.bot.run/RunState.directory|{}directory[0]
+        final fun <get-directory>(): kotlinx.io.files/Path // com.fenakhay.kwikibot.bot.run/RunState.directory.<get-directory>|<get-directory>(){}[0]
+
+    final fun close() // com.fenakhay.kwikibot.bot.run/RunState.close|close(){}[0]
+    final suspend fun finishedCount(): kotlin/Int // com.fenakhay.kwikibot.bot.run/RunState.finishedCount|finishedCount(){}[0]
+    final suspend fun isFinished(com.fenakhay.kwikibot.model.page/PageRef): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/RunState.isFinished|isFinished(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+    final suspend fun pin(com.fenakhay.kwikibot.model.page/PageRef): com.fenakhay.kwikibot.model/RevisionId? // com.fenakhay.kwikibot.bot.run/RunState.pin|pin(com.fenakhay.kwikibot.model.page.PageRef){}[0]
+    final suspend fun record(com.fenakhay.kwikibot.bot.run/PageOutcome, com.fenakhay.kwikibot.model/RevisionId?) // com.fenakhay.kwikibot.bot.run/RunState.record|record(com.fenakhay.kwikibot.bot.run.PageOutcome;com.fenakhay.kwikibot.model.RevisionId?){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/BotConfig|null[0]
+    constructor <init>(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity, com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ...) // com.fenakhay.kwikibot.bot/BotConfig.<init>|<init>(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings){}[0]
+
+    final val bot // com.fenakhay.kwikibot.bot/BotConfig.bot|{}bot[0]
+        final fun <get-bot>(): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.bot.<get-bot>|<get-bot>(){}[0]
+    final val cache // com.fenakhay.kwikibot.bot/BotConfig.cache|{}cache[0]
+        final fun <get-cache>(): com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? // com.fenakhay.kwikibot.bot/BotConfig.cache.<get-cache>|<get-cache>(){}[0]
+    final val http // com.fenakhay.kwikibot.bot/BotConfig.http|{}http[0]
+        final fun <get-http>(): com.fenakhay.kwikibot.bot/BotConfig.HttpSection // com.fenakhay.kwikibot.bot/BotConfig.http.<get-http>|<get-http>(){}[0]
+    final val login // com.fenakhay.kwikibot.bot/BotConfig.login|{}login[0]
+        final fun <get-login>(): com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? // com.fenakhay.kwikibot.bot/BotConfig.login.<get-login>|<get-login>(){}[0]
+    final val maxlag // com.fenakhay.kwikibot.bot/BotConfig.maxlag|{}maxlag[0]
+        final fun <get-maxlag>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.maxlag.<get-maxlag>|<get-maxlag>(){}[0]
+    final val oauth // com.fenakhay.kwikibot.bot/BotConfig.oauth|{}oauth[0]
+        final fun <get-oauth>(): com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? // com.fenakhay.kwikibot.bot/BotConfig.oauth.<get-oauth>|<get-oauth>(){}[0]
+    final val retry // com.fenakhay.kwikibot.bot/BotConfig.retry|{}retry[0]
+        final fun <get-retry>(): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.retry.<get-retry>|<get-retry>(){}[0]
+    final val run // com.fenakhay.kwikibot.bot/BotConfig.run|{}run[0]
+        final fun <get-run>(): com.fenakhay.kwikibot.bot/BotConfig.RunSettings // com.fenakhay.kwikibot.bot/BotConfig.run.<get-run>|<get-run>(){}[0]
+    final val throttle // com.fenakhay.kwikibot.bot/BotConfig.throttle|{}throttle[0]
+        final fun <get-throttle>(): com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings // com.fenakhay.kwikibot.bot/BotConfig.throttle.<get-throttle>|<get-throttle>(){}[0]
+    final val wiki // com.fenakhay.kwikibot.bot/BotConfig.wiki|{}wiki[0]
+        final fun <get-wiki>(): com.fenakhay.kwikibot.bot/BotConfig.WikiSelection // com.fenakhay.kwikibot.bot/BotConfig.wiki.<get-wiki>|<get-wiki>(){}[0]
+
+    final fun applyTo(com.fenakhay.kwikibot.bot.run/BotRunBuilder) // com.fenakhay.kwikibot.bot/BotConfig.applyTo|applyTo(com.fenakhay.kwikibot.bot.run.BotRunBuilder){}[0]
+    final fun component1(): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.component1|component1(){}[0]
+    final fun component10(): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.component10|component10(){}[0]
+    final fun component2(): com.fenakhay.kwikibot.bot/BotConfig.WikiSelection // com.fenakhay.kwikibot.bot/BotConfig.component2|component2(){}[0]
+    final fun component3(): com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings // com.fenakhay.kwikibot.bot/BotConfig.component3|component3(){}[0]
+    final fun component4(): com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? // com.fenakhay.kwikibot.bot/BotConfig.component4|component4(){}[0]
+    final fun component5(): com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? // com.fenakhay.kwikibot.bot/BotConfig.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.component6|component6(){}[0]
+    final fun component7(): com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? // com.fenakhay.kwikibot.bot/BotConfig.component7|component7(){}[0]
+    final fun component8(): com.fenakhay.kwikibot.bot/BotConfig.RunSettings // com.fenakhay.kwikibot.bot/BotConfig.component8|component8(){}[0]
+    final fun component9(): com.fenakhay.kwikibot.bot/BotConfig.HttpSection // com.fenakhay.kwikibot.bot/BotConfig.component9|component9(){}[0]
+    final fun copy(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity = ..., com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ...): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.copy|copy(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings){}[0]
+    final fun credentials(kotlin/Function1<kotlin/String, kotlin/String?> = ...): com.fenakhay.kwikibot.net.auth/Credentials // com.fenakhay.kwikibot.bot/BotConfig.credentials|credentials(kotlin.Function1<kotlin.String,kotlin.String?>){}[0]
+    final fun endpoint(): com.fenakhay.kwikibot.net.transport/ApiEndpoint // com.fenakhay.kwikibot.bot/BotConfig.endpoint|endpoint(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.equals|equals(kotlin.Any?){}[0]
+    final fun family(): com.fenakhay.kwikibot.client/Family // com.fenakhay.kwikibot.bot/BotConfig.family|family(){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.hashCode|hashCode(){}[0]
+    final fun language(): com.fenakhay.kwikibot.model/LangCode // com.fenakhay.kwikibot.bot/BotConfig.language|language(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.toString|toString(){}[0]
+    final fun toWikiConfig(): com.fenakhay.kwikibot.client/WikiConfig // com.fenakhay.kwikibot.bot/BotConfig.toWikiConfig|toWikiConfig(){}[0]
+    final suspend fun connect(com.fenakhay.kwikibot.client/WikiClient): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.bot/BotConfig.connect|connect(com.fenakhay.kwikibot.client.WikiClient){}[0]
+
+    final class BotIdentity { // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity|null[0]
+        constructor <init>(kotlin/String, kotlin/String = ..., kotlin/String) // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.<init>|<init>(kotlin.String;kotlin.String;kotlin.String){}[0]
+
+        final val contact // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.contact|{}contact[0]
+            final fun <get-contact>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.contact.<get-contact>|<get-contact>(){}[0]
+        final val name // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.name|{}name[0]
+            final fun <get-name>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.name.<get-name>|<get-name>(){}[0]
+        final val version // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.version|{}version[0]
+            final fun <get-version>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.version.<get-version>|<get-version>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.component3|component3(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.copy|copy(kotlin.String;kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.BotIdentity> { // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.BotIdentity) // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.BotIdentity){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.BotIdentity> // com.fenakhay.kwikibot.bot/BotConfig.BotIdentity.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class CacheSettings { // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings|null[0]
+        constructor <init>(kotlin/String = ..., kotlin/String = ...) // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val path // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.path|{}path[0]
+            final fun <get-path>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.path.<get-path>|<get-path>(){}[0]
+        final val ttl // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.ttl|{}ttl[0]
+            final fun <get-ttl>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.ttl.<get-ttl>|<get-ttl>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot/BotConfig.CacheSettings // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.CacheSettings> { // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.CacheSettings // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.CacheSettings) // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.CacheSettings> // com.fenakhay.kwikibot.bot/BotConfig.CacheSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class HttpSection { // com.fenakhay.kwikibot.bot/BotConfig.HttpSection|null[0]
+        constructor <init>(kotlin/Int = ..., kotlin/Int = ..., kotlin/String = ...) // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.String){}[0]
+
+        final val maxConcurrentRequests // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.maxConcurrentRequests|{}maxConcurrentRequests[0]
+            final fun <get-maxConcurrentRequests>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.maxConcurrentRequests.<get-maxConcurrentRequests>|<get-maxConcurrentRequests>(){}[0]
+        final val maxIdleConnections // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.maxIdleConnections|{}maxIdleConnections[0]
+            final fun <get-maxIdleConnections>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.maxIdleConnections.<get-maxIdleConnections>|<get-maxIdleConnections>(){}[0]
+        final val timeout // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.timeout|{}timeout[0]
+            final fun <get-timeout>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.timeout.<get-timeout>|<get-timeout>(){}[0]
+
+        final fun component1(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.component3|component3(){}[0]
+        final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot/BotConfig.HttpSection // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.copy|copy(kotlin.Int;kotlin.Int;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.HttpSection> { // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.HttpSection // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.HttpSection) // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.HttpSection){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.HttpSection> // com.fenakhay.kwikibot.bot/BotConfig.HttpSection.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class LoginSettings { // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings|null[0]
+        constructor <init>(kotlin/String, kotlin/String, kotlin/String = ..., kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.Boolean){}[0]
+
+        final val account // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.account|{}account[0]
+            final fun <get-account>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.account.<get-account>|<get-account>(){}[0]
+        final val botName // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.botName|{}botName[0]
+            final fun <get-botName>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.botName.<get-botName>|<get-botName>(){}[0]
+        final val optional // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.optional|{}optional[0]
+            final fun <get-optional>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.optional.<get-optional>|<get-optional>(){}[0]
+        final val passwordEnv // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.passwordEnv|{}passwordEnv[0]
+            final fun <get-passwordEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.passwordEnv.<get-passwordEnv>|<get-passwordEnv>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.component3|component3(){}[0]
+        final fun component4(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.component4|component4(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.bot/BotConfig.LoginSettings // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.LoginSettings> { // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.LoginSettings // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.LoginSettings) // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.LoginSettings> // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class OAuthSettings { // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings|null[0]
+        constructor <init>(kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+
+        final val optional // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.optional|{}optional[0]
+            final fun <get-optional>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.optional.<get-optional>|<get-optional>(){}[0]
+        final val tokenEnv // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.tokenEnv|{}tokenEnv[0]
+            final fun <get-tokenEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.tokenEnv.<get-tokenEnv>|<get-tokenEnv>(){}[0]
+        final val username // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.username|{}username[0]
+            final fun <get-username>(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.username.<get-username>|<get-username>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.component1|component1(){}[0]
+        final fun component2(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.component2|component2(){}[0]
+        final fun component3(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.component3|component3(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.copy|copy(kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings> { // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings) // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings> // com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class RetrySettings { // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings|null[0]
+        constructor <init>(kotlin/Int? = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Int = ...) // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.<init>|<init>(kotlin.Int?;kotlin.String?;kotlin.String?;kotlin.Int){}[0]
+
+        final val initialDelay // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.initialDelay|{}initialDelay[0]
+            final fun <get-initialDelay>(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.initialDelay.<get-initialDelay>|<get-initialDelay>(){}[0]
+        final val maxDelay // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.maxDelay|{}maxDelay[0]
+            final fun <get-maxDelay>(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.maxDelay.<get-maxDelay>|<get-maxDelay>(){}[0]
+        final val maxRetries // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.maxRetries|{}maxRetries[0]
+            final fun <get-maxRetries>(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.maxRetries.<get-maxRetries>|<get-maxRetries>(){}[0]
+        final val relogins // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.relogins|{}relogins[0]
+            final fun <get-relogins>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.relogins.<get-relogins>|<get-relogins>(){}[0]
+
+        final fun component1(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.component1|component1(){}[0]
+        final fun component2(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.component2|component2(){}[0]
+        final fun component3(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.component3|component3(){}[0]
+        final fun component4(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.component4|component4(){}[0]
+        final fun copy(kotlin/Int? = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Int = ...): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.copy|copy(kotlin.Int?;kotlin.String?;kotlin.String?;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.RetrySettings> { // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.RetrySettings) // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.RetrySettings> // com.fenakhay.kwikibot.bot/BotConfig.RetrySettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class RunSettings { // com.fenakhay.kwikibot.bot/BotConfig.RunSettings|null[0]
+        constructor <init>(kotlin/Int? = ..., kotlin/Int? = ..., kotlin/Int? = ...) // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.<init>|<init>(kotlin.Int?;kotlin.Int?;kotlin.Int?){}[0]
+
+        final val readBatch // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.readBatch|{}readBatch[0]
+            final fun <get-readBatch>(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.readBatch.<get-readBatch>|<get-readBatch>(){}[0]
+        final val readConcurrency // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.readConcurrency|{}readConcurrency[0]
+            final fun <get-readConcurrency>(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.readConcurrency.<get-readConcurrency>|<get-readConcurrency>(){}[0]
+        final val writeConcurrency // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.writeConcurrency|{}writeConcurrency[0]
+            final fun <get-writeConcurrency>(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.writeConcurrency.<get-writeConcurrency>|<get-writeConcurrency>(){}[0]
+
+        final fun component1(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.component1|component1(){}[0]
+        final fun component2(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.component2|component2(){}[0]
+        final fun component3(): kotlin/Int? // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.component3|component3(){}[0]
+        final fun copy(kotlin/Int? = ..., kotlin/Int? = ..., kotlin/Int? = ...): com.fenakhay.kwikibot.bot/BotConfig.RunSettings // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.copy|copy(kotlin.Int?;kotlin.Int?;kotlin.Int?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.RunSettings> { // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.RunSettings // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.RunSettings) // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.RunSettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.RunSettings> // com.fenakhay.kwikibot.bot/BotConfig.RunSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class ThrottleSettings { // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings|null[0]
+        constructor <init>(kotlin/String = ..., kotlin/String = ...) // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val read // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.read|{}read[0]
+            final fun <get-read>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.read.<get-read>|<get-read>(){}[0]
+        final val write // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.write|{}write[0]
+            final fun <get-write>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.write.<get-write>|<get-write>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings> { // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings) // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings> // com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class WikiSelection { // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection|null[0]
+        constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/String = ...) // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?;kotlin.String){}[0]
+
+        final val family // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.family|{}family[0]
+            final fun <get-family>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.family.<get-family>|<get-family>(){}[0]
+        final val lang // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.lang|{}lang[0]
+            final fun <get-lang>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.lang.<get-lang>|<get-lang>(){}[0]
+        final val scriptPath // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.scriptPath|{}scriptPath[0]
+            final fun <get-scriptPath>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.scriptPath.<get-scriptPath>|<get-scriptPath>(){}[0]
+        final val server // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.server|{}server[0]
+            final fun <get-server>(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.server.<get-server>|<get-server>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.component2|component2(){}[0]
+        final fun component3(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.component4|component4(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/String = ...): com.fenakhay.kwikibot.bot/BotConfig.WikiSelection // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.copy|copy(kotlin.String;kotlin.String;kotlin.String?;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.WikiSelection> { // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.WikiSelection // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.WikiSelection) // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.WikiSelection> // com.fenakhay.kwikibot.bot/BotConfig.WikiSelection.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig> { // com.fenakhay.kwikibot.bot/BotConfig.$serializer|null[0]
+        final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.$serializer.descriptor|{}descriptor[0]
+            final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+        final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.$serializer.childSerializers|childSerializers(){}[0]
+        final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+        final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig) // com.fenakhay.kwikibot.bot/BotConfig.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig){}[0]
+    }
+
+    final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.Companion|null[0]
+        final const val DEFAULT_MAXLAG // com.fenakhay.kwikibot.bot/BotConfig.Companion.DEFAULT_MAXLAG|{}DEFAULT_MAXLAG[0]
+            final fun <get-DEFAULT_MAXLAG>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.Companion.DEFAULT_MAXLAG.<get-DEFAULT_MAXLAG>|<get-DEFAULT_MAXLAG>(){}[0]
+        final const val FILE_NAME // com.fenakhay.kwikibot.bot/BotConfig.Companion.FILE_NAME|{}FILE_NAME[0]
+            final fun <get-FILE_NAME>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.Companion.FILE_NAME.<get-FILE_NAME>|<get-FILE_NAME>(){}[0]
+
+        final fun find(kotlinx.io.files/Path? = ...): com.fenakhay.kwikibot.bot/BotConfig? // com.fenakhay.kwikibot.bot/BotConfig.Companion.find|find(kotlinx.io.files.Path?){}[0]
+        final fun parse(kotlin/String): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.Companion.parse|parse(kotlin.String){}[0]
+        final fun read(kotlinx.io.files/Path): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.Companion.read|read(kotlinx.io.files.Path){}[0]
+        final fun searchPath(): kotlin.collections/List<kotlinx.io.files/Path> // com.fenakhay.kwikibot.bot/BotConfig.Companion.searchPath|searchPath(){}[0]
+        final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig> // com.fenakhay.kwikibot.bot/BotConfig.Companion.serializer|serializer(){}[0]
+        final fun template(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.Companion.template|template(){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.bot/BotPolicy { // com.fenakhay.kwikibot.bot/BotPolicy|null[0]
+    constructor <init>(kotlin/String, kotlin/String? = ...) // com.fenakhay.kwikibot.bot/BotPolicy.<init>|<init>(kotlin.String;kotlin.String?){}[0]
+
+    final fun check(com.fenakhay.kwikibot.wikitext/Markup): com.fenakhay.kwikibot.bot/EditPermission // com.fenakhay.kwikibot.bot/BotPolicy.check|check(com.fenakhay.kwikibot.wikitext.Markup){}[0]
+    final fun check(kotlin/String): com.fenakhay.kwikibot.bot/EditPermission // com.fenakhay.kwikibot.bot/BotPolicy.check|check(kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot/BotStart { // com.fenakhay.kwikibot.bot/BotStart|null[0]
+    constructor <init>(com.fenakhay.kwikibot.client/Wiki, com.fenakhay.kwikibot.bot/CommonOptions, kotlin.collections/List<kotlin/String>, com.fenakhay.kwikibot.bot/BotConfig) // com.fenakhay.kwikibot.bot/BotStart.<init>|<init>(com.fenakhay.kwikibot.client.Wiki;com.fenakhay.kwikibot.bot.CommonOptions;kotlin.collections.List<kotlin.String>;com.fenakhay.kwikibot.bot.BotConfig){}[0]
+
+    final val arguments // com.fenakhay.kwikibot.bot/BotStart.arguments|{}arguments[0]
+        final fun <get-arguments>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot/BotStart.arguments.<get-arguments>|<get-arguments>(){}[0]
+    final val config // com.fenakhay.kwikibot.bot/BotStart.config|{}config[0]
+        final fun <get-config>(): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotStart.config.<get-config>|<get-config>(){}[0]
+    final val options // com.fenakhay.kwikibot.bot/BotStart.options|{}options[0]
+        final fun <get-options>(): com.fenakhay.kwikibot.bot/CommonOptions // com.fenakhay.kwikibot.bot/BotStart.options.<get-options>|<get-options>(){}[0]
+    final val wiki // com.fenakhay.kwikibot.bot/BotStart.wiki|{}wiki[0]
+        final fun <get-wiki>(): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.bot/BotStart.wiki.<get-wiki>|<get-wiki>(){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot/CommonOptions { // com.fenakhay.kwikibot.bot/CommonOptions|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Int? = ..., kotlinx.io.files/Path? = ..., kotlinx.io.files/Path? = ..., kotlin/String? = ..., kotlin.time/Duration? = ..., kotlin.time/Duration? = ..., kotlin/Int? = ..., kotlin/String? = ..., kotlinx.io.files/Path? = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot/CommonOptions.<init>|<init>(kotlin.Boolean;kotlin.Int?;kotlinx.io.files.Path?;kotlinx.io.files.Path?;kotlin.String?;kotlin.time.Duration?;kotlin.time.Duration?;kotlin.Int?;kotlin.String?;kotlinx.io.files.Path?;kotlin.Boolean;kotlin.Boolean){}[0]
+
+    final val contact // com.fenakhay.kwikibot.bot/CommonOptions.contact|{}contact[0]
+        final fun <get-contact>(): kotlin/String? // com.fenakhay.kwikibot.bot/CommonOptions.contact.<get-contact>|<get-contact>(){}[0]
+    final val diffLog // com.fenakhay.kwikibot.bot/CommonOptions.diffLog|{}diffLog[0]
+        final fun <get-diffLog>(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.diffLog.<get-diffLog>|<get-diffLog>(){}[0]
+    final val httpConnections // com.fenakhay.kwikibot.bot/CommonOptions.httpConnections|{}httpConnections[0]
+        final fun <get-httpConnections>(): kotlin/Int? // com.fenakhay.kwikibot.bot/CommonOptions.httpConnections.<get-httpConnections>|<get-httpConnections>(){}[0]
+    final val limit // com.fenakhay.kwikibot.bot/CommonOptions.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int? // com.fenakhay.kwikibot.bot/CommonOptions.limit.<get-limit>|<get-limit>(){}[0]
+    final val readDelay // com.fenakhay.kwikibot.bot/CommonOptions.readDelay|{}readDelay[0]
+        final fun <get-readDelay>(): kotlin.time/Duration? // com.fenakhay.kwikibot.bot/CommonOptions.readDelay.<get-readDelay>|<get-readDelay>(){}[0]
+    final val resume // com.fenakhay.kwikibot.bot/CommonOptions.resume|{}resume[0]
+        final fun <get-resume>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.resume.<get-resume>|<get-resume>(){}[0]
+    final val save // com.fenakhay.kwikibot.bot/CommonOptions.save|{}save[0]
+        final fun <get-save>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.save.<get-save>|<get-save>(){}[0]
+    final val skipLog // com.fenakhay.kwikibot.bot/CommonOptions.skipLog|{}skipLog[0]
+        final fun <get-skipLog>(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.skipLog.<get-skipLog>|<get-skipLog>(){}[0]
+    final val state // com.fenakhay.kwikibot.bot/CommonOptions.state|{}state[0]
+        final fun <get-state>(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.state.<get-state>|<get-state>(){}[0]
+    final val stopPage // com.fenakhay.kwikibot.bot/CommonOptions.stopPage|{}stopPage[0]
+        final fun <get-stopPage>(): kotlin/String? // com.fenakhay.kwikibot.bot/CommonOptions.stopPage.<get-stopPage>|<get-stopPage>(){}[0]
+    final val trial // com.fenakhay.kwikibot.bot/CommonOptions.trial|{}trial[0]
+        final fun <get-trial>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.trial.<get-trial>|<get-trial>(){}[0]
+    final val writeDelay // com.fenakhay.kwikibot.bot/CommonOptions.writeDelay|{}writeDelay[0]
+        final fun <get-writeDelay>(): kotlin.time/Duration? // com.fenakhay.kwikibot.bot/CommonOptions.writeDelay.<get-writeDelay>|<get-writeDelay>(){}[0]
+
+    final fun applyTo(com.fenakhay.kwikibot.bot.run/BotRunBuilder, com.fenakhay.kwikibot.client/Wiki) // com.fenakhay.kwikibot.bot/CommonOptions.applyTo|applyTo(com.fenakhay.kwikibot.bot.run.BotRunBuilder;com.fenakhay.kwikibot.client.Wiki){}[0]
+    final fun applyTo(com.fenakhay.kwikibot.client/WikiConfig): com.fenakhay.kwikibot.client/WikiConfig // com.fenakhay.kwikibot.bot/CommonOptions.applyTo|applyTo(com.fenakhay.kwikibot.client.WikiConfig){}[0]
+    final fun component1(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.component1|component1(){}[0]
+    final fun component10(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.component10|component10(){}[0]
+    final fun component11(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.component11|component11(){}[0]
+    final fun component12(): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.component12|component12(){}[0]
+    final fun component2(): kotlin/Int? // com.fenakhay.kwikibot.bot/CommonOptions.component2|component2(){}[0]
+    final fun component3(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.component3|component3(){}[0]
+    final fun component4(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.bot/CommonOptions.component4|component4(){}[0]
+    final fun component5(): kotlin/String? // com.fenakhay.kwikibot.bot/CommonOptions.component5|component5(){}[0]
+    final fun component6(): kotlin.time/Duration? // com.fenakhay.kwikibot.bot/CommonOptions.component6|component6(){}[0]
+    final fun component7(): kotlin.time/Duration? // com.fenakhay.kwikibot.bot/CommonOptions.component7|component7(){}[0]
+    final fun component8(): kotlin/Int? // com.fenakhay.kwikibot.bot/CommonOptions.component8|component8(){}[0]
+    final fun component9(): kotlin/String? // com.fenakhay.kwikibot.bot/CommonOptions.component9|component9(){}[0]
+    final fun copy(kotlin/Boolean = ..., kotlin/Int? = ..., kotlinx.io.files/Path? = ..., kotlinx.io.files/Path? = ..., kotlin/String? = ..., kotlin.time/Duration? = ..., kotlin.time/Duration? = ..., kotlin/Int? = ..., kotlin/String? = ..., kotlinx.io.files/Path? = ..., kotlin/Boolean = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.bot/CommonOptions // com.fenakhay.kwikibot.bot/CommonOptions.copy|copy(kotlin.Boolean;kotlin.Int?;kotlinx.io.files.Path?;kotlinx.io.files.Path?;kotlin.String?;kotlin.time.Duration?;kotlin.time.Duration?;kotlin.Int?;kotlin.String?;kotlinx.io.files.Path?;kotlin.Boolean;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/CommonOptions.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/CommonOptions.hashCode|hashCode(){}[0]
+    final fun runLog(com.fenakhay.kwikibot.client/Wiki): com.fenakhay.kwikibot.bot.run/RunLog // com.fenakhay.kwikibot.bot/CommonOptions.runLog|runLog(com.fenakhay.kwikibot.client.Wiki){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/CommonOptions.toString|toString(){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.bot/CommonOptions.Companion|null[0]
+        final val usage // com.fenakhay.kwikibot.bot/CommonOptions.Companion.usage|{}usage[0]
+            final fun <get-usage>(): kotlin/String // com.fenakhay.kwikibot.bot/CommonOptions.Companion.usage.<get-usage>|<get-usage>(){}[0]
+
+        final fun parse(kotlin.collections/List<kotlin/String>): kotlin/Pair<com.fenakhay.kwikibot.bot/CommonOptions, kotlin.collections/List<kotlin/String>> // com.fenakhay.kwikibot.bot/CommonOptions.Companion.parse|parse(kotlin.collections.List<kotlin.String>){}[0]
+        final fun parse(kotlin/Array<kotlin/String>): kotlin/Pair<com.fenakhay.kwikibot.bot/CommonOptions, kotlin.collections/List<kotlin/String>> // com.fenakhay.kwikibot.bot/CommonOptions.Companion.parse|parse(kotlin.Array<kotlin.String>){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.bot/NonInteractive : com.fenakhay.kwikibot.bot/Prompt { // com.fenakhay.kwikibot.bot/NonInteractive|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/String = ...) // com.fenakhay.kwikibot.bot/NonInteractive.<init>|<init>(kotlin.Boolean;kotlin.String){}[0]
+
+    final val isInteractive // com.fenakhay.kwikibot.bot/NonInteractive.isInteractive|{}isInteractive[0]
+        final fun <get-isInteractive>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/NonInteractive.isInteractive.<get-isInteractive>|<get-isInteractive>(){}[0]
+
+    final var asked // com.fenakhay.kwikibot.bot/NonInteractive.asked|{}asked[0]
+        final fun <get-asked>(): kotlin/Int // com.fenakhay.kwikibot.bot/NonInteractive.asked.<get-asked>|<get-asked>(){}[0]
+
+    final suspend fun choose(kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.bot/Choice<kotlin/String>>): kotlin/String // com.fenakhay.kwikibot.bot/NonInteractive.choose|choose(kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.Choice<kotlin.String>>){}[0]
+    final suspend fun confirm(kotlin/String, kotlin/Boolean): kotlin/Boolean // com.fenakhay.kwikibot.bot/NonInteractive.confirm|confirm(kotlin.String;kotlin.Boolean){}[0]
+    final suspend fun text(kotlin/String, kotlin/String): kotlin/String // com.fenakhay.kwikibot.bot/NonInteractive.text|text(kotlin.String;kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot/ScriptedPrompt : com.fenakhay.kwikibot.bot/Prompt { // com.fenakhay.kwikibot.bot/ScriptedPrompt|null[0]
+    constructor <init>(kotlin.collections/List<kotlin/String>, com.fenakhay.kwikibot.bot/Prompt = ...) // com.fenakhay.kwikibot.bot/ScriptedPrompt.<init>|<init>(kotlin.collections.List<kotlin.String>;com.fenakhay.kwikibot.bot.Prompt){}[0]
+
+    final val isInteractive // com.fenakhay.kwikibot.bot/ScriptedPrompt.isInteractive|{}isInteractive[0]
+        final fun <get-isInteractive>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/ScriptedPrompt.isInteractive.<get-isInteractive>|<get-isInteractive>(){}[0]
+
+    final suspend fun choose(kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.bot/Choice<kotlin/String>>): kotlin/String // com.fenakhay.kwikibot.bot/ScriptedPrompt.choose|choose(kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.Choice<kotlin.String>>){}[0]
+    final suspend fun confirm(kotlin/String, kotlin/Boolean): kotlin/Boolean // com.fenakhay.kwikibot.bot/ScriptedPrompt.confirm|confirm(kotlin.String;kotlin.Boolean){}[0]
+    final suspend fun text(kotlin/String, kotlin/String): kotlin/String // com.fenakhay.kwikibot.bot/ScriptedPrompt.text|text(kotlin.String;kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.bot/TerminalPrompt : com.fenakhay.kwikibot.bot/Prompt { // com.fenakhay.kwikibot.bot/TerminalPrompt|null[0]
+    constructor <init>(kotlin/Function1<kotlin/String, kotlin/Unit> = ..., kotlin.coroutines/SuspendFunction0<kotlin/String?> = ...) // com.fenakhay.kwikibot.bot/TerminalPrompt.<init>|<init>(kotlin.Function1<kotlin.String,kotlin.Unit>;kotlin.coroutines.SuspendFunction0<kotlin.String?>){}[0]
+
+    final val isInteractive // com.fenakhay.kwikibot.bot/TerminalPrompt.isInteractive|{}isInteractive[0]
+        final fun <get-isInteractive>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/TerminalPrompt.isInteractive.<get-isInteractive>|<get-isInteractive>(){}[0]
+
+    final suspend fun choose(kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.bot/Choice<kotlin/String>>): kotlin/String // com.fenakhay.kwikibot.bot/TerminalPrompt.choose|choose(kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.bot.Choice<kotlin.String>>){}[0]
+    final suspend fun confirm(kotlin/String, kotlin/Boolean): kotlin/Boolean // com.fenakhay.kwikibot.bot/TerminalPrompt.confirm|confirm(kotlin.String;kotlin.Boolean){}[0]
+    final suspend fun text(kotlin/String, kotlin/String): kotlin/String // com.fenakhay.kwikibot.bot/TerminalPrompt.text|text(kotlin.String;kotlin.String){}[0]
+}
+
+final object com.fenakhay.kwikibot.bot.fix/Diffs { // com.fenakhay.kwikibot.bot.fix/Diffs|null[0]
+    final const val DEFAULT_CONTEXT // com.fenakhay.kwikibot.bot.fix/Diffs.DEFAULT_CONTEXT|{}DEFAULT_CONTEXT[0]
+        final fun <get-DEFAULT_CONTEXT>(): kotlin/Int // com.fenakhay.kwikibot.bot.fix/Diffs.DEFAULT_CONTEXT.<get-DEFAULT_CONTEXT>|<get-DEFAULT_CONTEXT>(){}[0]
+
+    final fun unified(kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ...): kotlin/String // com.fenakhay.kwikibot.bot.fix/Diffs.unified|unified(kotlin.String;kotlin.String;kotlin.String;kotlin.Int){}[0]
+}
+
+final object com.fenakhay.kwikibot.bot.fix/Fixes { // com.fenakhay.kwikibot.bot.fix/Fixes|null[0]
+    final val DATE_RANGES // com.fenakhay.kwikibot.bot.fix/Fixes.DATE_RANGES|{}DATE_RANGES[0]
+        final fun <get-DATE_RANGES>(): com.fenakhay.kwikibot.bot.fix/Fix // com.fenakhay.kwikibot.bot.fix/Fixes.DATE_RANGES.<get-DATE_RANGES>|<get-DATE_RANGES>(){}[0]
+    final val ELLIPSIS // com.fenakhay.kwikibot.bot.fix/Fixes.ELLIPSIS|{}ELLIPSIS[0]
+        final fun <get-ELLIPSIS>(): com.fenakhay.kwikibot.bot.fix/Fix // com.fenakhay.kwikibot.bot.fix/Fixes.ELLIPSIS.<get-ELLIPSIS>|<get-ELLIPSIS>(){}[0]
+    final val EXTRA_SPACES // com.fenakhay.kwikibot.bot.fix/Fixes.EXTRA_SPACES|{}EXTRA_SPACES[0]
+        final fun <get-EXTRA_SPACES>(): com.fenakhay.kwikibot.bot.fix/Fix // com.fenakhay.kwikibot.bot.fix/Fixes.EXTRA_SPACES.<get-EXTRA_SPACES>|<get-EXTRA_SPACES>(){}[0]
+    final val all // com.fenakhay.kwikibot.bot.fix/Fixes.all|{}all[0]
+        final fun <get-all>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.bot.fix/Fix> // com.fenakhay.kwikibot.bot.fix/Fixes.all.<get-all>|<get-all>(){}[0]
+
+    final fun get(kotlin/String): com.fenakhay.kwikibot.bot.fix/Fix? // com.fenakhay.kwikibot.bot.fix/Fixes.get|get(kotlin.String){}[0]
+    final fun named(kotlin.collections/List<kotlin/String>): kotlin.collections/List<com.fenakhay.kwikibot.bot.fix/Fix> // com.fenakhay.kwikibot.bot.fix/Fixes.named|named(kotlin.collections.List<kotlin.String>){}[0]
+    final fun register(com.fenakhay.kwikibot.bot.fix/Fix) // com.fenakhay.kwikibot.bot.fix/Fixes.register|register(com.fenakhay.kwikibot.bot.fix.Fix){}[0]
+}
+
+final object com.fenakhay.kwikibot.bot.source/ExternalSources { // com.fenakhay.kwikibot.bot.source/ExternalSources|null[0]
+    final fun pagePile(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/ExternalSources.pagePile|pagePile(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
+    final fun petScan(kotlin.collections/Map<kotlin/String, kotlin/String>, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/ExternalSources.petScan|petScan(kotlin.collections.Map<kotlin.String,kotlin.String>;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
+    final fun petScan(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/ExternalSources.petScan|petScan(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
+    final fun sparql(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, kotlin/String = ..., kotlin/String = ..., com.fenakhay.kwikibot.client.model/SparqlAuth = ...): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/ExternalSources.sparql|sparql(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;kotlin.String;kotlin.String;com.fenakhay.kwikibot.client.model.SparqlAuth){}[0]
+    final suspend fun <#A1: kotlin/Any?> withPetScanTitles(kotlin.collections/Map<kotlin/String, kotlin/String>, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, kotlin.coroutines/SuspendFunction1<kotlin.sequences/Sequence<kotlin/String>, #A1>): #A1 // com.fenakhay.kwikibot.bot.source/ExternalSources.withPetScanTitles|withPetScanTitles(kotlin.collections.Map<kotlin.String,kotlin.String>;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;kotlin.coroutines.SuspendFunction1<kotlin.sequences.Sequence<kotlin.String>,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun petScanTitles(kotlin.collections/Map<kotlin/String, kotlin/String>, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot.source/ExternalSources.petScanTitles|petScanTitles(kotlin.collections.Map<kotlin.String,kotlin.String>;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
+}
+
+final object com.fenakhay.kwikibot.bot.source/PageSourceSpec { // com.fenakhay.kwikibot.bot.source/PageSourceSpec|null[0]
+    final val kinds // com.fenakhay.kwikibot.bot.source/PageSourceSpec.kinds|{}kinds[0]
+        final fun <get-kinds>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot.source/PageSourceSpec.kinds.<get-kinds>|<get-kinds>(){}[0]
+
+    final fun parse(kotlin/String): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/PageSourceSpec.parse|parse(kotlin.String){}[0]
+    final fun parseAll(kotlin.collections/List<kotlin/String>): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/PageSourceSpec.parseAll|parseAll(kotlin.collections.List<kotlin.String>){}[0]
+}
+
+final fun (com.fenakhay.kwikibot.bot.source/PageSource).com.fenakhay.kwikibot.bot.source/repeating(kotlin.time/Duration = ..., kotlin/Int = ...): com.fenakhay.kwikibot.bot.source/PageSource // com.fenakhay.kwikibot.bot.source/repeating|repeating@com.fenakhay.kwikibot.bot.source.PageSource(kotlin.time.Duration;kotlin.Int){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent>).com.fenakhay.kwikibot.bot.source/redirects(kotlin/Boolean = ...): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.bot.source/redirects|redirects@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageContent>(kotlin.Boolean){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent>).com.fenakhay.kwikibot.bot.source/textMatching(kotlin.text/Regex): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.bot.source/textMatching|textMatching@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageContent>(kotlin.text.Regex){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent>).com.fenakhay.kwikibot.bot.source/textNotMatching(kotlin.text/Regex): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.bot.source/textNotMatching|textNotMatching@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageContent>(kotlin.text.Regex){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/distinctPages(): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/distinctPages|distinctPages@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/excluding(kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/excluding|excluding@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/inNamespaces(kotlin.collections/Set<com.fenakhay.kwikibot.model.title/Namespace>): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/inNamespaces|inNamespaces@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlin.collections.Set<com.fenakhay.kwikibot.model.title.Namespace>){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/intersect(kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/intersect|intersect@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/subpageDepthAtMost(kotlin/Int): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/subpageDepthAtMost|subpageDepthAtMost@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlin.Int){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/titleMatching(kotlin.text/Regex): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/titleMatching|titleMatching@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlin.text.Regex){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/titleNotMatching(kotlin.text/Regex): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef> // com.fenakhay.kwikibot.bot.source/titleNotMatching|titleNotMatching@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(kotlin.text.Regex){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/withContent(com.fenakhay.kwikibot.client.service/PageService, kotlin/Int = ..., kotlin/Int = ...): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.bot.source/withContent|withContent@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(com.fenakhay.kwikibot.client.service.PageService;kotlin.Int;kotlin.Int){}[0]
+final fun (kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageRef>).com.fenakhay.kwikibot.bot.source/withContent(com.fenakhay.kwikibot.client/Wiki, kotlin/Int = ..., kotlin/Int = ...): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.bot.source/withContent|withContent@kotlinx.coroutines.flow.Flow<com.fenakhay.kwikibot.model.page.PageRef>(com.fenakhay.kwikibot.client.Wiki;kotlin.Int;kotlin.Int){}[0]
+final fun com.fenakhay.kwikibot.bot.run/reportTo(kotlin/Array<out kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit>>...): kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit> // com.fenakhay.kwikibot.bot.run/reportTo|reportTo(kotlin.Array<out|kotlin.Function1<com.fenakhay.kwikibot.bot.run.PageOutcome,kotlin.Unit>>...){}[0]
+final fun com.fenakhay.kwikibot.bot/botMain(kotlin/Array<kotlin/String>, kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.bot/BotStart, kotlin/Int>) // com.fenakhay.kwikibot.bot/botMain|botMain(kotlin.Array<kotlin.String>;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.bot.BotStart,kotlin.Int>){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.bot.run/botRun(kotlin/Function1<com.fenakhay.kwikibot.bot.run/BotRunBuilder, kotlin/Unit>): com.fenakhay.kwikibot.bot.run/BotReport // com.fenakhay.kwikibot.bot.run/botRun|botRun@com.fenakhay.kwikibot.client.Wiki(kotlin.Function1<com.fenakhay.kwikibot.bot.run.BotRunBuilder,kotlin.Unit>){}[0]
+final suspend fun com.fenakhay.kwikibot.bot.run/botRun(com.fenakhay.kwikibot.client.service/PageService, kotlin/Function1<com.fenakhay.kwikibot.bot.run/BotRunBuilder, kotlin/Unit>): com.fenakhay.kwikibot.bot.run/BotReport // com.fenakhay.kwikibot.bot.run/botRun|botRun(com.fenakhay.kwikibot.client.service.PageService;kotlin.Function1<com.fenakhay.kwikibot.bot.run.BotRunBuilder,kotlin.Unit>){}[0]

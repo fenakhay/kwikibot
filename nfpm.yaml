@@ -10,7 +10,7 @@ homepage: https://github.com/fenakhay/kwikibot
 license: MIT
 
 contents:
-  - src: kwikibot-cli/build/native/nativeCompile/kwikibot
+  - src: kwikibot-cli/build/bin/linuxX64/releaseExecutable/kwikibot.kexe
     dst: /usr/bin/kwikibot
     file_info:
       mode: 0755

@@ -1,0 +1,205 @@
+package com.fenakhay.kwikibot.net.auth
+
+import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.net.RequestKind
+import com.fenakhay.kwikibot.net.array
+import com.fenakhay.kwikibot.net.long
+import com.fenakhay.kwikibot.net.obj
+import com.fenakhay.kwikibot.net.string
+import com.fenakhay.kwikibot.net.strings
+import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+
+private val log = KotlinLogging.logger("com.fenakhay.kwikibot.net.auth.LoginManager")
+
+/** Who the wiki says we are. */
+public data class Identity(
+    /** The account name the wiki reports, which is the canonical spelling of it. */
+    val name: String,
+    /** The account's id. Zero for an anonymous session. */
+    val id: Long,
+    /** The groups the account is in, which is where its rights come from. */
+    val groups: Set<String> = emptySet(),
+    /** What the account may do. The direct answer to whether an action will be allowed. */
+    val rights: Set<String> = emptySet(),
+) {
+    /** Whether the wiki has flagged this account as a bot. */
+    val isBot: Boolean
+        get() = "bot" in groups
+
+    /** Whether the account is anonymous, in which case [name] is an IP address. */
+    val isAnonymous: Boolean
+        get() = id == 0L
+
+    /**
+     * How many titles, page ids, revision ids or user names one query may name for this account: 500 with
+     * `apihighlimits`, which bots and administrators hold, and 50 otherwise. The wiki refuses more.
+     */
+    val batchLimit: Int
+        get() = if (HIGH_LIMITS in rights) HIGH_BATCH else DEFAULT_BATCH
+
+    /** Whether the account holds [right]. */
+    public operator fun contains(right: String): Boolean = right in rights
+}
+
+private const val HIGH_LIMITS = "apihighlimits"
+private const val DEFAULT_BATCH = 50
+private const val HIGH_BATCH = 500
+
+/**
+ * Establishes and verifies a session.
+ *
+ * Bot passwords need a two-step login: fetch a login token, then post the credentials with it. OAuth 2.0
+ * needs no login at all — the bearer header is attached by the HTTP client — so for those this only confirms
+ * who the wiki thinks we are.
+ *
+ * Logging in twice concurrently is prevented, so a pool of coroutines starting at once produces one login,
+ * not one each.
+ */
+public class LoginManager(
+    private val transport: MediaWikiTransport,
+    private val credentials: Credentials,
+    private val tokens: TokenStore = TokenStore(transport),
+) {
+    private val mutex = Mutex()
+
+    private var identity: Identity? = null
+
+    /** The identity established by the last successful [login], if any. */
+    public val currentIdentity: Identity?
+        get() = identity
+
+    /**
+     * Logs in if that has not happened yet, and returns who we are.
+     *
+     * @throws WikiError.Auth if the wiki refuses the credentials.
+     */
+    public suspend fun login(): Identity {
+        identity?.let {
+            return it
+        }
+        return mutex.withLock {
+            identity ?: performLogin().also { identity = it }
+        }
+    }
+
+    /**
+     * Logs in again, for a session the wiki has dropped.
+     *
+     * A session can end before the client is done with it: after long enough without requests, when the bot
+     * password is reset or deleted, or when the wiki's session store loses it. Every request after that is
+     * made anonymously, or refused if it asserts a user. Unlike [logout] this tells the wiki nothing, since
+     * there is no session left to end: it forgets the old session and its tokens and starts another. For
+     * OAuth 2.0 the token is what logs in, and an owner-only token never expires, though it can be revoked,
+     * so this only checks that the token is still accepted.
+     *
+     * @throws WikiError.Auth if the wiki refuses the credentials this time.
+     */
+    public suspend fun relogin(): Identity = mutex.withLock {
+        identity = null
+        // Tokens belong to the session that issued them, so the cached ones ended with it.
+        tokens.clear()
+        performLogin().also { identity = it }
+    }
+
+    /** Forgets the session, so the next [login] starts a new one. */
+    public suspend fun logout() {
+        mutex.withLock {
+            if (credentials !is Credentials.Anonymous) {
+                runCatching {
+                    transport.call(
+                        ApiRequest(
+                            mapOf("action" to "logout", "token" to tokens.token()),
+                            RequestKind.WRITE,
+                        )
+                    )
+                }
+                    .onFailure { log.debug(it) { "logout call failed; dropping the session anyway" } }
+            }
+            tokens.clear()
+            identity = null
+        }
+    }
+
+    /** Asks the wiki who we are, without logging in. */
+    public suspend fun whoAmI(): Identity {
+        val response =
+            transport.call(ApiRequest.of("query", "meta" to "userinfo", "uiprop" to "groups|rights"))
+        val info =
+            response.obj("query")?.obj("userinfo")
+                ?: throw WikiError.Api("nouserinfo", "no userinfo in response", "query+userinfo")
+
+        return Identity(
+            name = info.string("name").orEmpty(),
+            id = info.long("id") ?: 0L,
+            groups = info.array("groups").strings().toSet(),
+            rights = info.array("rights").strings().toSet(),
+        )
+    }
+
+    private suspend fun performLogin(): Identity =
+        when (credentials) {
+            // Nothing to establish; the wiki will treat us as the requesting IP.
+            is Credentials.Anonymous -> whoAmI()
+
+            // The bearer header is attached by the HTTP client, so a session already exists.
+            is Credentials.OAuth2 -> whoAmI().also { verifyNotAnonymous(it) }
+
+            is Credentials.BotPassword -> {
+                submitBotPassword(credentials)
+                tokens.clear()
+                whoAmI().also { verifyNotAnonymous(it) }
+            }
+        }
+
+    private suspend fun submitBotPassword(botPassword: Credentials.BotPassword) {
+        val response =
+            transport.call(
+                ApiRequest(
+                    mapOf(
+                        "action" to "login",
+                        "lgname" to botPassword.loginName,
+                        "lgpassword" to botPassword.password,
+                        "lgtoken" to tokens.token(TokenStore.LOGIN),
+                    ),
+                    RequestKind.READ,
+                )
+            )
+
+        val login =
+            response.obj("login") ?: throw WikiError.Auth.LoginFailed("no login block in the response")
+
+        val result = login.string("result").orEmpty()
+        if (!result.equals("Success", ignoreCase = true)) {
+            throw WikiError.Auth.LoginFailed(login.reasonText() ?: result.ifEmpty { "unknown" })
+        }
+    }
+
+    /**
+     * Why a login was refused, in either shape MediaWiki reports it.
+     *
+     * With `errorformat=plaintext` — which this library always sends — `reason` is an object carrying a code
+     * and a message, not a string. Reading it as a string throws, which turns a wrong password into a crash
+     * inside the library instead of "wrong password". Anything else the wiki sends is reported as it came.
+     */
+    private fun JsonObject.reasonText(): String? =
+        when (val reason = this["reason"]) {
+            is JsonObject -> reason.string("text") ?: reason.string("code")
+            is JsonArray -> reason.toString()
+            else -> string("reason")
+        }
+
+    private fun verifyNotAnonymous(identity: Identity) {
+        if (identity.isAnonymous) {
+            throw WikiError.Auth.LoginFailed(
+                "credentials were accepted but the wiki still sees an anonymous user"
+            )
+        }
+        log.info { "logged in as ${identity.name}" + if (identity.isBot) " (bot)" else "" }
+    }
+}

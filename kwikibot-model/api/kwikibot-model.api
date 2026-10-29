@@ -129,7 +129,6 @@ public final class com/fenakhay/kwikibot/model/TextDirection$Companion {
 }
 
 public abstract class com/fenakhay/kwikibot/model/WikiError : java/lang/Exception {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun isTransient ()Z
 }
@@ -252,7 +251,6 @@ public final class com/fenakhay/kwikibot/model/WikiError$ReadOnly : com/fenakhay
 }
 
 public abstract class com/fenakhay/kwikibot/model/WikiError$Transport : com/fenakhay/kwikibot/model/WikiError {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun isTransient ()Z
 }
@@ -794,10 +792,8 @@ public final class com/fenakhay/kwikibot/model/log/LogEvent {
 }
 
 public final class com/fenakhay/kwikibot/model/log/RecentChange {
-	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/log/LogEvent;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/log/LogEvent;Ljava/util/List;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/log/LogEvent;Ljava/util/List;Ljava/lang/Boolean;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/model/page/PageRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/RevisionId;Lcom/fenakhay/kwikibot/model/RevisionId;IZZZZLcom/fenakhay/kwikibot/model/log/LogEvent;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()J
 	public final fun component10 ()Z
 	public final fun component11 ()Z
@@ -1060,9 +1056,6 @@ public final class com/fenakhay/kwikibot/model/page/WikiId {
 }
 
 public final class com/fenakhay/kwikibot/model/render/LimitReport {
-	public static final field EXPENSIVE_FUNCTIONS Ljava/lang/String;
-	public static final field LUA_MEMORY Ljava/lang/String;
-	public static final field LUA_TIME Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Map;)V
 	public synthetic fun <init> (Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

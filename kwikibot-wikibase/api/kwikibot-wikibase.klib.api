@@ -1,0 +1,619 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.fenakhay.kwikibot:kwikibot-wikibase>
+final enum class com.fenakhay.kwikibot.wikibase.value/Rank : kotlin/Enum<com.fenakhay.kwikibot.wikibase.value/Rank> { // com.fenakhay.kwikibot.wikibase.value/Rank|null[0]
+    enum entry DEPRECATED // com.fenakhay.kwikibot.wikibase.value/Rank.DEPRECATED|null[0]
+    enum entry NORMAL // com.fenakhay.kwikibot.wikibase.value/Rank.NORMAL|null[0]
+    enum entry PREFERRED // com.fenakhay.kwikibot.wikibase.value/Rank.PREFERRED|null[0]
+
+    final val entries // com.fenakhay.kwikibot.wikibase.value/Rank.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.wikibase.value/Rank> // com.fenakhay.kwikibot.wikibase.value/Rank.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.wikibase.value/Rank // com.fenakhay.kwikibot.wikibase.value/Rank.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.wikibase.value/Rank> // com.fenakhay.kwikibot.wikibase.value/Rank.values|values#static(){}[0]
+}
+
+abstract interface com.fenakhay.kwikibot.wikibase/EntityService { // com.fenakhay.kwikibot.wikibase/EntityService|null[0]
+    abstract suspend fun create(com.fenakhay.kwikibot.wikibase.value/EntityId.Kind, kotlin/Function1<com.fenakhay.kwikibot.wikibase/EntityEdit, kotlin/Unit>): com.fenakhay.kwikibot.wikibase.entity/Entity // com.fenakhay.kwikibot.wikibase/EntityService.create|create(com.fenakhay.kwikibot.wikibase.value.EntityId.Kind;kotlin.Function1<com.fenakhay.kwikibot.wikibase.EntityEdit,kotlin.Unit>){}[0]
+    abstract suspend fun edit(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin/Function1<com.fenakhay.kwikibot.wikibase/EntityEdit, kotlin/Unit>): com.fenakhay.kwikibot.wikibase.entity/Entity // com.fenakhay.kwikibot.wikibase/EntityService.edit|edit(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.Function1<com.fenakhay.kwikibot.wikibase.EntityEdit,kotlin.Unit>){}[0]
+    abstract suspend fun entities(kotlin.collections/Collection<com.fenakhay.kwikibot.wikibase.value/EntityId>): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.entity/Entity> // com.fenakhay.kwikibot.wikibase/EntityService.entities|entities(kotlin.collections.Collection<com.fenakhay.kwikibot.wikibase.value.EntityId>){}[0]
+    abstract suspend fun entity(com.fenakhay.kwikibot.wikibase.value/EntityId): com.fenakhay.kwikibot.wikibase.entity/Entity? // com.fenakhay.kwikibot.wikibase/EntityService.entity|entity(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    abstract suspend fun forPages(kotlin/String, kotlin.collections/Collection<kotlin/String>): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/Entity> // com.fenakhay.kwikibot.wikibase/EntityService.forPages|forPages(kotlin.String;kotlin.collections.Collection<kotlin.String>){}[0]
+    abstract suspend fun mergeItems(com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Set<kotlin/String> = ..., kotlin/String = ...) // com.fenakhay.kwikibot.wikibase/EntityService.mergeItems|mergeItems(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Set<kotlin.String>;kotlin.String){}[0]
+    abstract suspend fun mergeLexemes(com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin/String = ...) // com.fenakhay.kwikibot.wikibase/EntityService.mergeLexemes|mergeLexemes(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.String){}[0]
+    abstract suspend fun parseValues(kotlin/String, kotlin.collections/List<kotlin/String>): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/DataValue> // com.fenakhay.kwikibot.wikibase/EntityService.parseValues|parseValues(kotlin.String;kotlin.collections.List<kotlin.String>){}[0]
+    abstract suspend fun redirect(com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.value/EntityId) // com.fenakhay.kwikibot.wikibase/EntityService.redirect|redirect(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    abstract suspend fun removeStatements(kotlin.collections/Collection<kotlin/String>, kotlin/String = ..., kotlin/Long? = ...) // com.fenakhay.kwikibot.wikibase/EntityService.removeStatements|removeStatements(kotlin.collections.Collection<kotlin.String>;kotlin.String;kotlin.Long?){}[0]
+    abstract suspend fun search(kotlin/String, kotlin/String = ..., com.fenakhay.kwikibot.wikibase.value/EntityId.Kind = ..., kotlin/Int = ...): kotlin.collections/List<com.fenakhay.kwikibot.wikibase/EntityMatch> // com.fenakhay.kwikibot.wikibase/EntityService.search|search(kotlin.String;kotlin.String;com.fenakhay.kwikibot.wikibase.value.EntityId.Kind;kotlin.Int){}[0]
+    abstract suspend fun setStatement(com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.value/Statement, kotlin/String = ..., kotlin/Long? = ...): com.fenakhay.kwikibot.wikibase.value/Statement // com.fenakhay.kwikibot.wikibase/EntityService.setStatement|setStatement(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.Statement;kotlin.String;kotlin.Long?){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.wikibase/EntityService.Companion|null[0]
+        final const val BATCH_SIZE // com.fenakhay.kwikibot.wikibase/EntityService.Companion.BATCH_SIZE|{}BATCH_SIZE[0]
+            final fun <get-BATCH_SIZE>(): kotlin/Int // com.fenakhay.kwikibot.wikibase/EntityService.Companion.BATCH_SIZE.<get-BATCH_SIZE>|<get-BATCH_SIZE>(){}[0]
+        final const val SEARCH_LIMIT // com.fenakhay.kwikibot.wikibase/EntityService.Companion.SEARCH_LIMIT|{}SEARCH_LIMIT[0]
+            final fun <get-SEARCH_LIMIT>(): kotlin/Int // com.fenakhay.kwikibot.wikibase/EntityService.Companion.SEARCH_LIMIT.<get-SEARCH_LIMIT>|<get-SEARCH_LIMIT>(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.wikibase.entity/Entity { // com.fenakhay.kwikibot.wikibase.entity/Entity|null[0]
+    abstract val aliases // com.fenakhay.kwikibot.wikibase.entity/Entity.aliases|{}aliases[0]
+        abstract fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.aliases.<get-aliases>|<get-aliases>(){}[0]
+    abstract val descriptions // com.fenakhay.kwikibot.wikibase.entity/Entity.descriptions|{}descriptions[0]
+        abstract fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+    abstract val id // com.fenakhay.kwikibot.wikibase.entity/Entity.id|{}id[0]
+        abstract fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.id.<get-id>|<get-id>(){}[0]
+    abstract val labels // com.fenakhay.kwikibot.wikibase.entity/Entity.labels|{}labels[0]
+        abstract fun <get-labels>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.labels.<get-labels>|<get-labels>(){}[0]
+    abstract val lastRevisionId // com.fenakhay.kwikibot.wikibase.entity/Entity.lastRevisionId|{}lastRevisionId[0]
+        abstract fun <get-lastRevisionId>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.lastRevisionId.<get-lastRevisionId>|<get-lastRevisionId>(){}[0]
+    abstract val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.statements|{}statements[0]
+        abstract fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.statements.<get-statements>|<get-statements>(){}[0]
+
+    open fun best(com.fenakhay.kwikibot.wikibase.value/EntityId): com.fenakhay.kwikibot.wikibase.value/Statement? // com.fenakhay.kwikibot.wikibase.entity/Entity.best|best(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    open fun description(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.wikibase.entity/Entity.description|description(kotlin.String){}[0]
+    open fun get(com.fenakhay.kwikibot.wikibase.value/EntityId): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement> // com.fenakhay.kwikibot.wikibase.entity/Entity.get|get(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    open fun label(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.wikibase.entity/Entity.label|label(kotlin.String){}[0]
+    open fun labelIn(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.wikibase.entity/Entity.labelIn|labelIn(kotlin.String){}[0]
+
+    final class Form { // com.fenakhay.kwikibot.wikibase.entity/Entity.Form|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.EntityId>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+
+        final val grammaticalFeatures // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.grammaticalFeatures|{}grammaticalFeatures[0]
+            final fun <get-grammaticalFeatures>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.grammaticalFeatures.<get-grammaticalFeatures>|<get-grammaticalFeatures>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.id.<get-id>|<get-id>(){}[0]
+        final val representations // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.representations|{}representations[0]
+            final fun <get-representations>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.representations.<get-representations>|<get-representations>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.component4|component4(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.Form // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.EntityId>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Form.toString|toString(){}[0]
+    }
+
+    final class Item : com.fenakhay.kwikibot.wikibase.entity/Entity { // com.fenakhay.kwikibot.wikibase.entity/Entity.Item|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink> = ..., kotlin/Long? = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.LanguageValue>>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.SiteLink>;kotlin.Long?){}[0]
+
+        final val aliases // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.aliases|{}aliases[0]
+            final fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.aliases.<get-aliases>|<get-aliases>(){}[0]
+        final val descriptions // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.descriptions|{}descriptions[0]
+            final fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.id.<get-id>|<get-id>(){}[0]
+        final val labels // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.labels|{}labels[0]
+            final fun <get-labels>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.labels.<get-labels>|<get-labels>(){}[0]
+        final val lastRevisionId // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.lastRevisionId|{}lastRevisionId[0]
+            final fun <get-lastRevisionId>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.lastRevisionId.<get-lastRevisionId>|<get-lastRevisionId>(){}[0]
+        final val siteLinks // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.siteLinks|{}siteLinks[0]
+            final fun <get-siteLinks>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.siteLinks.<get-siteLinks>|<get-siteLinks>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component5|component5(){}[0]
+        final fun component6(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink> // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component6|component6(){}[0]
+        final fun component7(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.component7|component7(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink> = ..., kotlin/Long? = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.Item // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.LanguageValue>>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.SiteLink>;kotlin.Long?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.hashCode|hashCode(){}[0]
+        final fun siteLink(kotlin/String): com.fenakhay.kwikibot.wikibase.entity/SiteLink? // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.siteLink|siteLink(kotlin.String){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Item.toString|toString(){}[0]
+    }
+
+    final class Lexeme : com.fenakhay.kwikibot.wikibase.entity/Entity { // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., com.fenakhay.kwikibot.wikibase.value/EntityId? = ..., com.fenakhay.kwikibot.wikibase.value/EntityId? = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Form> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Sense> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;com.fenakhay.kwikibot.wikibase.value.EntityId?;com.fenakhay.kwikibot.wikibase.value.EntityId?;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.Entity.Form>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.Entity.Sense>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+
+        final val aliases // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.aliases|{}aliases[0]
+            final fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.aliases.<get-aliases>|<get-aliases>(){}[0]
+        final val descriptions // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.descriptions|{}descriptions[0]
+            final fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+        final val forms // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.forms|{}forms[0]
+            final fun <get-forms>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Form> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.forms.<get-forms>|<get-forms>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.id.<get-id>|<get-id>(){}[0]
+        final val labels // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.labels|{}labels[0]
+            final fun <get-labels>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.labels.<get-labels>|<get-labels>(){}[0]
+        final val language // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.language|{}language[0]
+            final fun <get-language>(): com.fenakhay.kwikibot.wikibase.value/EntityId? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.language.<get-language>|<get-language>(){}[0]
+        final val lastRevisionId // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lastRevisionId|{}lastRevisionId[0]
+            final fun <get-lastRevisionId>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lastRevisionId.<get-lastRevisionId>|<get-lastRevisionId>(){}[0]
+        final val lemmas // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lemmas|{}lemmas[0]
+            final fun <get-lemmas>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lemmas.<get-lemmas>|<get-lemmas>(){}[0]
+        final val lexicalCategory // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lexicalCategory|{}lexicalCategory[0]
+            final fun <get-lexicalCategory>(): com.fenakhay.kwikibot.wikibase.value/EntityId? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lexicalCategory.<get-lexicalCategory>|<get-lexicalCategory>(){}[0]
+        final val senses // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.senses|{}senses[0]
+            final fun <get-senses>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Sense> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.senses.<get-senses>|<get-senses>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component2|component2(){}[0]
+        final fun component3(): com.fenakhay.kwikibot.wikibase.value/EntityId? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component3|component3(){}[0]
+        final fun component4(): com.fenakhay.kwikibot.wikibase.value/EntityId? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Form> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component5|component5(){}[0]
+        final fun component6(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Sense> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component6|component6(){}[0]
+        final fun component7(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component7|component7(){}[0]
+        final fun component8(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.component8|component8(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., com.fenakhay.kwikibot.wikibase.value/EntityId? = ..., com.fenakhay.kwikibot.wikibase.value/EntityId? = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Form> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/Entity.Sense> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;com.fenakhay.kwikibot.wikibase.value.EntityId?;com.fenakhay.kwikibot.wikibase.value.EntityId?;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.Entity.Form>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.Entity.Sense>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.hashCode|hashCode(){}[0]
+        final fun lemma(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.lemma|lemma(kotlin.String){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Lexeme.toString|toString(){}[0]
+    }
+
+    final class MediaInfo : com.fenakhay.kwikibot.wikibase.entity/Entity { // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+
+        final val aliases // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.aliases|{}aliases[0]
+            final fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.aliases.<get-aliases>|<get-aliases>(){}[0]
+        final val descriptions // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.descriptions|{}descriptions[0]
+            final fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.id.<get-id>|<get-id>(){}[0]
+        final val labels // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.labels|{}labels[0]
+            final fun <get-labels>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.labels.<get-labels>|<get-labels>(){}[0]
+        final val lastRevisionId // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.lastRevisionId|{}lastRevisionId[0]
+            final fun <get-lastRevisionId>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.lastRevisionId.<get-lastRevisionId>|<get-lastRevisionId>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun caption(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.caption|caption(kotlin.String){}[0]
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.component3|component3(){}[0]
+        final fun component4(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.component4|component4(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.MediaInfo.toString|toString(){}[0]
+    }
+
+    final class Property : com.fenakhay.kwikibot.wikibase.entity/Entity { // com.fenakhay.kwikibot.wikibase.entity/Entity.Property|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin/String, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.String;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.LanguageValue>>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+
+        final val aliases // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.aliases|{}aliases[0]
+            final fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.aliases.<get-aliases>|<get-aliases>(){}[0]
+        final val dataType // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.dataType|{}dataType[0]
+            final fun <get-dataType>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.dataType.<get-dataType>|<get-dataType>(){}[0]
+        final val descriptions // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.descriptions|{}descriptions[0]
+            final fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.id.<get-id>|<get-id>(){}[0]
+        final val labels // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.labels|{}labels[0]
+            final fun <get-labels>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.labels.<get-labels>|<get-labels>(){}[0]
+        final val lastRevisionId // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.lastRevisionId|{}lastRevisionId[0]
+            final fun <get-lastRevisionId>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.lastRevisionId.<get-lastRevisionId>|<get-lastRevisionId>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component5|component5(){}[0]
+        final fun component6(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component6|component6(){}[0]
+        final fun component7(): kotlin/Long? // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.component7|component7(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ..., kotlin/Long? = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.Property // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.String;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<kotlin.String,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.LanguageValue>>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>;kotlin.Long?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Property.toString|toString(){}[0]
+    }
+
+    final class Sense { // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ...) // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+
+        final val glosses // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.glosses|{}glosses[0]
+            final fun <get-glosses>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.glosses.<get-glosses>|<get-glosses>(){}[0]
+        final val id // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.id.<get-id>|<get-id>(){}[0]
+        final val statements // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.statements|{}statements[0]
+            final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.statements.<get-statements>|<get-statements>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.component1|component1(){}[0]
+        final fun component2(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.component3|component3(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue> = ..., kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> = ...): com.fenakhay.kwikibot.wikibase.entity/Entity.Sense // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>;kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/Entity.Sense.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue|null[0]
+    final class EntityRef : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId) // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+
+        final val id // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.id|{}id[0]
+            final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.id.<get-id>|<get-id>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.component1|component1(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.EntityRef.toString|toString(){}[0]
+    }
+
+    final class GlobeCoordinate : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate|null[0]
+        constructor <init>(kotlin/Double, kotlin/Double, kotlin/Double?, kotlin/String) // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.<init>|<init>(kotlin.Double;kotlin.Double;kotlin.Double?;kotlin.String){}[0]
+
+        final val globe // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.globe|{}globe[0]
+            final fun <get-globe>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.globe.<get-globe>|<get-globe>(){}[0]
+        final val latitude // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.latitude|{}latitude[0]
+            final fun <get-latitude>(): kotlin/Double // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.latitude.<get-latitude>|<get-latitude>(){}[0]
+        final val longitude // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.longitude|{}longitude[0]
+            final fun <get-longitude>(): kotlin/Double // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.longitude.<get-longitude>|<get-longitude>(){}[0]
+        final val precision // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.precision|{}precision[0]
+            final fun <get-precision>(): kotlin/Double? // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.precision.<get-precision>|<get-precision>(){}[0]
+
+        final fun component1(): kotlin/Double // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.component1|component1(){}[0]
+        final fun component2(): kotlin/Double // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.component2|component2(){}[0]
+        final fun component3(): kotlin/Double? // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.component4|component4(){}[0]
+        final fun copy(kotlin/Double = ..., kotlin/Double = ..., kotlin/Double? = ..., kotlin/String = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.copy|copy(kotlin.Double;kotlin.Double;kotlin.Double?;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.GlobeCoordinate.toString|toString(){}[0]
+    }
+
+    final class Monolingual : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual|null[0]
+        constructor <init>(kotlin/String, kotlin/String) // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val language // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.language|{}language[0]
+            final fun <get-language>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.language.<get-language>|<get-language>(){}[0]
+        final val text // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.text|{}text[0]
+            final fun <get-text>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.text.<get-text>|<get-text>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Monolingual.toString|toString(){}[0]
+    }
+
+    final class Quantity : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity|null[0]
+        constructor <init>(kotlin/String, kotlin/String = ..., kotlin/String? = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?;kotlin.String?){}[0]
+
+        final val amount // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.amount|{}amount[0]
+            final fun <get-amount>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.amount.<get-amount>|<get-amount>(){}[0]
+        final val lowerBound // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.lowerBound|{}lowerBound[0]
+            final fun <get-lowerBound>(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.lowerBound.<get-lowerBound>|<get-lowerBound>(){}[0]
+        final val unit // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.unit|{}unit[0]
+            final fun <get-unit>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.unit.<get-unit>|<get-unit>(){}[0]
+        final val upperBound // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.upperBound|{}upperBound[0]
+            final fun <get-upperBound>(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.upperBound.<get-upperBound>|<get-upperBound>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.component2|component2(){}[0]
+        final fun component3(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.component3|component3(){}[0]
+        final fun component4(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.component4|component4(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/String? = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.copy|copy(kotlin.String;kotlin.String;kotlin.String?;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.toString|toString(){}[0]
+
+        final object Companion { // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.Companion|null[0]
+            final const val UNITLESS // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.Companion.UNITLESS|{}UNITLESS[0]
+                final fun <get-UNITLESS>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Quantity.Companion.UNITLESS.<get-UNITLESS>|<get-UNITLESS>(){}[0]
+        }
+    }
+
+    final class Text : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.Text|null[0]
+        constructor <init>(kotlin/String) // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.<init>|<init>(kotlin.String){}[0]
+
+        final val value // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.value|{}value[0]
+            final fun <get-value>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.Text // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Text.toString|toString(){}[0]
+    }
+
+    final class Time : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.Time|null[0]
+        constructor <init>(kotlin/String, kotlin/Int, kotlin/String, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...) // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.<init>|<init>(kotlin.String;kotlin.Int;kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+        final val after // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.after|{}after[0]
+            final fun <get-after>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.after.<get-after>|<get-after>(){}[0]
+        final val before // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.before|{}before[0]
+            final fun <get-before>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.before.<get-before>|<get-before>(){}[0]
+        final val calendarModel // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.calendarModel|{}calendarModel[0]
+            final fun <get-calendarModel>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.calendarModel.<get-calendarModel>|<get-calendarModel>(){}[0]
+        final val precision // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.precision|{}precision[0]
+            final fun <get-precision>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.precision.<get-precision>|<get-precision>(){}[0]
+        final val time // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.time|{}time[0]
+            final fun <get-time>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.time.<get-time>|<get-time>(){}[0]
+        final val timezone // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.timezone|{}timezone[0]
+            final fun <get-timezone>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.timezone.<get-timezone>|<get-timezone>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component3|component3(){}[0]
+        final fun component4(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component4|component4(){}[0]
+        final fun component5(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component5|component5(){}[0]
+        final fun component6(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.component6|component6(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/Int = ..., kotlin/String = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.Time // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.copy|copy(kotlin.String;kotlin.Int;kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.toString|toString(){}[0]
+
+        final object Companion { // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion|null[0]
+            final const val BILLION_YEARS // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.BILLION_YEARS|{}BILLION_YEARS[0]
+                final fun <get-BILLION_YEARS>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.BILLION_YEARS.<get-BILLION_YEARS>|<get-BILLION_YEARS>(){}[0]
+            final const val CENTURY // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.CENTURY|{}CENTURY[0]
+                final fun <get-CENTURY>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.CENTURY.<get-CENTURY>|<get-CENTURY>(){}[0]
+            final const val DAY // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.DAY|{}DAY[0]
+                final fun <get-DAY>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.DAY.<get-DAY>|<get-DAY>(){}[0]
+            final const val DECADE // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.DECADE|{}DECADE[0]
+                final fun <get-DECADE>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.DECADE.<get-DECADE>|<get-DECADE>(){}[0]
+            final const val MONTH // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.MONTH|{}MONTH[0]
+                final fun <get-MONTH>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.MONTH.<get-MONTH>|<get-MONTH>(){}[0]
+            final const val YEAR // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.YEAR|{}YEAR[0]
+                final fun <get-YEAR>(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Time.Companion.YEAR.<get-YEAR>|<get-YEAR>(){}[0]
+        }
+    }
+
+    final class Unknown : com.fenakhay.kwikibot.wikibase.value/DataValue { // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown|null[0]
+        constructor <init>(kotlin/String, kotlinx.serialization.json/JsonElement) // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.<init>|<init>(kotlin.String;kotlinx.serialization.json.JsonElement){}[0]
+
+        final val json // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.json|{}json[0]
+            final fun <get-json>(): kotlinx.serialization.json/JsonElement // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.json.<get-json>|<get-json>(){}[0]
+        final val type // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.type|{}type[0]
+            final fun <get-type>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.component1|component1(){}[0]
+        final fun component2(): kotlinx.serialization.json/JsonElement // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlinx.serialization.json/JsonElement = ...): com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.copy|copy(kotlin.String;kotlinx.serialization.json.JsonElement){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/DataValue.Unknown.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.wikibase.value/Snak { // com.fenakhay.kwikibot.wikibase.value/Snak|null[0]
+    abstract val property // com.fenakhay.kwikibot.wikibase.value/Snak.property|{}property[0]
+        abstract fun <get-property>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.property.<get-property>|<get-property>(){}[0]
+
+    final class NoValue : com.fenakhay.kwikibot.wikibase.value/Snak { // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId) // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+
+        final val property // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.property|{}property[0]
+            final fun <get-property>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.property.<get-property>|<get-property>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.component1|component1(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ...): com.fenakhay.kwikibot.wikibase.value/Snak.NoValue // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/Snak.NoValue.toString|toString(){}[0]
+    }
+
+    final class SomeValue : com.fenakhay.kwikibot.wikibase.value/Snak { // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId) // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+
+        final val property // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.property|{}property[0]
+            final fun <get-property>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.property.<get-property>|<get-property>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.component1|component1(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ...): com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/Snak.SomeValue.toString|toString(){}[0]
+    }
+
+    final class Value : com.fenakhay.kwikibot.wikibase.value/Snak { // com.fenakhay.kwikibot.wikibase.value/Snak.Value|null[0]
+        constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.value/DataValue, kotlin/String? = ...) // com.fenakhay.kwikibot.wikibase.value/Snak.Value.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.DataValue;kotlin.String?){}[0]
+
+        final val dataType // com.fenakhay.kwikibot.wikibase.value/Snak.Value.dataType|{}dataType[0]
+            final fun <get-dataType>(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/Snak.Value.dataType.<get-dataType>|<get-dataType>(){}[0]
+        final val property // com.fenakhay.kwikibot.wikibase.value/Snak.Value.property|{}property[0]
+            final fun <get-property>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.Value.property.<get-property>|<get-property>(){}[0]
+        final val value // com.fenakhay.kwikibot.wikibase.value/Snak.Value.value|{}value[0]
+            final fun <get-value>(): com.fenakhay.kwikibot.wikibase.value/DataValue // com.fenakhay.kwikibot.wikibase.value/Snak.Value.value.<get-value>|<get-value>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Snak.Value.component1|component1(){}[0]
+        final fun component2(): com.fenakhay.kwikibot.wikibase.value/DataValue // com.fenakhay.kwikibot.wikibase.value/Snak.Value.component2|component2(){}[0]
+        final fun component3(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/Snak.Value.component3|component3(){}[0]
+        final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., com.fenakhay.kwikibot.wikibase.value/DataValue = ..., kotlin/String? = ...): com.fenakhay.kwikibot.wikibase.value/Snak.Value // com.fenakhay.kwikibot.wikibase.value/Snak.Value.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;com.fenakhay.kwikibot.wikibase.value.DataValue;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/Snak.Value.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/Snak.Value.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/Snak.Value.toString|toString(){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.wikibase.entity/LanguageValue { // com.fenakhay.kwikibot.wikibase.entity/LanguageValue|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val language // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.language|{}language[0]
+        final fun <get-language>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.language.<get-language>|<get-language>(){}[0]
+    final val value // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.value|{}value[0]
+        final fun <get-value>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.wikibase.entity/LanguageValue // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.copy|copy(kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/LanguageValue.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.wikibase.entity/SiteLink { // com.fenakhay.kwikibot.wikibase.entity/SiteLink|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> = ...) // com.fenakhay.kwikibot.wikibase.entity/SiteLink.<init>|<init>(kotlin.String;kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.EntityId>){}[0]
+
+    final val badges // com.fenakhay.kwikibot.wikibase.entity/SiteLink.badges|{}badges[0]
+        final fun <get-badges>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> // com.fenakhay.kwikibot.wikibase.entity/SiteLink.badges.<get-badges>|<get-badges>(){}[0]
+    final val site // com.fenakhay.kwikibot.wikibase.entity/SiteLink.site|{}site[0]
+        final fun <get-site>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/SiteLink.site.<get-site>|<get-site>(){}[0]
+    final val title // com.fenakhay.kwikibot.wikibase.entity/SiteLink.title|{}title[0]
+        final fun <get-title>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/SiteLink.title.<get-title>|<get-title>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/SiteLink.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/SiteLink.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> // com.fenakhay.kwikibot.wikibase.entity/SiteLink.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/EntityId> = ...): com.fenakhay.kwikibot.wikibase.entity/SiteLink // com.fenakhay.kwikibot.wikibase.entity/SiteLink.copy|copy(kotlin.String;kotlin.String;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.EntityId>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.entity/SiteLink.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.entity/SiteLink.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/SiteLink.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.wikibase.value/Reference { // com.fenakhay.kwikibot.wikibase.value/Reference|null[0]
+    constructor <init>(kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak>) // com.fenakhay.kwikibot.wikibase.value/Reference.<init>|<init>(kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Snak>){}[0]
+
+    final val snaks // com.fenakhay.kwikibot.wikibase.value/Reference.snaks|{}snaks[0]
+        final fun <get-snaks>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Reference.snaks.<get-snaks>|<get-snaks>(){}[0]
+
+    final fun component1(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Reference.component1|component1(){}[0]
+    final fun copy(kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> = ...): com.fenakhay.kwikibot.wikibase.value/Reference // com.fenakhay.kwikibot.wikibase.value/Reference.copy|copy(kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Snak>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/Reference.equals|equals(kotlin.Any?){}[0]
+    final fun get(com.fenakhay.kwikibot.wikibase.value/EntityId): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Reference.get|get(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/Reference.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/Reference.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.wikibase.value/Statement { // com.fenakhay.kwikibot.wikibase.value/Statement|null[0]
+    constructor <init>(com.fenakhay.kwikibot.wikibase.value/Snak, kotlin/String? = ..., com.fenakhay.kwikibot.wikibase.value/Rank = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Reference> = ...) // com.fenakhay.kwikibot.wikibase.value/Statement.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.Snak;kotlin.String?;com.fenakhay.kwikibot.wikibase.value.Rank;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Snak>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Reference>){}[0]
+
+    final val id // com.fenakhay.kwikibot.wikibase.value/Statement.id|{}id[0]
+        final fun <get-id>(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/Statement.id.<get-id>|<get-id>(){}[0]
+    final val mainSnak // com.fenakhay.kwikibot.wikibase.value/Statement.mainSnak|{}mainSnak[0]
+        final fun <get-mainSnak>(): com.fenakhay.kwikibot.wikibase.value/Snak // com.fenakhay.kwikibot.wikibase.value/Statement.mainSnak.<get-mainSnak>|<get-mainSnak>(){}[0]
+    final val property // com.fenakhay.kwikibot.wikibase.value/Statement.property|{}property[0]
+        final fun <get-property>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase.value/Statement.property.<get-property>|<get-property>(){}[0]
+    final val qualifiers // com.fenakhay.kwikibot.wikibase.value/Statement.qualifiers|{}qualifiers[0]
+        final fun <get-qualifiers>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Statement.qualifiers.<get-qualifiers>|<get-qualifiers>(){}[0]
+    final val rank // com.fenakhay.kwikibot.wikibase.value/Statement.rank|{}rank[0]
+        final fun <get-rank>(): com.fenakhay.kwikibot.wikibase.value/Rank // com.fenakhay.kwikibot.wikibase.value/Statement.rank.<get-rank>|<get-rank>(){}[0]
+    final val references // com.fenakhay.kwikibot.wikibase.value/Statement.references|{}references[0]
+        final fun <get-references>(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Reference> // com.fenakhay.kwikibot.wikibase.value/Statement.references.<get-references>|<get-references>(){}[0]
+    final val value // com.fenakhay.kwikibot.wikibase.value/Statement.value|{}value[0]
+        final fun <get-value>(): com.fenakhay.kwikibot.wikibase.value/DataValue? // com.fenakhay.kwikibot.wikibase.value/Statement.value.<get-value>|<get-value>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.wikibase.value/Snak // com.fenakhay.kwikibot.wikibase.value/Statement.component1|component1(){}[0]
+    final fun component2(): kotlin/String? // com.fenakhay.kwikibot.wikibase.value/Statement.component2|component2(){}[0]
+    final fun component3(): com.fenakhay.kwikibot.wikibase.value/Rank // com.fenakhay.kwikibot.wikibase.value/Statement.component3|component3(){}[0]
+    final fun component4(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Statement.component4|component4(){}[0]
+    final fun component5(): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Reference> // com.fenakhay.kwikibot.wikibase.value/Statement.component5|component5(){}[0]
+    final fun copy(com.fenakhay.kwikibot.wikibase.value/Snak = ..., kotlin/String? = ..., com.fenakhay.kwikibot.wikibase.value/Rank = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> = ..., kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Reference> = ...): com.fenakhay.kwikibot.wikibase.value/Statement // com.fenakhay.kwikibot.wikibase.value/Statement.copy|copy(com.fenakhay.kwikibot.wikibase.value.Snak;kotlin.String?;com.fenakhay.kwikibot.wikibase.value.Rank;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Snak>;kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Reference>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/Statement.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/Statement.hashCode|hashCode(){}[0]
+    final fun qualifiers(com.fenakhay.kwikibot.wikibase.value/EntityId): kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Snak> // com.fenakhay.kwikibot.wikibase.value/Statement.qualifiers|qualifiers(com.fenakhay.kwikibot.wikibase.value.EntityId){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/Statement.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.wikibase/EntityEdit { // com.fenakhay.kwikibot.wikibase/EntityEdit|null[0]
+    constructor <init>() // com.fenakhay.kwikibot.wikibase/EntityEdit.<init>|<init>(){}[0]
+
+    final var aliases // com.fenakhay.kwikibot.wikibase/EntityEdit.aliases|{}aliases[0]
+        final fun <get-aliases>(): kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>> // com.fenakhay.kwikibot.wikibase/EntityEdit.aliases.<get-aliases>|<get-aliases>(){}[0]
+        final fun <set-aliases>(kotlin.collections/Map<kotlin/String, kotlin.collections/List<kotlin/String>>) // com.fenakhay.kwikibot.wikibase/EntityEdit.aliases.<set-aliases>|<set-aliases>(kotlin.collections.Map<kotlin.String,kotlin.collections.List<kotlin.String>>){}[0]
+    final var baseRevision // com.fenakhay.kwikibot.wikibase/EntityEdit.baseRevision|{}baseRevision[0]
+        final fun <get-baseRevision>(): kotlin/Long? // com.fenakhay.kwikibot.wikibase/EntityEdit.baseRevision.<get-baseRevision>|<get-baseRevision>(){}[0]
+        final fun <set-baseRevision>(kotlin/Long?) // com.fenakhay.kwikibot.wikibase/EntityEdit.baseRevision.<set-baseRevision>|<set-baseRevision>(kotlin.Long?){}[0]
+    final var bot // com.fenakhay.kwikibot.wikibase/EntityEdit.bot|{}bot[0]
+        final fun <get-bot>(): kotlin/Boolean // com.fenakhay.kwikibot.wikibase/EntityEdit.bot.<get-bot>|<get-bot>(){}[0]
+        final fun <set-bot>(kotlin/Boolean) // com.fenakhay.kwikibot.wikibase/EntityEdit.bot.<set-bot>|<set-bot>(kotlin.Boolean){}[0]
+    final var clear // com.fenakhay.kwikibot.wikibase/EntityEdit.clear|{}clear[0]
+        final fun <get-clear>(): kotlin/Boolean // com.fenakhay.kwikibot.wikibase/EntityEdit.clear.<get-clear>|<get-clear>(){}[0]
+        final fun <set-clear>(kotlin/Boolean) // com.fenakhay.kwikibot.wikibase/EntityEdit.clear.<set-clear>|<set-clear>(kotlin.Boolean){}[0]
+    final var descriptions // com.fenakhay.kwikibot.wikibase/EntityEdit.descriptions|{}descriptions[0]
+        final fun <get-descriptions>(): kotlin.collections/Map<kotlin/String, kotlin/String> // com.fenakhay.kwikibot.wikibase/EntityEdit.descriptions.<get-descriptions>|<get-descriptions>(){}[0]
+        final fun <set-descriptions>(kotlin.collections/Map<kotlin/String, kotlin/String>) // com.fenakhay.kwikibot.wikibase/EntityEdit.descriptions.<set-descriptions>|<set-descriptions>(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+    final var labels // com.fenakhay.kwikibot.wikibase/EntityEdit.labels|{}labels[0]
+        final fun <get-labels>(): kotlin.collections/Map<kotlin/String, kotlin/String> // com.fenakhay.kwikibot.wikibase/EntityEdit.labels.<get-labels>|<get-labels>(){}[0]
+        final fun <set-labels>(kotlin.collections/Map<kotlin/String, kotlin/String>) // com.fenakhay.kwikibot.wikibase/EntityEdit.labels.<set-labels>|<set-labels>(kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
+    final var siteLinks // com.fenakhay.kwikibot.wikibase/EntityEdit.siteLinks|{}siteLinks[0]
+        final fun <get-siteLinks>(): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink> // com.fenakhay.kwikibot.wikibase/EntityEdit.siteLinks.<get-siteLinks>|<get-siteLinks>(){}[0]
+        final fun <set-siteLinks>(kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink>) // com.fenakhay.kwikibot.wikibase/EntityEdit.siteLinks.<set-siteLinks>|<set-siteLinks>(kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.SiteLink>){}[0]
+    final var statements // com.fenakhay.kwikibot.wikibase/EntityEdit.statements|{}statements[0]
+        final fun <get-statements>(): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>> // com.fenakhay.kwikibot.wikibase/EntityEdit.statements.<get-statements>|<get-statements>(){}[0]
+        final fun <set-statements>(kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>>) // com.fenakhay.kwikibot.wikibase/EntityEdit.statements.<set-statements>|<set-statements>(kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+    final var summary // com.fenakhay.kwikibot.wikibase/EntityEdit.summary|{}summary[0]
+        final fun <get-summary>(): kotlin/String // com.fenakhay.kwikibot.wikibase/EntityEdit.summary.<get-summary>|<get-summary>(){}[0]
+        final fun <set-summary>(kotlin/String) // com.fenakhay.kwikibot.wikibase/EntityEdit.summary.<set-summary>|<set-summary>(kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.wikibase/EntityMatch { // com.fenakhay.kwikibot.wikibase/EntityMatch|null[0]
+    constructor <init>(com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin/String?, kotlin/String?) // com.fenakhay.kwikibot.wikibase/EntityMatch.<init>|<init>(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.String?;kotlin.String?){}[0]
+
+    final val description // com.fenakhay.kwikibot.wikibase/EntityMatch.description|{}description[0]
+        final fun <get-description>(): kotlin/String? // com.fenakhay.kwikibot.wikibase/EntityMatch.description.<get-description>|<get-description>(){}[0]
+    final val id // com.fenakhay.kwikibot.wikibase/EntityMatch.id|{}id[0]
+        final fun <get-id>(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase/EntityMatch.id.<get-id>|<get-id>(){}[0]
+    final val label // com.fenakhay.kwikibot.wikibase/EntityMatch.label|{}label[0]
+        final fun <get-label>(): kotlin/String? // com.fenakhay.kwikibot.wikibase/EntityMatch.label.<get-label>|<get-label>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.wikibase.value/EntityId // com.fenakhay.kwikibot.wikibase/EntityMatch.component1|component1(){}[0]
+    final fun component2(): kotlin/String? // com.fenakhay.kwikibot.wikibase/EntityMatch.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.fenakhay.kwikibot.wikibase/EntityMatch.component3|component3(){}[0]
+    final fun copy(com.fenakhay.kwikibot.wikibase.value/EntityId = ..., kotlin/String? = ..., kotlin/String? = ...): com.fenakhay.kwikibot.wikibase/EntityMatch // com.fenakhay.kwikibot.wikibase/EntityMatch.copy|copy(com.fenakhay.kwikibot.wikibase.value.EntityId;kotlin.String?;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase/EntityMatch.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase/EntityMatch.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase/EntityMatch.toString|toString(){}[0]
+}
+
+final value class com.fenakhay.kwikibot.wikibase.value/EntityId { // com.fenakhay.kwikibot.wikibase.value/EntityId|null[0]
+    constructor <init>(kotlin/String) // com.fenakhay.kwikibot.wikibase.value/EntityId.<init>|<init>(kotlin.String){}[0]
+
+    final val kind // com.fenakhay.kwikibot.wikibase.value/EntityId.kind|{}kind[0]
+        final fun <get-kind>(): com.fenakhay.kwikibot.wikibase.value/EntityId.Kind // com.fenakhay.kwikibot.wikibase.value/EntityId.kind.<get-kind>|<get-kind>(){}[0]
+    final val value // com.fenakhay.kwikibot.wikibase.value/EntityId.value|{}value[0]
+        final fun <get-value>(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/EntityId.value.<get-value>|<get-value>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.wikibase.value/EntityId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.wikibase.value/EntityId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.wikibase.value/EntityId.toString|toString(){}[0]
+
+    final enum class Kind : kotlin/Enum<com.fenakhay.kwikibot.wikibase.value/EntityId.Kind> { // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind|null[0]
+        enum entry FORM // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.FORM|null[0]
+        enum entry ITEM // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.ITEM|null[0]
+        enum entry LEXEME // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.LEXEME|null[0]
+        enum entry MEDIA_INFO // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.MEDIA_INFO|null[0]
+        enum entry PROPERTY // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.PROPERTY|null[0]
+        enum entry SENSE // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.SENSE|null[0]
+        enum entry UNKNOWN // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.UNKNOWN|null[0]
+
+        final val entries // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.wikibase.value/EntityId.Kind> // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): com.fenakhay.kwikibot.wikibase.value/EntityId.Kind // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<com.fenakhay.kwikibot.wikibase.value/EntityId.Kind> // com.fenakhay.kwikibot.wikibase.value/EntityId.Kind.values|values#static(){}[0]
+    }
+}
+
+final object com.fenakhay.kwikibot.wikibase/EntityDecoder { // com.fenakhay.kwikibot.wikibase/EntityDecoder|null[0]
+    final fun decode(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.wikibase.entity/Entity // com.fenakhay.kwikibot.wikibase/EntityDecoder.decode|decode(kotlinx.serialization.json.JsonObject){}[0]
+    final fun decodeAll(kotlinx.serialization.json/JsonObject): kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, com.fenakhay.kwikibot.wikibase.entity/Entity> // com.fenakhay.kwikibot.wikibase/EntityDecoder.decodeAll|decodeAll(kotlinx.serialization.json.JsonObject){}[0]
+    final fun decodeSnak(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.wikibase.value/Snak // com.fenakhay.kwikibot.wikibase/EntityDecoder.decodeSnak|decodeSnak(kotlinx.serialization.json.JsonObject){}[0]
+    final fun decodeStatement(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.wikibase.value/Statement // com.fenakhay.kwikibot.wikibase/EntityDecoder.decodeStatement|decodeStatement(kotlinx.serialization.json.JsonObject){}[0]
+    final fun decodeValue(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.wikibase.value/DataValue // com.fenakhay.kwikibot.wikibase/EntityDecoder.decodeValue|decodeValue(kotlinx.serialization.json.JsonObject){}[0]
+    final fun redirectTarget(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.wikibase.value/EntityId? // com.fenakhay.kwikibot.wikibase/EntityDecoder.redirectTarget|redirectTarget(kotlinx.serialization.json.JsonObject){}[0]
+}
+
+final object com.fenakhay.kwikibot.wikibase/EntityEncoder { // com.fenakhay.kwikibot.wikibase/EntityEncoder|null[0]
+    final fun encodeAliases(kotlin.collections/Map<kotlin/String, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.entity/LanguageValue>>): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeAliases|encodeAliases(kotlin.collections.Map<kotlin.String,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.entity.LanguageValue>>){}[0]
+    final fun encodeLanguageValues(kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/LanguageValue>): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeLanguageValues|encodeLanguageValues(kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.LanguageValue>){}[0]
+    final fun encodeSiteLinks(kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.wikibase.entity/SiteLink>): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeSiteLinks|encodeSiteLinks(kotlin.collections.Map<kotlin.String,com.fenakhay.kwikibot.wikibase.entity.SiteLink>){}[0]
+    final fun encodeSnak(com.fenakhay.kwikibot.wikibase.value/Snak): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeSnak|encodeSnak(com.fenakhay.kwikibot.wikibase.value.Snak){}[0]
+    final fun encodeStatement(com.fenakhay.kwikibot.wikibase.value/Statement): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeStatement|encodeStatement(com.fenakhay.kwikibot.wikibase.value.Statement){}[0]
+    final fun encodeStatements(kotlin.collections/Map<com.fenakhay.kwikibot.wikibase.value/EntityId, kotlin.collections/List<com.fenakhay.kwikibot.wikibase.value/Statement>>): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeStatements|encodeStatements(kotlin.collections.Map<com.fenakhay.kwikibot.wikibase.value.EntityId,kotlin.collections.List<com.fenakhay.kwikibot.wikibase.value.Statement>>){}[0]
+    final fun encodeValue(com.fenakhay.kwikibot.wikibase.value/DataValue): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.wikibase/EntityEncoder.encodeValue|encodeValue(com.fenakhay.kwikibot.wikibase.value.DataValue){}[0]
+}
+
+final const val com.fenakhay.kwikibot.wikibase.entity/MULTIPLE_LANGUAGES // com.fenakhay.kwikibot.wikibase.entity/MULTIPLE_LANGUAGES|{}MULTIPLE_LANGUAGES[0]
+    final fun <get-MULTIPLE_LANGUAGES>(): kotlin/String // com.fenakhay.kwikibot.wikibase.entity/MULTIPLE_LANGUAGES.<get-MULTIPLE_LANGUAGES>|<get-MULTIPLE_LANGUAGES>(){}[0]
+
+final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.wikibase/wikibase(): com.fenakhay.kwikibot.wikibase/EntityService // com.fenakhay.kwikibot.wikibase/wikibase|wikibase@com.fenakhay.kwikibot.client.Wiki(){}[0]

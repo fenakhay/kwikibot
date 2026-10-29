@@ -13,10 +13,8 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService : com/fenakhay/
 	public static final field Companion Lcom/fenakhay/kwikibot/testkit/FakePageService$Companion;
 	public static final field INITIAL_REVISION J
 	public fun <init> ()V
-	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> ([Lkotlin/Pair;)V
 	public fun backlinksOf (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun categoryInfo (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -57,10 +55,8 @@ public final class com/fenakhay/kwikibot/testkit/FakePageService$Companion {
 }
 
 public final class com/fenakhay/kwikibot/testkit/FakeWiki : com/fenakhay/kwikibot/client/Wiki {
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lcom/fenakhay/kwikibot/client/service/ListService;Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/client/service/UserService;Lcom/fenakhay/kwikibot/client/service/LogService;Lcom/fenakhay/kwikibot/client/service/RenderService;Lcom/fenakhay/kwikibot/client/service/MetaService;Lcom/fenakhay/kwikibot/net/transport/MediaWikiTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lcom/fenakhay/kwikibot/client/service/ListService;Lcom/fenakhay/kwikibot/client/service/RevisionService;Lcom/fenakhay/kwikibot/client/service/UserService;Lcom/fenakhay/kwikibot/client/service/LogService;Lcom/fenakhay/kwikibot/client/service/RenderService;Lcom/fenakhay/kwikibot/client/service/MetaService;Lcom/fenakhay/kwikibot/net/transport/MediaWikiTransport;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/service/PageService;Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/net/auth/Identity;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> ([Lkotlin/Pair;)V
 	public fun getExtensions ()Lcom/fenakhay/kwikibot/client/service/ExtensionService;
 	public fun getFiles ()Lcom/fenakhay/kwikibot/client/service/FileService;

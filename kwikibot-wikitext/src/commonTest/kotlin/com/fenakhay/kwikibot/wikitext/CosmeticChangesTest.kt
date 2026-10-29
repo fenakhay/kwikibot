@@ -1,0 +1,202 @@
+package com.fenakhay.kwikibot.wikitext
+
+import com.fenakhay.kwikibot.wikitext.node.Tag
+import io.kotest.matchers.shouldBe
+import kotlin.test.Test
+
+class CosmeticChangesTest {
+
+    private fun tidy(pass: CosmeticPass, text: String): String = CosmeticChanges.of(pass).apply(text)
+
+    @Test
+    fun `trailing whitespace goes and nothing else moves`() {
+        val before = "==English==   \nA word.  \n\n{{col|en|a|b}}\t\n"
+
+        tidy(CosmeticChanges.TRAILING_WHITESPACE, before) shouldBe "==English==\nA word.\n\n{{col|en|a|b}}\n"
+    }
+
+    @Test
+    fun `whitespace inside nowiki is content and stays`() {
+        val before = "<nowiki>two  spaces   \nand a line</nowiki>  \n"
+
+        tidy(CosmeticChanges.TRAILING_WHITESPACE, before) shouldBe
+            "<nowiki>two  spaces   \nand a line</nowiki>\n"
+    }
+
+    @Test
+    fun `three blank lines become two`() {
+        tidy(CosmeticChanges.EXTRA_BLANK_LINES, "a\n\n\n\n\nb") shouldBe "a\n\n\nb"
+        tidy(CosmeticChanges.EXTRA_BLANK_LINES, "a\n\n\nb") shouldBe "a\n\n\nb"
+    }
+
+    @Test
+    fun `a link whose text repeats its target loses the text`() {
+        tidy(CosmeticChanges.REDUNDANT_LINK_TEXT, "[[volcano|volcano]] erupts") shouldBe "[[volcano]] erupts"
+    }
+
+    @Test
+    fun `a link whose text differs in case is left alone`() {
+        val before = "[[Volcano|volcano]] and [[volcano|volcanoes]]"
+
+        tidy(CosmeticChanges.REDUNDANT_LINK_TEXT, before) shouldBe before
+    }
+
+    @Test
+    fun `bold and italic tags become the markup that means the same thing`() {
+        tidy(CosmeticChanges.HTML_EMPHASIS, "<b>loud</b> and <i>soft</i>") shouldBe "'''loud''' and ''soft''"
+    }
+
+    @Test
+    fun `a bold tag over more than one line is left alone since wiki markup would end at the line's end`() {
+        val before = "<b>loud\n\nstill loud</b>"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+    }
+
+    @Test
+    fun `a bold or italic tag around nothing is left alone since the apostrophes would show`() {
+        val before = "<b></b> <i></i> <b/>"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+        val built = Markup(listOf(Tag("b")))
+        CosmeticChanges.HTML_EMPHASIS.apply(built) shouldBe built
+    }
+
+    @Test
+    fun `strong and em are left alone because they say something bold and italic do not`() {
+        val before = "<strong>warning</strong> <em>stress</em>"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+    }
+
+    @Test
+    fun `markup that is already markup is not touched`() {
+        val before = "'''loud''' and ''soft''"
+
+        tidy(CosmeticChanges.HTML_EMPHASIS, before) shouldBe before
+    }
+
+    @Test
+    fun `a bare br becomes self-closing`() {
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "one<br>two") shouldBe "one<br />two"
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "one<br />two") shouldBe "one<br />two"
+    }
+
+    @Test
+    fun `a br already closed or written with a space before its end is closed once`() {
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "one<br >two") shouldBe "one<br />two"
+        tidy(CosmeticChanges.SELF_CLOSING_BR, "<span>an unclosed span") shouldBe "<span>an unclosed span"
+    }
+
+    @Test
+    fun `entities with a plain character behind them are decoded`() {
+        tidy(CosmeticChanges.HTML_ENTITIES, "1990&ndash;1995 caf&eacute;") shouldBe "1990–1995 café"
+    }
+
+    @Test
+    fun `numeric entities are decoded in decimal and in hex`() {
+        tidy(CosmeticChanges.HTML_ENTITIES, "&#8211; and &#x2014;") shouldBe "– and —"
+    }
+
+    @Test
+    fun `the entities that are markup are never decoded`() {
+        val before = "&lt;ref&gt; &amp; a&nbsp;b &quot;q&quot;"
+
+        tidy(CosmeticChanges.HTML_ENTITIES, before) shouldBe before
+    }
+
+    @Test
+    fun `a numeric reference to markup to a character nobody can see or to no character stays encoded`() {
+        val before =
+            "&#60;ref&#62; a&#124;b &#91;&#91;c]] d&#160;e f&#x200B;g &#xD800; &#1114112; &#99999999999;"
+
+        tidy(CosmeticChanges.HTML_ENTITIES, before) shouldBe before
+    }
+
+    @Test
+    fun `an entity inside nowiki is what the page displays and stays`() {
+        val before = "<nowiki>&ndash;</nowiki> but &ndash; here"
+
+        tidy(CosmeticChanges.HTML_ENTITIES, before) shouldBe "<nowiki>&ndash;</nowiki> but – here"
+    }
+
+    @Test
+    fun `a heading with nothing under it goes`() {
+        val before = "==English==\nA word.\n\n==Etymology==\n\n==French==\nUn mot.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==English==\nA word.\n\n==French==\nUn mot.\n"
+    }
+
+    @Test
+    fun `dropping a heading keeps the next one at the start of its line`() {
+        tidy(CosmeticChanges.EMPTY_SECTIONS, "{{t}}\n== a ==\n== b ==\nx") shouldBe "{{t}}\n== b ==\nx"
+    }
+
+    @Test
+    fun `an empty first section goes without leaving a line break behind`() {
+        tidy(CosmeticChanges.EMPTY_SECTIONS, "==a==\n==b==\nx") shouldBe "==b==\nx"
+    }
+
+    @Test
+    fun `a heading whose only content is its subsections stays`() {
+        val before = "==English==\n===Noun===\n# A word.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe before
+    }
+
+    @Test
+    fun `a section goes with its subsections when they are empty too`() {
+        val before = "==English==\n===Noun===\n\n====Synonyms====\n\n==French==\nUn mot.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==French==\nUn mot.\n"
+    }
+
+    @Test
+    fun `an empty subsection goes and the section it was in stays for its other content`() {
+        val before = "==English==\n===Etymology===\n\n===Noun===\n# A word.\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe "==English==\n===Noun===\n# A word.\n"
+    }
+
+    @Test
+    fun `a section holding only a comment is not empty`() {
+        val before = "==English==\n<!-- to be written -->\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe before
+    }
+
+    @Test
+    fun `a section holding only a template is not empty`() {
+        val before = "==English==\n{{rfdef|en}}\n"
+
+        tidy(CosmeticChanges.EMPTY_SECTIONS, before) shouldBe before
+    }
+
+    @Test
+    fun `the safe set changes only what nobody disputes`() {
+        val before = "==English==  \n[[volcano|volcano]]\n\n\n\n\nA word.\n"
+
+        CosmeticChanges.SAFE.apply(before) shouldBe "==English==\n[[volcano]]\n\n\nA word.\n"
+    }
+
+    @Test
+    fun `a page with nothing to tidy comes back byte for byte`() {
+        val before = "==English==\n\n===Noun===\n{{en-noun}}\n\n# A [[volcano]].\n"
+
+        CosmeticChanges.SAFE.apply(before) shouldBe before
+        CosmeticChanges.SAFE.wouldChange(before) shouldBe false
+        CosmeticChanges.SAFE.wouldChange(before, ParseOptions.DEFAULT) shouldBe false
+        CosmeticChanges.SAFE.wouldChange("a  \nb", ParseOptions.DEFAULT) shouldBe true
+    }
+
+    @Test
+    fun `passes compose in the order they were given`() {
+        val tidier =
+            CosmeticChanges.of(
+                CosmeticChanges.HTML_EMPHASIS,
+                CosmeticChanges.TRAILING_WHITESPACE,
+            )
+
+        tidier.apply("<b>a</b>   \nb") shouldBe "'''a'''\nb"
+    }
+}

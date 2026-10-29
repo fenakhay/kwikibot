@@ -1,25 +1,28 @@
 [versions]
-kotlin = "2.4.20"
+kotlin = "2.5.0-Beta2"
 coroutines = "1.11.0"
-serialization = "1.11.0"
+serialization = "1.12.0"
 datetime = "0.8.0"
+io = "0.9.1"
 ktor = "3.6.0"
 clikt = "5.1.0"
 kotlinLogging = "8.0.4"
 slf4j = "2.0.20"
 ktoml = "0.7.1"
-diffUtils = "4.17"
-cldrPluralRules = "48.2"
 commonsCompress = "1.28.0"
 junit = "6.1.3"
-kotest = "6.2.5"
+kotest = "6.2.6"
 turbine = "1.2.1"
+kotlincrypto = "0.8.0"
+multiplatformDiff = "1.4.0"
+xmlutil = "1.0.2.1"
+node = "26.13.0"
+jsJodaTimezone = "2.23.0"
 
 nmcp = "1.6.2"
 kover = "0.9.11"
-graalvm = "1.1.14"
 ktfmt = "0.64"
-spotless = "8.10.3"
+spotless = "8.10.4"
 benchmark = "0.5.0"
 
 [libraries]
@@ -36,34 +39,37 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
+ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 
-kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlinLogging" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 ktoml-core = { module = "com.akuleshov7:ktoml-core", version.ref = "ktoml" }
-ktoml-file = { module = "com.akuleshov7:ktoml-file", version.ref = "ktoml" }
 
-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diffUtils" }
-cldr-plural-rules = { module = "net.xyzsd.plurals:cldr-plural-rules", version.ref = "cldrPluralRules" }
 
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+kotlincrypto-sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlincrypto" }
+kotlin-multiplatform-diff = { module = "io.github.petertrr:kotlin-multiplatform-diff", version.ref = "multiplatformDiff" }
+xmlutil-core = { module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlutil" }
 
 [plugins]
-binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.2" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "benchmark" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

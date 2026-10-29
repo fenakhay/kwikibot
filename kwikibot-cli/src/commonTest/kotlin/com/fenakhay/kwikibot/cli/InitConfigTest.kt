@@ -1,0 +1,55 @@
+package com.fenakhay.kwikibot.cli
+
+import com.fenakhay.kwikibot.bot.BotConfig
+import com.github.ajalt.clikt.command.test
+import io.kotest.matchers.shouldBe
+import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
+import kotlinx.io.writeString
+
+class InitConfigTest {
+
+    private val out =
+        Path(
+            temporaryDirectory("kwikibot-cli"),
+            "kwikibot.toml",
+        )
+
+    private suspend fun initConfig(vararg flags: String) =
+        kwikibot(CliEnvironment(searchPath = { emptyList() }))
+            .test(listOf("init-config", "--out", "$out") + flags)
+
+    @Test
+    fun `init-config writes a configuration to start from with no password in it`() = runTest {
+        val result = initConfig()
+
+        result.statusCode shouldBe 0
+        result.stdout shouldBe "wrote $out\nSet the password with: export KWIKIBOT_PASSWORD=...\n"
+        out.readText() shouldBe BotConfig.template()
+        BotConfig.read(out).login?.passwordEnv shouldBe "KWIKIBOT_PASSWORD"
+    }
+
+    @Test
+    fun `init-config leaves a file that is there alone unless forced`() = runTest {
+        out.writeText("# mine")
+
+        val refused = initConfig()
+
+        refused.statusCode shouldBe 1
+        refused.stderr shouldBe "$out already exists; pass --force to overwrite it\n"
+        out.readText() shouldBe "# mine"
+
+        initConfig("--force").statusCode shouldBe 0
+        out.readText() shouldBe BotConfig.template()
+    }
+
+    private fun Path.writeText(text: String) {
+        SystemFileSystem.sink(this).buffered().use { it.writeString(text) }
+    }
+
+    private fun Path.readText(): String = SystemFileSystem.source(this).buffered().use { it.readString() }
+}

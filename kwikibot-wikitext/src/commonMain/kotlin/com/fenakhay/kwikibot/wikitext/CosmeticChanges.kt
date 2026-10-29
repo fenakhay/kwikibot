@@ -1,0 +1,317 @@
+package com.fenakhay.kwikibot.wikitext
+
+import com.fenakhay.kwikibot.wikitext.internal.sectionNodes
+import com.fenakhay.kwikibot.wikitext.node.Heading
+import com.fenakhay.kwikibot.wikitext.node.HtmlEntity
+import com.fenakhay.kwikibot.wikitext.node.Node
+import com.fenakhay.kwikibot.wikitext.node.Tag
+import com.fenakhay.kwikibot.wikitext.node.TextNode
+import com.fenakhay.kwikibot.wikitext.node.WikiLink
+import com.fenakhay.kwikibot.wikitext.ops.mapNodes
+import kotlin.text.unicode.CodePoint
+import kotlin.text.unicode.ExperimentalUnicodeApi
+import kotlin.text.unicode.category
+import kotlin.text.unicode.toCodePoint
+
+/**
+ * One tidying pass over a page.
+ *
+ * Each is separate and named so a caller can choose: what counts as tidy differs between projects, and a pass
+ * that is right on Wikipedia can be wrong on Wiktionary.
+ */
+public fun interface CosmeticPass {
+
+    /** The page after this pass. Returning the input unchanged means the pass found nothing. */
+    public fun apply(code: Markup): Markup
+}
+
+/**
+ * Tidying passes over a page.
+ *
+ * **Nothing is enabled by default.** Many wikis prohibit cosmetic-only edits, and a pass that is correct on
+ * one project can be wrong on another: de-piping `[[foo|foos]]` breaks Wiktionary entries where the pipe is a
+ * deliberate link to a lemma. [CosmeticChanges] is assembled from named passes, and [SAFE] is the subset with
+ * no project-specific behaviour.
+ *
+ * **Passes operate on the parsed page rather than its text.** Templates, comments and `<nowiki>` are
+ * structure here, so a pass that must not touch them does not see them.
+ *
+ * ```
+ * val tidied = CosmeticChanges.SAFE.apply(Wikitext.parse(page.text))
+ * ```
+ */
+public class CosmeticChanges(private val passes: List<CosmeticPass>) {
+
+    /** The page with every pass applied, in order. */
+    public fun apply(code: Markup): Markup =
+        passes.fold(code) { current, pass ->
+            pass.apply(current)
+        }
+
+    /** The page with every pass applied, as text. */
+    public fun apply(wikitext: String): String = apply(wikitext, ParseOptions.DEFAULT)
+
+    /** The page with every pass applied, as text, parsed the way a wiki with [options] parses it. */
+    public fun apply(wikitext: String, options: ParseOptions): String =
+        apply(Wikitext.parse(wikitext, options)).serialize()
+
+    /** Whether any pass would change this page. */
+    public fun wouldChange(wikitext: String): Boolean = apply(wikitext) != wikitext
+
+    /** Whether any pass would change this page, parsed the way a wiki with [options] parses it. */
+    public fun wouldChange(wikitext: String, options: ParseOptions): Boolean =
+        apply(wikitext, options) != wikitext
+
+    /** The passes that ship with the library, and the set applied by default. */
+    public companion object {
+
+        /**
+         * Trailing whitespace at the end of lines.
+         *
+         * Invisible both in the rendered page and in a diff, which is why it accumulates. Nothing inside
+         * `<pre>` or `<nowiki>` is touched, where whitespace is content rather than formatting.
+         */
+        public val TRAILING_WHITESPACE: CosmeticPass = textPass { it.replace(TRAILING, "") }
+
+        /**
+         * Three or more blank lines in a row, reduced to two.
+         *
+         * MediaWiki renders any run of blank lines the same, so the extra ones are noise a later editor has
+         * to scroll past.
+         */
+        public val EXTRA_BLANK_LINES: CosmeticPass = textPass { it.replace(BLANK_RUN, "\n\n\n") }
+
+        /**
+         * `<b>` and `<i>` written as the wiki markup that means the same thing.
+         *
+         * Not `<strong>` or `<em>`: those carry meaning HTML keeps and wiki markup does not, and replacing
+         * them changes what a screen reader says.
+         */
+        public val HTML_EMPHASIS: CosmeticPass = CosmeticPass { code ->
+            code.mapNodes { node ->
+                val tag = node as? Tag ?: return@mapNodes node
+                when {
+                    tag.wikiMarkup != null -> node
+                    // A `<b>` nothing closes would become a `'''` nothing closes, which means something else.
+                    tag.selfClosing -> node
+                    // `'''` ends at the end of its line, where a `<b>` goes on.
+                    tag.contents?.serialize().let { it.isNullOrEmpty() || '\n' in it } -> node
+                    tag.name.equals("b", ignoreCase = true) -> tag.asMarkup("'''")
+                    tag.name.equals("i", ignoreCase = true) -> tag.asMarkup("''")
+                    else -> node
+                }
+            }
+        }
+
+        /**
+         * `&nbsp;` and its kind left alone; everything else decoded.
+         *
+         * Four of the five named ones that stay mean something as markup: decoding `&lt;` would turn text
+         * into a tag. The fifth is `&nbsp;`, where decoding turns a deliberate non-breaking space into a
+         * character no later editor can tell from an ordinary one. A numeric reference stays for the same
+         * reasons when it names an ASCII character, which is where all wiki markup lives (`&#124;` is a `|`
+         * that splits no template), a space, a control or formatting character, or no character at all.
+         */
+        public val HTML_ENTITIES: CosmeticPass = CosmeticPass { code ->
+            code.mapNodes { node ->
+                val entity = node as? HtmlEntity ?: return@mapNodes node
+                entity.decoded()?.let { TextNode(it) } ?: node
+            }
+        }
+
+        /**
+         * A link whose display text is its own target: `[[foo|foo]]` becomes `[[foo]]`.
+         *
+         * Only the exact case. `[[Foo|foo]]` is left alone, because on a case-sensitive wiki those are
+         * different pages, and on a case-insensitive one the difference is what the sentence needed.
+         */
+        public val REDUNDANT_LINK_TEXT: CosmeticPass = CosmeticPass { code ->
+            code.mapNodes { node ->
+                val link = node as? WikiLink ?: return@mapNodes node
+                val text = link.text ?: return@mapNodes node
+                if (text.serialize() == link.target.serialize()) link.copy(text = null) else node
+            }
+        }
+
+        /**
+         * `<br>` written as `<br />`.
+         *
+         * Both are accepted by MediaWiki, so this is only a house style — which is why it is not in [SAFE].
+         */
+        public val SELF_CLOSING_BR: CosmeticPass = CosmeticPass { code ->
+            code.mapNodes { node ->
+                val tag = node as? Tag ?: return@mapNodes node
+                if (tag.name.equals("br", ignoreCase = true) && tag.implicitClose) {
+                    tag.copy(implicitClose = false, padding = tag.padding.ifEmpty { " " })
+                } else {
+                    node
+                }
+            }
+        }
+
+        /**
+         * Sections with a heading and nothing under them.
+         *
+         * Only a section with no content at all: a section holding a comment or a template has something in
+         * it, whether or not it renders. A section includes its subsections, so `==English==` followed by
+         * `===Noun===` and a definition stays, and goes only when its subsections are empty too.
+         */
+        public val EMPTY_SECTIONS: CosmeticPass = CosmeticPass { code ->
+            val nodes = code.nodes.sectionNodes()
+            val kept = dropEmptySections(nodes)
+            if (kept.size == nodes.size) code else Markup(kept)
+        }
+
+        /**
+         * The passes with no project-specific behaviour.
+         *
+         * Whitespace, redundant blank lines, and a link whose text repeats its target exactly. Everything
+         * else is a house style and is chosen explicitly.
+         */
+        public val SAFE: CosmeticChanges =
+            CosmeticChanges(listOf(TRAILING_WHITESPACE, EXTRA_BLANK_LINES, REDUNDANT_LINK_TEXT))
+
+        /** A tidier built from named passes. */
+        public fun of(vararg passes: CosmeticPass): CosmeticChanges = CosmeticChanges(passes.toList())
+
+        /**
+         * The entities that must not be decoded.
+         *
+         * Three because they are markup, and `&nbsp;` because decoding it produces a character
+         * indistinguishable from a space in every editor.
+         */
+        private val KEEP_ENCODED = setOf("lt", "gt", "amp", "nbsp", "quot")
+
+        private val TRAILING = Regex("""[ \t]+(?=\n)""")
+        private val BLANK_RUN = Regex("""\n{4,}""")
+
+        /** A pass that rewrites the text nodes of a page and leaves its structure alone. */
+        private fun textPass(transform: (String) -> String): CosmeticPass = CosmeticPass { code ->
+            code.mapNodes { node ->
+                val text = node as? TextNode ?: return@mapNodes node
+                TextNode(transform(text.text))
+            }
+        }
+
+        /** The character an entity stands for, or `null` if it is one to leave alone. */
+        @OptIn(ExperimentalUnicodeApi::class)
+        private fun HtmlEntity.decoded(): String? =
+            when {
+                value.lowercase() in KEEP_ENCODED -> null
+                numeric -> codePoint()?.takeIf { it.isPlainCharacter() }?.toCodePoint()?.toString()
+                else -> NAMED[value.lowercase()]
+            }
+
+        private fun HtmlEntity.codePoint(): Int? =
+            if (hexChar != null) value.toIntOrNull(HEX) else value.toIntOrNull()
+
+        private const val HEX = 16
+
+        /** Whether this code point can be written out in place of its reference: a visible one past ASCII. */
+        @OptIn(ExperimentalUnicodeApi::class)
+        private fun Int.isPlainCharacter(): Boolean =
+            this in ASCII..CodePoint.MAX_VALUE.code && toCodePoint().category !in UNSEEN
+
+        private const val ASCII = 128
+
+        /**
+         * The kinds of code point that show nothing an editor can see, or stand for no character: the
+         * separators, control and format characters, surrogates, private use and unassigned code points.
+         */
+        private val UNSEEN =
+            setOf(
+                CharCategory.SPACE_SEPARATOR,
+                CharCategory.LINE_SEPARATOR,
+                CharCategory.PARAGRAPH_SEPARATOR,
+                CharCategory.CONTROL,
+                CharCategory.FORMAT,
+                CharCategory.SURROGATE,
+                CharCategory.PRIVATE_USE,
+                CharCategory.UNASSIGNED,
+            )
+
+        /**
+         * The named entities worth decoding.
+         *
+         * Deliberately short. A long table would decode entities whose replacement looks identical to the
+         * entity in some fonts, producing an unreviewable diff.
+         */
+        private val NAMED =
+            mapOf(
+                "ndash" to "–",
+                "mdash" to "—",
+                "hellip" to "…",
+                "times" to "×",
+                "middot" to "·",
+                "bull" to "•",
+                "deg" to "°",
+                "plusmn" to "±",
+                "frac12" to "½",
+                "eacute" to "é",
+                "egrave" to "è",
+                "agrave" to "à",
+                "uuml" to "ü",
+                "ouml" to "ö",
+                "auml" to "ä",
+                "szlig" to "ß",
+                "ccedil" to "ç",
+                "ntilde" to "ñ",
+            )
+
+        /**
+         * Drops each heading whose section holds nothing but whitespace and empty subsections, and the
+         * section with it.
+         */
+        private fun dropEmptySections(nodes: List<Node>): List<Node> {
+            val kept = mutableListOf<Node>()
+            var index = 0
+
+            while (index < nodes.size) {
+                val node = nodes[index]
+                val end = if (node is Heading) sectionEnd(nodes, index) else index + 1
+                val empty =
+                    node is Heading &&
+                        nodes.subList(index + 1, end).all {
+                            it is Heading || (it is TextNode && it.text.isBlank())
+                        }
+
+                if (!empty) {
+                    kept += node
+                    index++
+                } else {
+                    // The heading goes and so does the blank space under it. Keeping that space
+                    // would leave a growing gap where sections used to be. One line break stays, so a
+                    // heading after it still starts a line.
+                    kept.removeTrailingBlankText()
+                    if (end < nodes.size && kept.isNotEmpty() && !kept.last().serialize().endsWith('\n')) {
+                        kept += TextNode("\n")
+                    }
+                    index = end
+                }
+            }
+
+            return kept
+        }
+
+        /** Where the section headed by `nodes[start]` ends: at the next heading at its own level or above. */
+        private fun sectionEnd(nodes: List<Node>, start: Int): Int {
+            val level = (nodes[start] as Heading).level
+            var end = start + 1
+            while (end < nodes.size && (nodes[end] as? Heading)?.let { it.level <= level } != true) end++
+            return end
+        }
+
+        private fun MutableList<Node>.removeTrailingBlankText() {
+            while (isNotEmpty()) {
+                val last = last()
+                if (last is TextNode && last.text.isBlank()) removeAt(lastIndex) else break
+            }
+        }
+
+        private fun Tag.asMarkup(markup: String) =
+            copy(
+                wikiMarkup = markup,
+                attributes = emptyList(),
+            )
+    }
+}

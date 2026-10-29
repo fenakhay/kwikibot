@@ -1,10 +1,14 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-multiplatform")
     id("kwikibot.published")
 }
 
-dependencies {
-    api(project(":kwikibot-client"))
-    api(libs.ktor.client.mock)
-    api(libs.kotlinx.coroutines.test)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":kwikibot-client"))
+            api(libs.ktor.client.mock)
+            api(libs.kotlinx.coroutines.test)
+        }
+    }
 }

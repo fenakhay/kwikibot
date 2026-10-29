@@ -1,31 +1,37 @@
 # kwikibot-benchmarks
 
-JMH benchmarks for the wikitext parser, run over real page text rather than over examples chosen
-to flatter it. This module is not published, and it does not run as part of `build`.
+Benchmarks for the wikitext parser, run over real page text rather than over examples chosen to
+flatter it, on the JVM through JMH and natively on macOS through kotlinx-benchmark's own harness.
+The same suites run on both, so the two can be set side by side. This module is not published, and
+it does not run as part of `build`.
 
 ```bash
-./gradlew :kwikibot-benchmarks:quickBenchmark
+./gradlew :kwikibot-benchmarks:jvmQuickBenchmark
+./gradlew :kwikibot-benchmarks:macosArm64QuickBenchmark
 ```
 
-Roughly a minute. Accurate enough to notice that something is wrong, so use it while working.
+Roughly a minute each. Accurate enough to notice that something is wrong, so use one while working.
 
 ```bash
-./gradlew :kwikibot-benchmarks:mainBenchmark
+./gradlew :kwikibot-benchmarks:jvmBenchmark
+./gradlew :kwikibot-benchmarks:macosArm64Benchmark
 ```
 
-About three minutes, five measured iterations after three warmups. These are the numbers worth
-quoting.
+About four minutes each, five measured iterations after three warmups. These are the numbers worth
+quoting. Run them one after the other rather than as `benchmark`, which runs both, so neither
+competes with the other for the machine. The macOS one needs a Mac; its reports land next to the
+JVM's, in `build/reports/benchmarks/main`, as `macosArm64.json`.
 
 ## Comparing two runs
 
-`baseline.json` is a committed `mainBenchmark` report, and comparing against it is the point of
+`baseline.json` is a committed `jvmBenchmark` report, and comparing against it is the point of
 the suite:
 
 ```bash
 ./gradlew :kwikibot-benchmarks:compareToBaseline
 ```
 
-That runs `mainBenchmark`, prints the difference, and fails the build if anything got slower by
+That runs `jvmBenchmark`, prints the difference, and fails the build if anything got slower by
 more than its error bars. To compare two reports you already have:
 
 ```bash
@@ -38,8 +44,9 @@ To move the baseline forward, once a change is understood and wanted:
 ./gradlew :kwikibot-benchmarks:recordBaseline
 ```
 
-The report names the JVM it ran by its path, so the home directory in it is written as `user`
-(`/Users/user`, `C:\Users\user`) and a committed baseline carries no username.
+The report names the JVM it ran by its path, which says whose machine it was and where the JDK is
+installed, so a recorded baseline names it `$JAVA_HOME/bin/java` instead. `jdkVersion`, `vmName`
+and `vmVersion` still say which JVM it was.
 
 **A baseline is only comparable to a run from the same machine.** These are laptop numbers, and a
 comparison against a baseline recorded somewhere else measures the hardware instead of the code.
@@ -52,7 +59,7 @@ replays, drawn at random from en.wiktionary (entries and templates), en/fr/de/ja
 Commons. 764,000 characters in all. One operation is a pass over the whole of it, so divide to get
 a rate.
 
-`parseLargePages` reads a second corpus, `large-pages.json.gz`: eight pages of a quarter of a
+`parseLargePages` reads a second corpus, `corpus/large-pages.json.gz`: eight pages of a quarter of a
 megabyte each, 1.95M characters, recorded by `:kwikibot-tools:wikitextLargePageDump`. The
 round-trip corpus skips anything over 80KB and its largest page is 38KB, so nothing in it
 exercises the parser at the size a long article reaches. These pages are only ever timed. Checking

@@ -15,17 +15,19 @@ import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.Credentials
-import java.io.Writer
 import java.nio.file.Path
 import kotlin.io.path.Path
-import kotlin.io.path.bufferedWriter
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.outputStream
 import kotlin.io.path.readText
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.io.Sink
+import kotlinx.io.asSink
+import kotlinx.io.buffered
 
 /** What to print when the arguments are wrong. */
 private const val USAGE =
@@ -98,8 +100,8 @@ public suspend fun main(args: Array<String>) {
  * readable diff log.
  */
 private suspend fun run(wiki: Wiki, options: Options) =
-    options.diffLog.writer().use { diffs ->
-        options.skipLog.writer().use { skips ->
+    options.diffLog.sink().use { diffs ->
+        options.skipLog.sink().use { skips ->
             val tasks = TodoList.parsePage(options.todo.readText()).tasks
             val progress = Progress(total = options.limit ?: tasks.size)
 
@@ -142,7 +144,10 @@ private suspend fun run(wiki: Wiki, options: Options) =
                     stopPolicy = StopPolicy.page(wiki.pages, wiki.ref(options.stopPage))
 
                     onOutcome =
-                        reportTo(RunLog(diffs = diffs, skips = skips, namespaces = wiki.namespaces), progress)
+                        reportTo(
+                            RunLog(diffs = diffs, skips = skips, namespaces = wiki.namespaces)::record,
+                            progress::record,
+                        )
                 }
                 .also { progress.finish() }
         }
@@ -220,8 +225,8 @@ private fun credentialsFromEnvironment(): Credentials {
 }
 
 /** Opens a log file, creating its directory, or returns `null` when none was asked for. */
-private fun Path?.writer(): Writer? {
+private fun Path?.sink(): Sink? {
     if (this == null) return null
     createParentDirectories()
-    return bufferedWriter()
+    return outputStream().asSink().buffered()
 }

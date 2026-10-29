@@ -1,5 +1,5 @@
 plugins {
-    id("kwikibot.kotlin-library")
+    id("kwikibot.kotlin-multiplatform")
     id("kwikibot.published")
 }
 
@@ -30,18 +30,31 @@ val generateVersionSource =
         }
     }
 
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(generateVersionSource)
-}
+kotlin {
+    sourceSets {
+        commonMain {
+            kotlin.srcDir(generateVersionSource)
 
-dependencies {
-    api(project(":kwikibot-model"))
-    api(libs.ktor.client.core)
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.serialization.json)
+            dependencies {
+                api(project(":kwikibot-model"))
+                api(libs.ktor.client.core)
+                api(libs.kotlinx.coroutines.core)
+                api(libs.kotlinx.serialization.json)
+                api(libs.kotlinx.io.core)
 
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.kotlin.logging)
+                implementation(libs.kotlin.logging)
+                implementation(libs.kotlincrypto.sha2)
+            }
+        }
 
-    testImplementation(libs.ktor.client.mock)
+        commonTest.dependencies { implementation(libs.ktor.client.mock) }
+
+        jvmMain.dependencies { implementation(libs.ktor.client.okhttp) }
+
+        appleMain.dependencies { implementation(libs.ktor.client.darwin) }
+
+        linuxMain.dependencies { implementation(libs.ktor.client.curl) }
+
+        mingwMain.dependencies { implementation(libs.ktor.client.winhttp) }
+    }
 }

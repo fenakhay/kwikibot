@@ -1,0 +1,82 @@
+import org.gradle.accessors.dm.LibrariesForLibs
+import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+plugins {
+    id("org.jetbrains.kotlin.jvm")
+    id("kwikibot.code-quality")
+    id("kwikibot.dokka")
+    id("org.jetbrains.kotlinx.kover")
+    `java-library`
+}
+
+val libs = the<LibrariesForLibs>()
+
+kotlin {
+    explicitApi()
+    jvmToolchain(25)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+        allWarningsAsErrors.set(true)
+    }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(21)
+}
+
+val implementationTitle = project.name
+val implementationVersion = project.version.toString()
+
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes(
+            "Implementation-Title" to implementationTitle,
+            "Implementation-Version" to implementationVersion,
+        )
+    }
+}
+
+dependencies {
+    "testImplementation"(platform(libs.junit.bom))
+    "testImplementation"(kotlin("test"))
+    "testImplementation"(libs.junit.jupiter)
+    "testImplementation"(libs.kotest.assertions)
+    "testImplementation"(libs.kotlinx.coroutines.test)
+    "testRuntimeOnly"(libs.junit.platform.launcher)
+}
+
+tasks.named<KotlinCompile>("compileTestKotlin") {
+    compilerOptions.optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
+}
+
+tasks.withType<Test>().configureEach {
+    if (name != "liveTest") {
+        useJUnitPlatform { excludeTags("live") }
+    }
+}
+
+kover {
+    currentProject {
+        instrumentation {
+            disabledForTestTasks.add("liveTest")
+        }
+    }
+}
+
+tasks.register<Test>("liveTest") {
+    description = "Runs the tests that talk to a real wiki. Reads production wikis; writes only to test.wikipedia.org."
+    group = "verification"
+
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("live") }
+    environment("KWIKI_LIVE", "1")
+    outputs.upToDateWhen { false }
+
+    failOnNoDiscoveredTests = false
+}

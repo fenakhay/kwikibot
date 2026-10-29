@@ -1,0 +1,10 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.fenakhay.kwikibot:kwikibot>
+final val com.fenakhay.kwikibot/KWIKIBOT_MODULES // com.fenakhay.kwikibot/KWIKIBOT_MODULES|{}KWIKIBOT_MODULES[0]
+    final fun <get-KWIKIBOT_MODULES>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot/KWIKIBOT_MODULES.<get-KWIKIBOT_MODULES>|<get-KWIKIBOT_MODULES>(){}[0]

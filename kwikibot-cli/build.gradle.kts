@@ -1,101 +1,73 @@
-import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
-    id("kwikibot.kotlin-library")
-    application
-    alias(libs.plugins.graalvm.native)
+    id("kwikibot.kotlin-multiplatform-base")
 }
 
-configurations.runtimeClasspath {
-    exclude(group = "com.github.ajalt.mordant", module = "mordant-jvm-jna")
-}
-
-dependencies {
-    implementation(project(":kwikibot-bot"))
-    implementation(libs.clikt)
-    implementation(libs.kotlin.logging)
-    runtimeOnly(libs.slf4j.simple)
-
-    testImplementation(libs.ktor.client.mock)
-}
-
-application {
-    applicationName = "kwikibot"
-    mainClass.set("com.fenakhay.kwikibot.cli.MainKt")
-}
-
-val os: OperatingSystem = OperatingSystem.current()
-
-val platform =
-    when {
-        os.isWindows -> "windows"
-        os.isMacOsX -> "macos"
-        else -> "linux"
-    }
-
-val architecture =
-    when (val arch = System.getProperty("os.arch")) {
-        "aarch64",
-        "arm64" -> "arm64"
-        "amd64",
-        "x86_64" -> "x64"
-        else -> arch
-    }
-
-val packageVersion = version.toString().substringBefore("-")
-
-graalvmNative {
-    toolchainDetection.set(false)
-
-    binaries {
-        named("main") {
-            imageName.set("kwikibot")
-            mainClass.set("com.fenakhay.kwikibot.cli.MainKt")
-            sharedLibrary.set(false)
-            verbose.set(true)
-
-            buildArgs.add("-H:+ReportExceptionStackTraces")
-            buildArgs.add("--enable-url-protocols=https")
-            buildArgs.add("-O2")
+kotlin {
+    targets.withType<KotlinNativeTarget>().configureEach {
+        binaries.executable {
+            baseName = "kwikibot"
+            entryPoint = "com.fenakhay.kwikibot.cli.main"
         }
     }
 
-    metadataRepository {
-        enabled.set(true)
+    sourceSets {
+        commonMain.dependencies {
+            implementation(project(":kwikibot-bot"))
+            implementation(libs.clikt)
+            implementation(libs.kotlin.logging)
+        }
+
+        jvmMain.dependencies {
+            runtimeOnly(libs.slf4j.simple)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.ktor.client.mock)
+        }
     }
 }
 
-val nativeBinary =
-    layout.buildDirectory.file(
-        if (os.isWindows) "native/nativeCompile/kwikibot.exe" else "native/nativeCompile/kwikibot"
-    )
+val packageVersion = version.toString().substringBefore("-")
 
-val archiveSetup: AbstractArchiveTask.() -> Unit = {
-    group = "distribution"
-    description = "Packs the native kwikibot for release."
+kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+    val family = konanTarget.family
+    val platform =
+        when (family) {
+            Family.OSX -> "macos"
+            Family.LINUX -> "linux"
+            Family.MINGW -> "windows"
+            else -> error("no archive for $family")
+        }
+    val classifier = "$platform-${konanTarget.architecture.name.lowercase()}"
+    val executable = binaries.getExecutable(NativeBuildType.RELEASE)
+    val fileName = if (family == Family.MINGW) "kwikibot.exe" else "kwikibot"
 
-    dependsOn(tasks.named("nativeCompile"))
+    val archiveSetup: AbstractArchiveTask.() -> Unit = {
+        group = "distribution"
+        description = "Packs the release kwikibot executable for $classifier."
 
-    archiveBaseName.set("kwikibot")
-    archiveVersion.set(packageVersion)
-    archiveClassifier.set("$platform-$architecture")
-    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+        archiveBaseName.set("kwikibot")
+        archiveVersion.set(packageVersion)
+        archiveClassifier.set(classifier)
+        destinationDirectory.set(layout.buildDirectory.dir("distributions"))
 
-    from(nativeBinary) {
-        filePermissions { unix("rwxr-xr-x") }
+        from(executable.linkTaskProvider) {
+            include(executable.outputFile.name)
+            rename { fileName }
+            filePermissions { unix("rwxr-xr-x") }
+        }
     }
-}
 
-val appArchive =
-    if (os.isWindows) {
-        tasks.register<Zip>("appArchive", archiveSetup)
+    if (family == Family.MINGW) {
+        tasks.register<Zip>("${name}AppArchive", archiveSetup)
     } else {
-        tasks.register<Tar>("appArchive") {
+        tasks.register<Tar>("${name}AppArchive") {
             compression = Compression.GZIP
             archiveSetup()
         }
     }
-
-tasks.named("assemble") {
-    setDependsOn(dependsOn.filterNot { it == appArchive })
 }

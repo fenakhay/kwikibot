@@ -1,58 +1,72 @@
 import org.gradle.api.publish.maven.MavenPublication
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
-    `java-library`
-    org.jetbrains.dokka
+    id("kwikibot.dokka")
     `maven-publish`
     signing
     id("com.gradleup.nmcp")
 }
 
-java {
-    withSourcesJar()
+pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+    extensions.configure<JavaPluginExtension> { withSourcesJar() }
+
+    publishing.publications.create<MavenPublication>("maven") { from(components["java"]) }
+
+    extensions.configure<KotlinJvmProjectExtension> {
+        @OptIn(ExperimentalAbiValidation::class) abiValidation()
+    }
 }
 
-val javadocJar = tasks.register<Jar>("javadocJar") {
-    group = "documentation"
-    description = "Documentation jar built from the KDoc."
-    archiveClassifier.set("javadoc")
-    from(tasks.named("dokkaGeneratePublicationHtml"))
-    exclude("dokka-configuration.json")
+pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    extensions.configure<KotlinMultiplatformExtension> {
+        @OptIn(ExperimentalAbiValidation::class) abiValidation()
+    }
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            artifact(javadocJar)
+    publications.withType<MavenPublication>().configureEach {
+        val publication = name
+        val javadocJar =
+            tasks.register<Jar>("${publication}JavadocJar") {
+                group = "documentation"
+                description = "Documentation jar for the $publication publication, built from the KDoc."
+                archiveClassifier.set("javadoc")
+                archiveAppendix.set(publication)
+                destinationDirectory.set(layout.buildDirectory.dir("javadoc/$publication"))
+                from(tasks.named("dokkaGeneratePublicationHtml"))
+                exclude("dokka-configuration.json")
+            }
+        artifact(javadocJar)
 
-            pom {
-                name.set(project.name)
-                description.set(
-                    "kwikibot — a Kotlin library for writing MediaWiki bots (${project.name})",
-                )
+        pom {
+            name.set(project.name)
+            description.set(
+                "kwikibot — a Kotlin Multiplatform library for writing MediaWiki bots (${project.name})",
+            )
+            url.set("https://github.com/fenakhay/kwikibot")
+
+            licenses {
+                license {
+                    name.set("MIT License")
+                    url.set("https://opensource.org/licenses/MIT")
+                }
+            }
+
+            developers {
+                developer {
+                    id.set("fenakhay")
+                    name.set("Fenakhay")
+                    url.set("https://github.com/fenakhay")
+                }
+            }
+
+            scm {
                 url.set("https://github.com/fenakhay/kwikibot")
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("fenakhay")
-                        name.set("Fenakhay")
-                        url.set("https://github.com/fenakhay")
-                    }
-                }
-
-                scm {
-                    url.set("https://github.com/fenakhay/kwikibot")
-                    connection.set("scm:git:https://github.com/fenakhay/kwikibot.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/fenakhay/kwikibot.git")
-                }
+                connection.set("scm:git:https://github.com/fenakhay/kwikibot.git")
+                developerConnection.set("scm:git:ssh://git@github.com/fenakhay/kwikibot.git")
             }
         }
     }

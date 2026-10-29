@@ -4,6 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !build-logic/src/
 local.properties
+node_modules/
 
 # IDE
 .idea/

@@ -1,0 +1,4 @@
+public final class com/fenakhay/kwikibot/ModulesKt {
+	public static final fun getKWIKIBOT_MODULES ()Ljava/util/List;
+}
+
