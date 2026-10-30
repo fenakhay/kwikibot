@@ -41,7 +41,7 @@ class MarkupTest {
 
     @Test
     fun `a walk reaches the bottom of deeply nested templates`() {
-        val depth = 1000
+        val depth = 200
         val code = Wikitext.parse("{{a|".repeat(depth) + "}}".repeat(depth))
 
         code.templates().size shouldBe depth

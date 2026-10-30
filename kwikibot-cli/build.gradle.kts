@@ -1,6 +1,12 @@
+@file:OptIn(KotlinNativeCacheApi::class)
+
+import java.net.URI
+import org.jetbrains.kotlin.gradle.plugin.mpp.DisableCacheInKotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCacheApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     id("kwikibot.kotlin-multiplatform-base")
@@ -12,6 +18,20 @@ kotlin {
             baseName = "kwikibot"
             entryPoint = "com.fenakhay.kwikibot.cli.main"
         }
+    }
+
+    if (HostManager.hostIsLinux) {
+        linuxX64()
+            .binaries
+            .matching { it.buildType == NativeBuildType.DEBUG }
+            .configureEach {
+                disableNativeCache(
+                    DisableCacheInKotlinVersion.`2_5_0`,
+                    "clikt and clikt-mordant both define Context.selfAndAncestors, and ld.lld refuses the two copies " +
+                        "when each library is cached on its own",
+                    URI("https://youtrack.jetbrains.com/issue/KT-81760"),
+                )
+            }
     }
 
     sourceSets {
