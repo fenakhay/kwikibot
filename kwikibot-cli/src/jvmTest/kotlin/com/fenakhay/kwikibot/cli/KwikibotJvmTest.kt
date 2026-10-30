@@ -19,6 +19,6 @@ class KwikibotJvmTest {
             System.setOut(standardOutput)
         }
 
-        printed.toString() shouldBe Kwikibot.report()
+        printed.toString().lines() shouldBe Kwikibot.report().lines()
     }
 }
