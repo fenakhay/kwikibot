@@ -83,6 +83,18 @@ class WikiDatesTest {
     }
 
     @Test
+    fun `a wiki whose zone the platform does not know is read as UTC`() = runTest {
+        val wiki =
+            wiki(language = "de", timezone = "Mars/Olympus_Mons") {
+                respondJson("""{"query":{"allmessages":[{"name":"august","content":"August"}]}}""")
+            }
+
+        val found = wiki.signatures().latest("-- X 21:43, 31. August 2026 (CEST)")
+
+        found?.instant shouldBe Instant.parse("2026-08-31T21:43:00Z")
+    }
+
+    @Test
     fun `the shipped tables still answer without a session`() {
         Signatures.GERMAN.latest("-- X 21:43, 31. Aug. 2026 (CEST)")?.instant shouldBe
             Instant.parse("2026-08-31T21:43:00Z")

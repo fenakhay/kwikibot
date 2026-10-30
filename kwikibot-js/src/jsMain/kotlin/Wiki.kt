@@ -28,10 +28,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.promise
 
-@JsModule("@js-joda/timezone") @JsNonModule private external object JsJodaTimeZoneModule
-
-private val timeZones = JsJodaTimeZoneModule
-
 /** A bot password from Special:BotPasswords, to log in with. */
 @JsExport
 public class BotPassword(

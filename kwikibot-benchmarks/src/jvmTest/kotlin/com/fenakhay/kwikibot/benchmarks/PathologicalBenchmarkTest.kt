@@ -20,6 +20,12 @@ class PathologicalBenchmarkTest {
     }
 
     @Test
+    fun `nesting ten thousand deep is parsed and written back whole`() {
+        within(benchmark::veryDeeplyNestedTemplates) shouldBe 10_000 * "{{a|}}".length + 1
+        within(benchmark::veryDeeplyNestedTags) shouldBe 10_000 * "<div></div>".length + 1
+    }
+
+    @Test
     fun `openings that never close, runs and nested links all finish`() {
         listOf(
                 benchmark::unclosedTemplates,

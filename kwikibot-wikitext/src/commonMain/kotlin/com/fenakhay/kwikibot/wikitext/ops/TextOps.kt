@@ -2,13 +2,14 @@ package com.fenakhay.kwikibot.wikitext.ops
 
 import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.TextScope
-import com.fenakhay.kwikibot.wikitext.children
+import com.fenakhay.kwikibot.wikitext.internal.NodeStack
+import com.fenakhay.kwikibot.wikitext.internal.Rebuild
 import com.fenakhay.kwikibot.wikitext.internal.TagNames
+import com.fenakhay.kwikibot.wikitext.internal.children
 import com.fenakhay.kwikibot.wikitext.node.Argument
 import com.fenakhay.kwikibot.wikitext.node.Comment
 import com.fenakhay.kwikibot.wikitext.node.ExternalLink
 import com.fenakhay.kwikibot.wikitext.node.Heading
-import com.fenakhay.kwikibot.wikitext.node.HtmlEntity
 import com.fenakhay.kwikibot.wikitext.node.Node
 import com.fenakhay.kwikibot.wikitext.node.Tag
 import com.fenakhay.kwikibot.wikitext.node.Template
@@ -38,7 +39,7 @@ public fun Markup.replaceText(
     pattern: Regex,
     scope: TextScope = TextScope.PROSE,
     replacement: (MatchResult) -> String,
-): Markup = Markup(nodes.map { it.replaceTextIn(pattern, scope, replacement) })
+): Markup = TextReplacement(pattern, scope, replacement).rebuild(this)
 
 /** Whether any text this [scope] allows matches [pattern]. */
 public fun Markup.containsText(pattern: Regex, scope: TextScope = TextScope.PROSE): Boolean =
@@ -46,93 +47,57 @@ public fun Markup.containsText(pattern: Regex, scope: TextScope = TextScope.PROS
 
 /** The text this [scope] allows, node by node. */
 public fun Markup.textIn(scope: TextScope): List<String> = buildList {
-    for (node in nodes) {
-        when (node) {
+    val pending = NodeStack().apply { push(nodes) }
+    while (true) {
+        when (val node = pending.next() ?: break) {
             is TextNode -> add(node.text)
-            else -> addAll(node.scoped(scope).flatMap { it.textIn(scope) })
+            is Comment -> if (scope.comments) add(node.contents)
+            else -> node.scoped(scope).asReversed().forEach { pending.push(it.nodes) }
         }
     }
 }
 
-private fun Node.replaceTextIn(
-    pattern: Regex,
-    scope: TextScope,
-    replacement: (MatchResult) -> String,
-): Node =
-    when (this) {
-        is TextNode -> TextNode(pattern.replace(text, replacement))
+/**
+ * The text [scope] allows replaced, node by node, in the order it is written, and nothing else touched.
+ *
+ * A link's target, a template, a heading, an attribute and a comment are text to replace only when [scope]
+ * says so, and the inside of a raw tag only when it says so too. An external link's URL never is.
+ */
+private class TextReplacement(
+    private val pattern: Regex,
+    private val scope: TextScope,
+    private val replacement: (MatchResult) -> String,
+) : Rebuild(chooses = true) {
 
-        is Template -> replaceInTemplate(pattern, scope, replacement)
+    override fun enters(node: Node): Boolean =
+        when (node) {
+            is Template -> scope.templates
+            is Heading -> scope.headings
+            is Tag -> !node.isRaw || scope.rawTags
+            else -> true
+        }
 
-        is WikiLink -> replaceInLink(pattern, scope, replacement)
+    /** Rewriting a link's target silently repoints the link at a different page, so it is opt-in. */
+    override fun visits(node: Node, slot: Int): Boolean =
+        when (node) {
+            is WikiLink -> slot > 0 || scope.linkTargets
+            is ExternalLink -> slot > 0
+            is Tag -> slot == 0 || scope.tagAttributes
+            is Argument -> slot > 0 || scope.templates
+            else -> true
+        }
 
-        is ExternalLink -> copy(title = title?.replaceText(pattern, scope, replacement))
+    override fun rebuilt(original: Node, node: Node): Node =
+        when (node) {
+            is TextNode -> replaced(node.text)?.let { TextNode(it) } ?: node
+            is Comment ->
+                if (scope.comments) replaced(node.contents)?.let { node.copy(contents = it) } ?: node
+                else node
+            else -> node
+        }
 
-        is Heading ->
-            if (scope.headings) copy(title = title.replaceText(pattern, scope, replacement)) else this
-
-        is Tag -> replaceInTag(pattern, scope, replacement)
-
-        is Comment -> if (scope.comments) copy(contents = pattern.replace(contents, replacement)) else this
-
-        is Argument ->
-            copy(
-                name = if (scope.templates) name.replaceText(pattern, scope, replacement) else name,
-                default = default?.replaceText(pattern, scope, replacement),
-            )
-
-        is HtmlEntity -> this
-    }
-
-private fun Tag.replaceInTag(
-    pattern: Regex,
-    scope: TextScope,
-    replacement: (MatchResult) -> String,
-): Tag {
-    if (isRaw && !scope.rawTags) return this
-    return copy(
-        contents = contents?.replaceText(pattern, scope, replacement),
-        attributes =
-            if (scope.tagAttributes) {
-                attributes.map {
-                    it.copy(
-                        name = it.name.replaceText(pattern, scope, replacement),
-                        value = it.value?.replaceText(pattern, scope, replacement),
-                    )
-                }
-            } else {
-                attributes
-            },
-    )
-}
-
-private fun WikiLink.replaceInLink(
-    pattern: Regex,
-    scope: TextScope,
-    replacement: (MatchResult) -> String,
-): WikiLink =
-    copy(
-        // Rewriting a target silently repoints the link at a different page, so it is opt-in.
-        target = if (scope.linkTargets) target.replaceText(pattern, scope, replacement) else target,
-        text = text?.replaceText(pattern, scope, replacement),
-    )
-
-private fun Template.replaceInTemplate(
-    pattern: Regex,
-    scope: TextScope,
-    replacement: (MatchResult) -> String,
-): Template {
-    if (!scope.templates) return this
-    return copy(
-        name = name.replaceText(pattern, scope, replacement),
-        parameters =
-            parameters.map {
-                it.copy(
-                    name = it.name.replaceText(pattern, scope, replacement),
-                    value = it.value.replaceText(pattern, scope, replacement),
-                )
-            },
-    )
+    /** [text] with [pattern] replaced, or `null` when that changes nothing. */
+    private fun replaced(text: String): String? = pattern.replace(text, replacement).takeIf { it != text }
 }
 
 /** The wikicode inside this node that [scope] allows reading. */

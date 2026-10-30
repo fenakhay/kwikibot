@@ -51,9 +51,15 @@ against this release with Kotlin 2.4 or newer.
   says so on standard error. Without `--save` or `--limit` it does not start.
 - `HttpClient.withRequestPermit` in `kwikibot-net`, where a request waits for room among the
   client's requests in flight.
+- `SignatureFormat(language, pattern, months, zone: String)`, which takes a zone by its name, such
+  as `Europe/Berlin`. On JavaScript the zone is read through the runtime's `Intl`, so
+  `Wiki.signatures()` and the npm package need no `@js-joda/timezone`.
 
 ### Changed
 
+- `mapNodes` and `replaceText` keep what they leave unchanged: a node nothing in which changed is
+  given to `transform` as it was, and comes back as the same instance, as does the markup around it.
+  Only identity tells this apart, and a pass that changes nothing now allocates next to nothing.
 - Gradle resolves each platform's build from the same coordinates as before. Maven does not read
   Gradle's metadata, so a Maven project depends on the `-jvm` artifacts, such as
   `com.fenakhay.kwikibot:kwikibot-jvm`.
@@ -194,6 +200,12 @@ against this release with Kotlin 2.4 or newer.
   holds it to that.
 - `FakePageService` could lose edits, or hang a Kotlin/Native test, when a bot run called it from
   several threads at once. It can now be called from any number of threads.
+- `Wikitext.parse`, `serialize()`, `ranges()`, equality, hashing and the operations on a tree
+  recursed once per level of nesting, so templates, links or tags nested a few hundred deep ran a
+  Kotlin/Native process out of stack, which ends it, and threw `StackOverflowError` on the JVM. The
+  tokenizer and the builder now keep the constructs they are in on stacks of their own, and every
+  pass over a tree recurses for at most 32 levels and goes on with its own stack below that, so a
+  page nested a hundred thousand deep parses, compares and writes back like any other.
 
 ## [1.3.0] — 2026-10-18
 

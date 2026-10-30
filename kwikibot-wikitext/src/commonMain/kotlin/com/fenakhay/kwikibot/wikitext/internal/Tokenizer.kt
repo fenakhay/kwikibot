@@ -2,6 +2,36 @@ package com.fenakhay.kwikibot.wikitext.internal
 
 import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.Token
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.A
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.ARGUMENT_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.B
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.BRACKETED_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.C
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.CONTENT
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.D
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.DONE
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.E
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.EXTENSION_BODY
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.EXTENSION_DOCUMENT
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.EXTENSION_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.EXTENSION_LINES
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.EXTENSION_LINE_READ
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.FREE_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.HEADING_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.KEY_READ
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.KIND
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.LIMIT
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.MODE
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.NONE
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.PAGE
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.PART_READ
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.PREPROCESSED
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.SEGMENT
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.STYLE_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.TAG_CONTENTS
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.TAG_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.TEMPLATE_FRAME
+import com.fenakhay.kwikibot.wikitext.internal.Frames.Companion.WIKILINK_FRAME
 import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.ARGUMENT
 import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.COMMENT
 import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.COMMENT_OPEN_ENDED
@@ -11,10 +41,8 @@ import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.HEADING
 import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.HTML_PAIRED
 import com.fenakhay.kwikibot.wikitext.internal.Preprocessor.Companion.TEMPLATE
 import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.APOSTROPHE
-import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.ASCII
 import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.LINK_BRACKETS
 import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.isLink
-import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.isWordChar
 
 /**
  * Turns wikitext into a flat stream of tokens.
@@ -31,17 +59,14 @@ import com.fenakhay.kwikibot.wikitext.internal.Scanner.Companion.isWordChar
  *
  * Every character of the input lands in exactly one token, which is what makes the tree serialize back to the
  * input byte for byte.
+ *
+ * The constructs being read are kept in [Frames] rather than on the thread's stack. Opening a construct emits
+ * its opening tokens and puts its frame on top, set to read its first part, and the content around it stops
+ * there. The frame then reads its parts in turn, emits its closing tokens and comes off, and the content
+ * around it goes on where it stopped. The tokens come out in the order recursion would give them, and a page
+ * nested a hundred thousand deep needs no more stack than a flat one.
  */
-internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAULT) {
-
-    private var text: String = ""
-    private var pp: Preprocessor = Preprocessor("", options)
-    private var scan: Scanner = Scanner("", pp, options)
-    private var kinds: ByteArray = ByteArray(0)
-    private var head: Int = 0
-
-    private val tokens = ArrayList<Token>()
-    private val buffer = StringBuilder()
+internal class Tokenizer(options: ParseOptions = ParseOptions.DEFAULT) : TokenReader(options) {
 
     /** Tokenizes [wikitext]. */
     fun tokenize(wikitext: String): List<Token> {
@@ -54,97 +79,76 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
         segmentDepth = 0
         tokens.clear()
         buffer.setLength(0)
+        frames.clear()
 
-        segment(wikitext.length)
+        val page = frames.push(PAGE)
+        next(page, DONE)
+        startPart(page, SEGMENT, wikitext.length)
+        run()
         flush()
         return tokens.toList()
     }
 
-    // ------------------------------------------------------------------ emitting
+    /** Takes the steps of the innermost construct until none is left. */
+    private fun run() {
+        while (frames.depth > 0) step()
+    }
 
-    /** Moves buffered literal text into the token list, keeping token order. */
-    private fun flush() {
-        if (buffer.isNotEmpty()) {
-            tokens += Token.Text(buffer.toString())
-            buffer.setLength(0)
+    /** Reads on in the innermost construct, and takes its next steps once the part it is reading is done. */
+    private fun step() {
+        val frame = frames.top
+        val mode = frames[frame, MODE]
+        val limit = frames[frame, LIMIT]
+        val done =
+            when (mode) {
+                NONE -> true
+                PREPROCESSED -> preprocessedOnly(limit)
+                else -> content(limit)
+            }
+        if (done) {
+            if (mode == SEGMENT) segmentDepth--
+            frames[frame, MODE] = NONE
+            resume(frame)
         }
     }
 
-    private fun emit(token: Token) {
-        flush()
-        tokens += token
-    }
-
-    private fun emitText(value: String) {
-        buffer.append(value)
-    }
-
-    /** Buffers the source between two offsets and leaves the cursor after it. */
-    private fun emitSpan(from: Int, to: Int) {
-        if (to > from) buffer.append(text, from, to)
-        head = maxOf(head, to)
-    }
-
-    private fun emitChar() {
-        buffer.append(text[head])
-        head++
-    }
-
-    private fun atLineStart(): Boolean = head == scan.documentStart || text[head - 1] == '\n'
-
-    // ------------------------------------------------------------------ segments and content
-
-    // The segments being read, innermost last: where each starts and ends, and whether its tags are paired.
-    private var segmentStarts = IntArray(INITIAL_DEPTH)
-    private var segmentLimits = IntArray(INITIAL_DEPTH)
-    private var segmentPaired = BooleanArray(INITIAL_DEPTH)
-    private var segmentModes = arrayOfNulls<BodyMode>(INITIAL_DEPTH)
-    private var segmentDepth = 0
-
-    /**
-     * Reads one segment up to [limit]: the page, or a part of a template, link or heading.
-     *
-     * HTML tags pair inside a segment and never across one. They are paired when the first opening tag in the
-     * segment is reached, once for the whole segment, so the many segments with no tag in them (most template
-     * parameters) cost nothing extra.
-     */
-    private fun segment(limit: Int, mode: BodyMode = BodyMode.PAGE) {
-        if (segmentDepth == segmentStarts.size) {
-            segmentStarts = segmentStarts.copyOf(segmentDepth * 2)
-            segmentLimits = segmentLimits.copyOf(segmentDepth * 2)
-            segmentPaired = segmentPaired.copyOf(segmentDepth * 2)
-            segmentModes = segmentModes.copyOf(segmentDepth * 2)
+    /** Takes the next steps of the construct in [frame], whose last part has been read. */
+    private fun resume(frame: Int) {
+        when (frames[frame, KIND]) {
+            PAGE -> page()
+            TEMPLATE_FRAME -> template(frame)
+            ARGUMENT_FRAME -> argument(frame)
+            WIKILINK_FRAME -> wikilink(frame)
+            BRACKETED_FRAME -> bracketedLink(frame)
+            FREE_FRAME -> freeLink()
+            EXTENSION_FRAME -> extensionTag(frame)
+            TAG_FRAME -> tag(frame)
+            STYLE_FRAME -> style(frame)
+            else -> heading(frame)
         }
-        segmentStarts[segmentDepth] = head
-        segmentLimits[segmentDepth] = limit
-        segmentPaired[segmentDepth] = false
-        segmentModes[segmentDepth] = mode
-        segmentDepth++
-
-        content(limit)
-        segmentDepth--
     }
 
-    /** Pairs the tags of the segment being read, if nothing has yet, and says whether it did. */
-    private fun pairSegment(): Boolean {
-        val top = segmentDepth - 1
-        if (top < 0 || segmentPaired[top]) return false
-        segmentPaired[top] = true
-        scan.pairTags(segmentStarts[top], segmentLimits[top], segmentModes[top] ?: BodyMode.PAGE)
-        return true
+    /** The page has been read. */
+    private fun page() {
+        frames.pop()
     }
+
+    // ------------------------------------------------------------------ content
 
     /**
-     * Consumes content up to [limit], which is always where the enclosing construct's closing markup starts.
+     * Consumes content up to [limit], which is always where the enclosing construct's closing markup starts,
+     * and says whether it got there: it stops before, with the construct's frame on top, at a construct that
+     * holds content of its own.
      *
      * Every construct found here is known to close by [limit] before it is parsed, so nested constructs are
      * read once each and the cursor ends at [limit].
      */
     @Suppress("CyclomaticComplexMethod") // A tokenizer's dispatch is a table; splitting it hides it.
-    private fun content(limit: Int) {
+    override fun content(limit: Int): Boolean {
+        val depth = frames.depth
         while (head < limit) {
             skipPlainText(limit)
-            if (head >= limit) return
+            if (head >= limit) return true
 
             val char = text[head]
             when {
@@ -152,208 +156,227 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
                 char == '[' -> brackets(limit)
                 char == '<' -> angle(limit)
                 char == '&' -> entity(limit)
-                char == APOSTROPHE && head + 1 < limit && text[head + 1] == APOSTROPHE -> style(limit)
-                char == '=' && Preprocessor.isHeading(kinds[head]) && pp.end(head) <= limit -> heading()
+                char == APOSTROPHE && head + 1 < limit && text[head + 1] == APOSTROPHE -> openStyle(limit)
+                char == '=' && Preprocessor.isHeading(kinds[head]) && pp.end(head) <= limit -> openHeading()
                 char in LIST_MARKERS && atLineStart() && listAllowed() -> listMarker(char)
-                else -> if (!freeLink(limit)) emitChar()
+                else -> if (!openFreeLink(limit)) emitChar()
             }
+            if (frames.depth > depth) return false
         }
+        return true
     }
 
     /**
-     * Content with only the preprocessor's constructs in it, for attributes and URLs.
+     * Content with only the preprocessor's constructs in it, for attributes and URLs, read as [content] is.
      *
      * MediaWiki escapes everything else it finds in an attribute value, and a URL is read whole, so a
      * template or a comment is all that can be structure there.
      */
-    private fun preprocessedOnly(limit: Int) {
+    override fun preprocessedOnly(limit: Int): Boolean {
+        val depth = frames.depth
         while (head < limit) {
             val kind = kinds[head]
             when {
                 pp.end(head) > limit -> emitChar()
                 kind == TEMPLATE || kind == ARGUMENT -> braces(limit)
                 kind == COMMENT || kind == COMMENT_OPEN_ENDED -> comment()
-                kind == EXT || kind == EXT_SHORT -> extensionTag()
+                kind == EXT || kind == EXT_SHORT -> openExtensionTag()
                 else -> emitChar()
             }
+            if (frames.depth > depth) return false
         }
-    }
-
-    /**
-     * Runs the cursor forward over text that cannot start anything, buffering it in one go.
-     *
-     * Most of a page is prose. Here each character costs one array read, and the run is copied in one block
-     * when it ends. A word starting with a URL scheme's first letter is settled here too, by whether its
-     * letters run into a `:`; sending every such word to the dispatch would stop prose at every other word.
-     */
-    private fun skipPlainText(limit: Int) {
-        val start = head
-        val schemes = options.schemesByFirst
-        while (head < limit && !startsSomething(head, limit, schemes)) {
-            head = if (startsWord(head, schemes)) wordEnd(head, limit) else head + 1
-        }
-        if (head > start) buffer.append(text, start, head)
-    }
-
-    private fun startsSomething(at: Int, limit: Int, schemes: Array<List<String>?>): Boolean {
-        val code = text[at].code
-        return code < ASCII && (MARKUP[code] || (startsWord(at, schemes) && scan.couldStartUrl(at, limit)))
-    }
-
-    /** Whether a word starts at [at] with a letter some URL scheme starts with. */
-    private fun startsWord(at: Int, schemes: Array<List<String>?>): Boolean {
-        val code = text[at].code
-        return code < ASCII && schemes[code] != null && (at == 0 || !isWordChar(text[at - 1]))
-    }
-
-    /** The end of the letters of the word starting at [at], which are prose. */
-    private fun wordEnd(at: Int, limit: Int): Int {
-        var end = at + 1
-        while (end < limit && Scanner.isSchemeChar(text[end])) end++
-        return end
+        return true
     }
 
     // ------------------------------------------------------------------ templates and arguments
 
-    /** Parses whatever a `{` opens, or emits it as the text it is. */
+    /** Opens whatever a `{` opens, or emits it as the text it is. */
     private fun braces(limit: Int) {
         val kind = kinds[head]
         val end = pp.end(head)
         when {
             (kind != TEMPLATE && kind != ARGUMENT) || end > limit -> emitChar()
-            kind == ARGUMENT -> argument(end)
-            else -> template(end)
+            kind == ARGUMENT -> openArgument(end)
+            else -> openTemplate(end)
         }
     }
 
-    /** Parses `{{name|params}}`, splitting it where the preprocessor did. */
-    private fun template(end: Int) {
+    /** Opens `{{name|params}}`, which ends at [end], and starts on its name. */
+    private fun openTemplate(end: Int) {
         val start = head
-        val inner = end - TEMPLATE_BRACES
         val separators = pp.separatorsOf(start)
-        val parts = if (separators < 0) 0 else pp.partCount(separators)
-
         emit(Token.TemplateOpen)
         head = start + TEMPLATE_BRACES
-        segment(if (parts > 0) pp.pipe(separators, 0) else inner)
-
-        for (part in 0 until parts) {
-            val partEnd = if (part + 1 < parts) pp.pipe(separators, part + 1) else inner
-            emit(Token.ParameterSeparator)
-            head = pp.pipe(separators, part) + 1
-
-            val equals = pp.equalsSign(separators, part)
-            if (equals >= 0) {
-                segment(equals)
-                emit(Token.ParameterEquals)
-                head = equals + 1
-            }
-            segment(partEnd)
-        }
-
-        head = end
-        emit(Token.TemplateClose)
+        val frame = frames.push(TEMPLATE_FRAME, a = end, b = separators, c = -1)
+        next(frame, PART_READ)
+        val parts = if (separators < 0) 0 else pp.partCount(separators)
+        startPart(frame, SEGMENT, if (parts > 0) pp.pipe(separators, 0) else end - TEMPLATE_BRACES)
     }
 
+    /** Reads the rest of `{{name|params}}`, splitting it where the preprocessor did. */
+    private fun template(frame: Int) {
+        val end = frames[frame, A]
+        val separators = frames[frame, B]
+        val inner = end - TEMPLATE_BRACES
+        val parts = if (separators < 0) 0 else pp.partCount(separators)
+        while (true) {
+            when (step(frame)) {
+                PART_READ -> {
+                    val part = frames[frame, C] + 1
+                    if (part == parts) {
+                        head = end
+                        emit(Token.TemplateClose)
+                        frames.pop()
+                        return
+                    }
+                    frames[frame, C] = part
+                    emit(Token.ParameterSeparator)
+                    head = pp.pipe(separators, part) + 1
+                    val equals = pp.equalsSign(separators, part)
+                    next(frame, if (equals >= 0) KEY_READ else PART_READ)
+                    val partEnd = if (equals >= 0) equals else partEnd(separators, part, parts, inner)
+                    if (!read(frame, SEGMENT, partEnd)) return
+                }
+                else -> {
+                    val part = frames[frame, C]
+                    emit(Token.ParameterEquals)
+                    head = pp.equalsSign(separators, part) + 1
+                    next(frame, PART_READ)
+                    if (!read(frame, SEGMENT, partEnd(separators, part, parts, inner))) return
+                }
+            }
+        }
+    }
+
+    /** Where part [part] of a template ends: at the next `|`, or at the closing braces. */
+    private fun partEnd(separators: Int, part: Int, parts: Int, inner: Int): Int =
+        if (part + 1 < parts) pp.pipe(separators, part + 1) else inner
+
     /**
-     * Parses `{{{name|default}}}`.
+     * Opens `{{{name|default}}}`, which ends at [end], and starts on its name.
      *
      * An argument takes only one default. Anything after a second `|` is still part of the default as far as
      * the page's text goes, so it is kept there as text.
      */
-    private fun argument(end: Int) {
+    private fun openArgument(end: Int) {
         val start = head
-        val inner = end - ARGUMENT_BRACES
         val separators = pp.separatorsOf(start)
-
         emit(Token.ArgumentOpen)
         head = start + ARGUMENT_BRACES
-        if (separators < 0) {
-            segment(inner)
-        } else {
-            segment(pp.pipe(separators, 0))
+        val frame = frames.push(ARGUMENT_FRAME, a = end, b = separators)
+        next(frame, if (separators < 0) DONE else PART_READ)
+        startPart(frame, SEGMENT, if (separators < 0) end - ARGUMENT_BRACES else pp.pipe(separators, 0))
+    }
+
+    /** Reads the rest of the argument in [frame]. */
+    private fun argument(frame: Int) {
+        val end = frames[frame, A]
+        val separators = frames[frame, B]
+        val inner = end - ARGUMENT_BRACES
+        if (step(frame) == PART_READ) {
             emit(Token.ArgumentSeparator)
             head = pp.pipe(separators, 0) + 1
-            segment(inner)
+            next(frame, DONE)
+            if (!read(frame, SEGMENT, inner)) return
         }
-
         head = end
         emit(Token.ArgumentClose)
+        frames.pop()
     }
 
     // ------------------------------------------------------------------ links
 
-    /** Parses whatever a `[` opens, or emits it as the text it is. */
+    /** Opens whatever a `[` opens, or emits it as the text it is. */
     private fun brackets(limit: Int) {
         val link = head + 1 < limit && text[head + 1] == '[' && isLink(kinds[head])
         val end = if (link) scan.linkEnd(head) else -1
         when {
-            end in 0..limit -> wikilink(end)
-            scan.bracketedLinkAt(head, limit) -> bracketedLink()
+            end in 0..limit -> openWikilink(end)
+            scan.bracketedLinkAt(head, limit) -> openBracketedLink()
             else -> emitChar()
         }
     }
 
-    /** Parses `[[target|text]]`, whose closing brackets end at [end]. */
-    private fun wikilink(end: Int) {
+    /** Opens `[[target|text]]`, whose closing brackets end at [end], and starts on its target. */
+    private fun openWikilink(end: Int) {
         val start = head
         val pipe = scan.linkPipe(start, end - LINK_BRACKETS)
-
         emit(Token.WikiLinkOpen)
         head = start + LINK_BRACKETS
-        if (pipe < 0) {
-            segment(end - LINK_BRACKETS)
-        } else {
-            segment(pipe)
-            emit(Token.WikiLinkSeparator)
-            head = pipe + 1
-            segment(end - LINK_BRACKETS)
-        }
-
-        head = end
-        emit(Token.WikiLinkClose)
+        val frame = frames.push(WIKILINK_FRAME, a = end, b = pipe)
+        next(frame, if (pipe < 0) DONE else PART_READ)
+        startPart(frame, SEGMENT, if (pipe < 0) end - LINK_BRACKETS else pipe)
     }
 
-    /** Parses the `[url text]` [Scanner.bracketedLinkAt] just found. */
-    private fun bracketedLink() {
-        val urlEnd = scan.urlEnd
-        val labelStart = scan.labelStart
-        val close = scan.labelEnd
+    /** Reads the rest of the link in [frame], whose closing brackets end at [A], with its `|` at [B]. */
+    private fun wikilink(frame: Int) {
+        val end = frames[frame, A]
+        val pipe = frames[frame, B]
+        if (step(frame) == PART_READ) {
+            emit(Token.WikiLinkSeparator)
+            head = pipe + 1
+            next(frame, DONE)
+            if (!read(frame, SEGMENT, end - LINK_BRACKETS)) return
+        }
+        head = end
+        emit(Token.WikiLinkClose)
+        frames.pop()
+    }
 
+    /** Opens the `[url text]` [Scanner.bracketedLinkAt] just found, and starts on its URL. */
+    private fun openBracketedLink() {
+        val urlEnd = scan.urlEnd
+        val frame = frames.push(BRACKETED_FRAME, a = urlEnd, b = scan.labelStart, c = scan.labelEnd)
         emit(Token.ExternalLinkOpen(brackets = true))
         head++
-        preprocessedOnly(urlEnd)
-        if (close > urlEnd) {
+        next(frame, PART_READ)
+        startPart(frame, PREPROCESSED, urlEnd)
+    }
+
+    /** Reads the rest of the bracketed link in [frame], its URL ending at [A] and its text at [C]. */
+    private fun bracketedLink(frame: Int) {
+        val urlEnd = frames[frame, A]
+        val close = frames[frame, C]
+        if (step(frame) == PART_READ && close > urlEnd) {
+            val labelStart = frames[frame, B]
             emit(Token.ExternalLinkSeparator(text.substring(urlEnd, labelStart)))
             head = labelStart
-            content(close)
+            next(frame, DONE)
+            if (!read(frame, CONTENT, close)) return
         }
         head = close + 1
         emit(Token.ExternalLinkClose)
+        frames.pop()
     }
 
     /**
-     * Parses a URL appearing bare in running text, such as `https://example.org`, or reports there is none.
+     * Opens a URL appearing bare in running text, such as `https://example.org`, or reports there is none.
      */
-    private fun freeLink(limit: Int): Boolean {
+    private fun openFreeLink(limit: Int): Boolean {
         val end = scan.freeLinkEnd(head, limit)
         if (end < 0) return false
-
         emit(Token.ExternalLinkOpen(brackets = false))
-        preprocessedOnly(end)
-        emit(Token.ExternalLinkClose)
+        val frame = frames.push(FREE_FRAME)
+        next(frame, DONE)
+        startPart(frame, PREPROCESSED, end)
         return true
+    }
+
+    /** The bare URL has been read. */
+    private fun freeLink() {
+        emit(Token.ExternalLinkClose)
+        frames.pop()
     }
 
     // ------------------------------------------------------------------ comments and tags
 
-    /** Parses whatever a `<` opens, or emits it as the text it is. */
+    /** Opens whatever a `<` opens, or emits it as the text it is. */
     private fun angle(limit: Int) {
         val kind = kinds[head]
         val fits = pp.end(head) <= limit
         when {
             fits && (kind == COMMENT || kind == COMMENT_OPEN_ENDED) -> comment()
-            fits && (kind == EXT || kind == EXT_SHORT) -> extensionTag()
+            fits && (kind == EXT || kind == EXT_SHORT) -> openExtensionTag()
             else -> htmlTag(limit)
         }
     }
@@ -370,55 +393,87 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
         head = end
     }
 
+    /** Emits the start of the extension tag the preprocessor found at the cursor, and opens it. */
+    private fun openExtensionTag() {
+        val start = head
+        val nameEnd = extensionNameEnd(start)
+        val tagEnd = text.indexOf('>', nameEnd)
+        val short = kinds[start] == EXT_SHORT
+
+        emit(Token.OpeningTagStart())
+        emitText(text.substring(start + 1, nameEnd))
+        head = nameEnd
+        val frame = frames.push(EXTENSION_FRAME, a = start, b = if (short) tagEnd - 1 else tagEnd)
+        openExtensionBody(frame, start, pp.end(start))
+    }
+
+    private fun extensionNameEnd(start: Int): Int {
+        var nameEnd = start + 1
+        while (!Preprocessor.isSpace(text[nameEnd]) && text[nameEnd] != '/' && text[nameEnd] != '>') nameEnd++
+        return nameEnd
+    }
+
     /**
-     * Parses an extension tag the preprocessor found.
+     * Reads the rest of the extension tag in [frame], starting at [A], once its body has been read.
      *
      * Its attributes are raw: the preprocessor does not look inside them, so nothing there is a template. Its
      * body is wikitext only for the tags [ParseOptions.parsedTags] names, and is then read as a document of
      * its own; any other body is kept as written.
      */
-    private fun extensionTag() {
-        val start = head
-        val end = pp.end(start)
-        var nameEnd = start + 1
-        while (!Preprocessor.isSpace(text[nameEnd]) && text[nameEnd] != '/' && text[nameEnd] != '>') nameEnd++
-        val name = text.substring(start + 1, nameEnd)
-        val tagEnd = text.indexOf('>', nameEnd)
-        val short = kinds[start] == EXT_SHORT
+    private fun extensionTag(frame: Int) {
+        val end = pp.end(frames[frame, A])
+        when (step(frame)) {
+            EXTENSION_DOCUMENT -> scan.documentStart = frames[frame, D]
+            EXTENSION_BODY -> Unit
+            else -> if (!pageListBody(frame)) return
+        }
+        closingTag(frames[frame, E], end)
+        frames.pop()
+    }
 
-        emit(Token.OpeningTagStart())
-        emitText(name)
-        head = nameEnd
-        val padding = attributes(if (short) tagEnd - 1 else tagEnd, raw = true)
-
-        if (short) {
+    /**
+     * Reads the attributes of the extension tag in [frame], whose attributes end at [B], and starts on its
+     * body, or finishes the tag when it has none to read.
+     */
+    private fun openExtensionBody(frame: Int, start: Int, end: Int) {
+        attributes(frame, raw = true)
+        val padding = text.substring(frames[frame, D], head)
+        val tagEnd = frames[frame, B]
+        if (kinds[start] == EXT_SHORT) {
             emit(Token.SelfClosingTagEnd(padding))
             head = end
+            frames.pop()
             return
         }
 
+        val nameEnd = extensionNameEnd(start)
+        val name = text.substring(start + 1, nameEnd)
         val closerStart = text.lastIndexOf('<', end - 1)
         val body = bodyOf(name, nameEnd, tagEnd)
         emit(Token.OpeningTagEnd(padding, verbatim = body == Body.VERBATIM))
         head = tagEnd + 1
+        frames[frame, E] = closerStart
 
         when (body) {
-            Body.VERBATIM -> emitSpan(head, closerStart)
+            Body.VERBATIM -> {
+                emitSpan(head, closerStart)
+                closingTag(closerStart, end)
+                frames.pop()
+            }
             Body.WIKITEXT -> {
                 pp.run(head, closerStart)
-                val outer = scan.documentStart
+                frames[frame, D] = scan.documentStart
                 scan.documentStart = head
-                segment(closerStart, modeOf(name))
-                scan.documentStart = outer
+                next(frame, EXTENSION_DOCUMENT)
+                startPart(frame, SEGMENT, closerStart, modeOf(name))
             }
             Body.PREPROCESSED -> {
                 pp.run(head, closerStart)
-                preprocessedOnly(closerStart)
+                next(frame, EXTENSION_BODY)
+                startPart(frame, PREPROCESSED, closerStart)
             }
-            Body.PAGE_LIST -> pageListBody(closerStart)
+            Body.PAGE_LIST -> next(frame, EXTENSION_LINES)
         }
-
-        closingTag(closerStart, end)
     }
 
     /** How the body of the extension tag [name], whose attributes end at [tagEnd], is read. */
@@ -433,27 +488,43 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
         }
 
     /**
-     * A `<DynamicPageList>` body up to [limit], read as the extension reads it: line by line, each split at
-     * its first `=`, with only the values of [TagNames.PAGE_LIST_EXPANDED] keys expanded, each on its own.
+     * A `<DynamicPageList>` body up to the tag's closing tag, read as the extension reads it: line by line,
+     * each split at its first `=`, with only the values of [TagNames.PAGE_LIST_EXPANDED] keys expanded, each
+     * on its own. Says whether it got to the end; the line being read ends at [D].
      */
-    private fun pageListBody(limit: Int) {
+    private fun pageListBody(frame: Int): Boolean {
+        val limit = frames[frame, E]
+        if (step(frame) == EXTENSION_LINE_READ) endLine(frame, limit)
         while (head < limit) {
             val lineEnd = text.indexOf('\n', head).let { if (it < 0 || it > limit) limit else it }
             val equals = text.indexOf('=', head).takeIf { it in head until lineEnd }
-            val key = equals?.let { text.substring(head, it).trim() }
-            if (equals == null || key !in TagNames.PAGE_LIST_EXPANDED) {
+            if (equals == null || text.substring(head, equals).trim() !in TagNames.PAGE_LIST_EXPANDED) {
                 emitSpan(head, minOf(lineEnd + 1, limit))
-                continue
+            } else {
+                frames[frame, D] = lineEnd
+                if (!expandValue(frame, equals, lineEnd)) return false
+                endLine(frame, limit)
             }
-            var valueStart = equals + 1
-            while (valueStart < lineEnd && text[valueStart].isWhitespace()) valueStart++
-            var valueEnd = lineEnd
-            while (valueEnd > valueStart && text[valueEnd - 1].isWhitespace()) valueEnd--
-            emitSpan(head, valueStart)
-            pp.run(valueStart, valueEnd)
-            preprocessedOnly(valueEnd)
-            emitSpan(head, minOf(lineEnd + 1, limit))
         }
+        return true
+    }
+
+    /** Reads the value after the `=` at [equals] on a line ending at [lineEnd], on its own. */
+    private fun expandValue(frame: Int, equals: Int, lineEnd: Int): Boolean {
+        var valueStart = equals + 1
+        while (valueStart < lineEnd && text[valueStart].isWhitespace()) valueStart++
+        var valueEnd = lineEnd
+        while (valueEnd > valueStart && text[valueEnd - 1].isWhitespace()) valueEnd--
+        emitSpan(head, valueStart)
+        pp.run(valueStart, valueEnd)
+        next(frame, EXTENSION_LINE_READ)
+        return read(frame, PREPROCESSED, valueEnd)
+    }
+
+    /** Takes the rest of the line ending at [D], its line break included, as written. */
+    private fun endLine(frame: Int, limit: Int) {
+        emitSpan(head, minOf(frames[frame, D] + 1, limit))
+        next(frame, EXTENSION_LINES)
     }
 
     /** How MediaWiki's paragraph pass reads the wikitext body of the extension tag [name]. */
@@ -467,19 +538,6 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
             "imagemap" -> BodyMode.PER_LINE
             else -> BodyMode.PAGE
         }
-
-    /**
-     * Whether a list can start here: not inside a `<pre format="wikitext">`, and not on a reference's first
-     * line, which MediaWiki places after the list item it opens for the reference.
-     */
-    private fun listAllowed(): Boolean {
-        val top = segmentDepth - 1
-        return when (if (top >= 0) segmentModes[top] else null) {
-            BodyMode.PREFORMATTED -> false
-            BodyMode.REFERENCE -> head != segmentStarts[top]
-            else -> true
-        }
-    }
 
     /** How an extension tag's body is read. */
     private enum class Body {
@@ -496,16 +554,8 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
         PAGE_LIST,
     }
 
-    /** Emits the closing tag between [start] and [end] as written. */
-    private fun closingTag(start: Int, end: Int) {
-        emit(Token.ClosingTagStart)
-        emitText(text.substring(start + 2, end - 1))
-        emit(Token.ClosingTagEnd)
-        head = end
-    }
-
     /**
-     * Parses an HTML tag, or emits its `<` as text.
+     * Opens an HTML tag, or emits its `<` as text.
      *
      * A tag paired with its closing tag in this segment wraps what is between them. One that is not stands
      * alone, written as it was: `<br>`, an `<li>` left open, or a `<div>` whose `</div>` is in another
@@ -530,134 +580,76 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
         emit(Token.OpeningTagStart())
         emitText(text.substring(start + 1, nameEnd))
         head = nameEnd
-        val padding = attributes(if (selfClosing) end - 1 else end, raw = false)
-
-        if (!paired) {
-            emit(Token.SelfClosingTagEnd(padding, implicit = !selfClosing))
-            head = end + 1
-            return
-        }
-
-        emit(Token.OpeningTagEnd(padding))
-        head = end + 1
-        val close = pp.end(start)
-        val closerStart = text.lastIndexOf('<', close - 1)
-        content(closerStart)
-        closingTag(closerStart, close)
+        val flags = (if (selfClosing) SELF_CLOSING else 0) or (if (paired) PAIRED else 0)
+        tag(frames.push(TAG_FRAME, a = start, b = if (selfClosing) end - 1 else end, c = flags))
     }
 
     /**
-     * Parses a tag's attributes up to [to], keeping the whitespace around each one, and returns the
-     * whitespace left before the closing `>`.
-     *
-     * Any text at all has a reading here, so a tag rebuilds byte for byte whatever its attributes look like:
-     * a name is anything up to whitespace or `=`, a quoted value runs to its closing quote if it has one, and
-     * an unquoted value to the next whitespace. [raw] is for an extension tag, whose attributes the
-     * preprocessor never looked inside.
+     * Reads the attributes of the HTML tag in [frame] and starts on its contents when it is paired, or, once
+     * they have been read, closes it.
      */
-    private fun attributes(to: Int, raw: Boolean): String {
-        var padStart = head
-        head = whitespaceEnd(head, to)
-        while (head < to) {
-            val padFirst = text.substring(padStart, head)
-            val nameStart = head
-            val nameEnd = attributeRun(nameStart, to, raw) { it.isWhitespace() || it == '=' }
-            val equals = whitespaceEnd(nameEnd, to)
-
-            if (equals < to && text[equals] == '=') {
-                val valueStart = whitespaceEnd(equals + 1, to)
-                emit(
-                    Token.AttributeStart(
-                        padFirst,
-                        text.substring(nameEnd, equals),
-                        text.substring(equals + 1, valueStart),
-                    )
-                )
-                attributeText(nameStart, nameEnd, raw)
-                emit(Token.AttributeEquals)
-                attributeValue(valueStart, to, raw)
-            } else {
-                // A bare attribute: the whitespace after it belongs to whatever comes next.
-                emit(Token.AttributeStart(padFirst, "", ""))
-                attributeText(nameStart, nameEnd, raw)
-                head = nameEnd
-            }
-
-            padStart = head
-            head = whitespaceEnd(head, to)
+    private fun tag(frame: Int) {
+        val start = frames[frame, A]
+        if (step(frame) == TAG_CONTENTS) {
+            closingTag(frames[frame, E], pp.end(start))
+            frames.pop()
+            return
         }
-        return text.substring(padStart, head)
-    }
-
-    /** Parses a value starting at [from]: quoted if a closing quote follows, unquoted otherwise. */
-    private fun attributeValue(from: Int, to: Int, raw: Boolean) {
-        val quote = if (from < to) text[from] else ' '
-        val closingQuote =
-            if (quote == '"' || quote == APOSTROPHE) attributeRun(from + 1, to, raw) { it == quote } else to
-        if (closingQuote < to) {
-            emit(Token.AttributeQuote(quote.toString()))
-            attributeText(from + 1, closingQuote, raw)
-            head = closingQuote + 1
-        } else {
-            val valueEnd = attributeRun(from, to, raw) { it.isWhitespace() }
-            attributeText(from, valueEnd, raw)
-            head = valueEnd
+        if (!attributes(frame, raw = false)) return
+        val padding = text.substring(frames[frame, D], head)
+        val flags = frames[frame, C]
+        val selfClosing = flags and SELF_CLOSING != 0
+        val end = frames[frame, B] + if (selfClosing) 1 else 0
+        if (flags and PAIRED == 0) {
+            emit(Token.SelfClosingTagEnd(padding, implicit = !selfClosing))
+            head = end + 1
+            frames.pop()
+            return
         }
-    }
-
-    private fun whitespaceEnd(from: Int, to: Int): Int {
-        var at = from
-        while (at < to && text[at].isWhitespace()) at++
-        return at
-    }
-
-    /** Where a run of attribute text from [from] ends: at [stop], skipping templates unless [raw]. */
-    private inline fun attributeRun(from: Int, to: Int, raw: Boolean, stop: (Char) -> Boolean): Int {
-        var at = from
-        while (at < to) {
-            val skip = if (raw || kinds[at] == 0.toByte()) -1 else scan.opaqueEnd(at, to, links = false)
-            if (skip < 0 && stop(text[at])) return at
-            at = if (skip >= 0) skip else at + 1
-        }
-        return at
-    }
-
-    private fun attributeText(from: Int, to: Int, raw: Boolean) {
-        head = from
-        if (raw) emitSpan(from, to) else preprocessedOnly(to)
-        head = to
+        emit(Token.OpeningTagEnd(padding))
+        head = end + 1
+        val closerStart = text.lastIndexOf('<', pp.end(start) - 1)
+        frames[frame, E] = closerStart
+        next(frame, TAG_CONTENTS)
+        startPart(frame, CONTENT, closerStart)
     }
 
     // ------------------------------------------------------------------ styles and lists
 
     /**
-     * Parses `''italic''` and `'''bold'''`, or emits the apostrophes as text.
+     * Opens `''italic''` and `'''bold'''`, or emits the apostrophes as text.
      *
      * The partner is looked for on the same line and at the same level, by [Scanner.styleCloser].
      */
-    private fun style(limit: Int) {
-        val markup = if (head + 2 < limit && text[head + 2] == APOSTROPHE) BOLD else ITALIC
-        val closing = scan.styleCloser(head + markup.length, limit, markup)
+    private fun openStyle(limit: Int) {
+        val length = if (head + 2 < limit && text[head + 2] == APOSTROPHE) BOLD.length else ITALIC.length
+        val markup = if (length == BOLD.length) BOLD else ITALIC
+        val closing = scan.styleCloser(head + length, limit, markup)
 
         if (closing < 0) {
             emitText(markup)
-            head += markup.length
+            head += length
             return
         }
-
-        val name = if (markup == BOLD) "b" else "i"
-        head += markup.length
-
+        head += length
         emit(Token.OpeningTagStart(wikiMarkup = markup))
-        emitText(name)
+        emitText(if (markup == BOLD) "b" else "i")
         emit(Token.OpeningTagEnd())
+        val frame = frames.push(STYLE_FRAME, a = closing, b = length)
+        next(frame, DONE)
+        startPart(frame, CONTENT, closing)
+    }
 
-        content(closing)
-
+    /** Closes the bold or italic in [frame], as long as [B], whose partner is at [A]. */
+    private fun style(frame: Int) {
+        val closing = frames[frame, A]
+        val markup = if (frames[frame, B] == BOLD.length) BOLD else ITALIC
+        val name = if (markup == BOLD) "b" else "i"
         head = closing + markup.length
         emit(Token.ClosingTagStart)
         emitText(name)
         emit(Token.ClosingTagEnd)
+        frames.pop()
     }
 
     /**
@@ -675,22 +667,29 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
     // ------------------------------------------------------------------ headings
 
     /**
-     * Parses a heading the preprocessor found.
+     * Opens the heading the preprocessor found at the cursor, and starts on its text.
      *
      * Its level is the shorter of its two runs of `=`, capped at six, and any surplus on either side is part
      * of its text, which is how `===a==` is a level-two heading reading `=a`. Whatever follows the closing
      * run on the line, spaces or a comment, is outside the heading.
      */
-    private fun heading() {
+    private fun openHeading() {
         val start = head
         val level = kinds[start] - HEADING
         val end = pp.end(start)
-
         emit(Token.HeadingStart(level))
         head = start + level
-        segment(end - level)
+        val frame = frames.push(HEADING_FRAME, a = end)
+        next(frame, DONE)
+        startPart(frame, SEGMENT, end - level)
+    }
+
+    /** Closes the heading in [frame], which ends at [A]. */
+    private fun heading(frame: Int) {
+        val end = frames[frame, A]
         head = end
         emit(Token.HeadingEnd)
+        frames.pop()
     }
 
     // ------------------------------------------------------------------ entities
@@ -734,20 +733,16 @@ internal class Tokenizer(private val options: ParseOptions = ParseOptions.DEFAUL
     private companion object {
         const val TEMPLATE_BRACES = 2
         const val ARGUMENT_BRACES = 3
-        const val INITIAL_DEPTH = 32
         const val COMMENT_OPEN = "<!--"
         const val COMMENT_CLOSE = "-->"
         const val BOLD = "'''"
         const val ITALIC = "''"
 
+        /** What an HTML tag's frame keeps about it in [C]. */
+        const val SELF_CLOSING = 1
+        const val PAIRED = 2
+
         /** Line-start markers MediaWiki turns into list tags. */
         val LIST_MARKERS = mapOf('*' to "li", '#' to "li", ';' to "dt", ':' to "dd")
-
-        /** Every character that begins a construct here, wherever it appears. */
-        val MARKUP =
-            BooleanArray(ASCII).apply {
-                for (char in "{[<&'=") this[char.code] = true
-                for (char in "*#;:") this[char.code] = true
-            }
     }
 }

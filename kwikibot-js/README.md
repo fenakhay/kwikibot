@@ -1,4 +1,9 @@
-# @fenakhay/kwikibot
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fenakhay/kwikibot/main/brand/logo-light.svg">
+    <img alt="kwikibot" src="https://raw.githubusercontent.com/fenakhay/kwikibot/main/brand/logo-dark.svg" height="48">
+  </picture>
+</h1>
 
 Read, parse and edit MediaWiki wikis from JavaScript and TypeScript: a wikitext parser that writes
 text back byte for byte, a client for any wiki's `api.php`, Wikibase entities, SPARQL, and bot runs

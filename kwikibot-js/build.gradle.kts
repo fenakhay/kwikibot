@@ -53,7 +53,6 @@ kotlin {
             implementation(project(":kwikibot-wikibase"))
             implementation(project(":kwikibot-bot"))
             implementation(libs.kotlin.logging)
-            npm("@js-joda/timezone", libs.versions.jsJodaTimezone.get())
         }
 
         jsTest.dependencies {

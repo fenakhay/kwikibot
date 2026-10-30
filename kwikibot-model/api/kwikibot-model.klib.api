@@ -1318,6 +1318,7 @@ final class com.fenakhay.kwikibot.model/LanguageInfo { // com.fenakhay.kwikibot.
 }
 
 final class com.fenakhay.kwikibot.model/SignatureFormat { // com.fenakhay.kwikibot.model/SignatureFormat|null[0]
+    constructor <init>(kotlin/String, kotlin.text/Regex, kotlin.collections/Map<kotlin/String, kotlin/Int>, kotlin/String) // com.fenakhay.kwikibot.model/SignatureFormat.<init>|<init>(kotlin.String;kotlin.text.Regex;kotlin.collections.Map<kotlin.String,kotlin.Int>;kotlin.String){}[0]
     constructor <init>(kotlin/String, kotlin.text/Regex, kotlin.collections/Map<kotlin/String, kotlin/Int>, kotlinx.datetime/TimeZone = ...) // com.fenakhay.kwikibot.model/SignatureFormat.<init>|<init>(kotlin.String;kotlin.text.Regex;kotlin.collections.Map<kotlin.String,kotlin.Int>;kotlinx.datetime.TimeZone){}[0]
 
     final val pattern // com.fenakhay.kwikibot.model/SignatureFormat.pattern|{}pattern[0]

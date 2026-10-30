@@ -163,17 +163,47 @@ public class Signatures(
  * @param months the month names as that wiki writes them, lowercased, mapped to their number. Abbreviations
  *   are included where a wiki uses them, since `Aug.` and `August` both appear on de.wikipedia depending on
  *   when the signature was left.
- * @param zone the zone the timestamps are in. MediaWiki writes a local zone name into the signature —
- *   `(CEST)` — and writes the time in that zone; reading it as UTC puts a discussion two hours in the past,
- *   enough to archive a thread that is still active.
+ * @param instantOf what a time the pattern matches is as an instant, in the zone the format reads.
  */
-public class SignatureFormat(
+public class SignatureFormat
+private constructor(
     private val language: String,
     /** The pattern this format matches, exposed so a caller can reuse it with other months. */
     public val pattern: Regex,
     private val months: Map<String, Int>,
-    private val zone: TimeZone = TimeZone.UTC,
+    private val instantOf: (LocalDateTime) -> Instant,
 ) {
+
+    /**
+     * A format whose timestamps are in [zone]. MediaWiki writes a local zone name into the signature —
+     * `(CEST)` — and writes the time in that zone; reading it as UTC puts a discussion two hours in the past,
+     * enough to archive a thread that is still active.
+     *
+     * A named zone such as `Europe/Berlin` needs `@js-joda/timezone` on JavaScript, where kotlinx-datetime
+     * has no zones of its own; the constructor taking the zone's name does not.
+     */
+    public constructor(
+        language: String,
+        pattern: Regex,
+        months: Map<String, Int>,
+        zone: TimeZone = TimeZone.UTC,
+    ) : this(language, pattern, months, { time: LocalDateTime -> time.toInstant(zone) })
+
+    /**
+     * A format whose timestamps are in the zone named [zone], such as `Europe/Berlin`, which is how siteinfo
+     * reports a wiki's.
+     *
+     * The zone comes from the platform: kotlinx-datetime's on the JVM and the native platforms, and the
+     * runtime's `Intl` on JavaScript, so it works there with nothing more loaded.
+     *
+     * @throws kotlinx.datetime.IllegalTimeZoneException when no zone is called [zone].
+     */
+    public constructor(
+        language: String,
+        pattern: Regex,
+        months: Map<String, Int>,
+        zone: String,
+    ) : this(language, pattern, months, wallClock(zone))
 
     /**
      * Every timestamp in [wikitext] this format matches.
@@ -190,7 +220,7 @@ public class SignatureFormat(
         val moment = momentOf(match, month) ?: return null
 
         return SignatureTime(
-            instant = moment.toInstant(zone),
+            instant = instantOf(moment),
             // Read back from the original text: masking preserves offsets but not characters.
             text = original.substring(match.range),
             range = match.range,

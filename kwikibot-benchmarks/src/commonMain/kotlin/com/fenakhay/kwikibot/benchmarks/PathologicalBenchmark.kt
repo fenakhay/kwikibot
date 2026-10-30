@@ -51,6 +51,19 @@ public class PathologicalBenchmark {
         Wikitext.parse("[[a|".repeat(DEPTH) + "x" + "]]".repeat(DEPTH)).nodes.size
 
     /**
+     * Templates nested far deeper than any page, parsed and written back: past the depth where every pass
+     * over a tree stops recursing, so this is the cost of nesting carried on the heap.
+     */
+    @Benchmark
+    public fun veryDeeplyNestedTemplates(): Int =
+        Wikitext.parse("{{a|".repeat(DEEP) + "x" + "}}".repeat(DEEP)).serialize().length
+
+    /** Tags nested as deeply as the templates above, which pair and close at every level. */
+    @Benchmark
+    public fun veryDeeplyNestedTags(): Int =
+        Wikitext.parse("<div>".repeat(DEEP) + "x" + "</div>".repeat(DEEP)).serialize().length
+
+    /**
      * Unclosed openings whose partner the parser searches for along the line: external links, bold, HTML tags
      * and extension tags. Each failed search is remembered; this is where forgetting one would show.
      */
@@ -95,7 +108,10 @@ public class PathologicalBenchmark {
         /** Well past the point where an exponential parser stops finishing, and instant for a linear one. */
         const val REPEATS = 200
 
-        /** Kept lower, since these recurse and the stack is the limit rather than the clock. */
+        /** Nesting as deep as a page with templates in templates ever goes, and then some. */
         const val DEPTH = 100
+
+        /** A hundred times deeper, which no recursive parser survives. */
+        const val DEEP = 10_000
     }
 }

@@ -72,6 +72,7 @@ public final class com/fenakhay/kwikibot/model/RevisionId {
 }
 
 public final class com/fenakhay/kwikibot/model/SignatureFormat {
+	public fun <init> (Ljava/lang/String;Lkotlin/text/Regex;Ljava/util/Map;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lkotlin/text/Regex;Ljava/util/Map;Lkotlinx/datetime/TimeZone;)V
 	public synthetic fun <init> (Ljava/lang/String;Lkotlin/text/Regex;Ljava/util/Map;Lkotlinx/datetime/TimeZone;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun findAll (Ljava/lang/String;)Ljava/util/List;

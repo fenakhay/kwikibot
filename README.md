@@ -151,33 +151,14 @@ Maven does not read Gradle's metadata, so a Maven project names the JVM artifact
 | npm package | Node 26 or newer |
 | A wiki | MediaWiki 1.39 or newer, see [Compatibility](#compatibility) |
 
-Two platforms need one more thing from you:
+**On the JVM**, the library needs one more thing from you: it logs through SLF4J and ships no
+binding. Without one, SLF4J prints a warning and drops every line, retries and logins included. A
+command-line bot adds `runtimeOnly("org.slf4j:slf4j-simple:2.0.20")`. See [Logging](#logging).
 
-- **On the JVM**, the library logs through SLF4J and ships no binding. Without one, SLF4J prints a
-  warning and drops every line, retries and logins included. A command-line bot adds
-  `runtimeOnly("org.slf4j:slf4j-simple:2.0.20")`. See [Logging](#logging).
-- **On Kotlin/JS**, kotlinx-datetime knows no named time zone, such as `Europe/Paris`, until
-  `@js-joda/timezone` is loaded, and without it every wiki's signatures read as UTC.
-
-<details>
-<summary>Loading time zones on Kotlin/JS</summary>
-
-```kotlin
-jsMain.dependencies {
-    implementation(npm("@js-joda/timezone", "2.23.0"))
-}
-```
-
-```kotlin
-@JsModule("@js-joda/timezone") @JsNonModule external object JsJodaTimeZoneModule
-
-private val timeZones = JsJodaTimeZoneModule
-```
-
-kotlinx-datetime 0.8.0 depends on `@js-joda/core` 3.2.0, and `@js-joda/timezone` 2.23.0 works with
-it. The npm package loads it already.
-
-</details>
+On JavaScript, `wiki.signatures()` reads a wiki's time zone, such as `Europe/Paris`, through the
+runtime's `Intl`, which Node and browsers ship, so nothing loads a time zone database.
+kotlinx-datetime's own `TimeZone.of` knows no named zone there until `@js-joda/timezone` is
+loaded, which matters only to code that calls it.
 
 ### Modules
 
@@ -350,7 +331,9 @@ edited.serialize()
 ```
 
 `Wikitext.parse` never fails: no input is rejected, and markup that does not parse, such as an
-unclosed template or a stray bracket, stays literal text, which is what MediaWiki renders. Nodes
+unclosed template or a stray bracket, stays literal text, which is what MediaWiki renders. Nor
+does any input nest too deep: templates, links or tags nested a hundred thousand levels deep parse,
+compare and write back like any other page, on every platform and whatever the thread's stack. Nodes
 are immutable values, every edit returns a new `Markup`, and every node that was not touched keeps
 the exact text it was parsed from.
 

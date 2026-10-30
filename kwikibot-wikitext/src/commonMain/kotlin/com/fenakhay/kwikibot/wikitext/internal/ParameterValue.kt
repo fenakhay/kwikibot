@@ -1,9 +1,7 @@
 package com.fenakhay.kwikibot.wikitext.internal
 
-import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.ParseOptions
 import com.fenakhay.kwikibot.wikitext.Wikitext
-import com.fenakhay.kwikibot.wikitext.node.Attribute
 import com.fenakhay.kwikibot.wikitext.node.ExternalLink
 import com.fenakhay.kwikibot.wikitext.node.Node
 import com.fenakhay.kwikibot.wikitext.node.Tag
@@ -45,39 +43,29 @@ internal class ParameterValue private constructor(val text: String, val splitsAt
          */
         fun of(value: String): ParameterValue {
             val escaper = Escaper(value)
-            val escaped = escaper.escape(Wikitext.parse(value)).serialize()
+            val escaped = escaper.rebuild(Wikitext.parse(value)).serialize()
             return ParameterValue(escaped, escaper.equals)
         }
     }
 
     /** Escapes what would split a parameter, noting whether an `=` would. */
-    private class Escaper(private val value: String) {
+    private class Escaper(private val value: String) : Rebuild() {
         var equals = false
             private set
 
-        fun escape(markup: Markup): Markup = Markup(markup.nodes.map { escape(it) })
+        /**
+         * Templates, arguments, links, comments, headings and extension tags each enclose what is inside
+         * them.
+         */
+        override fun enters(node: Node): Boolean = node is ExternalLink || (node is Tag && opens(node))
 
-        private fun escape(node: Node): Node =
-            when (node) {
-                is TextNode -> TextNode(escape(node.text))
-                is ExternalLink -> node.copy(url = escape(node.url), title = node.title?.let { escape(it) })
-                is Tag ->
-                    if (node.name.lowercase() in OPAQUE) {
-                        node
-                    } else {
-                        node.copy(
-                            contents = node.contents?.let { escape(it) },
-                            attributes = node.attributes.map { escape(it) },
-                        )
-                    }
-                // Templates, arguments, links, comments and headings each enclose what is inside them.
-                else -> node
-            }
-
-        private fun escape(attribute: Attribute): Attribute {
-            if (attribute.value != null) equals = true
-            return attribute.copy(name = escape(attribute.name), value = attribute.value?.let { escape(it) })
+        override fun rebuilt(original: Node, node: Node): Node {
+            if (node is TextNode) return TextNode(escape(node.text))
+            if (node is Tag && opens(node) && node.attributes.any { it.value != null }) equals = true
+            return node
         }
+
+        private fun opens(tag: Tag): Boolean = tag.name.lowercase() !in OPAQUE
 
         private fun escape(text: String): String {
             require(UNBALANCED.none { it in text }) {

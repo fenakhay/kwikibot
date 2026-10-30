@@ -1,5 +1,11 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.node.TextNode
+import com.fenakhay.kwikibot.wikitext.ops.mapNodes
+import com.fenakhay.kwikibot.wikitext.ops.outline
+import com.fenakhay.kwikibot.wikitext.ops.replaceText
+import com.fenakhay.kwikibot.wikitext.ops.textIn
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail
 
@@ -73,17 +79,54 @@ class PathologicalInputTest {
         parseWithin("<span>a\n<!-- c -->\n".repeat(LONG))
     }
 
+    /**
+     * Every pass over a tree, on nesting a hundred thousand deep, finishes in time on a thread whose stack
+     * holds only a few dozen levels of recursion: one that recursed once per level would overflow it, and one
+     * that went back over the levels above for each level would take hours.
+     */
+    @Test
+    fun `nesting a hundred thousand deep is parsed and walked in time on a small stack`() {
+        val templates = "{{a|".repeat(DEEP) + "x" + "}}".repeat(DEEP)
+        val tags = "<div>".repeat(DEEP) + "\n==h==\n" + "</div>".repeat(DEEP)
+
+        within(SMALL_STACK) {
+            val code = Wikitext.parse(templates)
+            code.serialize() shouldBe templates
+            code.ranges()[code] shouldBe templates.indices
+            (code == Wikitext.parse(templates)) shouldBe true
+            code.templates().toSet().size shouldBe DEEP
+            code.text shouldBe ""
+            code.textIn(TextScope.EVERYWHERE).size shouldBe 2 * DEEP + 1
+            code.mapNodes { if (it is TextNode) TextNode(it.text.uppercase()) else it }.serialize() shouldBe
+                templates.uppercase()
+            code.replaceText(Regex("x"), "y", TextScope.EVERYWHERE).serialize().last { it != '}' } shouldBe
+                'y'
+            code.replace(code.templates()[DEEP / 2], TextNode("z")).serialize() shouldBe
+                "{{a|".repeat(DEEP / 2) + "z" + "}}".repeat(DEEP / 2)
+        }
+        within(SMALL_STACK) {
+            val code = Wikitext.parse(tags)
+            code.serialize() shouldBe tags
+            code.headings().size shouldBe 1
+            code.outline().serialize() shouldBe tags
+            CosmeticChanges.SAFE.apply(code).serialize() shouldBe tags
+        }
+    }
+
     private fun parseWithin(wikitext: String) {
+        within { Wikitext.parse(wikitext).serialize() }
+    }
+
+    /** Runs [work] on a thread of its own, with [stack] bytes of stack, and fails if it takes too long. */
+    private fun within(stack: Long = 0, work: () -> Unit) {
         var thrown: Throwable? = null
 
-        val worker = Thread { runCatching { Wikitext.parse(wikitext).serialize() }.onFailure { thrown = it } }
+        val worker = Thread(null, { runCatching(work).onFailure { thrown = it } }, "pathological", stack)
         worker.isDaemon = true
         worker.start()
         worker.join(DEADLINE_MILLIS)
 
-        if (worker.isAlive) {
-            fail("parsing ${wikitext.length} characters did not finish within ${DEADLINE_MILLIS}ms")
-        }
+        if (worker.isAlive) fail("the work did not finish within ${DEADLINE_MILLIS}ms")
         thrown?.let { throw it }
     }
 
@@ -93,7 +136,13 @@ class PathologicalInputTest {
         /** Long enough that a quadratic search takes minutes; a linear one takes milliseconds. */
         const val LONG = 20_000
 
-        /** As deep as the tree is made to nest: deep enough to matter, shallow enough for its recursion. */
+        /** As deep as the tree is made to nest where it is the clock that matters, not the depth. */
         const val NESTED = 100
+
+        /** Far deeper than any thread's stack could take if each level cost a frame. */
+        const val DEEP = 100_000
+
+        /** A stack a few dozen levels of the library's own recursion fit in, and no more. */
+        const val SMALL_STACK = 256L * 1024
     }
 }

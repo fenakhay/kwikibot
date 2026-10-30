@@ -1,6 +1,8 @@
 package com.fenakhay.kwikibot.wikitext
 
+import com.fenakhay.kwikibot.wikitext.node.Parameter
 import com.fenakhay.kwikibot.wikitext.node.Tag
+import com.fenakhay.kwikibot.wikitext.node.Template
 import com.fenakhay.kwikibot.wikitext.node.TextNode
 import com.fenakhay.kwikibot.wikitext.node.WikiLink
 import io.kotest.matchers.nulls.shouldBeNull
@@ -41,8 +43,14 @@ class MarkupTest {
 
     @Test
     fun `a walk reaches the bottom of deeply nested templates`() {
-        val depth = 200
-        val code = Wikitext.parse("{{a|".repeat(depth) + "}}".repeat(depth))
+        val depth = 1000
+        var code = Markup.of("x")
+        repeat(depth) {
+            code =
+                Markup(
+                    listOf(Template(Markup.of("a"), listOf(Parameter(Markup.of("1"), code, showKey = false))))
+                )
+        }
 
         code.templates().size shouldBe depth
     }

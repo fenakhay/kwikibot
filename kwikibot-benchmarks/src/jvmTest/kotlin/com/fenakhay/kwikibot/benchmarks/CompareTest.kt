@@ -143,7 +143,7 @@ class CompareTest {
         val outcome = run("baseline.json", "baseline.json")
 
         outcome.status shouldBe 0
-        outcome.rows shouldHaveSize 22
+        outcome.rows shouldHaveSize 35
         outcome.rows.forEach { it.substringAfterLast(' ') shouldBe "same" }
     }
 

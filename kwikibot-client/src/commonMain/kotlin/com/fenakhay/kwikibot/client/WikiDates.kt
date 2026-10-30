@@ -3,7 +3,6 @@ package com.fenakhay.kwikibot.client
 import com.fenakhay.kwikibot.model.SignatureFormat
 import com.fenakhay.kwikibot.model.Signatures
 import com.fenakhay.kwikibot.model.page.DatePages
-import kotlinx.datetime.TimeZone
 
 /**
  * Month names and signature formats taken from the wiki rather than from a table.
@@ -52,16 +51,12 @@ public suspend fun Wiki.monthNames(): Map<String, Int> {
  */
 public suspend fun Wiki.signatures(): Signatures {
     val months = monthNames()
-    val zone = runCatching { TimeZone.of(info.timezone) }.getOrDefault(TimeZone.UTC)
+    val language = info.language.code
 
     return Signatures(
-        Signatures.forLanguage(info.language.code).patterns().map { pattern ->
-            SignatureFormat(
-                language = info.language.code,
-                pattern = pattern,
-                months = months,
-                zone = zone,
-            )
+        Signatures.forLanguage(language).patterns().map { pattern ->
+            runCatching { SignatureFormat(language, pattern, months, zone = info.timezone) }
+                .getOrElse { SignatureFormat(language, pattern, months) }
         }
     )
 }

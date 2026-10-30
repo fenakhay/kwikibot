@@ -2,11 +2,19 @@ package com.fenakhay.kwikibot.wikitext
 
 import com.fenakhay.kwikibot.wikitext.internal.Builder
 import com.fenakhay.kwikibot.wikitext.internal.IdentityMap
+import com.fenakhay.kwikibot.wikitext.internal.NodeStack
+import com.fenakhay.kwikibot.wikitext.internal.NodeWalk
+import com.fenakhay.kwikibot.wikitext.internal.Rebuild
 import com.fenakhay.kwikibot.wikitext.internal.TagNames
 import com.fenakhay.kwikibot.wikitext.internal.Tokenizer
+import com.fenakhay.kwikibot.wikitext.internal.TreeComparison
 import com.fenakhay.kwikibot.wikitext.internal.Writer
 import com.fenakhay.kwikibot.wikitext.internal.identityMap
+import com.fenakhay.kwikibot.wikitext.internal.isLeaf
+import com.fenakhay.kwikibot.wikitext.internal.sameKind
 import com.fenakhay.kwikibot.wikitext.internal.sectionHeadings
+import com.fenakhay.kwikibot.wikitext.internal.slot
+import com.fenakhay.kwikibot.wikitext.internal.slots
 import com.fenakhay.kwikibot.wikitext.node.Argument
 import com.fenakhay.kwikibot.wikitext.node.Attribute
 import com.fenakhay.kwikibot.wikitext.node.Comment
@@ -42,6 +50,19 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
      */
     public val nodes: List<Node> = if (owned) nodes else nodes.toList()
 
+    /**
+     * [hashCode] once worked out, and whether it came out as zero, which [hash] cannot tell from not yet.
+     *
+     * Markup never changes, so its hash is worked out once, for it and everything nested in it, and kept. Two
+     * threads that both work it out store the same value, which is why no lock is needed.
+     */
+    private var hash = 0
+    private var hashIsZero = false
+
+    /** Whether [hashCode] has been worked out, so that comparing hashes costs nothing. */
+    internal val hasHash: Boolean
+        get() = hash != 0 || hashIsZero
+
     /** Takes a copy of [nodes]. */
     public constructor(nodes: List<Node>) : this(nodes, owned = false)
 
@@ -70,36 +91,49 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
      * text. Use this for comparing content, never for writing back.
      */
     public val text: String
-        get() =
-            nodes.joinToString("") { node ->
-                when (node) {
-                    is TextNode -> node.text
-                    is WikiLink -> (node.text ?: node.target).text
-                    is ExternalLink -> if (node.brackets) node.title?.text.orEmpty() else node.url.text
-                    is Heading -> node.title.text
-                    is Tag -> node.contents?.text.orEmpty()
-                    is HtmlEntity -> node.serialize()
+        get() {
+            (nodes.singleOrNull() as? TextNode)?.let {
+                return it.text
+            }
+            val out = StringBuilder()
+            val pending = NodeStack().apply { push(nodes) }
+            while (true) {
+                when (val node = pending.next() ?: break) {
+                    is TextNode -> out.append(node.text)
+                    is HtmlEntity -> out.append(node.serialize())
+                    is WikiLink -> pending.push((node.text ?: node.target).nodes)
+                    is ExternalLink ->
+                        (if (node.brackets) node.title else node.url)?.let { pending.push(it.nodes) }
+                    is Heading -> pending.push(node.title.nodes)
+                    is Tag -> node.contents?.let { pending.push(it.nodes) }
                     is Template,
                     is Argument,
-                    is Comment -> ""
+                    is Comment -> Unit
                 }
             }
+            return out.toString()
+        }
 
     /**
      * This wikitext as written, less its comments and `<noinclude>`-style markers: what MediaWiki compares a
      * name or a key by, since its preprocessor drops both before anything reads the name.
      */
-    internal fun withoutComments(): String = buildString { appendWithoutComments(this@Markup, this) }
-
-    private fun appendWithoutComments(markup: Markup, out: StringBuilder) {
-        for (node in markup.nodes) {
+    internal fun withoutComments(): String {
+        (nodes.singleOrNull() as? TextNode)?.let {
+            return it.text
+        }
+        val out = StringBuilder()
+        val pending = NodeStack().apply { push(nodes) }
+        while (true) {
+            val node = pending.next() ?: break
             when {
                 node is Comment -> Unit
                 node is Tag && node.wikiMarkup == null && node.name in TagNames.TRANSCLUSION ->
-                    node.contents?.let { appendWithoutComments(it, out) }
+                    node.contents?.let { pending.push(it.nodes) }
                 else -> Writer.append(out, node, null)
             }
         }
+        return out.toString()
     }
 
     /** Every node in the tree, including those nested inside templates, links and tags. */
@@ -196,9 +230,53 @@ public class Markup private constructor(nodes: List<Node>, owned: Boolean) {
 
     override fun toString(): String = serialize()
 
-    override fun equals(other: Any?): Boolean = other is Markup && other.nodes == nodes
+    /**
+     * Whether [other] is the same wikitext: the same nodes, and inside them the same nodes, all the way down.
+     *
+     * Compared level by level with a stack rather than through the nodes' own `equals`, which would recurse
+     * once per level, and settled at once by the hashes when both are known and differ.
+     */
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Markup && TreeComparison().same(this, other))
 
-    override fun hashCode(): Int = nodes.hashCode()
+    /**
+     * The same as the hash of [nodes], worked out for everything nested in this first, innermost first, so
+     * that no node's own `hashCode` has more than one level to look at, and kept.
+     */
+    override fun hashCode(): Int {
+        when {
+            hasHash -> Unit
+            nodes.all { it.isLeaf } -> storeHash()
+            else -> withoutHashes().asReversed().forEach { it.storeHash() }
+        }
+        return hash
+    }
+
+    /** This and the markup nested in it whose hash is not yet known, every one after the markup it is in. */
+    private fun withoutHashes(): List<Markup> {
+        val found = ArrayList<Markup>()
+        val pending = arrayListOf(this)
+        while (pending.isNotEmpty()) {
+            val markup = pending.removeAt(pending.lastIndex)
+            if (markup.hasHash) continue
+            found += markup
+            for (node in markup.nodes) pushWithoutHashes(node, pending)
+        }
+        return found
+    }
+
+    private fun pushWithoutHashes(node: Node, pending: MutableList<Markup>) {
+        for (slot in 0 until node.slots) {
+            val inner = node.slot(slot)
+            if (inner != null && !inner.hasHash) pending += inner
+        }
+    }
+
+    private fun storeHash() {
+        val value = nodes.hashCode()
+        hash = value
+        hashIsZero = value == 0
+    }
 
     /** Building wikitext from nodes, and the empty document. */
     public companion object {
@@ -252,7 +330,9 @@ public object Wikitext {
      * Parses [wikitext] into an editable tree, the way Wikimedia's wikis read it.
      *
      * Total: no input is rejected. Markup that does not parse — an unclosed template, a stray bracket — stays
-     * literal text, which is what MediaWiki renders.
+     * literal text, which is what MediaWiki renders. However deeply the input nests, neither parsing it nor
+     * anything done with the tree afterwards needs more of the thread's stack than a page nested a few levels
+     * deep: below that, each keeps its place on a stack of its own, on the heap.
      */
     public fun parse(wikitext: String): Markup = parse(wikitext, ParseOptions.DEFAULT)
 
@@ -292,171 +372,25 @@ public object Wikitext {
         parse(wikitext, options).serialize() == wikitext
 }
 
-/** The wikicode nested directly inside a node, in the order of its [slots]. */
-internal fun Node.children(): List<Markup> = (0 until slots).mapNotNull { slot(it) }
-
 /**
- * Walks a tree depth first: a node, then the wikicode nested in it slot by slot, then the node after it.
+ * This wikitext with every node equal to [target] replaced by [replacement], or removed where [replacement]
+ * is `null`, wherever it appears, in one pass.
  *
- * The node lists still to finish are kept on a stack, a list and a position each, so a node costs the same
- * however deep it sits and the walk allocates nothing per node.
+ * Only a node of the same kind as [target] is compared with it, and by its hash first, which is kept, so a
+ * page costs one look at each node. What contains no occurrence keeps its identity and its exact text, and
+ * when nothing does, this wikitext itself comes back.
  */
-private class NodeWalk(top: List<Node>) : Iterator<Node> {
-    private val lists = ArrayList<List<Node>>()
-    private var positions = IntArray(INITIAL_DEPTH)
-
-    init {
-        push(top)
-    }
-
-    override fun hasNext(): Boolean {
-        while (lists.isNotEmpty() && positions[lists.lastIndex] == lists[lists.lastIndex].size) {
-            lists.removeAt(lists.lastIndex)
-        }
-        return lists.isNotEmpty()
-    }
-
-    override fun next(): Node {
-        if (!hasNext()) throw NoSuchElementException()
-        val level = lists.lastIndex
-        val node = lists[level][positions[level]++]
-        for (slot in node.slots - 1 downTo 0) {
-            node.slot(slot)?.let { push(it.nodes) }
-        }
-        return node
-    }
-
-    private fun push(nodes: List<Node>) {
-        if (nodes.isEmpty()) return
-        if (lists.size == positions.size) positions = positions.copyOf(positions.size * 2)
-        positions[lists.size] = 0
-        lists.add(nodes)
-    }
-
-    private companion object {
-        const val INITIAL_DEPTH = 16
-    }
-}
-
-/** How many places for nested wikicode this node has, each read with [slot]. */
-private val Node.slots: Int
-    get() =
-        when (this) {
-            is Template -> 1 + 2 * parameters.size
-            is Tag -> 1 + 2 * attributes.size
-            is Argument,
-            is WikiLink,
-            is ExternalLink -> 2
-            is Heading -> 1
-            is TextNode,
-            is Comment,
-            is HtmlEntity -> 0
-        }
-
-/**
- * The wikicode in place [index] of this node, or `null` where that place is empty: a template's name, then
- * each parameter's name and value; a tag's contents, then each attribute's name and value; for the rest,
- * their parts in the order they are written.
- */
-private fun Node.slot(index: Int): Markup? = if (index == 0) firstSlot else laterSlot(index)
-
-/** The wikicode in this node's first place. */
-private val Node.firstSlot: Markup?
-    get() =
-        when (this) {
-            is Template -> name
-            is Tag -> contents
-            is Argument -> name
-            is WikiLink -> target
-            is ExternalLink -> url
-            is Heading -> title
-            is TextNode,
-            is Comment,
-            is HtmlEntity -> null
-        }
-
-/** The wikicode in this node's place [index], past the first. */
-private fun Node.laterSlot(index: Int): Markup? =
-    when (this) {
-        is Template -> parameters[(index - 1) / 2].let { if (index % 2 == 1) it.name else it.value }
-        is Tag -> attributes[(index - 1) / 2].let { if (index % 2 == 1) it.name else it.value }
-        is Argument -> default
-        is WikiLink -> text
-        is ExternalLink -> title
-        is Heading,
-        is TextNode,
-        is Comment,
-        is HtmlEntity -> null
-    }
-
-/**
- * This node with [target] replaced by [replacement], or removed where [replacement] is `null`, wherever it
- * appears inside it.
- *
- * Returns the node unchanged when it contains no occurrence, so untouched subtrees keep their identity and
- * their exact text.
- */
-private fun Node.rewrite(target: Node, replacement: Node?): Node =
-    when (this) {
-        is Template ->
-            copy(
-                name = name.rewrite(target, replacement),
-                parameters =
-                    parameters.map {
-                        it.copy(
-                            name = it.name.rewrite(target, replacement),
-                            value = it.value.rewrite(target, replacement),
-                        )
-                    },
-            )
-
-        is Argument ->
-            copy(
-                name = name.rewrite(target, replacement),
-                default = default?.rewrite(target, replacement),
-            )
-
-        is WikiLink ->
-            copy(
-                target = this.target.rewrite(target, replacement),
-                text = text?.rewrite(target, replacement),
-            )
-
-        is ExternalLink ->
-            copy(
-                url = url.rewrite(target, replacement),
-                title = title?.rewrite(target, replacement),
-            )
-
-        is Heading -> copy(title = title.rewrite(target, replacement))
-
-        is Tag ->
-            copy(
-                contents = contents?.rewrite(target, replacement),
-                attributes =
-                    attributes.map {
-                        it.copy(
-                            name = it.name.rewrite(target, replacement),
-                            value = it.value?.rewrite(target, replacement),
-                        )
-                    },
-            )
-
-        is TextNode,
-        is Comment,
-        is HtmlEntity -> this
-    }
-
-/** This wikitext with [target] rewritten as [Node.rewrite] does, or itself when [target] is not in it. */
 private fun Markup.rewrite(target: Node, replacement: Node?): Markup {
-    if (target !in allNodes()) return this
-    val rewritten = nodes.mapNotNull { node ->
-        if (node == target) replacement else node.rewrite(target, replacement)
-    }
-    return Markup(rewritten)
-}
+    val hash = target.hashCode()
+    return object : Rebuild(settles = true) {
+            override fun before(node: Node): Any? =
+                if (sameKind(node, target) && node.hashCode() == hash && node == target) replacement
+                else DESCEND
 
-private operator fun Sequence<Node>.contains(target: Node): Boolean = any { it == target }
+            override fun rebuilt(original: Node, node: Node): Node = node
+        }
+        .rebuild(this)
+}
 
 /**
  * Whether two template names refer to the same template.

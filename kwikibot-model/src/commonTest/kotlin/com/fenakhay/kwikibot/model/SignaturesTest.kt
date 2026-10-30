@@ -4,7 +4,9 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.time.Instant
+import kotlinx.datetime.IllegalTimeZoneException
 
 class SignaturesTest {
 
@@ -186,5 +188,49 @@ class SignaturesTest {
         noMonth.findAll("21:43, 31 August 2026").shouldBeEmpty()
         noYear.findAll("21:43, 31 August 2026").shouldBeEmpty()
         wordForDay.findAll("21:43, last August 2026").shouldBeEmpty()
+    }
+
+    @Test
+    fun `a zone given by its name reads summer and winter time as the wiki wrote them`() {
+        berlin("21:43, 31. Juli 2026 (CEST)") shouldBe Instant.parse("2026-07-31T19:43:00Z")
+        berlin("21:43, 31. Oktober 2026 (CET)") shouldBe Instant.parse("2026-10-31T20:43:00Z")
+    }
+
+    @Test
+    fun `a zone given by its name knows summer time decades back and years ahead`() {
+        berlin("12:00, 1. Juli 2004 (CEST)") shouldBe Instant.parse("2004-07-01T10:00:00Z")
+        berlin("12:00, 1. Juli 2033 (CEST)") shouldBe Instant.parse("2033-07-01T10:00:00Z")
+    }
+
+    @Test
+    fun `a time the clocks skip is moved forward by the gap`() {
+        berlin("02:30, 29. März 2026 (CEST)") shouldBe Instant.parse("2026-03-29T01:30:00Z")
+    }
+
+    @Test
+    fun `a time the clocks pass twice is the earlier of the two`() {
+        berlin("02:30, 25. Oktober 2026 (CEST)") shouldBe Instant.parse("2026-10-25T00:30:00Z")
+    }
+
+    @Test
+    fun `a zone nothing is called is refused rather than read as UTC`() {
+        assertFailsWith<IllegalTimeZoneException> {
+            SignatureFormat(
+                "de",
+                Signatures.GERMAN.patterns().single(),
+                BERLIN_MONTHS,
+                zone = "Mars/Olympus_Mons",
+            )
+        }
+    }
+
+    private fun berlin(signature: String): Instant =
+        SignatureFormat("de", Signatures.GERMAN.patterns().single(), BERLIN_MONTHS, zone = "Europe/Berlin")
+            .findAll(signature)
+            .single()
+            .instant
+
+    private companion object {
+        val BERLIN_MONTHS = mapOf("märz" to 3, "juli" to 7, "oktober" to 10)
     }
 }

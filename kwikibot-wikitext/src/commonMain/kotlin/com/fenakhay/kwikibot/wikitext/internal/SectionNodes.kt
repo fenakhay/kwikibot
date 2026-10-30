@@ -18,39 +18,121 @@ import com.fenakhay.kwikibot.wikitext.node.TextNode
  */
 internal fun List<Node>.sectionNodes(): List<Node> {
     if (none { it is Tag && it.holdsSection() }) return this
-    val opened = ArrayList<Node>(size + OPENED_EXTRA)
-    for (node in this) opened.addOpened(node)
-    return opened
+    return SectionOpening(this).run()
 }
 
 /**
  * The section headings among these nodes, those inside an HTML tag included, in the order they are written.
  */
 internal fun List<Node>.sectionHeadings(): List<Heading> =
-    ArrayList<Heading>().also { collectHeadings(this, it) }
+    ArrayList<Heading>().also { collectHeadings(this, it, LEVELS_ON_STACK) }
 
-private fun collectHeadings(nodes: List<Node>, into: MutableList<Heading>) {
+/** Collects the headings among [nodes] by recursion for [onStack] levels of tags, and with a stack below. */
+private fun collectHeadings(nodes: List<Node>, into: MutableList<Heading>, onStack: Int) {
     for (node in nodes) {
-        if (node is Heading) {
-            into += node
-        } else if (node is Tag && node.isWrapper()) {
-            node.contents?.let { collectHeadings(it.nodes, into) }
+        val wrapped = node.wrapped()
+        when {
+            node is Heading -> into += node
+            wrapped == null -> Unit
+            onStack > 0 -> collectHeadings(wrapped, into, onStack - 1)
+            else -> collectHeadingsBelow(wrapped, into)
         }
     }
 }
 
-private fun MutableList<Node>.addOpened(node: Node) {
-    if (node !is Tag || !node.holdsSection()) {
-        add(node)
-        return
+private fun collectHeadingsBelow(nodes: List<Node>, into: MutableList<Heading>) {
+    val pending = NodeStack().apply { push(nodes) }
+    while (true) {
+        val node = pending.next() ?: return
+        if (node is Heading) into += node else node.wrapped()?.let { pending.push(it) }
     }
-    add(node.copy(contents = null, selfClosing = true, implicitClose = true, closing = null))
-    node.contents?.nodes?.forEach { addOpened(it) }
-    add(TextNode(node.closingTag))
 }
 
-private fun Tag.holdsSection(): Boolean =
-    isWrapper() && contents?.nodes?.any { it is Heading || (it is Tag && it.holdsSection()) } == true
+/** Whether a section heading sits in this tag, in it or in a tag it wraps. */
+private fun Tag.holdsSection(): Boolean {
+    val wrapped = wrapped() ?: return false
+    if (wrapped.any { it is Heading }) return true
+    if (wrapped.none { it.wrapped() != null }) return false
+    val pending = NodeStack().apply { push(wrapped) }
+    var node = pending.next()
+    while (node != null && node !is Heading) {
+        node.wrapped()?.let { pending.push(it) }
+        node = pending.next()
+    }
+    return node != null
+}
+
+/** What this node wraps that a section heading can sit in, if it is a tag that can hold one. */
+private fun Node.wrapped(): List<Node>? = if (this is Tag && isWrapper()) contents?.nodes else null
+
+/**
+ * The nodes of a page with every tag that holds a section heading opened up, in one pass.
+ *
+ * Each tag that could hold a heading is opened as it is reached, its contents added after it. When it ends,
+ * it either held a heading, and its opening tag and closing tag stand on either side of what it held, or it
+ * did not, and what was added for it is taken back and the tag added whole. Each node is added once and taken
+ * back at most once, so a page costs the same however deeply its tags nest.
+ */
+private class SectionOpening(private val top: List<Node>) {
+    private val opened = ArrayList<Node>(top.size + OPENED_EXTRA)
+    private val tags = ArrayList<Tag>()
+    private val lists = ArrayList<List<Node>>()
+    private var positions = IntArray(INITIAL_DEPTH)
+    private var starts = IntArray(INITIAL_DEPTH)
+    private var headings = BooleanArray(INITIAL_DEPTH)
+
+    fun run(): List<Node> {
+        lists += top
+        positions[0] = 0
+        while (lists.isNotEmpty()) {
+            val level = lists.lastIndex
+            val nodes = lists[level]
+            if (positions[level] == nodes.size) {
+                close(level)
+                continue
+            }
+            val node = nodes[positions[level]++]
+            if (node is Heading && level > 0) headings[level] = true
+            val inner = node.wrapped()
+            if (inner == null) opened += node else open(node as Tag, inner)
+        }
+        return opened
+    }
+
+    private fun open(tag: Tag, inner: List<Node>) {
+        val level = lists.size
+        if (level == positions.size) {
+            positions = positions.copyOf(level * 2)
+            starts = starts.copyOf(level * 2)
+            headings = headings.copyOf(level * 2)
+        }
+        tags += tag
+        lists += inner
+        positions[level] = 0
+        starts[level] = opened.size
+        headings[level] = false
+        opened += tag
+    }
+
+    private fun close(level: Int) {
+        lists.removeAt(level)
+        if (level == 0) return
+        val tag = tags.removeAt(tags.lastIndex)
+        val start = starts[level]
+        if (headings[level]) {
+            opened[start] =
+                tag.copy(contents = null, selfClosing = true, implicitClose = true, closing = null)
+            opened += TextNode(tag.closingTag)
+            if (level > 1) headings[level - 1] = true
+        } else {
+            opened.subList(start + 1, opened.size).clear()
+        }
+    }
+
+    private companion object {
+        const val INITIAL_DEPTH = 8
+    }
+}
 
 /** Whether this is an HTML or transclusion tag with a body, which a section heading can sit inside. */
 private fun Tag.isWrapper(): Boolean =

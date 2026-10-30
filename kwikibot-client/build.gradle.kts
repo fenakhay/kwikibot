@@ -21,8 +21,6 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.turbine)
         }
-
-        jsTest.dependencies { npm("@js-joda/timezone", libs.versions.jsJodaTimezone.get()) }
     }
 }
 

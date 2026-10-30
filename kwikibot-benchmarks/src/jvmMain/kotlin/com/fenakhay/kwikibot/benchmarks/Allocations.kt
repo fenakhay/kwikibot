@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.benchmarks
 
 import com.fenakhay.kwikibot.wikitext.Wikitext
+import com.fenakhay.kwikibot.wikitext.ops.mapNodes
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.util.Locale
@@ -88,8 +89,9 @@ internal class Workload(val name: String, val units: Long, val work: () -> Any?)
 }
 
 /** The workloads worth watching, each over the corpus it is named for, counted in characters. */
-internal fun workloads(): List<Workload> =
-    listOf(
+internal fun workloads(): List<Workload> {
+    val parsed by lazy { Corpus.pages.map { Wikitext.parse(it) } }
+    return listOf(
         Workload("parse", Corpus.characters.toLong()) { Corpus.pages.map { Wikitext.parse(it) } },
         Workload("parseShort", Corpus.short.sumOf { it.length }.toLong()) {
             Corpus.short.map { Wikitext.parse(it) }
@@ -101,7 +103,11 @@ internal fun workloads(): List<Workload> =
         Workload("roundTrip", Corpus.characters.toLong()) {
             Corpus.pages.map { Wikitext.parse(it).serialize() }
         },
+        Workload("serialize", Corpus.characters.toLong()) { parsed.map { it.serialize() } },
+        Workload("ranges", Corpus.characters.toLong()) { parsed.map { it.ranges() } },
+        Workload("mapNodes", Corpus.characters.toLong()) { parsed.map { it.mapNodes { node -> node } } },
     )
+}
 
 /**
  * Measures the workloads worth watching and writes them down for a later run to compare against.

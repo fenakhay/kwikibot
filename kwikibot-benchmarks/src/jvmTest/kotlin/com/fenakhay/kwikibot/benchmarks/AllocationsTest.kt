@@ -77,12 +77,25 @@ class AllocationsTest {
     fun `each workload does the work it is named for, over the input it counts`() {
         val workloads = workloads().associateBy { it.name }
 
-        workloads.keys shouldBe setOf("parse", "parseShort", "parseLong", "parseLarge", "roundTrip")
+        workloads.keys shouldBe
+            setOf(
+                "parse",
+                "parseShort",
+                "parseLong",
+                "parseLarge",
+                "roundTrip",
+                "serialize",
+                "ranges",
+                "mapNodes",
+            )
         workloads.getValue("parse").serialized() shouldBe Corpus.pages
         workloads.getValue("parseShort").serialized() shouldBe Corpus.short
         workloads.getValue("parseLong").serialized() shouldBe Corpus.long
         workloads.getValue("parseLarge").serialized() shouldBe Corpus.large
         workloads.getValue("roundTrip").work() shouldBe Corpus.pages
+        workloads.getValue("serialize").work() shouldBe Corpus.pages
+        (workloads.getValue("ranges").work() as List<*>).size shouldBe Corpus.pages.size
+        workloads.getValue("mapNodes").serialized() shouldBe Corpus.pages
         workloads.mapValues { it.value.units } shouldBe
             mapOf(
                 "parse" to 764_152L,
@@ -90,6 +103,9 @@ class AllocationsTest {
                 "parseLong" to 726_293L,
                 "parseLarge" to 1_950_246L,
                 "roundTrip" to 764_152L,
+                "serialize" to 764_152L,
+                "ranges" to 764_152L,
+                "mapNodes" to 764_152L,
             )
     }
 

@@ -17,7 +17,6 @@ kotlincrypto = "0.8.0"
 multiplatformDiff = "1.4.0"
 xmlutil = "1.0.2.1"
 node = "26.13.0"
-jsJodaTimezone = "2.23.0"
 
 nmcp = "1.6.2"
 kover = "0.9.11"
