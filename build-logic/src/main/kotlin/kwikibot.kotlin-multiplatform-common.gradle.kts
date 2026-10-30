@@ -78,8 +78,10 @@ val generateTestFiles =
 
         val output = generatedTestSource
         val directory = preparedResources.get().asFile.invariantSeparatorsPath
+        val scratch = layout.buildDirectory.dir("test-scratch").get().asFile.invariantSeparatorsPath
         val pkg = testPackage
         inputs.property("directory", directory)
+        inputs.property("scratch", scratch)
         inputs.property("package", pkg)
         outputs.dir(output)
 
@@ -96,16 +98,17 @@ val generateTestFiles =
                     import kotlinx.io.buffered
                     import kotlinx.io.files.Path
                     import kotlinx.io.files.SystemFileSystem
-                    import kotlinx.io.files.SystemTemporaryDirectory
                     import kotlinx.io.readString
 
                     internal val TEST_RESOURCES: Path = Path("$directory")
+
+                    internal val TEST_SCRATCH: Path = Path("$scratch")
 
                     internal fun testResource(name: String): String =
                         SystemFileSystem.source(Path(TEST_RESOURCES, name)).buffered().use { it.readString() }
 
                     internal fun temporaryDirectory(prefix: String): Path {
-                        val directory = Path(SystemTemporaryDirectory, "${'$'}prefix-${'$'}{Uuid.random()}")
+                        val directory = Path(TEST_SCRATCH, "${'$'}prefix-${'$'}{Uuid.random()}")
                         SystemFileSystem.createDirectories(directory)
                         return directory
                     }

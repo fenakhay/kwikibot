@@ -1,12 +1,13 @@
 package com.fenakhay.kwikibot.client.model
 
+import com.fenakhay.kwikibot.client.internal.temporaryDirectory
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.ByteReadChannel
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.files.SystemTemporaryDirectory
 
 class SpoolTest {
 
@@ -36,14 +37,23 @@ class SpoolTest {
     }
 
     @Test
-    fun `a file spool leaves nothing behind once closed`() = runTest {
+    fun `a file spool keeps its file in the temporary directory until closed`() = runTest {
         val prefix = "kwikibot-spool-closed"
+        fun files() = SystemFileSystem.list(temporaryDirectory).filter { it.name.startsWith(prefix) }
+
         FileSpool(prefix).use { spooled ->
             spooled.fill(ByteReadChannel("kept until closed"))
+            files() shouldHaveSize 1
             spooled.lines().first() shouldBe "kept until closed"
         }
 
-        SystemFileSystem.list(SystemTemporaryDirectory).filter { it.name.startsWith(prefix) }.shouldBeEmpty()
+        files().shouldBeEmpty()
+    }
+
+    @Test
+    fun `the temporary directory is an absolute path to a directory`() {
+        temporaryDirectory.isAbsolute shouldBe true
+        SystemFileSystem.metadataOrNull(temporaryDirectory)?.isDirectory shouldBe true
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.client.model
 
 import com.fenakhay.kwikibot.client.internal.ioDispatcher
+import com.fenakhay.kwikibot.client.internal.temporaryDirectory
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readTo
 import kotlin.uuid.Uuid
@@ -10,7 +11,6 @@ import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readLine
 
 /**
@@ -40,7 +40,7 @@ public expect fun spool(prefix: String): Spool
 
 /** A spool in a file of its own under the system's temporary directory, deleted when the spool is closed. */
 internal class FileSpool(prefix: String) : Spool {
-    private val path = Path(SystemTemporaryDirectory, "$prefix-${Uuid.random()}")
+    private val path = Path(temporaryDirectory, "$prefix-${Uuid.random()}")
     private var reading: Source? = null
 
     override suspend fun fill(channel: ByteReadChannel) {
