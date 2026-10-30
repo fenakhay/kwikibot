@@ -1410,6 +1410,7 @@ query+growthtasks	gtoffset	list	GrowthExperiments		type=integer	enwiki,wikidataw
 query+growthtasks	gttasktypes	list	GrowthExperiments	multi	enum=copyedit|expand|link-recommendation|links|references|revise-tone|update limit=7 highlimit=7	enwiki,wikidatawiki
 query+growthtasks	gttopics	list	GrowthExperiments	multi	enum=africa|architecture|art|asia|biography|biology|business-and-economics|central-america|chemistry|comics-and-anime|computers-and-internet|earth-and-environment|education|engineering|entertainment|europe|fashion|food-and-drink|general-science|history|literature|mathematics|medicine-and-health|military-and-warfare|music|north-america|oceania|performing-arts|philosophy-and-religion|physics|politics-and-government|society|south-america|sports|technology|transportation|tv-and-film|video-games|women limit=39 highlimit=39	enwiki,wikidatawiki
 query+growthtasks	gttopicsmode	list	GrowthExperiments		enum=AND|OR	enwiki,wikidatawiki
+query+growthtasks	gtuseinterests	list	GrowthExperiments		type=boolean	enwiki,wikidatawiki
 query+imageforpage	-	prop	ProofreadPage		prefix=prppifp	enwikisource
 query+imageforpage	prppifpprop	prop	ProofreadPage	multi	enum=filename|fullsize|responsiveimages|size default=filename|size|fullsize|responsiveimages limit=50 highlimit=500	enwikisource
 query+imageinfo	-	prop	MediaWiki		prefix=ii
