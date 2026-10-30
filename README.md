@@ -10,7 +10,7 @@ that writes back byte for byte, and run bots that are dry runs until told otherw
 macOS, Linux, Windows and JavaScript, with an npm package and a command-line tool.
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.fenakhay.kwikibot/kwikibot)](https://central.sonatype.com/artifact/com.fenakhay.kwikibot/kwikibot)
-[![npm](https://img.shields.io/npm/v/@fenakhay/kwikibot)](https://www.npmjs.com/package/@fenakhay/kwikibot)
+[![npm](https://img.shields.io/npm/v/kwikibot)](https://www.npmjs.com/package/kwikibot)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.5.0--Beta2-7F52FF.svg?logo=kotlin)](https://kotlinlang.org)
 [![CI](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml/badge.svg)](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/fenakhay/kwikibot/branch/main/graph/badge.svg)](https://codecov.io/gh/fenakhay/kwikibot)
@@ -667,14 +667,14 @@ Wiktionary too.
 ## From JavaScript and TypeScript
 
 ```bash
-npm install @fenakhay/kwikibot
+npm install kwikibot
 ```
 
 The package is CommonJS with TypeScript definitions, and needs Node 26 or newer. Node cannot read
 the names a CommonJS module exports ahead of time, so an ES module imports the package whole:
 
 ```js
-import kwikibot from "@fenakhay/kwikibot";
+import kwikibot from "kwikibot";
 
 const contact = "https://en.wiktionary.org/wiki/User:MyBot";
 const wiki = await kwikibot.connect("en.wiktionary.org", contact);

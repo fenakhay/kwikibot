@@ -11,14 +11,14 @@ that are dry runs unless told to save. It is [kwikibot](https://github.com/fenak
 Kotlin library, compiled to JavaScript.
 
 ```bash
-npm install @fenakhay/kwikibot
+npm install kwikibot
 ```
 
 The package is CommonJS with TypeScript definitions, and needs Node 26 or newer. Node cannot read
 the names a CommonJS module exports ahead of time, so an ES module imports the package whole:
 
 ```js
-import kwikibot from "@fenakhay/kwikibot";
+import kwikibot from "kwikibot";
 
 const contact = "https://en.wiktionary.org/wiki/User:MyBot";
 const wiki = await kwikibot.connect("en.wiktionary.org", contact);

@@ -28,7 +28,7 @@ kotlin {
             val packageVersion = project.version.toString()
             val engines = mapOf("node" to ">=${libs.versions.node.get().substringBefore('.')}")
             packageJson {
-                name = "@fenakhay/kwikibot"
+                name = "kwikibot"
                 version = packageVersion
                 customField("description", "Read, parse and edit MediaWiki wikis from JavaScript.")
                 customField("license", "MIT")

@@ -11,7 +11,7 @@ cannot reach a release without showing up as a diff first.
 
 kwikibot is a Kotlin Multiplatform library. Every library module builds for the JVM, macOS on
 Apple Silicon, Linux (x64), Windows (x64) and JavaScript. The parser, the client and bot runs are
-on npm as `@fenakhay/kwikibot`, and the `kwikibot` tool is a Kotlin/Native binary. A JSON value of
+on npm as `kwikibot`, and the `kwikibot` tool is a Kotlin/Native binary. A JSON value of
 the wrong type now reads as absent instead of throwing, and the accessors that read JSON that way
 are public. `Messages` takes its plural rules from CLDR 49. The build requires every module to cover
 90% of its branches as well as 95% of its lines.
@@ -27,7 +27,7 @@ project compiles against this release with Kotlin 2.4 or newer.
 - The targets `macosArm64`, `linuxX64`, `mingwX64` and `js` for every library module, alongside
   `jvm`. On JavaScript the library runs on Node, and in browsers without the file APIs. XML dumps
   stay on the JVM.
-- `@fenakhay/kwikibot` on npm, CommonJS with TypeScript definitions, for Node 26 or newer and for
+- `kwikibot` on npm, CommonJS with TypeScript definitions, for Node 26 or newer and for
   browsers through a bundler. It has `parse`, with templates, sections, links, categories and
   `replaceText`; `parseTitle` and `signatureTimes`; `connect` and `detect`; reading and editing
   pages; category members, search, transclusions and history as async iterables; Wikibase

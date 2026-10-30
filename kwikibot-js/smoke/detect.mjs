@@ -1,4 +1,4 @@
-import kwikibot from "@fenakhay/kwikibot";
+import kwikibot from "kwikibot";
 
 const contact = process.argv[2] ?? "https://github.com/fenakhay/kwikibot";
 
