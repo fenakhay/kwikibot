@@ -14,15 +14,7 @@ plugins {
 }
 
 group = "com.fenakhay.kwikibot"
-val describedVersion = providers.exec {
-    commandLine("git", "describe", "--tags", "--match", "v[0-9]*", "--dirty")
-    isIgnoreExitValue = true
-}.standardOutput.asText.map { it.trim().removePrefix("v") }
-
-version =
-    providers.gradleProperty("releaseVersion").orNull
-        ?: runCatching { describedVersion.get() }.getOrNull()?.takeIf { it.isNotEmpty() }
-        ?: "0.0.0-SNAPSHOT"
+version = providers.gradleProperty("releaseVersion").orNull ?: "0.0.0-SNAPSHOT"
 
 subprojects {
     group = rootProject.group
