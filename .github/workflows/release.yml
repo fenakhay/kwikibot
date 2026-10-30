@@ -67,7 +67,6 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 26
-          registry-url: https://registry.npmjs.org
 
       - name: Build and test the npm package
         run: ./gradlew :kwikibot-js:check :kwikibot-js:jsNodeProductionLibraryDistribution -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
@@ -78,6 +77,11 @@ jobs:
           cd kwikibot-js/smoke
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/fenakhay-kwikibot-*.tgz
           node detect.mjs https://example.org/kwikibot-release
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          registry-url: https://registry.npmjs.org
 
       - name: Publish to npm
         working-directory: kwikibot-js/build/dist/js/productionLibrary
