@@ -7,20 +7,20 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
-## [Unreleased]
+## [1.4.0] — 2026-10-30
 
 kwikibot is a Kotlin Multiplatform library. Every library module builds for the JVM, macOS on
 Apple Silicon, Linux (x64), Windows (x64) and JavaScript. The parser, the client and bot runs are
-on npm as `@fenakhay/kwikibot`, and the `kwikibot` tool is a Kotlin/Native binary. A value of the
-wrong JSON type now reads as absent instead of throwing, and the accessors that read it are public.
-`Messages` takes its plural rules from CLDR 49. The build requires every module to cover 90% of
-its branches as well as 95% of its lines.
+on npm as `@fenakhay/kwikibot`, and the `kwikibot` tool is a Kotlin/Native binary. A JSON value of
+the wrong type now reads as absent instead of throwing, and the accessors that read JSON that way
+are public. `Messages` takes its plural rules from CLDR 49. The build requires every module to cover
+90% of its branches as well as 95% of its lines.
 
-Neither source- nor binary-compatible with 1.3.0, although the version is a minor one. Paths are
-kotlinx-io's, the run logs write to a kotlinx-io `Sink`, `RunState` suspends, the declarations
-kept for 1.1 and 1.2 are gone, and Maven projects depend on the `-jvm` artifacts. Changed and
-Removed list every break, and the cases where decoding behaves differently. A JVM project compiles
-against this release with Kotlin 2.4 or newer.
+This release breaks both source and binary compatibility with 1.3.0, although its version is a minor
+one. Paths are kotlinx-io's, the run logs write to a kotlinx-io `Sink`, `RunState` suspends, the
+declarations kept for 1.1 and 1.2 are gone, and Maven projects depend on the `-jvm` artifacts.
+Changed and Removed list every break, and every case where decoding behaves differently. A JVM
+project compiles against this release with Kotlin 2.4 or newer.
 
 ### Added
 
@@ -57,9 +57,10 @@ against this release with Kotlin 2.4 or newer.
 
 ### Changed
 
-- `mapNodes` and `replaceText` keep what they leave unchanged: a node nothing in which changed is
-  given to `transform` as it was, and comes back as the same instance, as does the markup around it.
-  Only identity tells this apart, and a pass that changes nothing now allocates next to nothing.
+- `mapNodes` and `replaceText` keep what they leave unchanged. A node in which nothing changed
+  reaches `transform` as it was and comes back as the same instance, and so does the markup around
+  it. Only identity shows the difference, and a pass that changes nothing now allocates next to
+  nothing.
 - Gradle resolves each platform's build from the same coordinates as before. Maven does not read
   Gradle's metadata, so a Maven project depends on the `-jvm` artifacts, such as
   `com.fenakhay.kwikibot:kwikibot-jvm`.
@@ -80,8 +81,8 @@ against this release with Kotlin 2.4 or newer.
   through `readline`, keeping the lines it has read ahead for the next question.
 - `Diffs` renders unified diffs itself, over `kotlin-multiplatform-diff`, and gives the output
   `java-diff-utils` gave.
-- `Kwikibot.runtime` and `platform` describe Kotlin/Native and the system, Node and the system, or
-  the browser, off the JVM.
+- Off the JVM, `Kwikibot.runtime` and `platform` describe Kotlin/Native and the operating system,
+  Node and the operating system, or the browser.
 - On JavaScript, every request also carries `Api-User-Agent`, since a browser will not send a
   page's own `User-Agent`. A request from a page on a site other than the wiki's sends `origin=*`,
   which MediaWiki answers as it would a logged-out reader.
@@ -90,9 +91,9 @@ against this release with Kotlin 2.4 or newer.
 - The `kwikibot` tool is a Kotlin/Native binary instead of a GraalVM native image, and logs to
   standard error on every system. `appArchive` is one task per target: `macosArm64AppArchive`,
   `linuxX64AppArchive` and `mingwX64AppArchive`. The archives keep their names.
-- Release native executables, the tool and the native benchmarks, are linked with Kotlin/Native's
-  experimental inlining pass, `preCodegenInlineThreshold=40`. Parsing runs about 10% faster, and the
-  tool is about 11% larger.
+- The release native executables, which are the tool and the native benchmarks, are linked with
+  Kotlin/Native's experimental inlining pass, `preCodegenInlineThreshold=40`. Parsing runs about 10%
+  faster, and the tool is about 11% larger.
 - The parser benchmarks run on the JVM and as a native macOS binary: `mainBenchmark` is
   `jvmBenchmark`, joined by `macosArm64Benchmark`, and `large-pages.json.gz` moved to
   `kwikibot-benchmarks/corpus`.
@@ -117,10 +118,10 @@ against this release with Kotlin 2.4 or newer.
   of a range that starts or ends at 0.
 - `Messages` takes its plural rules from CLDR 49, compiled into `kwikibot-bot` from CLDR's own data
   with no library behind it. Each language CLDR covers gets its own rule. The hand-written table
-  had seventeen, and the rest took English's, Czech, Lithuanian, Maltese, Hebrew and Welsh among
-  them. Forms are numbered as MediaWiki numbers them, by the categories the language has, and a
-  variant code such as `sr-ec` or `de-formal` takes its language's rule. Against CLDR 48, Tajik
-  has a rule of its own, Galician a many form and Vietnamese a one form.
+  had seventeen rules, and every other language, Czech, Lithuanian, Maltese, Hebrew and Welsh
+  among them, took English's. Forms are numbered as MediaWiki numbers them, by the categories the
+  language has, and a variant code such as `sr-ec` or `de-formal` takes its language's rule. Against
+  CLDR 48, Tajik has a rule of its own, Galician a many form and Vietnamese a one form.
 - `replaceText`, `containsText` and `textIn` leave an argument's name alone unless the scope
   includes templates. In `{{{colour|colour}}}`, prose reaches only the default.
 - `Markup.allNodes()` walks the tree without a coroutine for each level, in the same order. It
@@ -130,9 +131,9 @@ against this release with Kotlin 2.4 or newer.
   `HttpSettings.maxConcurrentRequests` requests in flight at once, 3 unless told otherwise, which is
   what [Wikimedia's rate limits](https://www.mediawiki.org/wiki/Wikimedia_APIs/Rate_limits) ask.
   The limit holds on every platform, for API requests, uploads and file downloads to every wiki of
-  the client together, and `--http-connections` sets it. A run's `readConcurrency` stays 4, the
-  pages it works on at once, whose requests wait for room. Before, nothing held a run to three
-  requests, and the per-host limit of 32 applied only on the JVM and macOS.
+  the client together, and `--http-connections` sets it. A run still works on 4 pages at once,
+  `readConcurrency`, and their requests wait for room. Before, nothing held a run to three requests,
+  and the per-host limit of 32 applied only on the JVM and macOS.
 - `HttpSettings.maxRequestsPerHost` is `maxConcurrentRequests`, and so is the `[http]` key in
   `kwikibot.toml`. The old key is now unknown, which is a warning, and the client keeps to 3.
   `kwikibot show-config` prints the limit as requests at once.
@@ -527,7 +528,7 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
-[Unreleased]: https://github.com/fenakhay/kwikibot/compare/v1.3.0...HEAD
+[1.4.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.4.0
 [1.3.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.2.0
 [1.1.1]: https://github.com/fenakhay/kwikibot/releases/tag/v1.1.1
