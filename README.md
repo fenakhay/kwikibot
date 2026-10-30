@@ -29,6 +29,9 @@ macOS, Linux, Windows and JavaScript, with an npm package and a command-line too
   JVM, XML dumps.
 - **Tests without a network.** `kwikibot-testkit` gives your bot a fake wiki.
 
+[docs/comparison.md](docs/comparison.md) sets kwikibot beside pywikibot, mwclient, mwn, m3api and
+three wikitext parsers, feature by feature, with parsing speed, memory and start-up.
+
 ## Contents
 
 - [Quick start](#quick-start)
@@ -42,7 +45,6 @@ macOS, Linux, Windows and JavaScript, with an npm package and a command-line too
 - [Testing a bot](#testing-a-bot)
 - [Configuration and logging](#configuration-and-logging)
 - [Running on Wikimedia wikis](#running-on-wikimedia-wikis)
-- [Coming from pywikibot](#coming-from-pywikibot)
 - [From JavaScript and TypeScript](#from-javascript-and-typescript)
 - [The kwikibot tool](#the-kwikibot-tool)
 - [Compatibility](#compatibility)
@@ -661,29 +663,6 @@ account without a bot flag to a number of requests a minute that the default rea
 A request over the limit is answered `429`, and kwikibot waits as long as the answer asks. Every
 wiki opened on one `WikiClient` shares one throttle, so a pause Wikidata asks for holds back
 Wiktionary too.
-
-## Coming from pywikibot
-
-| pywikibot | kwikibot |
-|---|---|
-| `pywikibot.Site("en", "wiktionary")` | `client.wiki(LangCode("en"), Family.WIKTIONARY)` |
-| `Page(site, "volcano").text` | `wiki.pages.content(wiki.ref("volcano"))?.text` |
-| `page.save(summary)` | `wiki.pages.edit(ref) { text = …; summary = …; baseRevision = … }` |
-| `pagegenerators`, `-cat:`, `-transcludes:` | `wiki.lists` flows and their filters; `PageSourceSpec` with `cat:`, `transcludes:Template:…` |
-| `ExistingPageBot.treat_page` | `wiki.botRun { source(…); transform { … } }` |
-| `-simulate` | The default; `dryRun = false` or `--save` to write |
-| `put_throttle`, `maxlag` | `Throttle(write = …)`, `WikiConfig.maxlag` |
-| `user-config.py`, `user-password.py` | `kwikibot.toml` and environment variables |
-| mwparserfromhell `parse`, `filter_templates`, `str()` | `Wikitext.parse`, `templates`, `serialize()` |
-| `ItemPage(repo, "Q42").get()` | `wikidata.wikibase().entity(EntityId("Q42"))` |
-| Confirming each save, `-always` | No prompts: a run is dry or it saves. `TerminalPrompt` is there for a bot that asks |
-| `pwb login` | `kwikibot login`, `kwikibot whoami` |
-| `pwb` scripts | Your own `main`; the `kwikibot` tool only diagnoses |
-
-The differences that catch people out: a bot saves nothing until it is told to; `{{nobots}}` is
-honoured only when a run sets `exclusionPolicy`; a stop page must say `false` for the bot to go on;
-`botMain` saves only as an account with the bot flag, or for a `--trial`; and a page source names a
-template by its full title, `transcludes:Template:col`, not `col`.
 
 ## From JavaScript and TypeScript
 
