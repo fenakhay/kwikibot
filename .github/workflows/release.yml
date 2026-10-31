@@ -13,6 +13,8 @@ jobs:
     outputs:
       version: ${{ steps.read.outputs.version }}
     steps:
+      - uses: actions/checkout@v7
+
       - id: read
         run: |
           tag="${GITHUB_REF_NAME}"
@@ -20,10 +22,11 @@ jobs:
             echo "::error::Tag '$tag' is not a release version of the form v1.2.3"
             exit 1
           fi
+          python3 .github/scripts/changelog_section.py "${tag#v}" > /dev/null
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
   maven-central:
-    needs: version
+    needs: [version, package]
     runs-on: macos-26
     environment: maven-central
     steps:
@@ -37,7 +40,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build and check
-        run: ./gradlew build detekt checkKotlinAbi -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
+        run: ./gradlew build jvm21Test detekt checkKotlinAbi -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
       - name: Upload to the Central Portal
         env:
@@ -47,8 +50,11 @@ jobs:
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: ./gradlew nmcpPublishAggregationToCentralPortal -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
+      - name: Say what is left to do by hand
+        run: echo "The deployment is on the Central Portal and stays private until it is published there." >> "$GITHUB_STEP_SUMMARY"
+
   npm:
-    needs: version
+    needs: [version, maven-central]
     runs-on: ubuntu-latest
     environment: npm
     permissions:
@@ -85,7 +91,14 @@ jobs:
 
       - name: Publish to npm
         working-directory: kwikibot-js/build/dist/js/productionLibrary
-        run: npm publish --provenance --access public
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          if npm view "kwikibot@$VERSION" version > /dev/null 2>&1; then
+            echo "kwikibot@$VERSION is already on npm"
+          else
+            npm publish --provenance --access public
+          fi
 
   package:
     needs: version
@@ -129,7 +142,12 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          curl -sSfL "https://github.com/goreleaser/nfpm/releases/download/v2.43.0/nfpm_2.43.0_Linux_x86_64.tar.gz" | sudo tar -xz -C /usr/local/bin nfpm
+          archive="$RUNNER_TEMP/nfpm.tar.gz"
+          curl -sSfL -o "$archive" "https://github.com/goreleaser/nfpm/releases/download/v2.43.0/nfpm_2.43.0_Linux_x86_64.tar.gz"
+          echo "a80d5f724ed70b192ffa8a2bde469c013cef559c8afa3441eb51dd9a918beb6b  $archive" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/bin" nfpm
+          export PATH="$RUNNER_TEMP/bin:$PATH"
           nfpm package -p deb -f nfpm.yaml -t kwikibot-cli/build/distributions/
           nfpm package -p rpm -f nfpm.yaml -t kwikibot-cli/build/distributions/
 
@@ -153,11 +171,13 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [version, package]
+    needs: [version, npm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
@@ -172,9 +192,15 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --title "$GITHUB_REF_NAME" --generate-notes artifacts/*
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "$GITHUB_REF_NAME is already released"
+          else
+            python3 .github/scripts/changelog_section.py "$VERSION" "$RUNNER_TEMP/notes.md"
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" artifacts/*
+          fi
 
   scoop:
     needs: [version, release]
@@ -200,8 +226,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add bucket/kwikibot.json
-          git commit -m "Point the Scoop bucket at $GITHUB_REF_NAME"
-          git push origin main
+          if git diff --cached --quiet; then
+            echo "The bucket already points at $GITHUB_REF_NAME"
+          else
+            git commit -m "build(scoop): point the bucket at $GITHUB_REF_NAME"
+            git push origin main || (git pull --rebase origin main && git push origin main)
+          fi
 
   homebrew:
     needs: [version, release]
