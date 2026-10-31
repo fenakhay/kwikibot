@@ -20,7 +20,7 @@ a pull request.
 | | kwikibot | pywikibot 11.9.0 | mwclient 0.11.0 | mwn 3.0.3 | m3api 1.1.0 |
 |---|---|---|---|---|---|
 | Language | Kotlin | Python | Python | TypeScript | JavaScript |
-| Runs on | JVM 21+, macOS, Linux, Windows; Node 26+ and browsers | Python 3.9+ | Python 3 | Node 14+ | Node 18.2+, browsers |
+| Runs on | JVM 21+, macOS, Linux, Windows; Node 22.3+ and browsers | Python 3.9+ | Python 3 | Node 14+ | Node 18.2+, browsers |
 | Reads and edits pages | ✓ | ✓ | ✓ | ✓ | As raw API requests |
 | Wikitext parser | ✓ | Through mwparserfromhell | – | Flat lists, no tree | – |
 | Dry run by default | ✓ | Opt-in, `-simulate` | – | – | – |
@@ -39,7 +39,7 @@ a pull request.
 | | kwikibot | mwparserfromhell 0.7.2 | wikiparser-node 1.48.1 | wtf_wikipedia 10.4.2 |
 |---|---|---|---|---|
 | Language | Kotlin | Python, with a tokenizer in C | TypeScript | JavaScript |
-| Runs on | JVM 21+, macOS, Linux, Windows; Node 26+ and browsers | Python 3.9+ | Node 20.19+, 22.13+ or 24.11+; a browser bundle | Node 12+, browsers |
+| Runs on | JVM 21+, macOS, Linux, Windows; Node 22.3+ and browsers | Python 3.9+ | Node 20.19+, 22.13+ or 24.11+; a browser bundle | Node 12+, browsers |
 | A parse gives | A tree | A tree | A tree | Sections, sentences, templates, infoboxes |
 | Unchanged text written back exactly | ✓ | Tested, not promised | ✓, less NUL, DEL and CR before a line break | – |
 | Edits written back | ✓ | ✓ | ✓ | – |

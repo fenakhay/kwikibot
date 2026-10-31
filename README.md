@@ -150,7 +150,7 @@ Maven does not read Gradle's metadata, so a Maven project names the JVM artifact
 |---|---|
 | Kotlin/JVM project | Kotlin 2.4 or newer, and JDK 21 or newer to run. Gradle resolves `kotlin-stdlib` to 2.5.0-Beta2, the version kwikibot is built with |
 | Kotlin/Native or Kotlin/JS project | Kotlin 2.5.0-Beta2 or newer: Kotlin 2.4 cannot read klibs built by 2.5 |
-| npm package | Node 26 or newer |
+| npm package | Node 22.3 or newer |
 | A wiki | MediaWiki 1.39 or newer, see [Compatibility](#compatibility) |
 
 **On the JVM**, the library needs one more thing from you: it logs through SLF4J and ships no

@@ -26,7 +26,7 @@ kotlin {
 
         compilations.named("main") {
             val packageVersion = project.version.toString()
-            val engines = mapOf("node" to ">=${libs.versions.node.get().substringBefore('.')}")
+            val engines = mapOf("node" to ">=${libs.versions.nodeMinimum.get()}")
             packageJson {
                 name = "kwikibot"
                 version = packageVersion

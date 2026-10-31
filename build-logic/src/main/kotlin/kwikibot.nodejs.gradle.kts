@@ -8,7 +8,7 @@ val libs = the<LibrariesForLibs>()
 
 plugins.withType<NodeJsPlugin> {
     the<NodeJsEnvSpec>().apply {
-        version.set(libs.versions.node)
+        version.set(providers.gradleProperty("nodeVersion").orElse(libs.versions.node))
         downloadBaseUrl.set(null as String?)
     }
 }

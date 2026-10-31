@@ -14,7 +14,7 @@ Kotlin library, compiled to JavaScript.
 npm install kwikibot
 ```
 
-The package is CommonJS with TypeScript definitions, and needs Node 26 or newer. Node cannot read
+The package is CommonJS with TypeScript definitions, and needs Node 22.3 or newer. Node cannot read
 the names a CommonJS module exports ahead of time, so an ES module imports the package whole:
 
 ```js
