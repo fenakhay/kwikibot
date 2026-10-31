@@ -16,6 +16,7 @@ kotlin {
     jvm {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
+            freeCompilerArgs.add("-Xjdk-release=21")
         }
 
         testRuns.named("test") {
@@ -61,11 +62,24 @@ kover {
     currentProject {
         instrumentation {
             disabledForTestTasks.add("liveTest")
+            disabledForTestTasks.add("jvm21Test")
         }
     }
 }
 
 val jvmTestCompilation = kotlin.jvm().compilations.getByName("test")
+
+tasks.register<Test>("jvm21Test") {
+    description = "Runs the JVM tests on JDK 21, the oldest the library supports."
+    group = "verification"
+
+    testClassesDirs = jvmTestCompilation.output.classesDirs
+    classpath = files(jvmTestCompilation.output.allOutputs, jvmTestCompilation.runtimeDependencyFiles)
+    useJUnitPlatform { excludeTags("live") }
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
+
+    failOnNoDiscoveredTests = false
+}
 
 tasks.register<Test>("liveTest") {
     description = "Runs the tests that talk to a real wiki. Reads production wikis; writes only to test.wikipedia.org."

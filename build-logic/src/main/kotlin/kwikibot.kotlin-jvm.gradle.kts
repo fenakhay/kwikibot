@@ -21,6 +21,7 @@ kotlin {
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
+        freeCompilerArgs.add("-Xjdk-release=21")
         allWarningsAsErrors.set(true)
     }
 }
