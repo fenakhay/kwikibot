@@ -7,6 +7,8 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The public A
 published module is recorded in `*/api/*.api` and checked on every build, so a breaking change
 cannot reach a release without showing up as a diff first.
 
+## [Unreleased]
+
 ## [1.4.0] — 2026-10-30
 
 kwikibot is a Kotlin Multiplatform library. Every library module builds for the JVM, macOS on
@@ -528,6 +530,7 @@ First release.
   the bot or the wiki, distributed through Scoop, Homebrew, Debian and RPM packages and plain
   archives.
 
+[Unreleased]: https://github.com/fenakhay/kwikibot/compare/v1.4.0...HEAD
 [1.4.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.4.0
 [1.3.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/fenakhay/kwikibot/releases/tag/v1.2.0
