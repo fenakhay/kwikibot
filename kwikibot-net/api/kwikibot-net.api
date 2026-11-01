@@ -263,6 +263,12 @@ public final class com/fenakhay/kwikibot/net/transport/ApiRequest$Companion {
 	public static synthetic fun of$default (Lcom/fenakhay/kwikibot/net/transport/ApiRequest$Companion;Ljava/lang/String;[Lkotlin/Pair;Lcom/fenakhay/kwikibot/net/RequestKind;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/transport/ApiRequest;
 }
 
+public final class com/fenakhay/kwikibot/net/transport/FailuresKt {
+	public static final fun statusFailure (Ljava/lang/String;Lio/ktor/client/statement/HttpResponse;Ljava/lang/String;)Lcom/fenakhay/kwikibot/model/WikiError$Transport;
+	public static synthetic fun statusFailure$default (Ljava/lang/String;Lio/ktor/client/statement/HttpResponse;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/model/WikiError$Transport;
+	public static final fun transportFailure (Ljava/lang/String;Ljava/lang/Throwable;)Lcom/fenakhay/kwikibot/model/WikiError$Transport;
+}
+
 public final class com/fenakhay/kwikibot/net/transport/HttpSettings {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/HttpSettings$Companion;
 	public static final field DEFAULT_CONCURRENT_REQUESTS I

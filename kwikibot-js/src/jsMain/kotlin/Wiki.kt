@@ -19,6 +19,7 @@ import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
 import io.ktor.client.engine.HttpClientEngine
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +91,12 @@ internal fun detect(url: String, contact: String, engine: HttpClientEngine?): Pr
     GlobalScope.promise {
         withoutLoggingBanner()
         WikiHttpClient.create(engine = engine).use { client ->
-            ApiDetector.detect(url, client, userAgent(contact))?.let(::Endpoint)
+            runCatching { ApiDetector.discover(url, client, userAgent(contact)) }
+                .getOrElse {
+                    if (it is CancellationException) throw it
+                    null
+                }
+                ?.let(::Endpoint)
         }
     }
 

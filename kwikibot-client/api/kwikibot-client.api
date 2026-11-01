@@ -1,6 +1,7 @@
 public final class com/fenakhay/kwikibot/client/ApiDetector {
 	public static final field INSTANCE Lcom/fenakhay/kwikibot/client/ApiDetector;
 	public final fun detect (Ljava/lang/String;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun discover (Ljava/lang/String;Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun endpointFrom (Ljava/lang/String;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;
 }
 

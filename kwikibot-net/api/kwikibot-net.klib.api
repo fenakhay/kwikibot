@@ -387,5 +387,7 @@ final object com.fenakhay.kwikibot.net/Kwikibot { // com.fenakhay.kwikibot.net/K
 }
 
 final fun (io.ktor.http/HttpMessageBuilder).com.fenakhay.kwikibot.net/identifyAs(com.fenakhay.kwikibot.net/UserAgent) // com.fenakhay.kwikibot.net/identifyAs|identifyAs@io.ktor.http.HttpMessageBuilder(com.fenakhay.kwikibot.net.UserAgent){}[0]
+final fun com.fenakhay.kwikibot.net.transport/statusFailure(kotlin/String, io.ktor.client.statement/HttpResponse, kotlin/String = ...): com.fenakhay.kwikibot.model/WikiError.Transport? // com.fenakhay.kwikibot.net.transport/statusFailure|statusFailure(kotlin.String;io.ktor.client.statement.HttpResponse;kotlin.String){}[0]
+final fun com.fenakhay.kwikibot.net.transport/transportFailure(kotlin/String, kotlin/Throwable): com.fenakhay.kwikibot.model/WikiError.Transport? // com.fenakhay.kwikibot.net.transport/transportFailure|transportFailure(kotlin.String;kotlin.Throwable){}[0]
 final fun com.fenakhay.kwikibot.net/environmentVariable(kotlin/String): kotlin/String? // com.fenakhay.kwikibot.net/environmentVariable|environmentVariable(kotlin.String){}[0]
 final suspend fun <#A: kotlin/Any?> (io.ktor.client/HttpClient).com.fenakhay.kwikibot.net.transport/withRequestPermit(kotlin.coroutines/SuspendFunction0<#A>): #A // com.fenakhay.kwikibot.net.transport/withRequestPermit|withRequestPermit@io.ktor.client.HttpClient(kotlin.coroutines.SuspendFunction0<0:0>){0§<kotlin.Any?>}[0]

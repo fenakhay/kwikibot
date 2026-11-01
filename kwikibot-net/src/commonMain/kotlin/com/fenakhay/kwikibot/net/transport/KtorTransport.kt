@@ -13,14 +13,10 @@ import com.fenakhay.kwikibot.net.pageOrigin
 import com.fenakhay.kwikibot.net.string
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
-import io.ktor.client.network.sockets.ConnectTimeoutException
-import io.ktor.client.network.sockets.SocketTimeoutException
-import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.http.encodeURLParameter
@@ -141,15 +137,6 @@ public class KtorTransport(
         return classify(response, body)
     }
 
-    /**
-     * Whether this is one of the three timeouts the client applies: on connecting, on a silent socket, and on
-     * the whole request.
-     */
-    private fun Throwable.isTimeout(): Boolean =
-        this is HttpRequestTimeoutException ||
-            this is ConnectTimeoutException ||
-            this is SocketTimeoutException
-
     private fun classify(response: HttpResponse, body: String): Attempt {
         statusDeferral(response)?.let {
             return it
@@ -238,19 +225,12 @@ public class KtorTransport(
     private fun queryLength(params: List<Pair<String, String>>): Int =
         endpoint.apiUrl.length + params.encode().length
 
-    /** How long the server asked us to wait, when it said so in seconds rather than as a date. */
-    private fun HttpResponse.retryAfter(): Duration? =
-        headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.seconds
-
     /**
      * A 4xx that means the request will not be served. 408 Request Timeout, 425 Too Early and 429 Too Many
      * Requests only mean "not now", so they are not refusals.
      */
     private fun HttpStatusCode.isRefusal(): Boolean =
         value in CLIENT_ERRORS && value !in RETRYABLE_CLIENT_ERRORS
-
-    /** The start of an error page as one line of text, without its markup. */
-    private fun String.gist(): String = replace(MARKUP, " ").replace(WHITESPACE, " ").trim().take(MAX_DETAIL)
 
     /**
      * The first error the response reports, in either shape MediaWiki uses.
@@ -400,11 +380,6 @@ public class KtorTransport(
 
         private val CLIENT_ERRORS = 400..499
         private val RETRYABLE_CLIENT_ERRORS = setOf(408, 425, 429)
-
-        /** How much of an error page goes into [WikiError.Transport.Refused.detail]. */
-        private const val MAX_DETAIL = 300
-        private val MARKUP = Regex("""<[^>]*>""")
-        private val WHITESPACE = Regex("""\s+""")
 
         private val LAG_SECONDS = Regex("""([\d.]+) seconds? lagged""")
         private val LAG_HOST = Regex("""Waiting for ([^:]+):""")

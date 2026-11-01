@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.UserAgent
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -9,7 +10,9 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
 
@@ -117,8 +120,58 @@ class ApiDetectorTest {
             )
         val failing = HttpClient(MockEngine { throw IOException("connection refused") })
 
+        ApiDetector.discover("https://en.wiktionary.org/wiki/volcano", serving, userAgent)?.server shouldBe
+            "en.wiktionary.org"
+        assertFailsWith<WikiError.Transport.Unreachable> {
+            ApiDetector.discover("https://en.wiktionary.org/wiki/volcano", failing, userAgent)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `the old detect still answers null for a page that cannot be fetched`() = runTest {
+        val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
+        val serving =
+            HttpClient(
+                MockEngine {
+                    respond(wikimedia, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/html"))
+                }
+            )
+        val failing = HttpClient(MockEngine { throw IOException("connection refused") })
+        val refusing = HttpClient(MockEngine { respond("no", HttpStatusCode.Forbidden) })
+        val cancelled = HttpClient(MockEngine { throw CancellationException("stopped") })
+
         ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", serving, userAgent)?.server shouldBe
             "en.wiktionary.org"
         ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", failing, userAgent).shouldBeNull()
+        ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", refusing, userAgent).shouldBeNull()
+        assertFailsWith<CancellationException> {
+            ApiDetector.detect("https://en.wiktionary.org/wiki/volcano", cancelled, userAgent)
+        }
+    }
+
+    @Test
+    fun `discover reads the link whatever the status and says why when there is none`() = runTest {
+        val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
+        val answering = { status: HttpStatusCode, body: String ->
+            HttpClient(MockEngine { respond(body, status, headersOf(HttpHeaders.ContentType, "text/html")) })
+        }
+        val url = "https://en.wiktionary.org/wiki/nonexistent"
+
+        ApiDetector.discover(url, answering(HttpStatusCode.NotFound, wikimedia), userAgent)?.server shouldBe
+            "en.wiktionary.org"
+        ApiDetector.discover(url, answering(HttpStatusCode.NotFound, "gone"), userAgent).shouldBeNull()
+        ApiDetector.discover(url, answering(HttpStatusCode.Gone, "gone"), userAgent).shouldBeNull()
+        ApiDetector.discover(url, answering(HttpStatusCode.OK, "plain"), userAgent).shouldBeNull()
+        assertFailsWith<WikiError.Transport.ServerError> {
+            ApiDetector.discover(url, answering(HttpStatusCode.BadGateway, "down"), userAgent)
+        }
+        assertFailsWith<WikiError.Transport.RateLimited> {
+            ApiDetector.discover(url, answering(HttpStatusCode.TooManyRequests, "slow"), userAgent)
+        }
+        assertFailsWith<WikiError.Transport.Refused> {
+                ApiDetector.discover(url, answering(HttpStatusCode.Forbidden, "<p>blocked</p>"), userAgent)
+            }
+            .detail shouldBe "blocked"
     }
 }

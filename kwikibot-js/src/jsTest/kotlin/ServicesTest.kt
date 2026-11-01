@@ -81,6 +81,13 @@ class ServicesTest {
     }
 
     @Test
+    fun `detect still gives null for a page that cannot be fetched`() = runTest {
+        val engine = MockEngine { error("connection refused") }
+
+        detect("https://example.org/", contact, engine).await() shouldBe null
+    }
+
+    @Test
     fun `detect gives null for a page that advertises no API`() = runTest {
         val engine = MockEngine {
             respond(

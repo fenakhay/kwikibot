@@ -1,12 +1,17 @@
 package com.fenakhay.kwikibot.client
 
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.identifyAs
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.statusFailure
+import com.fenakhay.kwikibot.net.transport.transportFailure
 import com.fenakhay.kwikibot.net.transport.withRequestPermit
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Finds where a wiki keeps its `api.php`, given any page of it.
@@ -20,22 +25,59 @@ public object ApiDetector {
     /**
      * The endpoint the wiki at [url] advertises, or `null` if it advertises none.
      *
-     * `null` means the page is not MediaWiki, or its head was stripped by a caching layer — not that the wiki
-     * has no API. A caller that knows better can still name the endpoint itself.
+     * `null` means the page is not MediaWiki, or its head was stripped by a caching layer, or it does not
+     * exist. Not that the wiki has no API: a caller that knows better can still name the endpoint itself. A
+     * page that could not be fetched is not an answer, and says why.
+     *
+     * The link is looked for first, whatever the status, since the page a wiki serves for a missing title is
+     * a 404 that advertises its API like any other.
+     *
+     * @throws WikiError.Transport if the host could not be reached, did not answer in time, or refused.
      */
-    public suspend fun detect(
+    public suspend fun discover(
         url: String,
         client: HttpClient,
         userAgent: UserAgent,
     ): ApiEndpoint? {
-        val html =
+        val (response, html) =
             runCatching {
-                client.withRequestPermit { client.get(url) { identifyAs(userAgent) }.bodyAsText() }
+                client.withRequestPermit {
+                    val response = client.get(url) { identifyAs(userAgent) }
+                    response to response.bodyAsText()
+                }
             }
-                .getOrNull() ?: return null
+                .getOrElse { throw transportFailure(url, it) ?: it }
 
-        return endpointFrom(html, url)
+        endpointFrom(html, url)?.let {
+            return it
+        }
+        if (response.status == HttpStatusCode.NotFound || response.status == HttpStatusCode.Gone) return null
+        statusFailure(url, response, html)?.let { throw it }
+        return null
     }
+
+    /**
+     * The endpoint the wiki at [url] advertises, or `null` if it advertises none or could not be asked.
+     *
+     * `null` means the page is not MediaWiki, or its head was stripped by a caching layer — not that the wiki
+     * has no API. A caller that knows better can still name the endpoint itself.
+     */
+    @Deprecated(
+        "Answers null when the page could not be fetched, as if it had no API. Use discover, which says " +
+            "why. Deprecated since kwikibot 1.5.0.",
+        ReplaceWith("discover(url, client, userAgent)"),
+    )
+    public suspend fun detect(
+        url: String,
+        client: HttpClient,
+        userAgent: UserAgent,
+    ): ApiEndpoint? = runCatching {
+        discover(url, client, userAgent)
+    }
+        .getOrElse {
+            if (it is CancellationException) throw it
+            null
+        }
 
     /**
      * Reads the endpoint out of a page's HTML.

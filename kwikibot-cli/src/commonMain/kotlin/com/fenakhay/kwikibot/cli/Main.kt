@@ -306,8 +306,12 @@ internal class Detect(private val environment: CliEnvironment) : SuspendingClikt
 
     override suspend fun run() {
         val endpoint =
-            WikiHttpClient.create(engine = environment.engine).use { client ->
-                ApiDetector.detect(url, client, userAgent(contact))
+            try {
+                WikiHttpClient.create(engine = environment.engine).use { client ->
+                    ApiDetector.discover(url, client, userAgent(contact))
+                }
+            } catch (e: WikiError) {
+                throw CliktError(e.message ?: e.toString(), e)
             } ?: throw CliktError("no MediaWiki API advertised at $url")
 
         echo("api:        ${endpoint.apiUrl}")

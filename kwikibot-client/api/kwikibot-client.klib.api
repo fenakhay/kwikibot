@@ -1201,6 +1201,7 @@ final class com.fenakhay.kwikibot.client/WikiConfig { // com.fenakhay.kwikibot.c
 final object com.fenakhay.kwikibot.client/ApiDetector { // com.fenakhay.kwikibot.client/ApiDetector|null[0]
     final fun endpointFrom(kotlin/String, kotlin/String): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.endpointFrom|endpointFrom(kotlin.String;kotlin.String){}[0]
     final suspend fun detect(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.detect|detect(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
+    final suspend fun discover(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.discover|discover(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
 }
 
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasExtension(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.client/hasExtension|hasExtension@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]

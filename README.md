@@ -225,7 +225,7 @@ settings. `wiki.identity` says who the wiki thinks you are.
 
 `Family` names the Wikimedia projects: Wikipedia, Wiktionary, Wikisource, Wikiquote, Wikibooks,
 Wikinews, Wikiversity, Wikivoyage, Commons, Wikidata, Meta, mediawiki.org and test.wikipedia.org.
-Any other wiki is an `ApiEndpoint`. When all you have is a URL, `ApiDetector.detect` finds its
+Any other wiki is an `ApiEndpoint`. When all you have is a URL, `ApiDetector.discover` finds its
 `api.php`, which is what `kwikibot detect` does.
 
 ### Credentials

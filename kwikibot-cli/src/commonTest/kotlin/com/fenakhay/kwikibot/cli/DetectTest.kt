@@ -88,6 +88,21 @@ class DetectTest {
         }
 
     @Test
+    fun `detect says why when the page cannot be fetched`() = runTest {
+        val result =
+            kwikibot(
+                    CliEnvironment(
+                        searchPath = { emptyList() },
+                        engine = MockEngine { respond("down", HttpStatusCode.BadGateway) },
+                    )
+                )
+                .test(listOf("detect", "https://example.org/"))
+
+        result.statusCode shouldBe 1
+        result.stderr shouldBe "server error 502 from https://example.org/\n"
+    }
+
+    @Test
     fun `detect fails on a page that advertises no API`() = runTest {
         val result = detect("<title>Not a wiki</title>", "https://example.org/")
 
