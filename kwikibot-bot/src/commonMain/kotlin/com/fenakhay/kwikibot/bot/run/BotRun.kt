@@ -17,6 +17,8 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
@@ -441,11 +443,22 @@ public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): 
 /** Runs a bot over the pages of a wiki. */
 public suspend fun Wiki.botRun(block: BotRunBuilder.() -> Unit): BotReport = botRun(pages, block)
 
-/** Why [policy] says to stop, or `null` if it says to go on. A check that throws is a reason to stop. */
+/**
+ * Why [policy] says to stop, or `null` if it says to go on. A check that throws is a reason to stop.
+ *
+ * Cancelling the run ends it here. A policy's own `withTimeout` throws a cancellation too, with the run still
+ * alive, and that is a check that could not answer.
+ */
 private suspend fun stopCheck(policy: StopPolicy): StopReason? = runCatching {
     policy.mayContinue()
 }
-    .fold(onSuccess = { if (it) null else StopReason.POLICY }, onFailure = { StopReason.POLICY_UNREACHABLE })
+    .fold(
+        onSuccess = { if (it) null else StopReason.POLICY },
+        onFailure = {
+            if (it is CancellationException) currentCoroutineContext().ensureActive()
+            StopReason.POLICY_UNREACHABLE
+        },
+    )
 
 private class Runner(
     private val pages: PageService,

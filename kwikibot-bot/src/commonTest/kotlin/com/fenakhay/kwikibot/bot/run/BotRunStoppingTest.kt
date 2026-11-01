@@ -12,15 +12,57 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 
 /** Which errors stop a run, and what becomes of the pages a stopped run already had in hand. */
 class BotRunStoppingTest {
 
     private val pages = FakePageService("a" to "t", "b" to "t", "c" to "t", "d" to "t")
+
+    @Test
+    fun `a policy that times out stops the run as unreachable`() = runTest {
+        val report =
+            botRun(pages) {
+                source(flowOf(pages.ref("a")))
+                transform { Edit("new", "s") }
+                dryRun = false
+                stopPolicy = StopPolicy { withTimeout(1.milliseconds) { awaitCancellation() } }
+            }
+
+        report.stopReason shouldBe StopReason.POLICY_UNREACHABLE
+    }
+
+    @Test
+    fun `cancelling a run during its stop check ends it instead of reporting a stop`() = runTest {
+        val checking = CompletableDeferred<Unit>()
+        var finished = false
+        val run = launch {
+            botRun(pages) {
+                source(flowOf(pages.ref("a")))
+                transform { Edit("new", "s") }
+                dryRun = false
+                stopPolicy = StopPolicy {
+                    checking.complete(Unit)
+                    awaitCancellation()
+                }
+            }
+            finished = true
+        }
+
+        checking.await()
+        run.cancelAndJoin()
+
+        finished shouldBe false
+    }
 
     @Test
     fun `an error about one page or the api or a passing transport failure fails only that page`() = runTest {
