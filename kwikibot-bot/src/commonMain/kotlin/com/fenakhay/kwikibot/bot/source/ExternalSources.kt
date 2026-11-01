@@ -4,11 +4,13 @@ import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.model.SparqlAuth
 import com.fenakhay.kwikibot.client.model.SparqlClient
 import com.fenakhay.kwikibot.client.model.spool
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.identifyAs
 import com.fenakhay.kwikibot.protocol.decode.array
 import com.fenakhay.kwikibot.protocol.decode.strings
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormDataContent
@@ -26,6 +28,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+
+private val log = KotlinLogging.logger("com.fenakhay.kwikibot.bot.source.ExternalSources")
 
 /**
  * Page lists built somewhere other than the wiki.
@@ -56,16 +60,18 @@ public object ExternalSources {
     public fun petScan(id: String, client: HttpClient, userAgent: UserAgent): PageSource =
         PageSource { wiki ->
             flow {
-                val titles: suspend (Sequence<String>) -> Unit = { titles ->
-                    titles.forEach { title -> wiki.refOrSkip(title)?.let { emit(it) } }
-                }
+                wiki.filteringTitles("PetScan") { filter ->
+                    val titles: suspend (Sequence<String>) -> Unit = { titles ->
+                        titles.forEach { title -> filter.refOrSkip(title)?.let { emit(it) } }
+                    }
 
-                titlesFrom(client, titles) {
-                    method = HttpMethod.Get
-                    identifyAs(userAgent)
-                    parameter("psid", id)
-                    parameter("format", "plain")
-                    parameter("doit", "1")
+                    titlesFrom(client, titles) {
+                        method = HttpMethod.Get
+                        identifyAs(userAgent)
+                        parameter("psid", id)
+                        parameter("format", "plain")
+                        parameter("doit", "1")
+                    }
                 }
             }
         }
@@ -85,8 +91,10 @@ public object ExternalSources {
         userAgent: UserAgent,
     ): PageSource = PageSource { wiki ->
         flow {
-            withPetScanTitles(parameters, client, userAgent) { titles ->
-                titles.forEach { title -> wiki.refOrSkip(title)?.let { emit(it) } }
+            wiki.filteringTitles("PetScan") { filter ->
+                withPetScanTitles(parameters, client, userAgent) { titles ->
+                    titles.forEach { title -> filter.refOrSkip(title)?.let { emit(it) } }
+                }
             }
         }
     }
@@ -185,10 +193,12 @@ public object ExternalSources {
         auth: SparqlAuth = SparqlAuth.None,
     ): PageSource = PageSource { wiki ->
         flow {
-            SparqlClient(client, userAgent, endpoint, auth).selectStreamed(query) { rows ->
-                rows.forEach { row ->
-                    val title = row[variable]?.value
-                    if (title != null) wiki.refOrSkip(title)?.let { emit(it) }
+            wiki.filteringTitles("the query service") { filter ->
+                SparqlClient(client, userAgent, endpoint, auth).selectStreamed(query) { rows ->
+                    rows.forEach { row ->
+                        val title = row[variable]?.value
+                        if (title != null) filter.refOrSkip(title)?.let { emit(it) }
+                    }
                 }
             }
         }
@@ -213,7 +223,11 @@ public object ExternalSources {
                         }
                         .bodyAsText()
 
-                titlesFromPagePile(body).forEach { title -> emit(wiki.refOrSkip(title) ?: return@forEach) }
+                wiki.filteringTitles("PagePile") { filter ->
+                    titlesFromPagePile(body).forEach { title ->
+                        emit(filter.refOrSkip(title) ?: return@forEach)
+                    }
+                }
             }
         }
 
@@ -221,14 +235,48 @@ public object ExternalSources {
     internal fun titlesFromPagePile(body: String): List<String> =
         json.parseToJsonElement(body).jsonObject.array("pages").strings()
 
+    /** Runs [block] with a filter for the titles of [source], and says how many it passed over. */
+    private inline fun Wiki.filteringTitles(source: String, block: (TitleFilter) -> Unit) {
+        val filter = TitleFilter(this, source)
+        try {
+            block(filter)
+        } finally {
+            filter.finish()
+        }
+    }
+
     /**
-     * A title the wiki accepts, or `null` if it does not.
+     * Takes the titles of one external list, and says what it passes over.
      *
      * An external list is unvalidated input and will contain titles this wiki rejects or that name another
-     * project. Skipping them keeps one bad row from ending a long run.
+     * project. Skipping them keeps one bad row from ending a long run, but a list that shrinks in silence
+     * looks like a list that was short, so each of the first few is logged, and the total if there were more.
      */
-    private fun Wiki.refOrSkip(title: String): PageRef? = runCatching { ref(title) }.getOrNull()
+    private class TitleFilter(private val wiki: Wiki, private val source: String) {
+        private var dropped = 0
 
+        /** A title the wiki accepts, or `null` if it does not. */
+        fun refOrSkip(title: String): PageRef? =
+            try {
+                wiki.ref(title)
+            } catch (e: WikiError.Page.BadTitle) {
+                drop(title, e)
+            } catch (e: WikiError.Page.OffWiki) {
+                drop(title, e)
+            }
+
+        private fun drop(title: String, reason: WikiError): PageRef? {
+            dropped++
+            if (dropped <= LOGGED_TITLES) log.warn { "Passing over '$title' from $source: ${reason.message}" }
+            return null
+        }
+
+        fun finish() {
+            if (dropped > LOGGED_TITLES) log.warn { "Passed over $dropped titles from $source in all" }
+        }
+    }
+
+    private const val LOGGED_TITLES = 20
     private const val PETSCAN = "https://petscan.wmcloud.org/"
     private const val PAGE_PILE = "https://pagepile.toolforge.org/api.php"
 }

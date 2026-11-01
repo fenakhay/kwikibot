@@ -222,6 +222,25 @@ class ExternalSourcesTest {
     }
 
     @Test
+    fun `more bad titles than are logged one by one still leave the good ones`() = runTest {
+        val titles = List(25) { "Bad[$it" } + "Volcano"
+        val client =
+            HttpClient(
+                MockEngine {
+                    respond(
+                        titles.joinToString("\n"),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "text/plain"),
+                    )
+                }
+            )
+
+        ExternalSources.petScan("7", client, userAgent).pages(FakeWiki()).toList().map {
+            it.title.text
+        } shouldBe listOf("Volcano")
+    }
+
+    @Test
     fun `a pagepile answer whose pages are not all titles keeps the ones that are`() {
         ExternalSources.titlesFromPagePile(
             """{"pages":["Volcano",null,{"title":"x"},"Mount Etna"]}"""
