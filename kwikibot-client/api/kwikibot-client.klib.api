@@ -677,6 +677,7 @@ final class com.fenakhay.kwikibot.client.model/Coordinate { // com.fenakhay.kwik
 }
 
 final class com.fenakhay.kwikibot.client.model/EventStreams { // com.fenakhay.kwikibot.client.model/EventStreams|null[0]
+    constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, com.fenakhay.kwikibot.net/RetryPolicy, kotlin/String = ...) // com.fenakhay.kwikibot.client.model/EventStreams.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;com.fenakhay.kwikibot.net.RetryPolicy;kotlin.String){}[0]
     constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, kotlin/String = ...) // com.fenakhay.kwikibot.client.model/EventStreams.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;kotlin.String){}[0]
 
     final fun events(kotlin/String, kotlin/String? = ...): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.client.model/WikiEvent> // com.fenakhay.kwikibot.client.model/EventStreams.events|events(kotlin.String;kotlin.String?){}[0]

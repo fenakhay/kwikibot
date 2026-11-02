@@ -39,7 +39,7 @@ public object ApiDetector {
         client: HttpClient,
         userAgent: UserAgent,
     ): ApiEndpoint? {
-        val (response, html) =
+        val [response, html] =
             runCatching {
                 client.withRequestPermit {
                     val response = client.get(url) { identifyAs(userAgent) }

@@ -1,7 +1,11 @@
 package com.fenakhay.kwikibot.client.model
 
+import com.fenakhay.kwikibot.model.WikiError
+import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.identifyAs
+import com.fenakhay.kwikibot.net.transport.statusFailure
+import com.fenakhay.kwikibot.net.transport.transportFailure
 import com.fenakhay.kwikibot.protocol.decode.flag
 import com.fenakhay.kwikibot.protocol.decode.int
 import com.fenakhay.kwikibot.protocol.decode.long
@@ -9,15 +13,23 @@ import com.fenakhay.kwikibot.protocol.decode.obj
 import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.decode.time
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.HttpTimeoutConfig
+import io.ktor.client.plugins.pluginOrNull
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readLine
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
@@ -79,8 +91,13 @@ public data class WikiEvent(
  *     .collect { … }
  * ```
  *
- * The flow does not end on its own. Cancel the collecting coroutine to stop it; a dropped connection surfaces
- * as an exception rather than a silent end, so a caller cannot mistake a network failure for a quiet wiki.
+ * The flow does not end on its own. Cancel the collecting coroutine to stop it. The server closes every
+ * connection after about fifteen minutes, so a close is routine: the flow reconnects from the last event it
+ * read, waiting as [RetryPolicy] says, and an event around a reconnect can arrive twice. A connection that
+ * keeps failing with no event in between surfaces as a [WikiError.Transport] once the retries are spent, so a
+ * caller cannot mistake a network failure for a quiet wiki, and a refusal surfaces at once.
+ *
+ * A stream holds no request permit, since it would keep one of the client's few for as long as it runs.
  */
 public class EventStreams(
     private val client: HttpClient,
@@ -88,12 +105,31 @@ public class EventStreams(
     private val baseUrl: String = WIKIMEDIA,
 ) {
 
+    private var retry: RetryPolicy = RetryPolicy()
+
+    /**
+     * A stream that reconnects as [retry] says, rather than as the default policy does.
+     *
+     * @param client the client to connect through.
+     * @param userAgent who to say is asking.
+     * @param retry how often to try again, and how long to wait, when a connection fails.
+     * @param baseUrl where the streams are served.
+     */
+    public constructor(
+        client: HttpClient,
+        userAgent: UserAgent,
+        retry: RetryPolicy,
+        baseUrl: String = WIKIMEDIA,
+    ) : this(client, userAgent, baseUrl) {
+        this.retry = retry
+    }
+
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Recent changes, as they happen.
      *
-     * @param since where to resume from: an offset from a previous [WikiEvent.offset], or a timestamp. `null`
+     * @param since where to resume from: a previous [WikiEvent.offset], or an ISO 8601 timestamp. `null`
      *   starts from now.
      */
     public fun recentChanges(since: String? = null): Flow<WikiEvent> = events("recentchange", since)
@@ -107,19 +143,64 @@ public class EventStreams(
      * Exposed because Wikimedia adds streams faster than any library can name them.
      */
     public fun events(stream: String, since: String? = null): Flow<WikiEvent> = channelFlow {
-        client
-            .prepareGet("$baseUrl/v2/stream/$stream") {
-                identifyAs(userAgent)
-                header(HttpHeaders.Accept, "text/event-stream")
-                // The server holds the connection open; a read timeout would end it every minute.
-                header(HttpHeaders.CacheControl, "no-cache")
-                since?.let { parameter("since", it) }
+        val url = "$baseUrl/v2/stream/$stream"
+        var position = since
+        var attempt = 0
+
+        while (true) {
+            var received = false
+            val failure = runCatching {
+                connect(url, position) { event, offset ->
+                    received = true
+                    offset?.let { position = it }
+                    event?.let { send(it) }
+                }
             }
-            .execute { response ->
-                readEvents(response.bodyAsChannel()) { event -> send(event) }
+                .fold(
+                    onSuccess = { null },
+                    onFailure = { it as? WikiError.Transport ?: transportFailure(url, it) ?: throw it },
+                )
+
+            if (failure != null && !failure.isTransient) throw failure
+            attempt = if (received) 1 else attempt + 1
+            if (!received && attempt > retry.maxRetries) {
+                throw failure ?: WikiError.Transport.Unreachable(url)
             }
+            delay(retry.delayFor(attempt, (failure as? WikiError.Transport.RateLimited)?.retryAfter))
+        }
     }
         .buffer(Channel.RENDEZVOUS)
+
+    /** One connection, resuming from [position], until the server closes it. */
+    private suspend fun connect(
+        url: String,
+        position: String?,
+        emit: suspend (WikiEvent?, String?) -> Unit,
+    ) {
+        client
+            .prepareGet(url) {
+                identifyAs(userAgent)
+                header(HttpHeaders.Accept, "text/event-stream")
+                header(HttpHeaders.CacheControl, "no-cache")
+                when {
+                    position == null -> Unit
+                    position.startsWith(OFFSET_START) -> header(LAST_EVENT_ID, position)
+                    else -> parameter("since", position)
+                }
+                if (client.pluginOrNull(HttpTimeout) != null) {
+                    timeout {
+                        requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
+                        socketTimeoutMillis = SILENT_FOR.inWholeMilliseconds
+                    }
+                }
+            }
+            .execute { response ->
+                if (!response.status.isSuccess()) {
+                    statusFailure(url, response, response.bodyAsText())?.let { throw it }
+                }
+                readEvents(response.bodyAsChannel(), emit)
+            }
+    }
 
     /**
      * Reads the server-sent-event framing off a channel.
@@ -130,8 +211,11 @@ public class EventStreams(
      *
      * An event with no blank line after it is not emitted. That is the specified behaviour and the safe one:
      * a connection cut mid-event would otherwise deliver half a payload as though it were whole.
+     *
+     * [emit] takes each complete event, as `null` if it could not be read, and its offset, so that an
+     * unreadable event still moves the position on.
      */
-    private suspend fun readEvents(channel: ByteReadChannel, emit: suspend (WikiEvent) -> Unit) {
+    private suspend fun readEvents(channel: ByteReadChannel, emit: suspend (WikiEvent?, String?) -> Unit) {
         val data = StringBuilder()
         var id: String? = null
 
@@ -140,7 +224,7 @@ public class EventStreams(
 
             when {
                 line.isEmpty() -> {
-                    flush(data, id, emit)
+                    if (data.isNotEmpty()) emit(decode(data.toString(), id), id)
                     data.clear()
                 }
 
@@ -151,15 +235,6 @@ public class EventStreams(
                 else -> Unit
             }
         }
-    }
-
-    private suspend fun flush(
-        data: StringBuilder,
-        id: String?,
-        emit: suspend (WikiEvent) -> Unit,
-    ) {
-        if (data.isEmpty()) return
-        decode(data.toString(), id)?.let { emit(it) }
     }
 
     /**
@@ -195,5 +270,11 @@ public class EventStreams(
     public companion object {
         /** Wikimedia's public stream, which needs no credentials. */
         public const val WIKIMEDIA: String = "https://stream.wikimedia.org"
+
+        private const val LAST_EVENT_ID = "Last-Event-ID"
+        private const val OFFSET_START = "["
+
+        /** How long a connection may say nothing, keep-alives included, before it counts as dead. */
+        private val SILENT_FOR = 5.minutes
     }
 }

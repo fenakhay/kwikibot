@@ -13,6 +13,7 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 
 private val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
 
@@ -85,7 +87,7 @@ class EventStreamsTest {
             """
                 .trimIndent() + BLANK_LINE
 
-        val events = streams(withGarbage).recentChanges().toList()
+        val events = streams(withGarbage).recentChanges().take(1).toList()
 
         events.single().title shouldBe "volcano"
     }
@@ -100,7 +102,7 @@ class EventStreamsTest {
             """
                 .trimIndent() + BLANK_LINE
 
-        val events = streams(misshapen).recentChanges().toList()
+        val events = streams(misshapen).recentChanges().take(2).toList()
 
         events.map { it.title } shouldBe listOf("volcano", "mountain")
         events.first().revisionId.shouldBeNull()
@@ -121,7 +123,7 @@ class EventStreamsTest {
                 """
                     .trimIndent() + BLANK_LINE
 
-            val events = streams(sparse).recentChanges().toList()
+            val events = streams(sparse).recentChanges().take(2).toList()
 
             events.map { it.title } shouldBe listOf("volcano", "lava")
             events.map { it.wiki } shouldBe listOf("en.wiktionary.org", "")
@@ -139,7 +141,7 @@ class EventStreamsTest {
                     MockEngine { request ->
                         asked += request.url
                         respond(
-                            "",
+                            stream,
                             HttpStatusCode.OK,
                             headersOf(HttpHeaders.ContentType, "text/event-stream"),
                         )
@@ -148,11 +150,163 @@ class EventStreamsTest {
                 userAgent,
             )
 
-        streams.pageCreations(since = "2026-10-01T00:00:00Z").toList()
-        streams.recentChanges().toList()
+        streams.pageCreations(since = "2026-10-01T00:00:00Z").take(1).toList()
+        streams.recentChanges().take(1).toList()
 
         asked.map { it.encodedPath } shouldBe listOf("/v2/stream/page-create", "/v2/stream/recentchange")
         asked.map { it.parameters["since"] } shouldBe listOf("2026-10-01T00:00:00Z", null)
+    }
+
+    @Test
+    fun `an offset goes in the header and a closed connection resumes from the last event`() = runTest {
+        val resumed = mutableListOf<String?>()
+        val since = mutableListOf<String?>()
+        val streams =
+            EventStreams(
+                HttpClient(
+                    MockEngine { request ->
+                        resumed += request.headers["Last-Event-ID"]
+                        since += request.url.parameters["since"]
+                        respond(stream, HttpStatusCode.OK)
+                    }
+                ),
+                userAgent,
+            )
+
+        streams.recentChanges(since = "[{\"offset\":1}]").take(3).toList()
+
+        resumed.first() shouldBe "[{\"offset\":1}]"
+        resumed[1] shouldBe """[{"topic":"codfw.mediawiki.recentchange","offset":42}]"""
+        since shouldBe listOf(null, null)
+    }
+
+    @Test
+    fun `a cut event leaves the position at the last whole one`() = runTest {
+        val cutOff =
+            """
+            id: [{"offset":1}]
+            data: {"title":"volcano"}
+
+            id: [{"offset":2}]
+            data: {"title":"half
+            """
+                .trimIndent()
+        val resumed = mutableListOf<String?>()
+        val streams =
+            EventStreams(
+                HttpClient(
+                    MockEngine { request ->
+                        resumed += request.headers["Last-Event-ID"]
+                        respond(cutOff, HttpStatusCode.OK)
+                    }
+                ),
+                userAgent,
+            )
+
+        streams.recentChanges().take(2).toList()
+
+        resumed shouldBe listOf(null, """[{"offset":1}]""")
+    }
+
+    @Test
+    fun `an unreadable event still moves the position on`() = runTest {
+        val garbled =
+            """
+            id: [{"offset":7}]
+            data: {not json
+
+            """
+                .trimIndent() + BLANK_LINE
+        val resumed = mutableListOf<String?>()
+        val answers = ArrayDeque(listOf(garbled, stream))
+        val streams =
+            EventStreams(
+                HttpClient(
+                    MockEngine { request ->
+                        resumed += request.headers["Last-Event-ID"]
+                        respond(answers.removeFirstOrNull() ?: stream, HttpStatusCode.OK)
+                    }
+                ),
+                userAgent,
+            )
+
+        streams.recentChanges().take(1).toList()
+
+        resumed shouldBe listOf(null, """[{"offset":7}]""")
+    }
+
+    @Test
+    fun `a server error is waited out as it asks and a recovery resets the count`() = runTest {
+        val answers = ArrayDeque(listOf(HttpStatusCode.ServiceUnavailable, HttpStatusCode.TooManyRequests))
+        val client =
+            HttpClient(
+                MockEngine {
+                    val status = answers.removeFirstOrNull() ?: HttpStatusCode.OK
+                    respond(
+                        if (status == HttpStatusCode.OK) stream else "busy",
+                        status,
+                        headersOf(HttpHeaders.RetryAfter, "90"),
+                    )
+                }
+            )
+
+        val events = EventStreams(client, userAgent).recentChanges().take(1).toList()
+
+        events.single().title shouldBe "volcano"
+        currentTime shouldBe 91_000L
+    }
+
+    @Test
+    fun `a refusal surfaces at once`() = runTest {
+        var asked = 0
+        val client =
+            HttpClient(
+                MockEngine {
+                    asked++
+                    respond("<p>go away</p>", HttpStatusCode.Forbidden)
+                }
+            )
+
+        val refused =
+            assertFailsWith<WikiError.Transport.Refused> {
+                EventStreams(client, userAgent).recentChanges().toList()
+            }
+
+        refused.detail shouldBe "go away"
+        asked shouldBe 1
+    }
+
+    @Test
+    fun `a stream that keeps failing raises once the retries are spent`() = runTest {
+        var asked = 0
+        val down =
+            HttpClient(
+                MockEngine {
+                    asked++
+                    throw IOException("connection refused")
+                }
+            )
+        val silent = HttpClient(MockEngine { respond("", HttpStatusCode.OK) })
+        val broken = HttpClient(MockEngine { error("a bug") })
+        val retry = RetryPolicy(maxRetries = 2)
+
+        assertFailsWith<WikiError.Transport.Unreachable> {
+            EventStreams(down, userAgent, retry).recentChanges().toList()
+        }
+        asked shouldBe 3
+        assertFailsWith<WikiError.Transport.Unreachable> {
+            EventStreams(silent, userAgent, retry, "https://example.org").recentChanges().toList()
+        }
+        assertFailsWith<IllegalStateException> {
+            EventStreams(broken, userAgent, RetryPolicy.NONE).recentChanges().toList()
+        }
+    }
+
+    @Test
+    fun `a client with a timeout does not apply it to the stream`() = runTest {
+        val client = HttpClient(MockEngine { respond(stream, HttpStatusCode.OK) }) { install(HttpTimeout) }
+
+        EventStreams(client, userAgent).recentChanges().take(1).toList().single().title shouldBe "volcano"
     }
 
     @Test
@@ -173,7 +327,7 @@ class EventStreamsTest {
             """
                 .trimIndent()
 
-        streams(cutOff).recentChanges().toList().size shouldBe 1
+        streams(cutOff).recentChanges().take(1).toList().size shouldBe 1
     }
 
     private fun streams(body: String) =
