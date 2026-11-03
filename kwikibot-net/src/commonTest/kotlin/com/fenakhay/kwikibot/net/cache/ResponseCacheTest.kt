@@ -1,17 +1,28 @@
 package com.fenakhay.kwikibot.net.cache
 
 import com.fenakhay.kwikibot.net.RequestKind
+import com.fenakhay.kwikibot.net.Throttle
+import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.filesUnder
 import com.fenakhay.kwikibot.net.temporaryDirectory
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.net.transport.KtorTransport
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotContain
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.buffered
@@ -143,6 +154,31 @@ class ResponseCacheTest {
     }
 
     @Test
+    fun `two wikis sharing a cache do not read each other's answers`() = runTest {
+        val cache = DiskCache(tempRoot())
+        val client =
+            HttpClient(
+                MockEngine {
+                    respond(
+                        """{"from":"${it.url.host}"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            )
+        val userAgent = UserAgent("TestBot", "1.0", "https://example.org/TestBot")
+
+        val answers =
+            listOf("a.example.org", "b.example.org").map { server ->
+                KtorTransport(client, ApiEndpoint(server), userAgent, Throttle.unpaced(), cache = cache)
+                    .call(read)["from"]
+                    .toString()
+            }
+
+        answers shouldBe listOf("\"a.example.org\"", "\"b.example.org\"")
+    }
+
+    @Test
     fun `accounts keep entries apart and no secret reaches the disk`() = runTest {
         val root = tempRoot()
         val cache = DiskCache(root)
@@ -166,6 +202,32 @@ class ResponseCacheTest {
             }
         written shouldNotContain "hunter2"
         written shouldNotContain "sekrit-token"
+    }
+
+    @Test
+    fun `a write sweeps out what has expired and only once per time to live`() = runTest {
+        val root = tempRoot()
+        val clock = FixedClock()
+        val cache = DiskCache(root, ttl = 1.hours, clock = clock)
+        val answer = body("""{"n":1}""")
+        val garbage = Path(root, "ab", "garbage.json")
+
+        cache.put(ApiRequest.of("query", "titles" to "old"), answer)
+        entries(root) shouldBe 1
+
+        clock.advance(30.minutes)
+        SystemFileSystem.createDirectories(Path(root, "ab"))
+        SystemFileSystem.sink(garbage).buffered().use { it.writeString("not json") }
+        cache.put(ApiRequest.of("query", "titles" to "middle"), answer)
+        entries(root) shouldBe 3
+
+        clock.advance(40.minutes)
+        cache.put(ApiRequest.of("query", "titles" to "new"), answer)
+
+        entries(root) shouldBe 2
+        cache.get(ApiRequest.of("query", "titles" to "old")).shouldBeNull()
+        cache.get(ApiRequest.of("query", "titles" to "middle")) shouldBe answer
+        cache.get(ApiRequest.of("query", "titles" to "new")) shouldBe answer
     }
 
     @Test

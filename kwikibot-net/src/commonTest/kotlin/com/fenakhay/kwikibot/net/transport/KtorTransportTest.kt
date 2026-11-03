@@ -493,31 +493,6 @@ class KtorTransportTest {
     }
 
     @Test
-    fun `two wikis sharing a cache do not read each other's answers`() = runTest {
-        val remembered = mutableMapOf<ApiRequest, JsonObject>()
-        val cache =
-            object : ResponseCache {
-                override suspend fun get(request: ApiRequest): JsonObject? = remembered[request]
-
-                override suspend fun put(request: ApiRequest, response: JsonObject) {
-                    remembered[request] = response
-                }
-            }
-        val client = HttpClient(MockEngine { respondJson("""{"from":"${it.url.host}"}""") })
-        val request = ApiRequest.of("query", "titles" to "volcano")
-
-        val answers =
-            listOf("a.example.org", "b.example.org").map { server ->
-                KtorTransport(client, ApiEndpoint(server), userAgent, Throttle.unpaced(), cache = cache)
-                    .call(request)["from"]
-                    .toString()
-            }
-
-        answers shouldBe listOf("\"a.example.org\"", "\"b.example.org\"")
-        remembered.size shouldBe 2
-    }
-
-    @Test
     fun `a listener that throws fails the call which is how a test makes a warning fatal`() = runTest {
         val transport =
             transport(listener = responses { _, _ -> throw AssertionError("deprecated") }) {

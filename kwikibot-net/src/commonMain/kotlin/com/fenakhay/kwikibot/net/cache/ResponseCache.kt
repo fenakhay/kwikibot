@@ -4,10 +4,13 @@ import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.long
 import com.fenakhay.kwikibot.net.obj
 import com.fenakhay.kwikibot.net.transport.ApiRequest
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.io.Buffer
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -128,6 +131,8 @@ public class DiskCache(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    @OptIn(ExperimentalAtomicApi::class) private val lastSweep = AtomicLong(Long.MIN_VALUE)
+
     override suspend fun get(request: ApiRequest): JsonObject? {
         if (!ResponseCache.isCacheable(request)) return null
 
@@ -175,7 +180,47 @@ public class DiskCache(
             file.parent?.let { SystemFileSystem.createDirectories(it) }
             file.writeText(entry.toString())
         }
+        sweepIfDue()
     }
+
+    /**
+     * Sweeps on the first write of this cache, then at most once per [ttl].
+     *
+     * An entry is otherwise deleted only when its request comes round again, and most never do, so the
+     * directory would grow for as long as it is used.
+     */
+    @OptIn(ExperimentalAtomicApi::class)
+    private fun sweepIfDue() {
+        val now = clock.now().toEpochMilliseconds()
+        val last = lastSweep.load()
+        if (last != Long.MIN_VALUE && now - last < ttl.inWholeMilliseconds) return
+        if (!lastSweep.compareAndSet(last, now)) return
+
+        val _ = runCatching { sweep(root) }
+    }
+
+    /**
+     * Deletes every entry below [directory] that is expired or unreadable.
+     *
+     * Reads only the start of each file, since `storedAt` is written first and a response can be large.
+     */
+    private fun sweep(directory: Path) {
+        for (child in SystemFileSystem.list(directory)) {
+            if (SystemFileSystem.metadataOrNull(child)?.isDirectory == true) {
+                sweep(child)
+            } else {
+                val storedAt = STORED_AT.find(child.readStart())?.groupValues?.get(1)?.toLongOrNull()
+                if (storedAt == null || !isFresh(storedAt)) child.deleteQuietly()
+            }
+        }
+    }
+
+    private fun Path.readStart(): String =
+        SystemFileSystem.source(this).use { source ->
+            val start = Buffer()
+            val _ = source.readAtMostTo(start, ENTRY_START_BYTES)
+            start.readString()
+        }
 
     /** Removes every entry. */
     public fun clear() {
@@ -229,6 +274,8 @@ public class DiskCache(
         public val DEFAULT_TTL: Duration = 12.hours
 
         /** Hex characters of the hash used as the file name. 128 bits is plenty. */
+        private const val ENTRY_START_BYTES = 64L
+        private val STORED_AT = Regex("""^\{"storedAt":(\d+)""")
         private const val KEY_LENGTH = 32
     }
 }
