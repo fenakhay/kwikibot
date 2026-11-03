@@ -4,7 +4,9 @@ import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
+import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -27,6 +29,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 class AuthTest {
 
@@ -439,6 +444,24 @@ class AuthTest {
         }
 
         codes shouldBe answers.map { "nouserinfo" }
+    }
+
+    @Test
+    fun `who is logged in is asked of the wiki and never of a cache`() = runTest {
+        var asked: ApiRequest? = null
+        val transport =
+            object : MediaWikiTransport {
+                override val endpoint = ApiEndpoint("en.wiktionary.org")
+
+                override suspend fun call(request: ApiRequest): JsonObject {
+                    asked = request
+                    return Json.parseToJsonElement("""{"query":{"userinfo":{"name":"Bot"}}}""").jsonObject
+                }
+            }
+
+        LoginManager(transport, Credentials.Anonymous).whoAmI().name shouldBe "Bot"
+
+        asked?.cacheable shouldBe false
     }
 
     @Test

@@ -129,7 +129,10 @@ public class LoginManager(
     /** Asks the wiki who we are, without logging in. */
     public suspend fun whoAmI(): Identity {
         val response =
-            transport.call(ApiRequest.of("query", "meta" to "userinfo", "uiprop" to "groups|rights"))
+            transport.call(
+                ApiRequest.of("query", "meta" to "userinfo", "uiprop" to "groups|rights")
+                    .copy(cacheable = false)
+            )
         val info =
             response.obj("query")?.obj("userinfo")
                 ?: throw WikiError.Api("nouserinfo", "no userinfo in response", "query+userinfo")
