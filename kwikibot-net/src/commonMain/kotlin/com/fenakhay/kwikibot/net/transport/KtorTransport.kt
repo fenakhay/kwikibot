@@ -6,6 +6,7 @@ import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.array
 import com.fenakhay.kwikibot.net.cache.ResponseCache
+import com.fenakhay.kwikibot.net.cache.scopedTo
 import com.fenakhay.kwikibot.net.identifyAs
 import com.fenakhay.kwikibot.net.obj
 import com.fenakhay.kwikibot.net.objects
@@ -56,9 +57,11 @@ public class KtorTransport(
     private val throttle: Throttle = Throttle(),
     private val retry: RetryPolicy = RetryPolicy(),
     private val maxlag: Int? = DEFAULT_MAXLAG,
-    private val cache: ResponseCache = ResponseCache.NONE,
+    cache: ResponseCache = ResponseCache.NONE,
     private val listener: TransportListener = TransportListener.NONE,
 ) : MediaWikiTransport {
+
+    private val cache: ResponseCache = cache.scopedTo(endpoint.apiUrl)
 
     private val json = Json { ignoreUnknownKeys = true }
 

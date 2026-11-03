@@ -213,6 +213,11 @@ public final class com/fenakhay/kwikibot/net/cache/ResponseCache$Companion {
 	public final fun isCacheable (Lcom/fenakhay/kwikibot/net/transport/ApiRequest;)Z
 }
 
+public final class com/fenakhay/kwikibot/net/cache/ResponseCacheKt {
+	public static final fun scopedTo (Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Lcom/fenakhay/kwikibot/net/auth/Credentials;)Lcom/fenakhay/kwikibot/net/cache/ResponseCache;
+	public static final fun scopedTo (Lcom/fenakhay/kwikibot/net/cache/ResponseCache;Ljava/lang/String;)Lcom/fenakhay/kwikibot/net/cache/ResponseCache;
+}
+
 public final class com/fenakhay/kwikibot/net/transport/ApiEndpoint {
 	public static final field Companion Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V

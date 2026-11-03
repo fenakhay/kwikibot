@@ -12,6 +12,7 @@ import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.auth.LoginManager
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.cache.ResponseCache
+import com.fenakhay.kwikibot.net.cache.scopedTo
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.HttpSettings
@@ -136,7 +137,7 @@ public class WikiClient(
                 throttle = config.throttle,
                 retry = config.retry,
                 maxlag = config.maxlag,
-                cache = config.cache,
+                cache = config.cache.scopedTo(credentials),
                 listener = listeners,
             )
 

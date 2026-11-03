@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.net.cache
 
+import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.long
 import com.fenakhay.kwikibot.net.obj
 import com.fenakhay.kwikibot.net.transport.ApiRequest
@@ -65,6 +66,43 @@ public interface ResponseCache {
         private val UNCACHEABLE_ACTIONS = setOf("login", "logout", "clientlogin", "createaccount")
     }
 }
+
+/**
+ * This cache, keeping what it holds for [scope] apart from everything else in it.
+ *
+ * The same request means something else on another wiki or to another account, and a cache on disk outlives
+ * and is shared between the clients that open it. So a scope is added to the request the cache sees, and only
+ * the cache sees it. A view of a view is in both scopes.
+ *
+ * @param scope what the answers belong to. Written into cache entries, so never a secret.
+ */
+public fun ResponseCache.scopedTo(scope: String): ResponseCache {
+    if (this === ResponseCache.NONE) return this
+    val inner = this
+    return object : ResponseCache {
+        override suspend fun get(request: ApiRequest): JsonObject? = inner.get(request.inScope(scope))
+
+        override suspend fun put(request: ApiRequest, response: JsonObject) =
+            inner.put(request.inScope(scope), response)
+    }
+}
+
+/** This cache, keeping what it holds for the account [credentials] log in as apart. */
+public fun ResponseCache.scopedTo(credentials: Credentials): ResponseCache =
+    scopedTo(
+        when (credentials) {
+            is Credentials.Anonymous -> "anonymous"
+            is Credentials.BotPassword -> credentials.loginName
+            is Credentials.OAuth2 ->
+                credentials.username
+                    ?: SHA256().digest(credentials.accessToken.encodeToByteArray()).toHexString()
+        }
+    )
+
+private fun ApiRequest.inScope(scope: String): ApiRequest =
+    copy(params = params + (SCOPE_PARAMETER to (params[SCOPE_PARAMETER]?.let { "$it|$scope" } ?: scope)))
+
+private const val SCOPE_PARAMETER = "kwikibot-scope"
 
 /**
  * A [ResponseCache] on disk, one file per request.

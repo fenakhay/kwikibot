@@ -1,11 +1,13 @@
 package com.fenakhay.kwikibot.net.cache
 
 import com.fenakhay.kwikibot.net.RequestKind
+import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.filesUnder
 import com.fenakhay.kwikibot.net.temporaryDirectory
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldNotContain
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -15,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -123,6 +126,46 @@ class ResponseCacheTest {
 
         cache.get(login).shouldBeNull()
         entries(root) shouldBe 0
+    }
+
+    @Test
+    fun `a scope keeps entries apart and scopes combine`() = runTest {
+        val cache = DiskCache(tempRoot())
+        val answer = body("""{"n":1}""")
+
+        cache.scopedTo("a").put(read, answer)
+
+        cache.scopedTo("a").get(read) shouldBe answer
+        cache.scopedTo("b").get(read).shouldBeNull()
+        cache.get(read).shouldBeNull()
+        cache.scopedTo("a").scopedTo("b").get(read).shouldBeNull()
+        ResponseCache.NONE.scopedTo("a") shouldBe ResponseCache.NONE
+    }
+
+    @Test
+    fun `accounts keep entries apart and no secret reaches the disk`() = runTest {
+        val root = tempRoot()
+        val cache = DiskCache(root)
+        val answer = body("""{"n":1}""")
+        val accounts =
+            listOf(
+                Credentials.Anonymous,
+                Credentials.BotPassword("Bot", "one", "hunter2"),
+                Credentials.BotPassword("Bot", "two", "hunter2"),
+                Credentials.OAuth2("sekrit-token"),
+                Credentials.OAuth2("sekrit-token", "Bot"),
+            )
+
+        accounts.forEach { cache.scopedTo(it).put(read, answer) }
+
+        entries(root) shouldBe accounts.size
+        accounts.forEach { cache.scopedTo(it).get(read) shouldBe answer }
+        val written =
+            filesUnder(root).joinToString { file ->
+                SystemFileSystem.source(file).buffered().use { it.readString() }
+            }
+        written shouldNotContain "hunter2"
+        written shouldNotContain "sekrit-token"
     }
 
     @Test

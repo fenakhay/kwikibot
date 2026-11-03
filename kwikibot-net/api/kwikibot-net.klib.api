@@ -386,6 +386,8 @@ final object com.fenakhay.kwikibot.net/Kwikibot { // com.fenakhay.kwikibot.net/K
     final fun report(): kotlin/String // com.fenakhay.kwikibot.net/Kwikibot.report|report(){}[0]
 }
 
+final fun (com.fenakhay.kwikibot.net.cache/ResponseCache).com.fenakhay.kwikibot.net.cache/scopedTo(com.fenakhay.kwikibot.net.auth/Credentials): com.fenakhay.kwikibot.net.cache/ResponseCache // com.fenakhay.kwikibot.net.cache/scopedTo|scopedTo@com.fenakhay.kwikibot.net.cache.ResponseCache(com.fenakhay.kwikibot.net.auth.Credentials){}[0]
+final fun (com.fenakhay.kwikibot.net.cache/ResponseCache).com.fenakhay.kwikibot.net.cache/scopedTo(kotlin/String): com.fenakhay.kwikibot.net.cache/ResponseCache // com.fenakhay.kwikibot.net.cache/scopedTo|scopedTo@com.fenakhay.kwikibot.net.cache.ResponseCache(kotlin.String){}[0]
 final fun (io.ktor.http/HttpMessageBuilder).com.fenakhay.kwikibot.net/identifyAs(com.fenakhay.kwikibot.net/UserAgent) // com.fenakhay.kwikibot.net/identifyAs|identifyAs@io.ktor.http.HttpMessageBuilder(com.fenakhay.kwikibot.net.UserAgent){}[0]
 final fun com.fenakhay.kwikibot.net.transport/statusFailure(kotlin/String, io.ktor.client.statement/HttpResponse, kotlin/String = ...): com.fenakhay.kwikibot.model/WikiError.Transport? // com.fenakhay.kwikibot.net.transport/statusFailure|statusFailure(kotlin.String;io.ktor.client.statement.HttpResponse;kotlin.String){}[0]
 final fun com.fenakhay.kwikibot.net.transport/transportFailure(kotlin/String, kotlin/Throwable): com.fenakhay.kwikibot.model/WikiError.Transport? // com.fenakhay.kwikibot.net.transport/transportFailure|transportFailure(kotlin.String;kotlin.Throwable){}[0]
