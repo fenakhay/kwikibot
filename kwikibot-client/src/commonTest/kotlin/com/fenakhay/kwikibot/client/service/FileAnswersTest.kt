@@ -202,7 +202,6 @@ class FileAnswersTest {
                         throw IOException("connection reset")
                     }
                     sent["offset"] == "8" -> respondJson(STORED_ALREADY)
-                    sent["checkstatus"] == "1" -> respondJson(UNEXPECTED)
                     else -> respondJson(STASHED)
                 }
             }
@@ -214,23 +213,22 @@ class FileAnswersTest {
     }
 
     @Test
-    fun `a last chunk whose answer was lost finds its key by asking the wiki`() = runTest {
+    fun `a last chunk whose answer was lost starts the upload again and only once`() = runTest {
+        val offsets = mutableListOf<String?>()
         var dropped = false
-        val published = mutableListOf<String?>()
+        var refused = false
         val service = retrying { request ->
             tokenOr(request) {
                 val sent = request.fields()
+                offsets += sent["offset"]
                 when {
-                    sent["checkstatus"] == "1" ->
-                        respondJson("""{"upload":{"result":"Success","filekey":"whole"}}""")
                     sent["offset"] == "8" && !dropped -> {
                         dropped = true
                         respond("<html>Bad gateway</html>", HttpStatusCode.BadGateway)
                     }
-                    sent["offset"] == "8" -> respondJson(STORED_ALREADY)
-                    sent["offset"] == null -> {
-                        published += sent["filekey"]
-                        respondJson("""{"upload":{"result":"Success","filename":"Volcano.png"}}""")
+                    sent["offset"] == "8" && !refused -> {
+                        refused = true
+                        respondJson(KEY_GONE)
                     }
                     else -> respondJson(STASHED)
                 }
@@ -239,7 +237,16 @@ class FileAnswersTest {
 
         service.upload(tempFile(ByteArray(CHUNK_SIZE * 2)), file, chunkSize = CHUNK_SIZE)
 
-        published shouldBe listOf("whole")
+        offsets shouldBe listOf("0", "8", "8", "0", "8", null)
+
+        val gone = retrying { request ->
+            tokenOr(request) {
+                if (request.fields()["offset"] == "8") respondJson(KEY_GONE) else respondJson(STASHED)
+            }
+        }
+        shouldThrow<WikiError> {
+            gone.upload(tempFile(ByteArray(CHUNK_SIZE * 2)), file, chunkSize = CHUNK_SIZE)
+        }
     }
 
     @Test
@@ -398,7 +405,7 @@ class FileAnswersTest {
         const val STORED_ALREADY =
             """{"errors":[{"code":"stashfailed","text":"Bad offset","data":{"offset":16}}]}"""
         const val STASHED = """{"upload":{"result":"Continue","filekey":"KEY"}}"""
-        const val UNEXPECTED = """{"error":{"code":"unexpected","info":"not asked for"}}"""
+        const val KEY_GONE = """{"errors":[{"code":"uploadstash-file-not-found","text":"Key not found"}]}"""
         const val MORE_THAN_A_BATCH = 600
     }
 

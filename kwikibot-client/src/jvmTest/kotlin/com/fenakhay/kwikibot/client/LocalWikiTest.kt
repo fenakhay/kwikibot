@@ -6,6 +6,7 @@ import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.ParseProperty
 import com.fenakhay.kwikibot.client.service.WatchMode
 import com.fenakhay.kwikibot.model.edit.EditOutcome
+import com.fenakhay.kwikibot.model.file.UploadOutcome
 import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
@@ -14,6 +15,7 @@ import com.fenakhay.kwikibot.net.auth.Identity
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.TransportListener
+import com.fenakhay.kwikibot.net.transport.WikiHttpClient
 import com.fenakhay.kwikibot.protocol.ApiWarning
 import com.fenakhay.kwikibot.protocol.ApiWarningListener
 import com.fenakhay.kwikibot.testkit.FailOnDeprecation
@@ -21,13 +23,22 @@ import com.fenakhay.kwikibot.wikitext.Wikitext
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.plugins.HttpSend
+import io.ktor.client.plugins.plugin
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
 import java.net.URI
+import java.nio.file.Files
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
+import javax.imageio.ImageIO
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.IOException
 import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Tag
@@ -296,6 +307,65 @@ class LocalWikiTest {
         rules.key("Template:Foo_bar") shouldBe "Foo bar"
         rules.isParserFunction("#if:x") shouldBe true
         rules.isParserFunction("PAGENAME") shouldBe true
+    }
+
+    @Test
+    fun `a chunk whose answer was lost is recognised and the upload carries on`(): Unit =
+        uploadLosingAnswerTo(multipartRequest = 2)
+
+    @Test
+    fun `a last chunk whose answer was lost starts the upload again`(): Unit =
+        uploadLosingAnswerTo(multipartRequest = 3)
+
+    /** Uploads a file in three chunks, the wiki storing the given request but its answer never arriving. */
+    private fun uploadLosingAnswerTo(multipartRequest: Int): Unit = runBlocking {
+        val image = BufferedImage(1200, 1200, BufferedImage.TYPE_INT_RGB)
+        val noise = Random(multipartRequest)
+        for (x in 0 until image.width) for (y in 0 until image.height) image.setRGB(x, y, noise.nextInt())
+        val file = Files.createTempFile("kwikibot-upload", ".png")
+        Files.write(file, ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray())
+
+        val url = URI(System.getenv("KWIKI_MEDIAWIKI"))
+        val credentials =
+            Credentials.BotPassword(
+                account = environment("KWIKI_MEDIAWIKI_ACCOUNT") ?: "Admin",
+                botName = environment("KWIKI_MEDIAWIKI_BOT") ?: "kwikibot",
+                password = environment("KWIKI_MEDIAWIKI_BOT_PASSWORD") ?: "kwikibotkwikibotkwikibotkwikibot",
+            )
+        val http = WikiHttpClient.create(credentials = credentials)
+        var multipart = 0
+        http.plugin(HttpSend).intercept { request ->
+            val call = execute(request)
+            if (request.body is MultiPartFormDataContent && ++multipart == multipartRequest) {
+                throw IOException("the answer was lost")
+            }
+            call
+        }
+        val config =
+            WikiConfig(
+                userAgent = UserAgent("kwikibot-localtest", "0.1.0", "https://github.com/fenakhay/kwikibot"),
+                throttle = Throttle(Duration.ZERO, Duration.ZERO),
+            )
+
+        WikiClient(config, credentials, httpClient = http).use { client ->
+            val wiki =
+                client.wiki(
+                    ApiEndpoint(url.authority, url.path.orEmpty().trimEnd('/'), url.scheme == "https")
+                )
+            val target = wiki.ref("File:Lost ${UUID.randomUUID()}.png")
+            val size = Files.size(file)
+
+            val outcome =
+                wiki.files.upload(
+                    kotlinx.io.files.Path(file.toString()),
+                    target,
+                    comment = "testing a lost answer",
+                    chunkSize = (size / 3 + 1).toInt(),
+                )
+
+            outcome.shouldBeInstanceOf<UploadOutcome.Uploaded>()
+            wiki.files.latest(target)?.size shouldBe size
+        }
     }
 
     private val restored = CopyOnWriteArrayList<String>()

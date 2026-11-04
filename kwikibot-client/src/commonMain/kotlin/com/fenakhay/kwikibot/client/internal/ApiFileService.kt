@@ -325,14 +325,16 @@ internal class ApiFileService(
      *
      * A chunk may be sent twice, when the wiki stored it and its answer was lost on the way back. The wiki
      * then refuses the copy, saying which offset it expected, and an offset past this chunk means this chunk
-     * is already there. The key stays the same between chunks, and asking after it is how the last one's key
-     * is found. A second stash from a first chunk sent twice is simply never used.
+     * is already there, under the same key. A second stash from a first chunk sent twice is simply never
+     * used. The last chunk is different: the wiki moves the file to a new key and forgets the old one, and
+     * with the answer lost nothing names the new one. So that upload starts again, once.
      */
     private suspend fun uploadInChunks(
         file: Path,
         fileName: String,
         size: Long,
         chunkSize: Int,
+        mayRestart: Boolean = true,
     ): String {
         // One chunk in memory at a time.
         var offset = 0L
@@ -366,12 +368,14 @@ internal class ApiFileService(
 
                 val isLast = end == size || chunk.size < end - offset
                 val known = fileKey
+                val keyWasLost = known != null && response.saysKeyIsGone()
+                if (isLast && mayRestart && keyWasLost) {
+                    log.warn { "The last chunk of $fileName arrived but its answer did not; starting again" }
+                    return uploadInChunks(file, fileName, size, chunkSize, mayRestart = false)
+                }
                 val key =
-                    when {
-                        known == null || !response.saysChunkArrived(end) -> response.fileKeyOrFail()
-                        isLast -> stashStatus(known, fileName).fileKeyOrFail()
-                        else -> known
-                    }
+                    if (known != null && !isLast && response.saysChunkArrived(end)) known
+                    else response.fileKeyOrFail()
                 if (isLast) return key
                 fileKey = key
                 offset = end
@@ -379,26 +383,17 @@ internal class ApiFileService(
         }
     }
 
+    private fun JsonObject.firstError(): JsonObject? = array("errors").objects().firstOrNull() ?: obj("error")
+
+    /** Whether the wiki refused a chunk because the key it was sent under no longer names anything. */
+    private fun JsonObject.saysKeyIsGone(): Boolean = firstError()?.string("code") == STASH_KEY_GONE
+
     /** Whether the wiki refused a chunk because it already holds the file up to [end]. */
     private fun JsonObject.saysChunkArrived(end: Long): Boolean {
-        val error = array("errors").objects().firstOrNull() ?: obj("error") ?: return false
+        val error = firstError() ?: return false
         if (error.string("code") != STASH_FAILED) return false
         return (error.obj("data")?.long("offset") ?: error.long("offset")) == end
     }
-
-    /** What the wiki holds under a key, which names the whole file once the last chunk has arrived. */
-    private suspend fun stashStatus(fileKey: String, fileName: String): JsonObject =
-        multipart(
-            fields =
-                mapOf(
-                    "action" to "upload",
-                    "filename" to fileName,
-                    "filekey" to fileKey,
-                    "checkstatus" to "1",
-                ),
-            part = null,
-            step = UploadStep.STASH,
-        )
 
     private fun logStopped(fileName: String, offset: Long, fileKey: String?) {
         log.warn {
@@ -538,7 +533,7 @@ internal class ApiFileService(
             .getOrElse {
                 return UploadAnswer.NotJson(response.status.value, retryAfter)
             }
-        val code = (parsed.array("errors").objects().firstOrNull() ?: parsed.obj("error"))?.string("code")
+        val code = parsed.firstError()?.string("code")
         return UploadAnswer.Answered(parsed, code, code in RETRYABLE_CODES, retryAfter)
     }
 
@@ -670,6 +665,7 @@ internal class ApiFileService(
     private companion object {
         const val DEFAULT_BATCH = 50
         const val STASH_FAILED = "stashfailed"
+        const val STASH_KEY_GONE = "uploadstash-file-not-found"
 
         /** Answers saying the moment is wrong, for which MediaWiki has applied nothing. */
         val RETRYABLE_CODES = setOf("maxlag", "ratelimited", "readonly")

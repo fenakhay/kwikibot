@@ -46,13 +46,16 @@ maintenance() {
 maintenance install --dbtype=sqlite --dbpath=/var/www/data --dbname=kwikibot --server="$server" \
     --scriptpath="" --lang=en --pass="$admin_password" "kwikibot test wiki" "$admin" >/dev/null
 
+echo '$wgEnableUploads = true;' >> LocalSettings.php
+chown -R www-data:www-data images
+
 if [ -d extensions/AbuseFilter ]; then
     echo "wfLoadExtension( 'AbuseFilter' );" >> LocalSettings.php
     maintenance update --quick >/dev/null
 fi
 
 maintenance createBotPassword --appid="$bot_name" \
-    --grants=basic,highvolume,editpage,createeditmovepage,patrol,viewmywatchlist "$admin" "$bot_password" >/dev/null
+    --grants=basic,highvolume,editpage,createeditmovepage,patrol,viewmywatchlist,uploadfile,uploadeditmovefile "$admin" "$bot_password" >/dev/null
 
 chown -R www-data:www-data /var/www/data
 INSIDE
