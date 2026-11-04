@@ -172,7 +172,19 @@ public class WikiClient(
 
         // The HTTP client is handed through for uploads alone: they need a multipart body
         // carrying bytes, which the transport deliberately cannot express.
-        return ApiWiki(info, identity, session, tokens, http, endpoint, config.userAgent, listeners)
+        return ApiWiki(
+            info,
+            identity,
+            session,
+            tokens,
+            http,
+            endpoint,
+            config.userAgent,
+            listeners,
+            config.throttle,
+            config.retry,
+            config.maxlag,
+        )
     }
 
     private suspend fun fetchSiteInfo(transport: MediaWikiTransport): SiteInfo =

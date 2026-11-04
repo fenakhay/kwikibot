@@ -13,6 +13,8 @@ import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
 import com.fenakhay.kwikibot.net.RequestKind
+import com.fenakhay.kwikibot.net.RetryPolicy
+import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.identifyAs
@@ -21,6 +23,7 @@ import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.net.transport.TransportListener
+import com.fenakhay.kwikibot.net.transport.transportFailure
 import com.fenakhay.kwikibot.net.transport.withRequestPermit
 import com.fenakhay.kwikibot.protocol.ApiFailure
 import com.fenakhay.kwikibot.protocol.decode.Continuation
@@ -34,6 +37,7 @@ import com.fenakhay.kwikibot.protocol.decode.objects
 import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
@@ -45,6 +49,10 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.utils.io.readTo
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -62,6 +70,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
+private val log = KotlinLogging.logger("com.fenakhay.kwikibot.client.internal.ApiFileService")
+
 internal class ApiFileService(
     private val transport: MediaWikiTransport,
     private val tokens: TokenStore,
@@ -74,6 +84,9 @@ internal class ApiFileService(
     private val onWarning: TransportListener = TransportListener.NONE,
     // Uploads skip the session transport, so they assert the account themselves.
     private val assertion: String? = null,
+    private val throttle: Throttle = Throttle.unpaced(),
+    private val retry: RetryPolicy = RetryPolicy.NONE,
+    private val maxlag: Int? = null,
 ) : FileService {
 
     private val continuation = Continuation(transport)
@@ -296,6 +309,7 @@ internal class ApiFileService(
                     if (ignoreWarnings) put("ignorewarnings", "1")
                 },
             part = Part("file", file.name, withContext(ioDispatcher) { file.readBytes() }),
+            step = UploadStep.PUBLISH,
         )
 
     /**
@@ -308,6 +322,11 @@ internal class ApiFileService(
      * A chunk that comes up short, because the file was cut short after its size was read, is the last one
      * sent: a chunk after it would claim an offset past the bytes the wiki has, and the wiki refuses the
      * incomplete file when it is published.
+     *
+     * A chunk may be sent twice, when the wiki stored it and its answer was lost on the way back. The wiki
+     * then refuses the copy, saying which offset it expected, and an offset past this chunk means this chunk
+     * is already there. The key stays the same between chunks, and asking after it is how the last one's key
+     * is found. A second stash from a first chunk sent twice is simply never used.
      */
     private suspend fun uploadInChunks(
         file: Path,
@@ -324,7 +343,7 @@ internal class ApiFileService(
                 val end = minOf(offset + chunkSize, size)
                 val chunk = withContext(ioDispatcher) { source.readAtMost((end - offset).toInt()) }
 
-                val response =
+                val response = runCatching {
                     multipart(
                         fields =
                             buildMap {
@@ -337,13 +356,53 @@ internal class ApiFileService(
                                 fileKey?.let { put("filekey", it) }
                             },
                         part = Part("chunk", file.name, chunk),
+                        step = UploadStep.STASH,
                     )
+                }
+                    .getOrElse {
+                        if (it !is CancellationException) logStopped(fileName, offset, fileKey)
+                        throw it
+                    }
 
-                val key = response.fileKeyOrFail()
-                if (end == size || chunk.size < end - offset) return key
+                val isLast = end == size || chunk.size < end - offset
+                val known = fileKey
+                val key =
+                    when {
+                        known == null || !response.saysChunkArrived(end) -> response.fileKeyOrFail()
+                        isLast -> stashStatus(known, fileName).fileKeyOrFail()
+                        else -> known
+                    }
+                if (isLast) return key
                 fileKey = key
                 offset = end
             }
+        }
+    }
+
+    /** Whether the wiki refused a chunk because it already holds the file up to [end]. */
+    private fun JsonObject.saysChunkArrived(end: Long): Boolean {
+        val error = array("errors").objects().firstOrNull() ?: obj("error") ?: return false
+        if (error.string("code") != STASH_FAILED) return false
+        return (error.obj("data")?.long("offset") ?: error.long("offset")) == end
+    }
+
+    /** What the wiki holds under a key, which names the whole file once the last chunk has arrived. */
+    private suspend fun stashStatus(fileKey: String, fileName: String): JsonObject =
+        multipart(
+            fields =
+                mapOf(
+                    "action" to "upload",
+                    "filename" to fileName,
+                    "filekey" to fileKey,
+                    "checkstatus" to "1",
+                ),
+            part = null,
+            step = UploadStep.STASH,
+        )
+
+    private fun logStopped(fileName: String, offset: Long, fileKey: String?) {
+        log.warn {
+            "Upload of $fileName stopped at offset $offset, with stash key ${fileKey ?: "(none yet)"}"
         }
     }
 
@@ -398,57 +457,156 @@ internal class ApiFileService(
                     if (ignoreWarnings) put("ignorewarnings", "1")
                 },
             part = null,
+            step = UploadStep.PUBLISH,
         )
 
     /**
-     * One multipart POST, with a fresh token attached.
+     * One multipart request, with a fresh token attached, until it is answered or the retries are spent.
      *
-     * The token retry is here rather than in the transport because uploads do not go through it: a long
-     * chunked upload is exactly the case where a session expires mid-way.
+     * Paced and retried here rather than in the transport because uploads do not go through it: a long
+     * chunked upload is exactly the case where a session expires or a connection drops mid-way. The body is
+     * made again for every attempt, since a multipart body can be read only once.
      */
-    private suspend fun multipart(fields: Map<String, String>, part: Part?): JsonObject =
+    private suspend fun multipart(fields: Map<String, String>, part: Part?, step: UploadStep): JsonObject =
         tokens.withFreshToken { token ->
-            val body =
-                MultiPartFormDataContent(
-                    formData {
-                        fields.forEach { (key, value) -> append(key, value) }
-                        KtorTransport.DEFAULT_PARAMS.forEach { (key, value) -> append(key, value) }
-                        if (assertion != null) append("assert", assertion)
-                        if (part != null) {
-                            append(
-                                part.name,
-                                part.bytes,
-                                Headers.build {
-                                    append(HttpHeaders.ContentDisposition, "filename=\"${part.fileName}\"")
-                                },
-                            )
+            deliver(fields, part, step, token)
+        }
+
+    private suspend fun deliver(
+        fields: Map<String, String>,
+        part: Part?,
+        step: UploadStep,
+        token: String,
+    ): JsonObject {
+        var attempt = 0
+        while (true) {
+            throttle.acquire(step.kind)
+            val answer = attempt(fields, part, token)
+            if (answer is UploadAnswer.Answered && !answer.retryable) return answered(fields, answer.body)
+
+            val mayRepeat = step.repeatsAfterLoss || answer is UploadAnswer.Answered
+            if (attempt >= retry.maxRetries || !mayRepeat) return gaveUp(fields, answer)
+
+            attempt++
+            val wait = retry.delayFor(attempt, answer.retryAfter)
+            log.info { "upload: ${answer.reason}; retry $attempt of ${retry.maxRetries} in $wait" }
+            answer.retryAfter?.let { throttle.penalize(it) }
+            delay(wait)
+        }
+    }
+
+    /** The answer to hand back, shown to the listener as the transport would, since uploads skip it. */
+    private suspend fun answered(fields: Map<String, String>, response: JsonObject): JsonObject {
+        onWarning.onResponse(ApiRequest(fields, RequestKind.WRITE), response)
+        response.raiseBadToken()
+        return response
+    }
+
+    /**
+     * What the last attempt comes to once there are to be no more: the failure it met, or the wiki's answer.
+     */
+    private suspend fun gaveUp(fields: Map<String, String>, answer: UploadAnswer): JsonObject =
+        when (answer) {
+            is UploadAnswer.Answered -> answered(fields, answer.body)
+            is UploadAnswer.NotJson ->
+                throw WikiError.Api("badresponse", "upload returned a non-JSON body", "upload")
+            is UploadAnswer.Lost -> throw answer.failure
+        }
+
+    private suspend fun attempt(fields: Map<String, String>, part: Part?, token: String): UploadAnswer {
+        val body = multipartBody(fields, part, token)
+        val (response, text) =
+            runCatching {
+                http.withRequestPermit {
+                    val response =
+                        http.post(endpoint.apiUrl) {
+                            identifyAs(userAgent)
+                            setBody(body)
                         }
-                        // Last, as MediaWiki requires of anything following a token.
-                        append("token", token)
-                    }
-                )
-
-            val text = http.withRequestPermit {
-                http
-                    .post(endpoint.apiUrl) {
-                        identifyAs(userAgent)
-                        setBody(body)
-                    }
-                    .bodyAsText()
-            }
-
-            val response = runCatching {
-                json.parseToJsonElement(text).jsonObject
+                    response to response.bodyAsText()
+                }
             }
                 .getOrElse {
-                    throw WikiError.Api("badresponse", "upload returned a non-JSON body", "upload")
+                    if (transportFailure(endpoint.apiUrl, it) == null) throw it
+                    return UploadAnswer.Lost(it)
                 }
 
-            // Uploads skip the transport, so they are shown to the listener here instead.
-            onWarning.onResponse(ApiRequest(fields, RequestKind.WRITE), response)
-            response.raiseBadToken()
-            response
+        val retryAfter = response.headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.seconds
+        val parsed = runCatching {
+            json.parseToJsonElement(text).jsonObject
         }
+            .getOrElse {
+                return UploadAnswer.NotJson(response.status.value, retryAfter)
+            }
+        val code = (parsed.array("errors").objects().firstOrNull() ?: parsed.obj("error"))?.string("code")
+        return UploadAnswer.Answered(parsed, code, code in RETRYABLE_CODES, retryAfter)
+    }
+
+    private fun multipartBody(fields: Map<String, String>, part: Part?, token: String) =
+        MultiPartFormDataContent(
+            formData {
+                fields.forEach { (key, value) -> append(key, value) }
+                KtorTransport.DEFAULT_PARAMS.forEach { (key, value) -> append(key, value) }
+                if (maxlag != null) append("maxlag", maxlag.toString())
+                if (assertion != null) append("assert", assertion)
+                if (part != null) {
+                    append(
+                        part.name,
+                        part.bytes,
+                        Headers.build {
+                            append(HttpHeaders.ContentDisposition, "filename=\"${part.fileName}\"")
+                        },
+                    )
+                }
+                // Last, as MediaWiki requires of anything following a token.
+                append("token", token)
+            }
+        )
+
+    /**
+     * Which part of an upload a request is.
+     *
+     * @param kind how it is paced. A stashed chunk changes nothing anyone can see, so it goes at the pace of
+     *   a read; at the pace of an edit, a long video would take hours.
+     * @param repeatsAfterLoss whether it may be sent again when no answer came back. A chunk can: the wiki
+     *   recognises a copy. A publish cannot, since the wiki may have applied it already.
+     */
+    private enum class UploadStep(val kind: RequestKind, val repeatsAfterLoss: Boolean) {
+        STASH(RequestKind.READ, true),
+        PUBLISH(RequestKind.WRITE, false),
+    }
+
+    /** What came of one attempt at a request. */
+    private sealed interface UploadAnswer {
+        val retryAfter: Duration?
+        val reason: String
+
+        /** The wiki answered in JSON. [retryable] if it says the moment is wrong and it applied nothing. */
+        data class Answered(
+            val body: JsonObject,
+            val code: String?,
+            val retryable: Boolean,
+            override val retryAfter: Duration?,
+        ) : UploadAnswer {
+            override val reason: String
+                get() = code.orEmpty()
+        }
+
+        /** Something answered, but not MediaWiki, and the request may or may not have arrived. */
+        data class NotJson(val status: Int, override val retryAfter: Duration?) : UploadAnswer {
+            override val reason: String
+                get() = "a non-JSON answer with status $status"
+        }
+
+        /** No answer came, and the request may or may not have arrived. */
+        data class Lost(val failure: Throwable) : UploadAnswer {
+            override val retryAfter: Duration?
+                get() = null
+
+            override val reason: String
+                get() = failure.message ?: "the connection failed"
+        }
+    }
 
     /**
      * The file in a multipart upload.
@@ -511,5 +669,9 @@ internal class ApiFileService(
 
     private companion object {
         const val DEFAULT_BATCH = 50
+        const val STASH_FAILED = "stashfailed"
+
+        /** Answers saying the moment is wrong, for which MediaWiki has applied nothing. */
+        val RETRYABLE_CODES = setOf("maxlag", "ratelimited", "readonly")
     }
 }

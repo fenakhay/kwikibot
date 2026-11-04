@@ -13,6 +13,8 @@ import com.fenakhay.kwikibot.client.service.RenderService
 import com.fenakhay.kwikibot.client.service.RevisionService
 import com.fenakhay.kwikibot.client.service.UserService
 import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.net.RetryPolicy
+import com.fenakhay.kwikibot.net.Throttle
 import com.fenakhay.kwikibot.net.UserAgent
 import com.fenakhay.kwikibot.net.auth.Identity
 import com.fenakhay.kwikibot.net.auth.TokenStore
@@ -36,6 +38,9 @@ internal class ApiWiki(
     private val endpoint: ApiEndpoint,
     private val userAgent: UserAgent,
     private val onWarning: TransportListener = TransportListener.NONE,
+    private val throttle: Throttle = Throttle.unpaced(),
+    private val retry: RetryPolicy = RetryPolicy.NONE,
+    private val maxlag: Int? = null,
 ) : Wiki {
 
     override val id: WikiId
@@ -134,6 +139,9 @@ internal class ApiWiki(
             userAgent = userAgent,
             onWarning = onWarning,
             assertion = "user".takeUnless { identity.isAnonymous },
+            throttle = throttle,
+            retry = retry,
+            maxlag = maxlag,
             batchSize = batch,
         )
 

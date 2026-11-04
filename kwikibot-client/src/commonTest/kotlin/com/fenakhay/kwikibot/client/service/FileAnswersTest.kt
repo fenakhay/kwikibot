@@ -23,6 +23,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -38,6 +39,7 @@ import kotlin.time.Duration
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -187,6 +189,120 @@ class FileAnswersTest {
     }
 
     @Test
+    fun `a chunk whose answer was lost is sent again and continues under the same key`() = runTest {
+        val offsets = mutableListOf<String?>()
+        var dropped = false
+        val service = retrying { request ->
+            tokenOr(request) {
+                val sent = request.fields()
+                offsets += sent["offset"]
+                when {
+                    sent["offset"] == "8" && !dropped -> {
+                        dropped = true
+                        throw IOException("connection reset")
+                    }
+                    sent["offset"] == "8" -> respondJson(STORED_ALREADY)
+                    sent["checkstatus"] == "1" -> respondJson(UNEXPECTED)
+                    else -> respondJson(STASHED)
+                }
+            }
+        }
+
+        service.upload(tempFile(ByteArray(CHUNK_SIZE * 3)), file, chunkSize = CHUNK_SIZE)
+
+        offsets shouldBe listOf("0", "8", "8", "16", null)
+    }
+
+    @Test
+    fun `a last chunk whose answer was lost finds its key by asking the wiki`() = runTest {
+        var dropped = false
+        val published = mutableListOf<String?>()
+        val service = retrying { request ->
+            tokenOr(request) {
+                val sent = request.fields()
+                when {
+                    sent["checkstatus"] == "1" ->
+                        respondJson("""{"upload":{"result":"Success","filekey":"whole"}}""")
+                    sent["offset"] == "8" && !dropped -> {
+                        dropped = true
+                        respond("<html>Bad gateway</html>", HttpStatusCode.BadGateway)
+                    }
+                    sent["offset"] == "8" -> respondJson(STORED_ALREADY)
+                    sent["offset"] == null -> {
+                        published += sent["filekey"]
+                        respondJson("""{"upload":{"result":"Success","filename":"Volcano.png"}}""")
+                    }
+                    else -> respondJson(STASHED)
+                }
+            }
+        }
+
+        service.upload(tempFile(ByteArray(CHUNK_SIZE * 2)), file, chunkSize = CHUNK_SIZE)
+
+        published shouldBe listOf("whole")
+    }
+
+    @Test
+    fun `an offset the wiki did not expect is still a failure`() = runTest {
+        val service = retrying { request ->
+            tokenOr(request) {
+                val sent = request.fields()
+                if (sent["offset"] == "8") respondJson(STORED_ALREADY.replace(":16", ":2"))
+                else respondJson(STASHED)
+            }
+        }
+
+        shouldThrow<WikiError> {
+            service.upload(tempFile(ByteArray(CHUNK_SIZE * 2)), file, chunkSize = CHUNK_SIZE)
+        }
+    }
+
+    @Test
+    fun `a publish whose answer was lost is not sent again but a wiki that said wait is`() = runTest {
+        var lost = 0
+        val losing = retrying { request ->
+            tokenOr(request) {
+                lost++
+                throw IOException("connection reset")
+            }
+        }
+
+        shouldThrow<IOException> { losing.upload(tempFile(ByteArray(4)), file) }
+        lost shouldBe 1
+
+        var asked = 0
+        val waiting = retrying { request ->
+            tokenOr(request) {
+                asked++
+                if (asked == 1) {
+                    respondJson("""{"error":{"code":"maxlag","info":"lagged"}}""")
+                } else {
+                    respondJson("""{"upload":{"result":"Success"}}""")
+                }
+            }
+        }
+
+        waiting.upload(tempFile(ByteArray(4)), file).shouldBeInstanceOf<UploadOutcome.Uploaded>()
+        asked shouldBe 2
+    }
+
+    @Test
+    fun `chunks that keep failing raise the last failure`() = runTest {
+        var asked = 0
+        val service = retrying { request ->
+            tokenOr(request) {
+                asked++
+                throw IOException("connection reset")
+            }
+        }
+
+        shouldThrow<IOException> {
+            service.upload(tempFile(ByteArray(CHUNK_SIZE * 2)), file, chunkSize = CHUNK_SIZE)
+        }
+        asked shouldBe 3
+    }
+
+    @Test
     fun `an upload answered with something other than JSON is a bad response`() = runTest {
         val service = service { request ->
             tokenOr(request) { respondJson("<html>Service unavailable</html>") }
@@ -222,8 +338,20 @@ class FileAnswersTest {
         return path
     }
 
+    /** A service that retries twice, as a wiki's own would. */
+    private fun TestScope.retrying(
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
+    ): FileService = service(retry = RetryPolicy(maxRetries = 2), handler = handler)
+
+    /** The form fields of a multipart request, other than the file. */
+    private suspend fun HttpRequestData.fields(): Map<String, String> =
+        Regex("""name="?(\w+)"?\r\n(?:[^\r\n]+\r\n)*\r\n([^\r]*)\r\n""")
+            .findAll(body.toByteArray().decodeToString())
+            .associate { it.groupValues[1] to it.groupValues[2] }
+
     internal fun TestScope.service(
         assertion: String? = null,
+        retry: RetryPolicy = RetryPolicy.NONE,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): FileService {
         val client = HttpClient(MockEngine(handler))
@@ -247,6 +375,7 @@ class FileAnswersTest {
             endpoint = endpoint,
             userAgent = userAgent,
             assertion = assertion,
+            retry = retry,
         )
     }
 
@@ -266,6 +395,10 @@ class FileAnswersTest {
 
     internal companion object {
         const val CHUNK_SIZE = 8
+        const val STORED_ALREADY =
+            """{"errors":[{"code":"stashfailed","text":"Bad offset","data":{"offset":16}}]}"""
+        const val STASHED = """{"upload":{"result":"Continue","filekey":"KEY"}}"""
+        const val UNEXPECTED = """{"error":{"code":"unexpected","info":"not asked for"}}"""
         const val MORE_THAN_A_BATCH = 600
     }
 
