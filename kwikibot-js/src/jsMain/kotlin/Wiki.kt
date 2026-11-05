@@ -218,6 +218,9 @@ internal constructor(
      * change as the run computes it, or saves it when it saves. A page the wiki refuses, or cannot serve, is
      * a problem in the report; a transform that throws, or answers with anything else, stops the run, which
      * rejects with that error.
+     *
+     * [stopPage] names a page of the wiki that has to say `false` for the run to save, so that it can be
+     * stopped from the wiki.
      */
     public fun run(
         titles: Array<String>,
@@ -225,7 +228,10 @@ internal constructor(
         transform: (text: String, title: String) -> Any?,
         save: Boolean = false,
         onChange: ((change: Change) -> Unit)? = null,
-    ): Promise<RunReport> = scope.promise { runBot(wiki, titles, summary, transform, save, onChange) }
+        stopPage: String? = null,
+    ): Promise<RunReport> = scope.promise {
+        runBot(wiki, titles, summary, transform, save, onChange, stopPage)
+    }
 
     /** Ends what this wiki is still fetching and releases its connections. */
     public fun close() {

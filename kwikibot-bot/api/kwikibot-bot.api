@@ -428,6 +428,7 @@ public final class com/fenakhay/kwikibot/bot/CommonOptions {
 	public final fun getWriteDelay-FghU774 ()Lkotlin/time/Duration;
 	public fun hashCode ()I
 	public final fun runLog (Lcom/fenakhay/kwikibot/client/Wiki;)Lcom/fenakhay/kwikibot/bot/run/RunLog;
+	public final fun stopPolicy (Lcom/fenakhay/kwikibot/client/Wiki;)Lcom/fenakhay/kwikibot/bot/run/StopPolicy;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -656,8 +657,12 @@ public final class com/fenakhay/kwikibot/bot/run/BotRunBuilder {
 }
 
 public final class com/fenakhay/kwikibot/bot/run/BotRunKt {
+	public static final fun botRun (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun botRun (Lcom/fenakhay/kwikibot/client/Wiki;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun botRun (Lcom/fenakhay/kwikibot/client/service/PageService;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lcom/fenakhay/kwikibot/bot/BotPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun botRun (Lcom/fenakhay/kwikibot/client/service/PageService;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun stopPage (Lcom/fenakhay/kwikibot/client/Wiki;Ljava/lang/String;)Lcom/fenakhay/kwikibot/bot/run/StopPolicy;
+	public static synthetic fun stopPage$default (Lcom/fenakhay/kwikibot/client/Wiki;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/bot/run/StopPolicy;
 }
 
 public final class com/fenakhay/kwikibot/bot/run/Edit {

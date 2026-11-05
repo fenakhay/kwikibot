@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.bot
 
 import com.fenakhay.kwikibot.bot.run.Edit
 import com.fenakhay.kwikibot.bot.run.PageOutcome
+import com.fenakhay.kwikibot.bot.run.StopPolicy
 import com.fenakhay.kwikibot.bot.run.botRun
 import com.fenakhay.kwikibot.testkit.FakePageService
 import io.kotest.matchers.shouldBe
@@ -112,7 +113,7 @@ class BotRunExclusionTest {
 
         val seen = mutableListOf<PageOutcome>()
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(flowOf(pages.ref("volcano"), pages.ref("mountain")))
             exclusionPolicy = BotPolicy("FenaBot")
             dryRun = false
@@ -135,7 +136,7 @@ class BotRunExclusionTest {
         val pages = FakePageService("volcano" to "{{nobots}}\n==English==")
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(flowOf(pages.ref("volcano")))
                 dryRun = false
                 transform { Edit(it.text + "!", "test") }

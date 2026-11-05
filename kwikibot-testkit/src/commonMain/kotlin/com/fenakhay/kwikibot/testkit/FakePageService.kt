@@ -43,7 +43,7 @@ import kotlin.time.Instant
  *
  * ```
  * val pages = FakePageService("volcano" to "==English==")
- * botRun(pages) { … }
+ * botRun(pages, StopPolicy.NONE, null) { … }
  * pages.text("volcano") shouldBe "…"
  * ```
  *

@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.benchmarks
 
 import com.fenakhay.kwikibot.bot.run.BotReport
 import com.fenakhay.kwikibot.bot.run.Edit
+import com.fenakhay.kwikibot.bot.run.StopPolicy
 import com.fenakhay.kwikibot.bot.run.botRun
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.page.WikiId
@@ -37,7 +38,7 @@ internal fun measureRetention(pages: Int, sentences: Int, out: Appendable, heapI
 
     // A dry run, which is the default: a `Pending` carries the new text and the old.
     var report: BotReport? = runBlocking {
-        botRun(service) {
+        botRun(service, StopPolicy.NONE, null) {
             source(refs.asFlow())
             transform { Edit(it.text + " and one more sentence.", "adding") }
         }

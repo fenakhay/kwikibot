@@ -36,7 +36,7 @@ class RunSizeTest {
         val many = 5_000
 
         val report =
-            botRun(pages(many)) {
+            botRun(pages(many), StopPolicy.NONE, null) {
                 source((1..many).map { ref("page$it") }.asFlow())
                 transform { Edit(it.text + " and more", "adding") }
             }
@@ -50,7 +50,7 @@ class RunSizeTest {
     @Test
     fun `what a report holds does not grow with the length of the run`() = runTest {
         suspend fun runOver(count: Int): BotReport =
-            botRun(pages(count)) {
+            botRun(pages(count), StopPolicy.NONE, null) {
                 source((1..count).map { ref("page$it") }.asFlow())
                 transform { Edit(it.text + " and more", "adding") }
             }
@@ -69,7 +69,7 @@ class RunSizeTest {
         val many = BotReport.PROBLEM_LIMIT * 3
 
         val report =
-            botRun(pages(many)) {
+            botRun(pages(many), StopPolicy.NONE, null) {
                 source((1..many).map { ref("page$it") }.asFlow())
                 // An Api error is recorded against the page and the run carries on; an Auth or
                 // ReadOnly one would stop it, and a plain exception is a bug in the transform and
@@ -89,7 +89,7 @@ class RunSizeTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages(many)) {
+            botRun(pages(many), StopPolicy.NONE, null) {
                 source((1..many).map { ref("page$it") }.asFlow())
                 transform { Edit(it.text + " and more", "adding") }
                 onOutcome = { seen += it }

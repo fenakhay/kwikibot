@@ -378,7 +378,7 @@ and `wiki.renderer` ask the wiki for the expanded or rendered result.
 ## Writing a bot
 
 ```kotlin
-val report = wiki.botRun {
+val report = wiki.botRun(wiki.stopPage()) {
     source(wiki.lists.transclusions(wiki.ref("Template:old")))
 
     transform { page ->
@@ -420,7 +420,7 @@ before the transform runs.
 
 ```kotlin
 fun main(args: Array<String>) = botMain(args) {
-    val report = wiki.botRun {
+    val report = wiki.botRun(options.stopPolicy(wiki)) {
         options.applyTo(this, wiki)
         config.applyTo(this)
         source(PageSourceSpec.parseAll(arguments).pages(wiki))
@@ -539,7 +539,7 @@ class VolcanoBotTest {
         val pages = FakePageService("volcano" to "old")
         val wiki = FakeWiki(pages)
 
-        val report = wiki.botRun {
+        val report = wiki.botRun(StopPolicy.NONE) {
             source(flowOf(wiki.ref("volcano")))
             transform { page -> Edit(page.text + " more", "adding") }
             dryRun = false

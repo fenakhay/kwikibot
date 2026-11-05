@@ -12,6 +12,7 @@ import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CancellationException
@@ -270,6 +271,8 @@ public fun interface StopPolicy {
     }
 }
 
+private val log = KotlinLogging.logger("com.fenakhay.kwikibot.bot.run.BotRun")
+
 /** Configures a run. */
 @KwikibotDsl
 public class BotRunBuilder internal constructor() {
@@ -332,13 +335,20 @@ public class BotRunBuilder internal constructor() {
 
     /** Checked before every save; see [StopPolicy]. */
     public var stopPolicy: StopPolicy = StopPolicy.NONE
+        set(value) {
+            field = value
+            stopPolicyChosen = true
+        }
+
+    internal var stopPolicyChosen: Boolean = false
+        private set
 
     /**
      * Whether to honour `{{nobots}}` and `{{bots}}`, and as which bot.
      *
-     * Should be set. Wikis block bots that edit pages carrying `{{nobots}}`. It is `null` here only because
-     * this builder does not know the account name — the session does, so a bot sets
-     * `BotPolicy(wiki.identity.name)` once it has opened the wiki.
+     * Should be set. Wikis block bots that edit pages carrying `{{nobots}}`. [Wiki.botRun] sets it to
+     * `BotPolicy(identity.name)` for you; `null` opts out. The builder itself does not know the account name,
+     * so a run on bare pages has to be told.
      */
     public var exclusionPolicy: BotPolicy? = null
 
@@ -424,13 +434,43 @@ internal expect fun skipPage(reason: String): SkipPage
  * checked, the run reads and saves nothing and its report has [BotReport.stopped] set, with
  * [StopReason.POLICY] or [StopReason.POLICY_UNREACHABLE].
  */
-public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport {
+public suspend fun botRun(
+    pages: PageService,
+    stopPolicy: StopPolicy,
+    exclusionPolicy: BotPolicy?,
+    block: BotRunBuilder.() -> Unit,
+): BotReport =
+    run(pages) {
+        this.stopPolicy = stopPolicy
+        this.exclusionPolicy = exclusionPolicy
+        block()
+    }
+
+/**
+ * Works through pages: read, transform, save.
+ *
+ * Choosing no stop policy here is why this is deprecated: a run that saves without one cannot be stopped from
+ * the wiki, and logs a warning saying so. It works as it did, and ignores `{{nobots}}` unless told otherwise.
+ */
+@Deprecated(
+    "Name the stop policy and the exclusion policy, StopPolicy.NONE and null if you mean none. " +
+        "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
+    ReplaceWith("botRun(pages, StopPolicy.NONE, null, block)"),
+)
+public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport = run(pages, block)
+
+private suspend fun run(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport {
     val config = BotRunBuilder().apply(block)
     val source = requireNotNull(config.source) { "a run needs a source of pages" }
     val transform = requireNotNull(config.transform) { "a run needs a transform" }
 
     // Fail-closed before anything is read, so a stopped bot does not even start.
     if (!config.dryRun) {
+        if (!config.stopPolicyChosen) {
+            log.warn {
+                "This run saves with no stop policy, so the wiki cannot stop it. See Wiki.stopPage."
+            }
+        }
         stopCheck(config.stopPolicy)?.let { reason ->
             return BotReport(stopped = true, stopReason = reason)
         }
@@ -440,8 +480,40 @@ public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): 
     return runner.run(source)
 }
 
-/** Runs a bot over the pages of a wiki. */
-public suspend fun Wiki.botRun(block: BotRunBuilder.() -> Unit): BotReport = botRun(pages, block)
+/**
+ * Runs a bot over the pages of a wiki, as this account.
+ *
+ * Honours `{{nobots}}` and `{{bots}}` for this account, which [block] can change by setting
+ * [BotRunBuilder.exclusionPolicy], `null` to opt out.
+ *
+ * @param stopPolicy what is checked before every save. [stopPage] is the usual one; [StopPolicy.NONE] says
+ *   the bot needs none, as for a dry run. A policy [block] sets replaces it.
+ * @param block what to run over, and how.
+ */
+public suspend fun Wiki.botRun(stopPolicy: StopPolicy, block: BotRunBuilder.() -> Unit): BotReport =
+    botRun(pages, stopPolicy, BotPolicy(identity.name), block)
+
+/**
+ * Runs a bot over the pages of a wiki.
+ *
+ * Choosing no stop policy here is why this is deprecated: a run that saves without one cannot be stopped from
+ * the wiki, and logs a warning saying so. It works as it did, and ignores `{{nobots}}` unless told otherwise.
+ */
+@Deprecated(
+    "Name the stop policy, with stopPage() or StopPolicy.NONE. The new form also honours {{nobots}} " +
+        "as this account unless told not to. Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
+    ReplaceWith("botRun(StopPolicy.NONE) { exclusionPolicy = null; block() }"),
+)
+public suspend fun Wiki.botRun(block: BotRunBuilder.() -> Unit): BotReport = run(pages, block)
+
+/**
+ * A stop policy on a page of this wiki, by convention `User:<account>/Stop`.
+ *
+ * The page has to exist and say `false` for the bot to run, so an administrator stops it by editing the page,
+ * and a bot whose page was never made does not start.
+ */
+public fun Wiki.stopPage(title: String = "User:${identity.name}/Stop"): StopPolicy =
+    StopPolicy.page(pages, ref(title))
 
 /**
  * Why [policy] says to stop, or `null` if it says to go on. A check that throws is a reason to stop.

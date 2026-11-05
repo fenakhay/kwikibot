@@ -21,7 +21,7 @@ class RunStateTest {
     private val pages = FakePageService("a" to "x", "b" to "y", "c" to "z")
 
     private suspend fun run(state: RunState, resume: Boolean, transform: (String) -> String?): BotReport =
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf("a", "b", "c", "missing").map { pages.ref(it) }.asFlow())
             transform { page -> transform(page.text)?.let { Edit(it, "s") } }
             this.state = state
@@ -74,7 +74,7 @@ class RunStateTest {
 
         var transformed = 0
         RunState(directory).use { state ->
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(pages.ref("b")).asFlow())
                 transform {
                     transformed++
@@ -159,7 +159,7 @@ class RunStateTest {
     @Test
     fun `resuming with no state to resume from works through every page`() = runTest {
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf("a", "b").map { pages.ref(it) }.asFlow())
                 transform { Edit("new", "s") }
                 resume = true

@@ -106,7 +106,7 @@ private suspend fun run(wiki: Wiki, options: Options) =
             val progress = Progress(total = options.limit ?: tasks.size)
 
             wiki
-                .botRun {
+                .botRun(StopPolicy.NONE) {
                     // Each task names the entry to edit and the terms to add to it. Titles that
                     // resolve off this wiki are refused by wiki.ref, which is the second of the two
                     // gates the todo parser opens the first of.

@@ -67,6 +67,9 @@ The run above only computes its edits; `true` as the fourth argument saves them.
 refuses is a problem in the report. A transform that throws, or returns anything but text or
 `null`, stops the run, and its promise rejects with that error.
 
+Pass a `stopPage` as `run`'s last argument, a page that has to say `false` for the run to save, so it
+can be stopped from the wiki. A saving run without one logs a warning.
+
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,
 category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`) and bot
 runs. Revision ids are numbers and lists are arrays.

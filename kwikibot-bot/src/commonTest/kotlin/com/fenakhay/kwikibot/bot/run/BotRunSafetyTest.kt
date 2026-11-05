@@ -35,7 +35,7 @@ class BotRunSafetyTest {
         val pages = FakePageService("volcano" to "old")
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(flowOf(pages.ref("volcano")))
                 transform { page ->
                     // Somebody deletes the page while the bot is working on it.
@@ -54,7 +54,7 @@ class BotRunSafetyTest {
     fun `an update is sent from the revision it was read at and asks the wiki not to create`() = runTest {
         val pages = FakePageService("volcano" to "old")
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(flowOf(pages.ref("volcano")))
             transform { Edit("new", "s", tags = listOf("bot-tag")) }
             dryRun = false
@@ -73,7 +73,7 @@ class BotRunSafetyTest {
             val pages = FakePageService("volcano" to "old")
 
             val report =
-                botRun(pages) {
+                botRun(pages, StopPolicy.NONE, null) {
                     source(listOf("Fresh", "Gone", "Raced").map { pages.ref(it) }.asFlow())
                     transform { null }
                     createMissing { ref ->
@@ -104,7 +104,7 @@ class BotRunSafetyTest {
         val pages = FakePageService()
         val seen = mutableListOf<PageOutcome>()
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(flowOf(pages.ref("Fresh")))
             transform { null }
             createMissing { Edit("created", "creating") }
@@ -124,12 +124,12 @@ class BotRunSafetyTest {
         val dry = mutableListOf<PageOutcome>()
         val live = mutableListOf<PageOutcome>()
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(flowOf(pages.ref("volcano")))
             transform { Edit("new", "s") }
             onOutcome = { dry += it }
         }
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(flowOf(pages.ref("volcano")))
             transform { Edit("new", "s") }
             dryRun = false
@@ -151,13 +151,13 @@ class BotRunSafetyTest {
         val pages = ReadCounting(fake, reads)
         val refs = listOf(fake.ref("volcano"), fake.ref("vog"))
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(refs.asFlow())
             transform { Edit("new", "s") }
         }
         val dry = reads.toList()
         reads.clear()
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(refs.asFlow())
             transform { Edit("new", "s") }
             dryRun = false
@@ -174,7 +174,7 @@ class BotRunSafetyTest {
         var allow = true
 
         val stopped =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(pages.ref("a"), pages.ref("b")).asFlow())
                 transform { Edit("y", "s") }
                 dryRun = false
@@ -184,7 +184,7 @@ class BotRunSafetyTest {
         allow = true
         var checks = 0
         val unreachable =
-            botRun(FakePageService("a" to "x")) {
+            botRun(FakePageService("a" to "x"), StopPolicy.NONE, null) {
                 source(flowOf(pages.ref("a")))
                 transform { Edit("y", "s") }
                 dryRun = false
@@ -204,7 +204,7 @@ class BotRunSafetyTest {
         val fastDone = CompletableDeferred<Unit>()
         val seen = mutableListOf<PageOutcome>()
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf(pages.ref("slow"), pages.ref("fast")).asFlow())
             readBatch = 2
             transform { page ->

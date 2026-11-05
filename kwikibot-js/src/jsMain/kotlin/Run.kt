@@ -2,13 +2,18 @@ import com.fenakhay.kwikibot.bot.fix.Diffs
 import com.fenakhay.kwikibot.bot.run.BotReport
 import com.fenakhay.kwikibot.bot.run.Edit
 import com.fenakhay.kwikibot.bot.run.PageOutcome
+import com.fenakhay.kwikibot.bot.run.StopPolicy
 import com.fenakhay.kwikibot.bot.run.botRun
+import com.fenakhay.kwikibot.bot.run.stopPage
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
 import com.fenakhay.kwikibot.model.title.NamespaceMap
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.js.Promise
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+
+private val log = KotlinLogging.logger("kwikibot.run")
 
 /** The run `Wiki.run` describes, on [wiki]. */
 internal suspend fun runBot(
@@ -18,21 +23,29 @@ internal suspend fun runBot(
     transform: (text: String, title: String) -> Any?,
     save: Boolean,
     onChange: ((change: Change) -> Unit)?,
+    stopPage: String? = null,
 ): RunReport {
-    val report = wiki.botRun {
-        source(titles.asList().asFlow().map { wiki.ref(it) })
-        dryRun = !save
-        onChange?.let { onOutcome = { outcome -> change(outcome, wiki.namespaces)?.let(it) } }
-        transform { page ->
-            val title = wiki.namespaces.format(page.ref.title)
-            when (val text = settled(transform(page.text, title))) {
-                null -> null
-                is String -> Edit(text, summary)
-                else ->
-                    throw IllegalArgumentException("the transform for $title returned neither text nor null")
+    if (save && stopPage == null) {
+        log.warn { "This run saves with no stopPage, so it cannot be stopped from the wiki" }
+    }
+    val report =
+        wiki.botRun(stopPage?.let { wiki.stopPage(it) } ?: StopPolicy.NONE) {
+            exclusionPolicy = null
+            source(titles.asList().asFlow().map { wiki.ref(it) })
+            dryRun = !save
+            onChange?.let { onOutcome = { outcome -> change(outcome, wiki.namespaces)?.let(it) } }
+            transform { page ->
+                val title = wiki.namespaces.format(page.ref.title)
+                when (val text = settled(transform(page.text, title))) {
+                    null -> null
+                    is String -> Edit(text, summary)
+                    else ->
+                        throw IllegalArgumentException(
+                            "the transform for $title returned neither text nor null"
+                        )
+                }
             }
         }
-    }
     return RunReport(report, wiki.namespaces)
 }
 

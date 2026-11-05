@@ -7,8 +7,11 @@ import com.fenakhay.kwikibot.bot.run.StopPolicy
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.WikiConfig
 import com.fenakhay.kwikibot.net.Throttle
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.time.Duration
 import kotlinx.io.files.Path
+
+private val log = KotlinLogging.logger("com.fenakhay.kwikibot.bot.CommonOptions")
 
 /**
  * The flags most bots take, read from their arguments without a command-line library.
@@ -22,7 +25,7 @@ import kotlinx.io.files.Path
  *     val config = options.applyTo(BotConfig.find()!!.toWikiConfig())
  *     WikiClient(config, Credentials.fromEnvironment()).use { client ->
  *         val wiki = client.wiki(LangCode("en"), Family.WIKTIONARY)
- *         wiki.botRun {
+ *         wiki.botRun(options.stopPolicy(wiki)) {
  *             options.applyTo(this, wiki)
  *             onOutcome = options.runLog(wiki)::record
  *             …
@@ -99,6 +102,18 @@ public data class CommonOptions(
             builder.state = RunState(it)
             builder.resume = resume
         }
+    }
+
+    /**
+     * The stop policy these flags ask for, for starting a run with.
+     *
+     * The page `--stop-page` names, or none. A run told to save with none logs a warning, since it cannot be
+     * stopped from the wiki.
+     */
+    public fun stopPolicy(wiki: Wiki): StopPolicy {
+        if (stopPage != null) return StopPolicy.page(wiki.pages, wiki.ref(stopPage))
+        if (save) log.warn { "--save with no --stop-page: this run cannot be stopped from the wiki" }
+        return StopPolicy.NONE
     }
 
     /**

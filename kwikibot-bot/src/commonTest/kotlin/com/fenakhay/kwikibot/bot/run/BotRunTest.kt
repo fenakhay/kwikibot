@@ -31,7 +31,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("volcano" to "old text", "vog" to "old text"))
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano"), ref("vog")).asFlow())
                 transform { Edit(it.text + " more", "adding") }
             }
@@ -46,7 +46,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("volcano" to "old text"))
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { Edit(it.text + " more", "adding") }
                 dryRun = false
@@ -61,7 +61,7 @@ class BotRunTest {
     fun `an edit is sent with the revision it was computed from`() = runTest {
         val pages = FakePageService(mapOf("volcano" to "old text"))
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf(ref("volcano")).asFlow())
             transform { Edit("new text", "adding") }
             dryRun = false
@@ -75,7 +75,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("volcano" to "text", "vog" to "text"))
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano"), ref("vog")).asFlow())
                 transform { if (it.title.text == "vog") Edit("new", "s") else null }
                 dryRun = false
@@ -92,7 +92,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { skip("no English section") }
                 onOutcome = { seen += it }
@@ -110,7 +110,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { Edit("same", "no real change") }
                 dryRun = false
@@ -129,7 +129,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano"), ref("nonexistent")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -151,7 +151,7 @@ class BotRunTest {
             )
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("volcano"), ref("vog")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -174,7 +174,7 @@ class BotRunTest {
         var pulled = 0
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source((1..20).map { ref("page$it") }.asFlow().onEach { pulled++ })
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -200,7 +200,7 @@ class BotRunTest {
             )
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source((1..20).map { ref("page$it") }.asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -218,7 +218,7 @@ class BotRunTest {
         var allowed = 3
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a"), ref("b"), ref("c")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -238,7 +238,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source((1..20).map { ref("page$it") }.asFlow().onEach { pulled++ })
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -262,7 +262,11 @@ class BotRunTest {
         val stops =
             listOf(WikiError.ReadOnly("maintenance"), WikiError.Configuration.MissingExtension("Echo")).map {
                 error ->
-                botRun(FakePageService(mapOf("a" to "t", "b" to "t"), failWith = { error })) {
+                botRun(
+                        FakePageService(mapOf("a" to "t", "b" to "t"), failWith = { error }),
+                        StopPolicy.NONE,
+                        null,
+                    ) {
                         source(listOf(ref("a"), ref("b")).asFlow())
                         transform { Edit("new", "s") }
                         dryRun = false
@@ -285,7 +289,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a")).asFlow())
                 // A section edit is always sent, since only the wiki can say whether it changes the page.
                 transform { Edit("==One==\nx", "s", section = "1") }
@@ -304,7 +308,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("volcano" to "old"))
 
         val report =
-            FakeWiki(pages).botRun {
+            FakeWiki(pages).botRun(StopPolicy.NONE) {
                 source(listOf(ref("volcano")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -320,7 +324,7 @@ class BotRunTest {
         var pulled = 0
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a")).asFlow().onEach { pulled++ })
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -337,7 +341,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("a" to "t"))
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -355,7 +359,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("a" to "t"))
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a")).asFlow())
                 transform { Edit("new", "s") }
                 stopPolicy = StopPolicy { error("stop service unreachable") }
@@ -369,7 +373,7 @@ class BotRunTest {
         val pages = FakePageService(mapOf("a" to "t", "b" to "t"))
         val seen = mutableListOf<PageOutcome>()
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf(ref("a"), ref("b")).asFlow())
             transform { Edit("new", "s") }
             onOutcome = { seen += it }
@@ -383,10 +387,10 @@ class BotRunTest {
         val pages = FakePageService(emptyMap())
 
         assertFailsWith<IllegalArgumentException> {
-            botRun(pages) { transform { null } }
+            botRun(pages, StopPolicy.NONE, null) { transform { null } }
         }
         assertFailsWith<IllegalArgumentException> {
-            botRun(pages) { source(emptyList<PageRef>().asFlow()) }
+            botRun(pages, StopPolicy.NONE, null) { source(emptyList<PageRef>().asFlow()) }
         }
     }
 
@@ -394,7 +398,7 @@ class BotRunTest {
     fun `by default a page is asked for one at a time`() = runTest {
         val pages = Counting(FakePageService(mapOf("a" to "x", "b" to "x", "c" to "x")))
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf(ref("a"), ref("b"), ref("c")).asFlow())
             transform { null }
         }
@@ -407,7 +411,7 @@ class BotRunTest {
     fun `a batch reads the whole group in one request`() = runTest {
         val pages = Counting(FakePageService(mapOf("a" to "x", "b" to "x", "c" to "x")))
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(listOf(ref("a"), ref("b"), ref("c")).asFlow())
             transform { null }
             readBatch = 50
@@ -426,13 +430,13 @@ class BotRunTest {
         val batched = mutableListOf<PageOutcome>()
 
         val one =
-            botRun(FakePageService(texts)) {
+            botRun(FakePageService(texts), StopPolicy.NONE, null) {
                 source(refs.asFlow())
                 transform { Edit(it.text + "!", "adding") }
                 onOutcome = { singly += it }
             }
         val many =
-            botRun(FakePageService(texts)) {
+            botRun(FakePageService(texts), StopPolicy.NONE, null) {
                 source(refs.asFlow())
                 transform { Edit(it.text + "!", "adding") }
                 readBatch = 3
@@ -460,7 +464,7 @@ class BotRunTest {
                 },
             )
 
-        botRun(pages) {
+        botRun(pages, StopPolicy.NONE, null) {
             source(titles.map { ref(it) }.asFlow())
             transform { Edit(it.text + "y", "s") }
             dryRun = false
@@ -480,7 +484,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a"), ref("gone")).asFlow())
                 transform { Edit(it.text + "!", "adding") }
                 readBatch = 10
@@ -496,7 +500,7 @@ class BotRunTest {
         val pages = FakePageService((1..20).associate { "p$it" to "x" })
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source((1..20).map { ref("p$it") }.asFlow())
                 transform { null }
                 readBatch = 6
@@ -517,7 +521,7 @@ class BotRunTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(ref("a"), ref("b")).asFlow())
                 transform { Edit("new", "adding") }
                 readBatch = 10

@@ -31,7 +31,7 @@ class BotRunStoppingTest {
     @Test
     fun `a policy that times out stops the run as unreachable`() = runTest {
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(flowOf(pages.ref("a")))
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -46,7 +46,7 @@ class BotRunStoppingTest {
         val checking = CompletableDeferred<Unit>()
         var finished = false
         val run = launch {
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(flowOf(pages.ref("a")))
                 transform { Edit("new", "s") }
                 dryRun = false
@@ -74,7 +74,7 @@ class BotRunStoppingTest {
             )
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf("a", "b", "c", "d").map { pages.ref(it) }.asFlow())
                 transform { page -> errors[page.ref.title.text]?.let { throw it } ?: Edit("new", "s") }
                 readConcurrency = 1
@@ -99,7 +99,7 @@ class BotRunStoppingTest {
         val seen = mutableListOf<PageOutcome>()
 
         val report =
-            botRun(gated) {
+            botRun(gated, StopPolicy.NONE, null) {
                 source(listOf(pages.ref("a"), pages.ref("b")).asFlow())
                 transform { throw WikiError.Auth.NotLoggedIn("editing") }
                 readConcurrency = 2
@@ -118,7 +118,7 @@ class BotRunStoppingTest {
         val reported = CompletableDeferred<Unit>()
 
         val report =
-            botRun(pages) {
+            botRun(pages, StopPolicy.NONE, null) {
                 source(listOf(pages.ref("a"), pages.ref("b")).asFlow())
                 transform { page ->
                     if (page.ref == pages.ref("a")) throw WikiError.Auth.NotLoggedIn("editing")
@@ -148,7 +148,7 @@ class BotRunStoppingTest {
                 }
             val seen = mutableListOf<PageOutcome>()
 
-            botRun(forgetful) {
+            botRun(forgetful, StopPolicy.NONE, null) {
                 source(listOf(pages.ref("a")).asFlow())
                 transform { Edit("new", "s") }
                 dryRun = false

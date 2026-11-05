@@ -42,7 +42,7 @@ public class BotStart(
  *
  * ```
  * fun main(args: Array<String>) = botMain(args) {
- *     val report = wiki.botRun {
+ *     val report = wiki.botRun(options.stopPolicy(wiki)) {
  *         options.applyTo(this, wiki)
  *         config.applyTo(this)
  *         source(wiki.lists.transclusions(wiki.ref("Template:old")))
