@@ -287,7 +287,7 @@ class EventStreamsTest {
                 }
             )
         val silent = HttpClient(MockEngine { respond("", HttpStatusCode.OK) })
-        val broken = HttpClient(MockEngine { error("a bug") })
+        val broken = HttpClient(MockEngine { throw IllegalArgumentException("a bug") })
         val retry = RetryPolicy(maxRetries = 2)
 
         assertFailsWith<WikiError.Transport.Unreachable> {
@@ -297,7 +297,7 @@ class EventStreamsTest {
         assertFailsWith<WikiError.Transport.Unreachable> {
             EventStreams(silent, userAgent, retry, "https://example.org").recentChanges().toList()
         }
-        assertFailsWith<IllegalStateException> {
+        assertFailsWith<IllegalArgumentException> {
             EventStreams(broken, userAgent, RetryPolicy.NONE).recentChanges().toList()
         }
     }
