@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.fenakhay.kwikibot.client.model
 
 import io.kotest.matchers.shouldBe

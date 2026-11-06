@@ -1,5 +1,9 @@
 package com.fenakhay.kwikibot.client.model
 
+import com.fenakhay.kwikibot.client.model.dump.compressionOf
+import com.fenakhay.kwikibot.client.model.dump.dumpFlow
+import com.fenakhay.kwikibot.client.model.dump.scanDump
+import com.fenakhay.kwikibot.client.model.dump.sequentialPages
 import com.fenakhay.kwikibot.model.MwTimestamp
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
@@ -21,40 +25,12 @@ import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.io.Source
+import kotlinx.io.files.Path as KxPath
+import kotlinx.io.files.SystemFileSystem
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-
-/**
- * One page of an XML dump, with the one revision the dump carries.
- *
- * @param title the full title, with its namespace prefix.
- * @param namespace the namespace number, since a dump records the number and not the name.
- * @param pageId the wiki's id for the page.
- * @param revisionId the revision this text came from.
- * @param text the wikitext, as of that revision.
- * @param timestamp when the revision was made.
- * @param contributor who made it, absent where the dump withheld it.
- * @param comment the edit summary.
- * @param isRedirect whether the page is a redirect.
- * @param redirectTarget the page a redirect points to, as the dump names it, or `null` for a page that is not
- *   one.
- */
-public data class DumpPage(
-    val title: String,
-    val namespace: Int,
-    val pageId: Long,
-    val revisionId: Long,
-    val text: String,
-    val timestamp: Instant? = null,
-    val contributor: String? = null,
-    val comment: String? = null,
-    val isRedirect: Boolean = false,
-    val redirectTarget: String? = null,
-) {
-
-    /** Whether this page is in one of [namespaces]. Every namespace matches an empty set. */
-    public fun inNamespaces(namespaces: Set<Int>): Boolean = namespaces.isEmpty() || namespace in namespaces
-}
 
 /**
  * Reads a MediaWiki XML dump without holding it in memory.
@@ -81,9 +57,40 @@ public data class DumpPage(
  * and failing silently is unsafe: a bot that treats a partial dump as the whole wiki concludes that every
  * missing page has been deleted.
  */
-public object XmlDump {
+@Suppress("DEPRECATION")
+public actual object XmlDump {
+
+    public actual fun pages(path: KxPath, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
+        yieldAll(sequentialPages(SystemFileSystem.source(path), compressionOf(path), namespaces))
+    }
+
+    public actual fun pages(
+        source: Source,
+        namespaces: Set<Int>,
+        compression: Compression,
+    ): Sequence<DumpPage> = sequentialPages(source, compression, namespaces)
+
+    public actual suspend fun scan(
+        path: KxPath,
+        namespaces: Set<Int>,
+        workers: Int,
+        block: suspend (DumpPage) -> Unit,
+    ) {
+        require(workers > 0) { "a scan needs at least one worker" }
+        scanDump(path, workers, namespaces, block)
+    }
+
+    public actual fun flow(path: KxPath, namespaces: Set<Int>, workers: Int): Flow<DumpPage> {
+        require(workers > 0) { "a flow needs at least one worker" }
+        return dumpFlow(path, workers, namespaces)
+    }
 
     /** The pages of a dump file. */
+    @Deprecated(
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
+            "to be removed in 2.0.0.",
+        ReplaceWith("pages(kotlinx.io.files.Path(path.toString()), emptySet())"),
+    )
     public fun pages(path: Path): Sequence<DumpPage> = pages(path, emptySet())
 
     /**
@@ -92,14 +99,29 @@ public object XmlDump {
      * The file is opened when the sequence is first read, not when this is called, and closed when it is read
      * to the end. A sequence abandoned midway leaves it open until it is collected; [scan] does not.
      */
+    @Deprecated(
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
+            "to be removed in 2.0.0.",
+        ReplaceWith("pages(kotlinx.io.files.Path(path.toString()), namespaces)"),
+    )
     public fun pages(path: Path, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
         open(path).use { input -> yieldAll(read(input, namespaces)) }
     }
 
     /** The pages of a dump read from [input], which is closed when the sequence ends. */
+    @Deprecated(
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
+            "to be removed in 2.0.0.",
+        ReplaceWith("pages(input.asSource().buffered(), emptySet())"),
+    )
     public fun pages(input: InputStream): Sequence<DumpPage> = pages(input, emptySet())
 
     /** The pages of a dump read from [input] in [namespaces], or every page when it is empty. */
+    @Deprecated(
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
+            "to be removed in 2.0.0.",
+        ReplaceWith("pages(input.asSource().buffered(), namespaces)"),
+    )
     public fun pages(input: InputStream, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
         input.use { yieldAll(read(it, namespaces)) }
     }
@@ -114,6 +136,11 @@ public object XmlDump {
      * Pages are handed out in no particular order. The file is closed when the scan ends, however it ends,
      * and the first exception from [block] ends it.
      */
+    @Deprecated(
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
+            "to be removed in 2.0.0.",
+        ReplaceWith("scan(kotlinx.io.files.Path(path.toString()), namespaces, workers, block)"),
+    )
     public suspend fun scan(
         path: Path,
         workers: Int = Runtime.getRuntime().availableProcessors(),
@@ -305,6 +332,7 @@ public object XmlDump {
         private var redirectTarget: String? = null
 
         private var inRevision = false
+        private var inContributor = false
         private var revisionsSeen = 0
 
         fun startElement(reader: XMLStreamReader) {
@@ -320,9 +348,14 @@ public object XmlDump {
 
                 // A page and its revision both have an <id>; which one it is depends on where
                 // the parser is, not on the element name.
+                "contributor" -> inContributor = true
                 "id" -> {
                     val id = reader.elementText.trim().toLongOrNull() ?: 0L
-                    if (inRevision) revisionId = id else pageId = id
+                    when {
+                        inContributor -> Unit
+                        inRevision -> revisionId = id
+                        else -> pageId = id
+                    }
                 }
 
                 "ns" -> {
@@ -348,6 +381,7 @@ public object XmlDump {
         }
 
         fun endElement(name: String) {
+            if (name == "contributor") inContributor = false
             if (name == REVISION) {
                 inRevision = false
                 revisionsSeen++
@@ -409,3 +443,5 @@ public object XmlDump {
             }
         }
 }
+
+public actual fun availableWorkers(): Int = Runtime.getRuntime().availableProcessors()
