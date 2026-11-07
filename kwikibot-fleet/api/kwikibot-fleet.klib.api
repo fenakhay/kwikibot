@@ -1,0 +1,272 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.fenakhay.kwikibot:kwikibot-fleet>
+final enum class com.fenakhay.kwikibot.fleet/RunStatus : kotlin/Enum<com.fenakhay.kwikibot.fleet/RunStatus> { // com.fenakhay.kwikibot.fleet/RunStatus|null[0]
+    enum entry CANCELLED // com.fenakhay.kwikibot.fleet/RunStatus.CANCELLED|null[0]
+    enum entry DECLINED // com.fenakhay.kwikibot.fleet/RunStatus.DECLINED|null[0]
+    enum entry DONE // com.fenakhay.kwikibot.fleet/RunStatus.DONE|null[0]
+    enum entry FAILED // com.fenakhay.kwikibot.fleet/RunStatus.FAILED|null[0]
+    enum entry QUEUED // com.fenakhay.kwikibot.fleet/RunStatus.QUEUED|null[0]
+    enum entry RUNNING // com.fenakhay.kwikibot.fleet/RunStatus.RUNNING|null[0]
+    enum entry WAITING // com.fenakhay.kwikibot.fleet/RunStatus.WAITING|null[0]
+
+    final val entries // com.fenakhay.kwikibot.fleet/RunStatus.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.fleet/RunStatus> // com.fenakhay.kwikibot.fleet/RunStatus.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val isFinished // com.fenakhay.kwikibot.fleet/RunStatus.isFinished|{}isFinished[0]
+        final fun <get-isFinished>(): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RunStatus.isFinished.<get-isFinished>|<get-isFinished>(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.fleet/RunStatus // com.fenakhay.kwikibot.fleet/RunStatus.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.fleet/RunStatus> // com.fenakhay.kwikibot.fleet/RunStatus.values|values#static(){}[0]
+}
+
+abstract interface com.fenakhay.kwikibot.fleet/Bot { // com.fenakhay.kwikibot.fleet/Bot|null[0]
+    abstract val description // com.fenakhay.kwikibot.fleet/Bot.description|{}description[0]
+        abstract fun <get-description>(): kotlin/String // com.fenakhay.kwikibot.fleet/Bot.description.<get-description>|<get-description>(){}[0]
+    abstract val id // com.fenakhay.kwikibot.fleet/Bot.id|{}id[0]
+        abstract fun <get-id>(): kotlin/String // com.fenakhay.kwikibot.fleet/Bot.id.<get-id>|<get-id>(){}[0]
+    open val account // com.fenakhay.kwikibot.fleet/Bot.account|{}account[0]
+        open fun <get-account>(): kotlin/String? // com.fenakhay.kwikibot.fleet/Bot.account.<get-account>|<get-account>(){}[0]
+    open val schedule // com.fenakhay.kwikibot.fleet/Bot.schedule|{}schedule[0]
+        open fun <get-schedule>(): com.fenakhay.kwikibot.fleet/Schedule? // com.fenakhay.kwikibot.fleet/Bot.schedule.<get-schedule>|<get-schedule>(){}[0]
+
+    abstract suspend fun run(com.fenakhay.kwikibot.fleet/RunContext) // com.fenakhay.kwikibot.fleet/Bot.run|run(com.fenakhay.kwikibot.fleet.RunContext){}[0]
+}
+
+abstract interface com.fenakhay.kwikibot.fleet/RunContext { // com.fenakhay.kwikibot.fleet/RunContext|null[0]
+    abstract val arguments // com.fenakhay.kwikibot.fleet/RunContext.arguments|{}arguments[0]
+        abstract fun <get-arguments>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.fleet/RunContext.arguments.<get-arguments>|<get-arguments>(){}[0]
+    abstract val directory // com.fenakhay.kwikibot.fleet/RunContext.directory|{}directory[0]
+        abstract fun <get-directory>(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.fleet/RunContext.directory.<get-directory>|<get-directory>(){}[0]
+    abstract val options // com.fenakhay.kwikibot.fleet/RunContext.options|{}options[0]
+        abstract fun <get-options>(): com.fenakhay.kwikibot.bot/CommonOptions // com.fenakhay.kwikibot.fleet/RunContext.options.<get-options>|<get-options>(){}[0]
+    abstract val outcomes // com.fenakhay.kwikibot.fleet/RunContext.outcomes|{}outcomes[0]
+        abstract fun <get-outcomes>(): kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit> // com.fenakhay.kwikibot.fleet/RunContext.outcomes.<get-outcomes>|<get-outcomes>(){}[0]
+    abstract val stopPolicy // com.fenakhay.kwikibot.fleet/RunContext.stopPolicy|{}stopPolicy[0]
+        abstract fun <get-stopPolicy>(): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.fleet/RunContext.stopPolicy.<get-stopPolicy>|<get-stopPolicy>(){}[0]
+    abstract val wiki // com.fenakhay.kwikibot.fleet/RunContext.wiki|{}wiki[0]
+        abstract fun <get-wiki>(): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/RunContext.wiki.<get-wiki>|<get-wiki>(){}[0]
+
+    abstract fun expect(kotlin/Int) // com.fenakhay.kwikibot.fleet/RunContext.expect|expect(kotlin.Int){}[0]
+    abstract fun say(kotlin/String, com.fenakhay.kwikibot.fleet/RunContext.Level = ...) // com.fenakhay.kwikibot.fleet/RunContext.say|say(kotlin.String;com.fenakhay.kwikibot.fleet.RunContext.Level){}[0]
+    abstract fun stopped(kotlin/String) // com.fenakhay.kwikibot.fleet/RunContext.stopped|stopped(kotlin.String){}[0]
+    abstract suspend fun <#A1: kotlin/Any?> step(kotlin/String, kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.fleet/RunContext, #A1>): #A1 // com.fenakhay.kwikibot.fleet/RunContext.step|step(kotlin.String;kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.fleet.RunContext,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun ask(com.fenakhay.kwikibot.fleet/Question): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RunContext.ask|ask(com.fenakhay.kwikibot.fleet.Question){}[0]
+    abstract suspend fun mayContinue(): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RunContext.mayContinue|mayContinue(){}[0]
+    abstract suspend fun open(com.fenakhay.kwikibot.model/LangCode, com.fenakhay.kwikibot.client/Family): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/RunContext.open|open(com.fenakhay.kwikibot.model.LangCode;com.fenakhay.kwikibot.client.Family){}[0]
+
+    final enum class Level : kotlin/Enum<com.fenakhay.kwikibot.fleet/RunContext.Level> { // com.fenakhay.kwikibot.fleet/RunContext.Level|null[0]
+        enum entry ERROR // com.fenakhay.kwikibot.fleet/RunContext.Level.ERROR|null[0]
+        enum entry INFO // com.fenakhay.kwikibot.fleet/RunContext.Level.INFO|null[0]
+        enum entry SAVED // com.fenakhay.kwikibot.fleet/RunContext.Level.SAVED|null[0]
+        enum entry SKIPPED // com.fenakhay.kwikibot.fleet/RunContext.Level.SKIPPED|null[0]
+
+        final val entries // com.fenakhay.kwikibot.fleet/RunContext.Level.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.fleet/RunContext.Level> // com.fenakhay.kwikibot.fleet/RunContext.Level.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): com.fenakhay.kwikibot.fleet/RunContext.Level // com.fenakhay.kwikibot.fleet/RunContext.Level.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<com.fenakhay.kwikibot.fleet/RunContext.Level> // com.fenakhay.kwikibot.fleet/RunContext.Level.values|values#static(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.fleet/FleetEvent { // com.fenakhay.kwikibot.fleet/FleetEvent|null[0]
+    abstract val botId // com.fenakhay.kwikibot.fleet/FleetEvent.botId|{}botId[0]
+        abstract fun <get-botId>(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.botId.<get-botId>|<get-botId>(){}[0]
+    abstract val runId // com.fenakhay.kwikibot.fleet/FleetEvent.runId|{}runId[0]
+        abstract fun <get-runId>(): kotlin/Long // com.fenakhay.kwikibot.fleet/FleetEvent.runId.<get-runId>|<get-runId>(){}[0]
+
+    final class Changed : com.fenakhay.kwikibot.fleet/FleetEvent { // com.fenakhay.kwikibot.fleet/FleetEvent.Changed|null[0]
+        constructor <init>(kotlin/Long, kotlin/String, com.fenakhay.kwikibot.fleet/RunStatus) // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.<init>|<init>(kotlin.Long;kotlin.String;com.fenakhay.kwikibot.fleet.RunStatus){}[0]
+
+        final val botId // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.botId|{}botId[0]
+            final fun <get-botId>(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.botId.<get-botId>|<get-botId>(){}[0]
+        final val runId // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.runId|{}runId[0]
+            final fun <get-runId>(): kotlin/Long // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.runId.<get-runId>|<get-runId>(){}[0]
+        final val status // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.status|{}status[0]
+            final fun <get-status>(): com.fenakhay.kwikibot.fleet/RunStatus // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.status.<get-status>|<get-status>(){}[0]
+
+        final fun component1(): kotlin/Long // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.component2|component2(){}[0]
+        final fun component3(): com.fenakhay.kwikibot.fleet/RunStatus // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.component3|component3(){}[0]
+        final fun copy(kotlin/Long = ..., kotlin/String = ..., com.fenakhay.kwikibot.fleet/RunStatus = ...): com.fenakhay.kwikibot.fleet/FleetEvent.Changed // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.copy|copy(kotlin.Long;kotlin.String;com.fenakhay.kwikibot.fleet.RunStatus){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Changed.toString|toString(){}[0]
+    }
+
+    final class Said : com.fenakhay.kwikibot.fleet/FleetEvent { // com.fenakhay.kwikibot.fleet/FleetEvent.Said|null[0]
+        constructor <init>(kotlin/Long, kotlin/String, kotlin.collections/List<kotlin/String>, kotlin/String, com.fenakhay.kwikibot.fleet/RunContext.Level) // com.fenakhay.kwikibot.fleet/FleetEvent.Said.<init>|<init>(kotlin.Long;kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.String;com.fenakhay.kwikibot.fleet.RunContext.Level){}[0]
+
+        final val botId // com.fenakhay.kwikibot.fleet/FleetEvent.Said.botId|{}botId[0]
+            final fun <get-botId>(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Said.botId.<get-botId>|<get-botId>(){}[0]
+        final val level // com.fenakhay.kwikibot.fleet/FleetEvent.Said.level|{}level[0]
+            final fun <get-level>(): com.fenakhay.kwikibot.fleet/RunContext.Level // com.fenakhay.kwikibot.fleet/FleetEvent.Said.level.<get-level>|<get-level>(){}[0]
+        final val message // com.fenakhay.kwikibot.fleet/FleetEvent.Said.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Said.message.<get-message>|<get-message>(){}[0]
+        final val runId // com.fenakhay.kwikibot.fleet/FleetEvent.Said.runId|{}runId[0]
+            final fun <get-runId>(): kotlin/Long // com.fenakhay.kwikibot.fleet/FleetEvent.Said.runId.<get-runId>|<get-runId>(){}[0]
+        final val steps // com.fenakhay.kwikibot.fleet/FleetEvent.Said.steps|{}steps[0]
+            final fun <get-steps>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.fleet/FleetEvent.Said.steps.<get-steps>|<get-steps>(){}[0]
+
+        final fun component1(): kotlin/Long // com.fenakhay.kwikibot.fleet/FleetEvent.Said.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Said.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.fleet/FleetEvent.Said.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Said.component4|component4(){}[0]
+        final fun component5(): com.fenakhay.kwikibot.fleet/RunContext.Level // com.fenakhay.kwikibot.fleet/FleetEvent.Said.component5|component5(){}[0]
+        final fun copy(kotlin/Long = ..., kotlin/String = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/String = ..., com.fenakhay.kwikibot.fleet/RunContext.Level = ...): com.fenakhay.kwikibot.fleet/FleetEvent.Said // com.fenakhay.kwikibot.fleet/FleetEvent.Said.copy|copy(kotlin.Long;kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.String;com.fenakhay.kwikibot.fleet.RunContext.Level){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.fleet/FleetEvent.Said.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.fleet/FleetEvent.Said.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.fleet/FleetEvent.Said.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.fleet/Schedule { // com.fenakhay.kwikibot.fleet/Schedule|null[0]
+    abstract fun next(kotlin.time/Instant): kotlin.time/Instant // com.fenakhay.kwikibot.fleet/Schedule.next|next(kotlin.time.Instant){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.fleet/Schedule.Companion|null[0]
+        final fun cron(kotlin/String, kotlin/String = ...): com.fenakhay.kwikibot.fleet/Schedule // com.fenakhay.kwikibot.fleet/Schedule.Companion.cron|cron(kotlin.String;kotlin.String){}[0]
+        final fun every(kotlin.time/Duration): com.fenakhay.kwikibot.fleet/Schedule // com.fenakhay.kwikibot.fleet/Schedule.Companion.every|every(kotlin.time.Duration){}[0]
+    }
+}
+
+final class com.fenakhay.kwikibot.fleet/Accounts : kotlin/AutoCloseable { // com.fenakhay.kwikibot.fleet/Accounts|null[0]
+    constructor <init>(com.fenakhay.kwikibot.client/WikiConfig, kotlin/Function1<kotlin/String?, com.fenakhay.kwikibot.net.auth/Credentials> = ..., kotlin/Function2<com.fenakhay.kwikibot.client/WikiConfig, com.fenakhay.kwikibot.net.auth/Credentials, com.fenakhay.kwikibot.client/WikiClient> = ...) // com.fenakhay.kwikibot.fleet/Accounts.<init>|<init>(com.fenakhay.kwikibot.client.WikiConfig;kotlin.Function1<kotlin.String?,com.fenakhay.kwikibot.net.auth.Credentials>;kotlin.Function2<com.fenakhay.kwikibot.client.WikiConfig,com.fenakhay.kwikibot.net.auth.Credentials,com.fenakhay.kwikibot.client.WikiClient>){}[0]
+
+    final fun close() // com.fenakhay.kwikibot.fleet/Accounts.close|close(){}[0]
+    final suspend fun wiki(com.fenakhay.kwikibot.net.transport/ApiEndpoint, kotlin/String? = ...): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/Accounts.wiki|wiki(com.fenakhay.kwikibot.net.transport.ApiEndpoint;kotlin.String?){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/BotRegistry { // com.fenakhay.kwikibot.fleet/BotRegistry|null[0]
+    constructor <init>(kotlin.collections/List<com.fenakhay.kwikibot.fleet/Bot>) // com.fenakhay.kwikibot.fleet/BotRegistry.<init>|<init>(kotlin.collections.List<com.fenakhay.kwikibot.fleet.Bot>){}[0]
+
+    final val all // com.fenakhay.kwikibot.fleet/BotRegistry.all|{}all[0]
+        final fun <get-all>(): kotlin.collections/List<com.fenakhay.kwikibot.fleet/Bot> // com.fenakhay.kwikibot.fleet/BotRegistry.all.<get-all>|<get-all>(){}[0]
+
+    final fun find(kotlin/String): com.fenakhay.kwikibot.fleet/Bot? // com.fenakhay.kwikibot.fleet/BotRegistry.find|find(kotlin.String){}[0]
+    final fun get(kotlin/String): com.fenakhay.kwikibot.fleet/Bot // com.fenakhay.kwikibot.fleet/BotRegistry.get|get(kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/Declined : kotlin/Exception { // com.fenakhay.kwikibot.fleet/Declined|null[0]
+    constructor <init>(kotlin/String) // com.fenakhay.kwikibot.fleet/Declined.<init>|<init>(kotlin.String){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/Fleet { // com.fenakhay.kwikibot.fleet/Fleet|null[0]
+    constructor <init>(kotlin.collections/List<com.fenakhay.kwikibot.fleet/Bot>, com.fenakhay.kwikibot.fleet/Accounts, com.fenakhay.kwikibot.net.transport/ApiEndpoint, com.fenakhay.kwikibot.bot.run/StopPolicy, kotlinx.coroutines/CoroutineScope, kotlinx.io.files/Path? = ..., kotlin.coroutines/SuspendFunction2<kotlin/String, com.fenakhay.kwikibot.fleet/Question, kotlin/Boolean> = ..., kotlin.time/Clock = ..., kotlin/Function1<kotlin/String, kotlin/Unit> = ...) // com.fenakhay.kwikibot.fleet/Fleet.<init>|<init>(kotlin.collections.List<com.fenakhay.kwikibot.fleet.Bot>;com.fenakhay.kwikibot.fleet.Accounts;com.fenakhay.kwikibot.net.transport.ApiEndpoint;com.fenakhay.kwikibot.bot.run.StopPolicy;kotlinx.coroutines.CoroutineScope;kotlinx.io.files.Path?;kotlin.coroutines.SuspendFunction2<kotlin.String,com.fenakhay.kwikibot.fleet.Question,kotlin.Boolean>;kotlin.time.Clock;kotlin.Function1<kotlin.String,kotlin.Unit>){}[0]
+
+    final val events // com.fenakhay.kwikibot.fleet/Fleet.events|{}events[0]
+        final fun <get-events>(): kotlinx.coroutines.flow/SharedFlow<com.fenakhay.kwikibot.fleet/FleetEvent> // com.fenakhay.kwikibot.fleet/Fleet.events.<get-events>|<get-events>(){}[0]
+    final val registry // com.fenakhay.kwikibot.fleet/Fleet.registry|{}registry[0]
+        final fun <get-registry>(): com.fenakhay.kwikibot.fleet/BotRegistry // com.fenakhay.kwikibot.fleet/Fleet.registry.<get-registry>|<get-registry>(){}[0]
+    final val runs // com.fenakhay.kwikibot.fleet/Fleet.runs|{}runs[0]
+        final fun <get-runs>(): kotlinx.coroutines.flow/StateFlow<kotlin.collections/List<com.fenakhay.kwikibot.fleet/RunView>> // com.fenakhay.kwikibot.fleet/Fleet.runs.<get-runs>|<get-runs>(){}[0]
+
+    final fun cancel(kotlin/Long): kotlin/Boolean // com.fenakhay.kwikibot.fleet/Fleet.cancel|cancel(kotlin.Long){}[0]
+    final fun start(kotlin/String, com.fenakhay.kwikibot.bot/CommonOptions = ..., kotlin.collections/List<kotlin/String> = ...): kotlin/Long // com.fenakhay.kwikibot.fleet/Fleet.start|start(kotlin.String;com.fenakhay.kwikibot.bot.CommonOptions;kotlin.collections.List<kotlin.String>){}[0]
+    final suspend fun awaitIdle() // com.fenakhay.kwikibot.fleet/Fleet.awaitIdle|awaitIdle(){}[0]
+    final suspend fun serve(com.fenakhay.kwikibot.bot/CommonOptions = ...) // com.fenakhay.kwikibot.fleet/Fleet.serve|serve(com.fenakhay.kwikibot.bot.CommonOptions){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/Question { // com.fenakhay.kwikibot.fleet/Question|null[0]
+    constructor <init>(kotlin/String, kotlin/String = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.fleet/Question.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?){}[0]
+
+    final val diff // com.fenakhay.kwikibot.fleet/Question.diff|{}diff[0]
+        final fun <get-diff>(): kotlin/String? // com.fenakhay.kwikibot.fleet/Question.diff.<get-diff>|<get-diff>(){}[0]
+    final val summary // com.fenakhay.kwikibot.fleet/Question.summary|{}summary[0]
+        final fun <get-summary>(): kotlin/String // com.fenakhay.kwikibot.fleet/Question.summary.<get-summary>|<get-summary>(){}[0]
+    final val title // com.fenakhay.kwikibot.fleet/Question.title|{}title[0]
+        final fun <get-title>(): kotlin/String // com.fenakhay.kwikibot.fleet/Question.title.<get-title>|<get-title>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.fleet/Question.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.fleet/Question.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.fenakhay.kwikibot.fleet/Question.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ...): com.fenakhay.kwikibot.fleet/Question // com.fenakhay.kwikibot.fleet/Question.copy|copy(kotlin.String;kotlin.String;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.fleet/Question.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.fleet/Question.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.fleet/Question.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/RecordingContext : com.fenakhay.kwikibot.fleet/RunContext { // com.fenakhay.kwikibot.fleet/RecordingContext|null[0]
+    constructor <init>(com.fenakhay.kwikibot.client/Wiki, com.fenakhay.kwikibot.bot.run/StopPolicy = ..., com.fenakhay.kwikibot.bot/CommonOptions = ..., kotlin.collections/List<kotlin/String> = ..., kotlinx.io.files/Path? = ..., kotlin/Function1<com.fenakhay.kwikibot.fleet/Question, kotlin/Boolean> = ...) // com.fenakhay.kwikibot.fleet/RecordingContext.<init>|<init>(com.fenakhay.kwikibot.client.Wiki;com.fenakhay.kwikibot.bot.run.StopPolicy;com.fenakhay.kwikibot.bot.CommonOptions;kotlin.collections.List<kotlin.String>;kotlinx.io.files.Path?;kotlin.Function1<com.fenakhay.kwikibot.fleet.Question,kotlin.Boolean>){}[0]
+
+    final val arguments // com.fenakhay.kwikibot.fleet/RecordingContext.arguments|{}arguments[0]
+        final fun <get-arguments>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.fleet/RecordingContext.arguments.<get-arguments>|<get-arguments>(){}[0]
+    final val asked // com.fenakhay.kwikibot.fleet/RecordingContext.asked|{}asked[0]
+        final fun <get-asked>(): kotlin.collections/MutableList<com.fenakhay.kwikibot.fleet/Question> // com.fenakhay.kwikibot.fleet/RecordingContext.asked.<get-asked>|<get-asked>(){}[0]
+    final val directory // com.fenakhay.kwikibot.fleet/RecordingContext.directory|{}directory[0]
+        final fun <get-directory>(): kotlinx.io.files/Path? // com.fenakhay.kwikibot.fleet/RecordingContext.directory.<get-directory>|<get-directory>(){}[0]
+    final val options // com.fenakhay.kwikibot.fleet/RecordingContext.options|{}options[0]
+        final fun <get-options>(): com.fenakhay.kwikibot.bot/CommonOptions // com.fenakhay.kwikibot.fleet/RecordingContext.options.<get-options>|<get-options>(){}[0]
+    final val outcomes // com.fenakhay.kwikibot.fleet/RecordingContext.outcomes|{}outcomes[0]
+        final fun <get-outcomes>(): kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit> // com.fenakhay.kwikibot.fleet/RecordingContext.outcomes.<get-outcomes>|<get-outcomes>(){}[0]
+    final val pages // com.fenakhay.kwikibot.fleet/RecordingContext.pages|{}pages[0]
+        final fun <get-pages>(): kotlin.collections/MutableList<com.fenakhay.kwikibot.bot.run/PageOutcome> // com.fenakhay.kwikibot.fleet/RecordingContext.pages.<get-pages>|<get-pages>(){}[0]
+    final val said // com.fenakhay.kwikibot.fleet/RecordingContext.said|{}said[0]
+        final fun <get-said>(): kotlin.collections/MutableList<kotlin/String> // com.fenakhay.kwikibot.fleet/RecordingContext.said.<get-said>|<get-said>(){}[0]
+    final val stopPolicy // com.fenakhay.kwikibot.fleet/RecordingContext.stopPolicy|{}stopPolicy[0]
+        final fun <get-stopPolicy>(): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.fleet/RecordingContext.stopPolicy.<get-stopPolicy>|<get-stopPolicy>(){}[0]
+    final val wiki // com.fenakhay.kwikibot.fleet/RecordingContext.wiki|{}wiki[0]
+        final fun <get-wiki>(): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/RecordingContext.wiki.<get-wiki>|<get-wiki>(){}[0]
+
+    final var expected // com.fenakhay.kwikibot.fleet/RecordingContext.expected|{}expected[0]
+        final fun <get-expected>(): kotlin/Int // com.fenakhay.kwikibot.fleet/RecordingContext.expected.<get-expected>|<get-expected>(){}[0]
+    final var stoppedBecause // com.fenakhay.kwikibot.fleet/RecordingContext.stoppedBecause|{}stoppedBecause[0]
+        final fun <get-stoppedBecause>(): kotlin/String? // com.fenakhay.kwikibot.fleet/RecordingContext.stoppedBecause.<get-stoppedBecause>|<get-stoppedBecause>(){}[0]
+
+    final fun expect(kotlin/Int) // com.fenakhay.kwikibot.fleet/RecordingContext.expect|expect(kotlin.Int){}[0]
+    final fun say(kotlin/String, com.fenakhay.kwikibot.fleet/RunContext.Level) // com.fenakhay.kwikibot.fleet/RecordingContext.say|say(kotlin.String;com.fenakhay.kwikibot.fleet.RunContext.Level){}[0]
+    final fun stopped(kotlin/String) // com.fenakhay.kwikibot.fleet/RecordingContext.stopped|stopped(kotlin.String){}[0]
+    final suspend fun <#A1: kotlin/Any?> step(kotlin/String, kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.fleet/RunContext, #A1>): #A1 // com.fenakhay.kwikibot.fleet/RecordingContext.step|step(kotlin.String;kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.fleet.RunContext,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun ask(com.fenakhay.kwikibot.fleet/Question): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RecordingContext.ask|ask(com.fenakhay.kwikibot.fleet.Question){}[0]
+    final suspend fun mayContinue(): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RecordingContext.mayContinue|mayContinue(){}[0]
+    final suspend fun open(com.fenakhay.kwikibot.model/LangCode, com.fenakhay.kwikibot.client/Family): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/RecordingContext.open|open(com.fenakhay.kwikibot.model.LangCode;com.fenakhay.kwikibot.client.Family){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/RunView { // com.fenakhay.kwikibot.fleet/RunView|null[0]
+    constructor <init>(kotlin/Long, kotlin/String, com.fenakhay.kwikibot.fleet/RunStatus, kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/String? = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.fleet/RunView.<init>|<init>(kotlin.Long;kotlin.String;com.fenakhay.kwikibot.fleet.RunStatus;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String?;kotlin.String?){}[0]
+
+    final val botId // com.fenakhay.kwikibot.fleet/RunView.botId|{}botId[0]
+        final fun <get-botId>(): kotlin/String // com.fenakhay.kwikibot.fleet/RunView.botId.<get-botId>|<get-botId>(){}[0]
+    final val expected // com.fenakhay.kwikibot.fleet/RunView.expected|{}expected[0]
+        final fun <get-expected>(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.expected.<get-expected>|<get-expected>(){}[0]
+    final val failure // com.fenakhay.kwikibot.fleet/RunView.failure|{}failure[0]
+        final fun <get-failure>(): kotlin/String? // com.fenakhay.kwikibot.fleet/RunView.failure.<get-failure>|<get-failure>(){}[0]
+    final val id // com.fenakhay.kwikibot.fleet/RunView.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // com.fenakhay.kwikibot.fleet/RunView.id.<get-id>|<get-id>(){}[0]
+    final val saved // com.fenakhay.kwikibot.fleet/RunView.saved|{}saved[0]
+        final fun <get-saved>(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.saved.<get-saved>|<get-saved>(){}[0]
+    final val seen // com.fenakhay.kwikibot.fleet/RunView.seen|{}seen[0]
+        final fun <get-seen>(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.seen.<get-seen>|<get-seen>(){}[0]
+    final val status // com.fenakhay.kwikibot.fleet/RunView.status|{}status[0]
+        final fun <get-status>(): com.fenakhay.kwikibot.fleet/RunStatus // com.fenakhay.kwikibot.fleet/RunView.status.<get-status>|<get-status>(){}[0]
+    final val stoppedBecause // com.fenakhay.kwikibot.fleet/RunView.stoppedBecause|{}stoppedBecause[0]
+        final fun <get-stoppedBecause>(): kotlin/String? // com.fenakhay.kwikibot.fleet/RunView.stoppedBecause.<get-stoppedBecause>|<get-stoppedBecause>(){}[0]
+
+    final fun component1(): kotlin/Long // com.fenakhay.kwikibot.fleet/RunView.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.fleet/RunView.component2|component2(){}[0]
+    final fun component3(): com.fenakhay.kwikibot.fleet/RunStatus // com.fenakhay.kwikibot.fleet/RunView.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.component6|component6(){}[0]
+    final fun component7(): kotlin/String? // com.fenakhay.kwikibot.fleet/RunView.component7|component7(){}[0]
+    final fun component8(): kotlin/String? // com.fenakhay.kwikibot.fleet/RunView.component8|component8(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String = ..., com.fenakhay.kwikibot.fleet/RunStatus = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/String? = ..., kotlin/String? = ...): com.fenakhay.kwikibot.fleet/RunView // com.fenakhay.kwikibot.fleet/RunView.copy|copy(kotlin.Long;kotlin.String;com.fenakhay.kwikibot.fleet.RunStatus;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String?;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.fleet/RunView.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.fleet/RunView.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.fleet/RunView.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.fleet/SharedStop : com.fenakhay.kwikibot.bot.run/StopPolicy { // com.fenakhay.kwikibot.fleet/SharedStop|null[0]
+    constructor <init>(kotlin.coroutines/SuspendFunction0<kotlin/String?>, kotlin.time/Duration = ..., kotlin.time/Duration = ..., kotlin.time/Clock = ...) // com.fenakhay.kwikibot.fleet/SharedStop.<init>|<init>(kotlin.coroutines.SuspendFunction0<kotlin.String?>;kotlin.time.Duration;kotlin.time.Duration;kotlin.time.Clock){}[0]
+
+    final suspend fun mayContinue(): kotlin/Boolean // com.fenakhay.kwikibot.fleet/SharedStop.mayContinue|mayContinue(){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.fleet/SharedStop.Companion|null[0]
+        final fun onPage(com.fenakhay.kwikibot.client/Wiki, kotlin/String): com.fenakhay.kwikibot.fleet/SharedStop // com.fenakhay.kwikibot.fleet/SharedStop.Companion.onPage|onPage(com.fenakhay.kwikibot.client.Wiki;kotlin.String){}[0]
+    }
+}
+
+final fun com.fenakhay.kwikibot.fleet/fleetMain(kotlin/Array<kotlin/String>, kotlin.collections/List<com.fenakhay.kwikibot.fleet/Bot>, com.fenakhay.kwikibot.bot/Prompt = ...) // com.fenakhay.kwikibot.fleet/fleetMain|fleetMain(kotlin.Array<kotlin.String>;kotlin.collections.List<com.fenakhay.kwikibot.fleet.Bot>;com.fenakhay.kwikibot.bot.Prompt){}[0]

@@ -13,6 +13,7 @@ import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CancellationException
@@ -260,6 +261,14 @@ public fun interface StopPolicy {
         public val NONE: StopPolicy = StopPolicy { true }
 
         /**
+         * Lets a bot go on only while every one of [policies] does, as when a bot has a limit of its own on
+         * top of a stop page. The first to say stop, or to fail, decides.
+         */
+        public fun allOf(vararg policies: StopPolicy): StopPolicy = StopPolicy {
+            policies.all { it.mayContinue() }
+        }
+
+        /**
          * Stops when a page on the wiki says anything other than `false`.
          *
          * The convention `User:MyBot/Stop` uses: an administrator empties or edits that page and the bot
@@ -332,6 +341,16 @@ public class BotRunBuilder internal constructor() {
      * rather than listing the lot and discarding most of it.
      */
     public var limit: Int? = null
+
+    /**
+     * How many edits to save at most, or `null` for no cap. The run stops with [StopReason.POLICY] on
+     * reaching it, and reports the pages it had in hand as not attempted.
+     *
+     * Not [limit], which caps pages read. A bot that reads a quarter of a million entries and edits a few
+     * hundred of them wants this one. Each save is counted as it is sent, so pages worked on side by side
+     * cannot pass it together, and a save the wiki refuses still counts.
+     */
+    public var maxEdits: Int? = null
 
     /** Checked before every save; see [StopPolicy]. */
     public var stopPolicy: StopPolicy = StopPolicy.NONE
@@ -550,6 +569,17 @@ private class Runner(
     private var notAttempted = 0
     private val problems = mutableListOf<PageOutcome>()
 
+    @OptIn(ExperimentalAtomicApi::class) private val editsClaimed = AtomicInt(0)
+
+    /** Takes one of the edits this run may make, or says none are left and stops the run. */
+    @OptIn(ExperimentalAtomicApi::class)
+    private fun claimEdit(): Boolean {
+        val most = config.maxEdits ?: return true
+        if (editsClaimed.fetchAndAdd(1) < most) return true
+        val _ = stopReason.compareAndSet(null, StopReason.POLICY)
+        return false
+    }
+
     /** Why the run stopped; the first reason found wins. */
     @OptIn(ExperimentalAtomicApi::class) private val stopReason = AtomicReference<StopReason?>(null)
 
@@ -692,6 +722,7 @@ private class Runner(
         return when {
             edit.section == null && edit.text == content.text -> PageOutcome.Unchanged(ref)
             config.dryRun -> PageOutcome.Pending(ref, edit, content.text, content.revisionId)
+            !claimEdit() -> notAttempted(ref)
             else -> save(ref, content, edit)
         }
     }
@@ -701,8 +732,11 @@ private class Runner(
         val edit = withContext(Dispatchers.Default) { create(ref) } ?: return PageOutcome.Missing(ref)
         val creation = edit.copy(createOnly = true)
 
-        return if (config.dryRun) PageOutcome.Pending(ref, creation, before = "")
-        else save(ref, null, creation)
+        return when {
+            config.dryRun -> PageOutcome.Pending(ref, creation, before = "")
+            !claimEdit() -> notAttempted(ref)
+            else -> save(ref, null, creation)
+        }
     }
 
     /** Records that the run must stop, if [error] means it must. */

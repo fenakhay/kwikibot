@@ -29,6 +29,7 @@ abstract fun interface com.fenakhay.kwikibot.bot.run/StopPolicy { // com.fenakha
         final val NONE // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.NONE|{}NONE[0]
             final fun <get-NONE>(): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.NONE.<get-NONE>|<get-NONE>(){}[0]
 
+        final fun allOf(kotlin/Array<out com.fenakhay.kwikibot.bot.run/StopPolicy>...): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.allOf|allOf(kotlin.Array<out|com.fenakhay.kwikibot.bot.run.StopPolicy>...){}[0]
         final fun page(com.fenakhay.kwikibot.client.service/PageService, com.fenakhay.kwikibot.model.page/PageRef): com.fenakhay.kwikibot.bot.run/StopPolicy // com.fenakhay.kwikibot.bot.run/StopPolicy.Companion.page|page(com.fenakhay.kwikibot.client.service.PageService;com.fenakhay.kwikibot.model.page.PageRef){}[0]
     }
 }
@@ -372,6 +373,9 @@ final class com.fenakhay.kwikibot.bot.run/BotRunBuilder { // com.fenakhay.kwikib
     final var limit // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit|{}limit[0]
         final fun <get-limit>(): kotlin/Int? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit.<get-limit>|<get-limit>(){}[0]
         final fun <set-limit>(kotlin/Int?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.limit.<set-limit>|<set-limit>(kotlin.Int?){}[0]
+    final var maxEdits // com.fenakhay.kwikibot.bot.run/BotRunBuilder.maxEdits|{}maxEdits[0]
+        final fun <get-maxEdits>(): kotlin/Int? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.maxEdits.<get-maxEdits>|<get-maxEdits>(){}[0]
+        final fun <set-maxEdits>(kotlin/Int?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.maxEdits.<set-maxEdits>|<set-maxEdits>(kotlin.Int?){}[0]
     final var onOutcome // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome|{}onOutcome[0]
         final fun <get-onOutcome>(): kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit>? // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome.<get-onOutcome>|<get-onOutcome>(){}[0]
         final fun <set-onOutcome>(kotlin/Function1<com.fenakhay.kwikibot.bot.run/PageOutcome, kotlin/Unit>?) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.onOutcome.<set-onOutcome>|<set-onOutcome>(kotlin.Function1<com.fenakhay.kwikibot.bot.run.PageOutcome,kotlin.Unit>?){}[0]

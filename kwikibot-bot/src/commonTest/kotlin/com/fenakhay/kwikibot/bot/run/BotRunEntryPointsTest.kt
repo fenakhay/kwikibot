@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.testkit.FakePageService
 import com.fenakhay.kwikibot.testkit.FakeWiki
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 
@@ -60,6 +61,53 @@ class BotRunEntryPointsTest {
 
         wiki.botRun(wiki.stopPage("User:Bot/Stop")) { editing("page", wiki) }.saved shouldBe 1
         wiki.botRun(wiki.stopPage()) { editing("page", wiki) }.stopReason shouldBe StopReason.POLICY
+    }
+
+    @Test
+    fun `a cap on edits holds with pages saved side by side and stops the run`() = runTest {
+        val many = FakePageService((1..20).associate { "p$it" to "text" })
+        val report =
+            botRun(many, StopPolicy.NONE, null) {
+                source((1..20).map { many.ref("p$it") }.asFlow())
+                transform { Edit("new", "s") }
+                dryRun = false
+                writeConcurrency = 8
+                readConcurrency = 8
+                maxEdits = 3
+            }
+
+        report.saved shouldBe 3
+        report.stopReason shouldBe StopReason.POLICY
+    }
+
+    @Test
+    fun `a cap on edits counts creations and leaves a dry run alone`() = runTest {
+        val empty = FakePageService()
+        val created =
+            botRun(empty, StopPolicy.NONE, null) {
+                source(listOf("a", "b").map { empty.ref(it) }.asFlow())
+                transform { null }
+                createMissing { Edit("new", "s") }
+                dryRun = false
+                readConcurrency = 1
+                maxEdits = 1
+            }
+        created.saved shouldBe 1
+
+        val dry =
+            botRun(empty, StopPolicy.NONE, null) {
+                source(listOf("c", "d").map { empty.ref(it) }.asFlow())
+                transform { null }
+                createMissing { Edit("new", "s") }
+                maxEdits = 1
+            }
+        dry.pending shouldBe 2
+    }
+
+    @Test
+    fun `all of several policies have to let a bot go on`() = runTest {
+        StopPolicy.allOf(StopPolicy.NONE, StopPolicy.NONE).mayContinue() shouldBe true
+        StopPolicy.allOf(StopPolicy.NONE, StopPolicy { false }).mayContinue() shouldBe false
     }
 
     @Suppress("DEPRECATION")
