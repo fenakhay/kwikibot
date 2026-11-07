@@ -25,8 +25,8 @@ macOS, Linux, Windows and JavaScript, with an npm package and a command-line too
   back exactly as it was read.
 - **Bots that save nothing until told to.** Conflict-checked saves and, once set, a stop page and
   `{{nobots}}`; resumable state, diffs and skip logs.
-- **More than `api.php`.** Wikibase entities, SPARQL, EventStreams, PetScan, PagePile and, on the
-  JVM, XML dumps.
+- **More than `api.php`.** Wikibase entities, SPARQL, EventStreams, PetScan, PagePile and XML dumps,
+  read on every core.
 - **Tests without a network.** `kwikibot-testkit` gives your bot a fake wiki.
 
 [docs/comparison.md](docs/comparison.md) sets kwikibot beside pywikibot, mwclient, mwn, m3api and
@@ -174,7 +174,7 @@ program that wants less: a tool that only parses wikitext has no reason to pull 
 | `kwikibot-wikitext` | The wikitext parser and editor, with no dependencies of its own |
 | `kwikibot-net` | The HTTP transport: user agent, credentials and login, tokens, throttle, maxlag, retries, response cache |
 | `kwikibot-protocol` | Reading `api.php` responses: errors and warnings, site info, `paraminfo`, continuation, page decoding |
-| `kwikibot-client` | `WikiClient`, the `Wiki` handle and its services, EventStreams, SPARQL, and XML dumps on the JVM |
+| `kwikibot-client` | `WikiClient`, the `Wiki` handle and its services, EventStreams, SPARQL, and XML dumps |
 | `kwikibot-wikibase` | Entities, statements and data values |
 | `kwikibot-bot` | `botRun`, `botMain`, page sources and filters, `{{nobots}}`, stop pages, run state, diffs, logs, plural forms, prompts |
 | `kwikibot-testkit` | `FakeWiki`, `FakePageService`, `MockTransport` and `FailOnDeprecation`, for testing a bot |
@@ -192,11 +192,11 @@ Every module builds for every platform below, with one API. Where they differ:
 |---|---|---|---|---|
 | HTTP engine | OkHttp | Darwin, Curl, WinHTTP | fetch | fetch |
 | Files: `DiskCache`, file uploads and downloads, `BotConfig`, `RunState`, diff and skip logs | ✓ | ✓ | ✓ | – |
-| XML dumps (`XmlDump`, `DumpPage`) | ✓ | – | – | – |
+| XML dumps (`XmlDump`, `DumpPage`) | ✓ | ✓ | ✓, on worker threads | From bytes, on one thread |
 | `botMain`, `TerminalPrompt`, environment variables | ✓ | ✓ | ✓ | – |
 | Tested by `./gradlew check` and CI | ✓ | ✓ | ✓ | the npm package, in headless Chrome |
 
-Paths are `kotlinx.io.files.Path`, except `XmlDump`'s, which are `java.nio.file.Path`. The file APIs
+Paths are `kotlinx.io.files.Path`. The file APIs
 fail in a browser, which has no filesystem; there, environment variables read as unset and a
 prompt reads no answer. On JavaScript only the
 request timeout applies, since fetch has no connect or socket timeout, and every request also
@@ -521,14 +521,23 @@ WikiHttpClient.create().use { http ->
 SPARQL runs against the Wikidata Query Service or any other endpoint; Commons' needs an OAuth
 token, given as `SparqlAuth.wcqs(token)`. Each event carries an `offset`, and passed back as
 `since`, it lets a listener that restarts carry on where it stopped. PetScan and PagePile are page
-sources, for the working lists editors assemble by hand. On the JVM, `XmlDump` streams a dump,
-plain or compressed, as a `Sequence` of pages, or scans it on every core:
+sources, for the working lists editors assemble by hand. `XmlDump` streams a dump, plain,
+gzip or bzip2, as a `Sequence` of pages on one thread, as a `Flow` in the dump's order on every core,
+or fastest of all through `scan`, which hands out pages in no order:
 
 ```kotlin
 XmlDump.pages(Path("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = setOf(0))
     .filter { "{{col|" in it.text }
     .forEach { println(it.title) }
+
+XmlDump.scan(Path("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = setOf(0)) { page ->
+    if ("{{col|" in page.text) matches.add(page.title)
+}
 ```
+
+bzip2 is decoded block by block on every thread, with or without a multistream index. gzip has no
+boundaries to split on, so its decompression takes one thread and only the parsing shares out. A
+truncated or corrupt dump throws `DumpFormatException` after yielding the pages before the damage.
 
 ## Testing a bot
 

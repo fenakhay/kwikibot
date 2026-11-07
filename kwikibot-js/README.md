@@ -70,9 +70,18 @@ refuses is a problem in the report. A transform that throws, or returns anything
 Pass a `stopPage` as `run`'s last argument, a page that has to say `false` for the run to save, so it
 can be stopped from the wiki. A saving run without one logs a warning.
 
+XML dumps read as async iterables, with bzip2 decoded on worker threads so the event loop stays free.
+A browser has no files, so `dumpPagesOf` reads a small dump from bytes, on one thread:
+
+```js
+for await (const page of kwikibot.dumpPages("enwiktionary-latest-pages-articles.xml.bz2", [0])) {
+  if (page.text.includes("{{col|")) console.log(page.title);
+}
+```
+
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,
-category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`) and bot
-runs. Revision ids are numbers and lists are arrays.
+category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps
+and bot runs. Revision ids are numbers and lists are arrays.
 
 It runs in browsers too, through a bundler. From a page on a site other than the wiki's, requests
 carry `origin=*`, which MediaWiki answers as it would a logged-out reader, so logging in works on

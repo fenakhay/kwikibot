@@ -92,7 +92,6 @@ private class NodeBlockDecoders(threads: dynamic, file: String, workers: Int) : 
                 val output: ByteArray? = message.output?.unsafeCast<ByteArray>()
                 waiting.remove(id)?.resumeWith(Result.success(output))
             }
-            worker.unref()
             all.add(worker)
             val _ = idle.trySend(worker)
         }

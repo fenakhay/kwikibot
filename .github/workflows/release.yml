@@ -83,6 +83,7 @@ jobs:
           cd kwikibot-js/smoke
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz
           node detect.mjs https://example.org/kwikibot-release
+          node dump.mjs
 
       - uses: actions/setup-node@v7
         with:

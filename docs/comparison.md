@@ -31,7 +31,7 @@ a pull request.
 | Wikibase | ✓ | ✓ | – | As raw API requests | As raw API requests |
 | SPARQL | ✓ | ✓ | – | ✓ | – |
 | EventStreams | ✓ | ✓ | – | – | – |
-| XML dumps | JVM only | ✓ | – | – | – |
+| XML dumps | ✓, on every core | ✓ | – | – | – |
 | Fake wiki for tests | `kwikibot-testkit` | – | – | – | – |
 
 ### Wikitext parsers
