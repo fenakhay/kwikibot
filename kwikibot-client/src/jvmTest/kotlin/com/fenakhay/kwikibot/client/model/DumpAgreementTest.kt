@@ -2,15 +2,19 @@
 
 package com.fenakhay.kwikibot.client.model
 
+import com.fenakhay.kwikibot.client.model.dump.DumpFormatException
 import io.kotest.matchers.shouldBe
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import kotlin.io.path.writeBytes
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.time.TimeSource
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
 import kotlinx.io.files.Path
+import kotlinx.io.write
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
@@ -78,6 +82,24 @@ class DumpAgreementTest {
                     expected.filter { it.namespace == 1 }
             }
         }
+
+    @Test
+    fun `the JDK's gzip reads every member and a bad file fails as any other does`() {
+        val read = { bytes: ByteArray ->
+            XmlDump.pages(Buffer().apply { write(bytes) }, compression = Compression.GZIP)
+                .map { it.title }
+                .toList()
+        }
+        read(DumpFixtures.gzipMembers) shouldBe listOf("Volcano", "Talk:Volcano", "Lava")
+
+        assertFailsWith<DumpFormatException> { read("not gzip at all".encodeToByteArray()) }
+        assertFailsWith<DumpFormatException> { read(byteArrayOf()) }
+        val bytes = DumpFixtures.gzip
+        assertFailsWith<DumpFormatException> { read(bytes.copyOf(bytes.size - 3)) }
+        val damaged =
+            bytes.copyOf().also { it[bytes.size / 2] = (it[bytes.size / 2].toInt() xor 0x55).toByte() }
+        assertFailsWith<DumpFormatException> { read(damaged) }
+    }
 
     @Test
     @EnabledIfEnvironmentVariable(named = "KWIKI_DUMP", matches = ".+")

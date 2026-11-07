@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber", "NestedBlockDepth", "LoopWithTooManyJumpStatements", "CyclomaticComplexMethod")
+
 package com.fenakhay.kwikibot.client.model.dump
 
 import kotlinx.io.Buffer
@@ -515,8 +517,10 @@ internal class BlockScanner {
         get() = sawEnd && open < 0
 
     /**
-     * The next blocks whole within what has arrived. [piece] is taken over by the result.
+     * The next blocks whole within what has arrived.
      *
+     * @param piece the next bytes of the file, which are copied.
+     * @param length how many of [piece] are meant.
      * @param last whether this is the last piece of the file.
      */
     fun feed(piece: ByteArray, length: Int, last: Boolean): BlockRanges {

@@ -9,18 +9,22 @@ import kotlinx.io.Source
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
+/** Reads a MediaWiki XML dump without holding it in memory. */
 public actual object XmlDump {
 
+    /** See the common declaration. */
     public actual fun pages(path: Path, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
         yieldAll(sequentialPages(SystemFileSystem.source(path), compressionOf(path), namespaces))
     }
 
+    /** See the common declaration. */
     public actual fun pages(
         source: Source,
         namespaces: Set<Int>,
         compression: Compression,
     ): Sequence<DumpPage> = sequentialPages(source, compression, namespaces)
 
+    /** See the common declaration. */
     public actual suspend fun scan(
         path: Path,
         namespaces: Set<Int>,
@@ -31,6 +35,7 @@ public actual object XmlDump {
         scanDump(path, workers, namespaces, block)
     }
 
+    /** See the common declaration. */
     public actual fun flow(path: Path, namespaces: Set<Int>, workers: Int): Flow<DumpPage> {
         require(workers > 0) { "a flow needs at least one worker" }
         return dumpFlow(path, workers, namespaces)
@@ -38,4 +43,5 @@ public actual object XmlDump {
 }
 
 @OptIn(kotlin.experimental.ExperimentalNativeApi::class)
+/** How many threads there are to work on. */
 public actual fun availableWorkers(): Int = kotlin.native.Platform.getAvailableProcessors()

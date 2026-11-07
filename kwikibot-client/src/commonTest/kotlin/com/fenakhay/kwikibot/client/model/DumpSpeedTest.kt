@@ -23,13 +23,14 @@ class DumpSpeedTest {
         runTest(timeout = 2.hours) {
             val named = environmentVariable("KWIKI_DUMP") ?: return@runTest
             val path = Path(named)
-            val threads =
-                environmentVariable("KWIKI_DUMP_WORKERS")?.split(",")?.map { it.toInt() }
-                    ?: listOf(1, 2, 4, 8)
+            val workersNamed = environmentVariable("KWIKI_DUMP_WORKERS")
+            val threads = workersNamed?.split(",")?.map { it.toInt() } ?: listOf(1, 2, 4, 8)
 
-            val started = TimeSource.Monotonic.markNow()
-            val sequential = XmlDump.pages(path).count()
-            println("sequence: ${started.elapsedNow().inWholeMilliseconds} ms, $sequential pages")
+            if (workersNamed == null) {
+                val started = TimeSource.Monotonic.markNow()
+                val sequential = XmlDump.pages(path).count()
+                println("sequence: ${started.elapsedNow().inWholeMilliseconds} ms, $sequential pages")
+            }
 
             for (workers in threads) {
                 val scanStart = TimeSource.Monotonic.markNow()
@@ -41,10 +42,8 @@ class DumpSpeedTest {
 
                 val flowStart = TimeSource.Monotonic.markNow()
                 XmlDump.flow(path, workers = workers).collect()
-                println(
-                    "workers $workers: scan $scanned ms, flow ${flowStart.elapsedNow().inWholeMilliseconds} ms, " +
-                        "${seen.load()} pages"
-                )
+                val flowed = flowStart.elapsedNow().inWholeMilliseconds
+                println("workers $workers: scan $scanned ms, flow $flowed ms, ${seen.load()} pages")
             }
         }
 }

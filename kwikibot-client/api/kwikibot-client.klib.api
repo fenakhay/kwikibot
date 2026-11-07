@@ -10,6 +10,18 @@ open annotation class com.fenakhay.kwikibot.client.service/KwikibotDsl : kotlin/
     constructor <init>() // com.fenakhay.kwikibot.client.service/KwikibotDsl.<init>|<init>(){}[0]
 }
 
+final enum class com.fenakhay.kwikibot.client.model/Compression : kotlin/Enum<com.fenakhay.kwikibot.client.model/Compression> { // com.fenakhay.kwikibot.client.model/Compression|null[0]
+    enum entry BZIP2 // com.fenakhay.kwikibot.client.model/Compression.BZIP2|null[0]
+    enum entry GZIP // com.fenakhay.kwikibot.client.model/Compression.GZIP|null[0]
+    enum entry NONE // com.fenakhay.kwikibot.client.model/Compression.NONE|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/Compression.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/Compression> // com.fenakhay.kwikibot.client.model/Compression.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/Compression // com.fenakhay.kwikibot.client.model/Compression.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/Compression> // com.fenakhay.kwikibot.client.model/Compression.values|values#static(){}[0]
+}
+
 final enum class com.fenakhay.kwikibot.client.model/TriageStatus : kotlin/Enum<com.fenakhay.kwikibot.client.model/TriageStatus> { // com.fenakhay.kwikibot.client.model/TriageStatus|null[0]
     enum entry AUTOPATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.AUTOPATROLLED|null[0]
     enum entry PATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.PATROLLED|null[0]
@@ -586,6 +598,25 @@ sealed interface com.fenakhay.kwikibot.client/Family { // com.fenakhay.kwikibot.
     }
 }
 
+final class com.fenakhay.kwikibot.client.model.dump/DumpFormatException : kotlin/Exception { // com.fenakhay.kwikibot.client.model.dump/DumpFormatException|null[0]
+    constructor <init>(com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code, kotlin/String) // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.<init>|<init>(com.fenakhay.kwikibot.client.model.dump.DumpFormatException.Code;kotlin.String){}[0]
+
+    final val code // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.code|{}code[0]
+        final fun <get-code>(): com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.code.<get-code>|<get-code>(){}[0]
+
+    final enum class Code : kotlin/Enum<com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code> { // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code|null[0]
+        enum entry BAD_CHECKSUM // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.BAD_CHECKSUM|null[0]
+        enum entry BAD_DATA // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.BAD_DATA|null[0]
+        enum entry UNEXPECTED_EOF // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.UNEXPECTED_EOF|null[0]
+
+        final val entries // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code> // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code> // com.fenakhay.kwikibot.client.model.dump/DumpFormatException.Code.values|values#static(){}[0]
+    }
+}
+
 final class com.fenakhay.kwikibot.client.model/AbuseFilter { // com.fenakhay.kwikibot.client.model/AbuseFilter|null[0]
     constructor <init>(kotlin/Long, kotlin/String? = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Long? = ..., kotlin/String? = ..., kotlin.time/Instant? = ..., com.fenakhay.kwikibot.client.model/AbuseFilterFlags? = ..., kotlin.collections/Set<com.fenakhay.kwikibot.client.service/AbuseFilterProperty> = ...) // com.fenakhay.kwikibot.client.model/AbuseFilter.<init>|<init>(kotlin.Long;kotlin.String?;kotlin.collections.List<kotlin.String>;kotlin.String?;kotlin.String?;kotlin.Long?;kotlin.String?;kotlin.time.Instant?;com.fenakhay.kwikibot.client.model.AbuseFilterFlags?;kotlin.collections.Set<com.fenakhay.kwikibot.client.service.AbuseFilterProperty>){}[0]
 
@@ -674,6 +705,47 @@ final class com.fenakhay.kwikibot.client.model/Coordinate { // com.fenakhay.kwik
     final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/Coordinate.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/Coordinate.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/Coordinate.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/DumpPage { // com.fenakhay.kwikibot.client.model/DumpPage|null[0]
+    constructor <init>(kotlin/String, kotlin/Int, kotlin/Long, kotlin/Long, kotlin/String, kotlin.time/Instant? = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Boolean = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.client.model/DumpPage.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Long;kotlin.Long;kotlin.String;kotlin.time.Instant?;kotlin.String?;kotlin.String?;kotlin.Boolean;kotlin.String?){}[0]
+
+    final val comment // com.fenakhay.kwikibot.client.model/DumpPage.comment|{}comment[0]
+        final fun <get-comment>(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.comment.<get-comment>|<get-comment>(){}[0]
+    final val contributor // com.fenakhay.kwikibot.client.model/DumpPage.contributor|{}contributor[0]
+        final fun <get-contributor>(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.contributor.<get-contributor>|<get-contributor>(){}[0]
+    final val isRedirect // com.fenakhay.kwikibot.client.model/DumpPage.isRedirect|{}isRedirect[0]
+        final fun <get-isRedirect>(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/DumpPage.isRedirect.<get-isRedirect>|<get-isRedirect>(){}[0]
+    final val namespace // com.fenakhay.kwikibot.client.model/DumpPage.namespace|{}namespace[0]
+        final fun <get-namespace>(): kotlin/Int // com.fenakhay.kwikibot.client.model/DumpPage.namespace.<get-namespace>|<get-namespace>(){}[0]
+    final val pageId // com.fenakhay.kwikibot.client.model/DumpPage.pageId|{}pageId[0]
+        final fun <get-pageId>(): kotlin/Long // com.fenakhay.kwikibot.client.model/DumpPage.pageId.<get-pageId>|<get-pageId>(){}[0]
+    final val redirectTarget // com.fenakhay.kwikibot.client.model/DumpPage.redirectTarget|{}redirectTarget[0]
+        final fun <get-redirectTarget>(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.redirectTarget.<get-redirectTarget>|<get-redirectTarget>(){}[0]
+    final val revisionId // com.fenakhay.kwikibot.client.model/DumpPage.revisionId|{}revisionId[0]
+        final fun <get-revisionId>(): kotlin/Long // com.fenakhay.kwikibot.client.model/DumpPage.revisionId.<get-revisionId>|<get-revisionId>(){}[0]
+    final val text // com.fenakhay.kwikibot.client.model/DumpPage.text|{}text[0]
+        final fun <get-text>(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.text.<get-text>|<get-text>(){}[0]
+    final val timestamp // com.fenakhay.kwikibot.client.model/DumpPage.timestamp|{}timestamp[0]
+        final fun <get-timestamp>(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/DumpPage.timestamp.<get-timestamp>|<get-timestamp>(){}[0]
+    final val title // com.fenakhay.kwikibot.client.model/DumpPage.title|{}title[0]
+        final fun <get-title>(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.title.<get-title>|<get-title>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.component1|component1(){}[0]
+    final fun component10(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.component10|component10(){}[0]
+    final fun component2(): kotlin/Int // com.fenakhay.kwikibot.client.model/DumpPage.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // com.fenakhay.kwikibot.client.model/DumpPage.component3|component3(){}[0]
+    final fun component4(): kotlin/Long // com.fenakhay.kwikibot.client.model/DumpPage.component4|component4(){}[0]
+    final fun component5(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.component5|component5(){}[0]
+    final fun component6(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/DumpPage.component6|component6(){}[0]
+    final fun component7(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.component7|component7(){}[0]
+    final fun component8(): kotlin/String? // com.fenakhay.kwikibot.client.model/DumpPage.component8|component8(){}[0]
+    final fun component9(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/DumpPage.component9|component9(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/Int = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/String = ..., kotlin.time/Instant? = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/Boolean = ..., kotlin/String? = ...): com.fenakhay.kwikibot.client.model/DumpPage // com.fenakhay.kwikibot.client.model/DumpPage.copy|copy(kotlin.String;kotlin.Int;kotlin.Long;kotlin.Long;kotlin.String;kotlin.time.Instant?;kotlin.String?;kotlin.String?;kotlin.Boolean;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/DumpPage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/DumpPage.hashCode|hashCode(){}[0]
+    final fun inNamespaces(kotlin.collections/Set<kotlin/Int>): kotlin/Boolean // com.fenakhay.kwikibot.client.model/DumpPage.inNamespaces|inNamespaces(kotlin.collections.Set<kotlin.Int>){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.toString|toString(){}[0]
 }
 
 final class com.fenakhay.kwikibot.client.model/EventStreams { // com.fenakhay.kwikibot.client.model/EventStreams|null[0]
@@ -1199,6 +1271,13 @@ final class com.fenakhay.kwikibot.client/WikiConfig { // com.fenakhay.kwikibot.c
     }
 }
 
+final object com.fenakhay.kwikibot.client.model/XmlDump { // com.fenakhay.kwikibot.client.model/XmlDump|null[0]
+    final fun flow(kotlinx.io.files/Path, kotlin.collections/Set<kotlin/Int> = ..., kotlin/Int = ...): kotlinx.coroutines.flow/Flow<com.fenakhay.kwikibot.client.model/DumpPage> // com.fenakhay.kwikibot.client.model/XmlDump.flow|flow(kotlinx.io.files.Path;kotlin.collections.Set<kotlin.Int>;kotlin.Int){}[0]
+    final fun pages(kotlinx.io.files/Path, kotlin.collections/Set<kotlin/Int> = ...): kotlin.sequences/Sequence<com.fenakhay.kwikibot.client.model/DumpPage> // com.fenakhay.kwikibot.client.model/XmlDump.pages|pages(kotlinx.io.files.Path;kotlin.collections.Set<kotlin.Int>){}[0]
+    final fun pages(kotlinx.io/Source, kotlin.collections/Set<kotlin/Int> = ..., com.fenakhay.kwikibot.client.model/Compression = ...): kotlin.sequences/Sequence<com.fenakhay.kwikibot.client.model/DumpPage> // com.fenakhay.kwikibot.client.model/XmlDump.pages|pages(kotlinx.io.Source;kotlin.collections.Set<kotlin.Int>;com.fenakhay.kwikibot.client.model.Compression){}[0]
+    final suspend fun scan(kotlinx.io.files/Path, kotlin.collections/Set<kotlin/Int> = ..., kotlin/Int = ..., kotlin.coroutines/SuspendFunction1<com.fenakhay.kwikibot.client.model/DumpPage, kotlin/Unit>) // com.fenakhay.kwikibot.client.model/XmlDump.scan|scan(kotlinx.io.files.Path;kotlin.collections.Set<kotlin.Int>;kotlin.Int;kotlin.coroutines.SuspendFunction1<com.fenakhay.kwikibot.client.model.DumpPage,kotlin.Unit>){}[0]
+}
+
 final object com.fenakhay.kwikibot.client/ApiDetector { // com.fenakhay.kwikibot.client/ApiDetector|null[0]
     final fun endpointFrom(kotlin/String, kotlin/String): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.endpointFrom|endpointFrom(kotlin.String;kotlin.String){}[0]
     final suspend fun detect(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.detect|detect(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
@@ -1211,6 +1290,7 @@ final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requi
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requireGroup(kotlin/String) // com.fenakhay.kwikibot.client/requireGroup|requireGroup@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requireVersion(com.fenakhay.kwikibot.client/MediaWikiVersion) // com.fenakhay.kwikibot.client/requireVersion|requireVersion@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.MediaWikiVersion){}[0]
 final fun (com.fenakhay.kwikibot.protocol/SiteInfo).com.fenakhay.kwikibot.client/hasVersion(com.fenakhay.kwikibot.client/MediaWikiVersion): kotlin/Boolean // com.fenakhay.kwikibot.client/hasVersion|hasVersion@com.fenakhay.kwikibot.protocol.SiteInfo(com.fenakhay.kwikibot.client.MediaWikiVersion){}[0]
+final fun com.fenakhay.kwikibot.client.model/availableWorkers(): kotlin/Int // com.fenakhay.kwikibot.client.model/availableWorkers|availableWorkers(){}[0]
 final fun com.fenakhay.kwikibot.client.model/spool(kotlin/String): com.fenakhay.kwikibot.client.model/Spool // com.fenakhay.kwikibot.client.model/spool|spool(kotlin.String){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/dayTitleFormat(): com.fenakhay.kwikibot.model.page/DatePages.DayFormat? // com.fenakhay.kwikibot.client/dayTitleFormat|dayTitleFormat@com.fenakhay.kwikibot.client.Wiki(){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasRight(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.client/hasRight|hasRight@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]

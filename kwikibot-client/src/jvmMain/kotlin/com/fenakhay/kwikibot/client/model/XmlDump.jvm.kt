@@ -60,16 +60,19 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 @Suppress("DEPRECATION")
 public actual object XmlDump {
 
+    /** See the common declaration. */
     public actual fun pages(path: KxPath, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
         yieldAll(sequentialPages(SystemFileSystem.source(path), compressionOf(path), namespaces))
     }
 
+    /** See the common declaration. */
     public actual fun pages(
         source: Source,
         namespaces: Set<Int>,
         compression: Compression,
     ): Sequence<DumpPage> = sequentialPages(source, compression, namespaces)
 
+    /** See the common declaration. */
     public actual suspend fun scan(
         path: KxPath,
         namespaces: Set<Int>,
@@ -80,6 +83,7 @@ public actual object XmlDump {
         scanDump(path, workers, namespaces, block)
     }
 
+    /** See the common declaration. */
     public actual fun flow(path: KxPath, namespaces: Set<Int>, workers: Int): Flow<DumpPage> {
         require(workers > 0) { "a flow needs at least one worker" }
         return dumpFlow(path, workers, namespaces)
@@ -87,8 +91,8 @@ public actual object XmlDump {
 
     /** The pages of a dump file. */
     @Deprecated(
-        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
-            "to be removed in 2.0.0.",
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
+            "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
         ReplaceWith("pages(kotlinx.io.files.Path(path.toString()), emptySet())"),
     )
     public fun pages(path: Path): Sequence<DumpPage> = pages(path, emptySet())
@@ -100,8 +104,8 @@ public actual object XmlDump {
      * to the end. A sequence abandoned midway leaves it open until it is collected; [scan] does not.
      */
     @Deprecated(
-        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
-            "to be removed in 2.0.0.",
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
+            "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
         ReplaceWith("pages(kotlinx.io.files.Path(path.toString()), namespaces)"),
     )
     public fun pages(path: Path, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
@@ -110,16 +114,16 @@ public actual object XmlDump {
 
     /** The pages of a dump read from [input], which is closed when the sequence ends. */
     @Deprecated(
-        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
-            "to be removed in 2.0.0.",
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
+            "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
         ReplaceWith("pages(input.asSource().buffered(), emptySet())"),
     )
     public fun pages(input: InputStream): Sequence<DumpPage> = pages(input, emptySet())
 
     /** The pages of a dump read from [input] in [namespaces], or every page when it is empty. */
     @Deprecated(
-        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
-            "to be removed in 2.0.0.",
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
+            "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
         ReplaceWith("pages(input.asSource().buffered(), namespaces)"),
     )
     public fun pages(input: InputStream, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
@@ -137,8 +141,8 @@ public actual object XmlDump {
      * and the first exception from [block] ends it.
      */
     @Deprecated(
-        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. Deprecated since kwikibot 1.5.0, " +
-            "to be removed in 2.0.0.",
+        "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
+            "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
         ReplaceWith("scan(kotlinx.io.files.Path(path.toString()), namespaces, workers, block)"),
     )
     public suspend fun scan(
@@ -444,4 +448,5 @@ public actual object XmlDump {
         }
 }
 
+/** How many threads there are to work on. */
 public actual fun availableWorkers(): Int = Runtime.getRuntime().availableProcessors()

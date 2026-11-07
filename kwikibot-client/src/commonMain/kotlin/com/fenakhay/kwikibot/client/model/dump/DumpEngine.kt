@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber", "TooManyFunctions", "CyclomaticComplexMethod")
+
 package com.fenakhay.kwikibot.client.model.dump
 
 import com.fenakhay.kwikibot.client.internal.ioDispatcher
@@ -12,6 +14,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.io.Buffer
 import kotlinx.io.RawSource
@@ -102,16 +105,52 @@ private suspend fun decompressedPieces(
     }
 }
 
+/** UTF-8 through whatever is fastest here, which on JavaScript is the runtime's own decoder. */
+internal expect fun decodeUtf8(bytes: ByteArray, start: Int, end: Int): String
+
+/** Decodes bzip2 blocks somewhere other than the calling thread, a block at a time and [workers] at once. */
+internal interface BlockDecoders {
+    /** The decoded bytes of the range, or `null` if it does not hold a whole valid block. */
+    suspend fun decode(bytes: ByteArray, start: Long, end: Long): ByteArray?
+
+    fun close()
+}
+
+/** The platform's way of decoding blocks on other threads, or `null` to use coroutines on this one's pool. */
+internal expect fun platformBlockDecoders(workers: Int): BlockDecoders?
+
+private class PooledBlockDecoders(workers: Int) : BlockDecoders {
+    private val decoders = Channel<Bzip2BlockDecoder>(workers)
+
+    init {
+        repeat(workers) {
+            val _ = decoders.trySend(Bzip2BlockDecoder())
+        }
+    }
+
+    override suspend fun decode(bytes: ByteArray, start: Long, end: Long): ByteArray? {
+        val decoder = decoders.receive()
+        return try {
+            withContext(Dispatchers.Default) { decoder.decodeRange(bytes, start, end) }
+        } finally {
+            decoders.send(decoder)
+        }
+    }
+
+    override fun close() {
+        val _ = decoders.close()
+    }
+}
+
 /** A block's bit range in the bytes that hold it. */
-private class BlockRange(val bytes: ByteArray, val start: Long, val end: Long)
+internal class BlockRange(val bytes: ByteArray, val start: Long, val end: Long)
 
 /** A decoded block, or the range to try again if it did not decode. */
 private class DecodedBlock(val range: BlockRange, val output: ByteArray?)
 
 private suspend fun parallelBzip2(path: Path, workers: Int, piece: suspend (ByteArray, Int) -> Unit) =
     coroutineScope {
-        val decoders = Channel<Bzip2BlockDecoder>(workers)
-        repeat(workers) { decoders.trySend(Bzip2BlockDecoder()) }
+        val decoders = platformBlockDecoders(workers) ?: PooledBlockDecoders(workers)
         val tasks = Channel<Deferred<DecodedBlock>>(workers * 2)
         val scanner = BlockScanner()
 
@@ -140,25 +179,29 @@ private suspend fun parallelBzip2(path: Path, workers: Int, piece: suspend (Byte
         val retry = Bzip2BlockDecoder()
         var held: DecodedBlock? = null
         var any = false
-        for (task in tasks) {
-            val block = task.await()
-            val earlier = held
-            if (earlier != null) {
-                held = null
-                val joined = joinRanges(earlier.range, block.range)
-                val output =
-                    retry.decodeRange(joined.bytes, joined.start, joined.end)
-                        ?: badChecksum("a bzip2 block cannot be decoded")
-                piece(output, output.size)
-                any = true
-                continue
+        try {
+            for (task in tasks) {
+                val block = task.await()
+                val earlier = held
+                if (earlier != null) {
+                    held = null
+                    val joined = joinRanges(earlier.range, block.range)
+                    val output =
+                        retry.decodeRange(joined.bytes, joined.start, joined.end)
+                            ?: badChecksum("a bzip2 block cannot be decoded")
+                    piece(output, output.size)
+                    any = true
+                    continue
+                }
+                if (block.output == null) {
+                    held = block
+                } else {
+                    piece(block.output, block.output.size)
+                    any = true
+                }
             }
-            if (block.output == null) {
-                held = block
-            } else {
-                piece(block.output, block.output.size)
-                any = true
-            }
+        } finally {
+            decoders.close()
         }
         if (held != null) truncated("a bzip2 block")
         if (!scanner.endedCleanly) {
@@ -168,19 +211,13 @@ private suspend fun parallelBzip2(path: Path, workers: Int, piece: suspend (Byte
 
 private fun CoroutineScope.decodeLater(
     range: BlockRange,
-    decoders: Channel<Bzip2BlockDecoder>,
-): Deferred<DecodedBlock> =
-    async(Dispatchers.Default) {
-        val decoder = decoders.receive()
-        try {
-            DecodedBlock(range, decoder.decodeRange(range.bytes, range.start, range.end))
-        } finally {
-            decoders.send(decoder)
-        }
-    }
+    decoders: BlockDecoders,
+): Deferred<DecodedBlock> = async {
+    DecodedBlock(range, decoders.decode(range.bytes, range.start, range.end))
+}
 
 /** One range covering two neighbours, which may sit in different arrays. */
-private fun joinRanges(first: BlockRange, second: BlockRange): BlockRange {
+internal fun joinRanges(first: BlockRange, second: BlockRange): BlockRange {
     if (first.bytes === second.bytes) return BlockRange(first.bytes, first.start, second.end)
 
     val firstByte = (first.start ushr 3).toInt()

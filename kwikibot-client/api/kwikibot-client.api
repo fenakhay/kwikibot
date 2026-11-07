@@ -228,6 +228,15 @@ public final class com/fenakhay/kwikibot/client/model/AbuseFilterFlags {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/fenakhay/kwikibot/client/model/Compression : java/lang/Enum {
+	public static final field BZIP2 Lcom/fenakhay/kwikibot/client/model/Compression;
+	public static final field GZIP Lcom/fenakhay/kwikibot/client/model/Compression;
+	public static final field NONE Lcom/fenakhay/kwikibot/client/model/Compression;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/Compression;
+	public static fun values ()[Lcom/fenakhay/kwikibot/client/model/Compression;
+}
+
 public final class com/fenakhay/kwikibot/client/model/Coordinate {
 	public fun <init> (DDLjava/lang/String;ZLjava/lang/String;)V
 	public synthetic fun <init> (DDLjava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -577,12 +586,38 @@ public final class com/fenakhay/kwikibot/client/model/WikiEvent {
 
 public final class com/fenakhay/kwikibot/client/model/XmlDump {
 	public static final field INSTANCE Lcom/fenakhay/kwikibot/client/model/XmlDump;
+	public final fun flow (Lkotlinx/io/files/Path;Ljava/util/Set;I)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun flow$default (Lcom/fenakhay/kwikibot/client/model/XmlDump;Lkotlinx/io/files/Path;Ljava/util/Set;IILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public final fun pages (Ljava/io/InputStream;)Lkotlin/sequences/Sequence;
 	public final fun pages (Ljava/io/InputStream;Ljava/util/Set;)Lkotlin/sequences/Sequence;
 	public final fun pages (Ljava/nio/file/Path;)Lkotlin/sequences/Sequence;
 	public final fun pages (Ljava/nio/file/Path;Ljava/util/Set;)Lkotlin/sequences/Sequence;
+	public final fun pages (Lkotlinx/io/Source;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/model/Compression;)Lkotlin/sequences/Sequence;
+	public final fun pages (Lkotlinx/io/files/Path;Ljava/util/Set;)Lkotlin/sequences/Sequence;
+	public static synthetic fun pages$default (Lcom/fenakhay/kwikibot/client/model/XmlDump;Lkotlinx/io/Source;Ljava/util/Set;Lcom/fenakhay/kwikibot/client/model/Compression;ILjava/lang/Object;)Lkotlin/sequences/Sequence;
+	public static synthetic fun pages$default (Lcom/fenakhay/kwikibot/client/model/XmlDump;Lkotlinx/io/files/Path;Ljava/util/Set;ILjava/lang/Object;)Lkotlin/sequences/Sequence;
 	public final fun scan (Ljava/nio/file/Path;ILjava/util/Set;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun scan (Lkotlinx/io/files/Path;Ljava/util/Set;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun scan$default (Lcom/fenakhay/kwikibot/client/model/XmlDump;Ljava/nio/file/Path;ILjava/util/Set;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun scan$default (Lcom/fenakhay/kwikibot/client/model/XmlDump;Lkotlinx/io/files/Path;Ljava/util/Set;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/client/model/XmlDump_jvmKt {
+	public static final fun availableWorkers ()I
+}
+
+public final class com/fenakhay/kwikibot/client/model/dump/DumpFormatException : java/lang/Exception {
+	public fun <init> (Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;Ljava/lang/String;)V
+	public final fun getCode ()Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
+}
+
+public final class com/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code : java/lang/Enum {
+	public static final field BAD_CHECKSUM Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
+	public static final field BAD_DATA Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
+	public static final field UNEXPECTED_EOF Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
+	public static fun values ()[Lcom/fenakhay/kwikibot/client/model/dump/DumpFormatException$Code;
 }
 
 public final class com/fenakhay/kwikibot/client/service/AbuseFilterOrder : java/lang/Enum {

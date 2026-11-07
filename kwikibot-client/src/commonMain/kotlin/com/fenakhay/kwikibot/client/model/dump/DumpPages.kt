@@ -1,3 +1,11 @@
+@file:Suppress(
+    "MagicNumber",
+    "TooManyFunctions",
+    "LoopWithTooManyJumpStatements",
+    "LongMethod",
+    "CyclomaticComplexMethod",
+)
+
 package com.fenakhay.kwikibot.client.model.dump
 
 import com.fenakhay.kwikibot.client.model.DumpPage
@@ -341,8 +349,8 @@ private fun textOf(bytes: ByteArray, start: Int, end: Int): String {
         }
         index++
     }
-    if (plain) return bytes.decodeToString(start, end)
-    return decodeEntities(bytes.decodeToString(start, end))
+    if (plain) return decodeUtf8(bytes, start, end)
+    return decodeEntities(decodeUtf8(bytes, start, end))
 }
 
 private fun decodeEntities(raw: String): String {

@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber", "CyclomaticComplexMethod")
+
 package com.fenakhay.kwikibot.client.model.dump
 
 import kotlinx.io.Buffer
