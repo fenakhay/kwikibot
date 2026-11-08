@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber")
+
 package com.fenakhay.kwikibot.fleet
 
 import kotlin.time.Duration
@@ -6,12 +8,9 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 
 /**
  * When `serve` runs a bot.
@@ -39,12 +38,24 @@ public sealed interface Schedule {
          * fires at the moment after the gap, and one it repeats going back fires the first time.
          *
          * @param expression the expression.
-         * @param zone the time zone it is read in.
+         * @param zone the name of the time zone it is read in, such as `"Europe/Berlin"`.
          * @throws IllegalArgumentException if it is not a valid expression.
          */
-        public fun cron(expression: String, zone: TimeZone = TimeZone.UTC): Schedule = Cron(expression, zone)
+        public fun cron(expression: String, zone: String = "UTC"): Schedule =
+            Cron(expression, zoneClock(zone))
     }
 }
+
+/** A time zone by name, which each platform reads its own way. */
+internal interface ZoneClock {
+    /** What the clocks there say at [instant]. */
+    fun localOf(instant: Instant): LocalDateTime
+
+    /** When the clocks there say [time], the moment after a gap, and the first time if it comes twice. */
+    fun instantOf(time: LocalDateTime): Instant
+}
+
+internal expect fun zoneClock(zone: String): ZoneClock
 
 private class Every(private val interval: Duration) : Schedule {
     init {
@@ -54,7 +65,7 @@ private class Every(private val interval: Duration) : Schedule {
     override fun next(after: Instant): Instant = after + interval
 }
 
-private class Cron(expression: String, private val zone: TimeZone) : Schedule {
+private class Cron(expression: String, private val zone: ZoneClock) : Schedule {
     private val minutes: Set<Int>
     private val hours: Set<Int>
     private val days: Set<Int>
@@ -116,8 +127,7 @@ private class Cron(expression: String, private val zone: TimeZone) : Schedule {
     }
 
     override fun next(after: Instant): Instant {
-        val local = after.toLocalDateTime(zone)
-        var date = local.date
+        var date = zone.localOf(after).date
         val sortedHours = hours.sorted()
         val sortedMinutes = minutes.sorted()
 
@@ -125,7 +135,7 @@ private class Cron(expression: String, private val zone: TimeZone) : Schedule {
             if (matches(date)) {
                 for (hour in sortedHours) {
                     for (minute in sortedMinutes) {
-                        val firing = LocalDateTime(date, LocalTime(hour, minute)).toInstant(zone)
+                        val firing = zone.instantOf(LocalDateTime(date, LocalTime(hour, minute)))
                         if (firing > after) return firing
                     }
                 }

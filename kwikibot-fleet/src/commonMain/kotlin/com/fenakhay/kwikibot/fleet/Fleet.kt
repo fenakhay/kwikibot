@@ -9,6 +9,7 @@ import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
@@ -126,6 +127,7 @@ public sealed interface FleetEvent {
  * @param questions who answers a run's question. No one, by default, so the answer is no.
  * @param clock what the time is, for schedules.
  * @param out where each line goes. Lines start with the bot's id, since lanes share the output.
+ * @param heartbeat how often a run that hands pages to [RunContext.outcomes] says how far it has got.
  */
 public class Fleet(
     bots: List<Bot>,
@@ -137,6 +139,7 @@ public class Fleet(
     private val questions: suspend (String, Question) -> Boolean = { _, _ -> false },
     private val clock: Clock = Clock.System,
     private val out: (String) -> Unit = {},
+    private val heartbeat: Duration = 30.seconds,
 ) {
 
     /** The bots this fleet runs. */
@@ -332,7 +335,7 @@ public class Fleet(
                 )
             }
             val now = started.elapsedNow()
-            if (now - lastBeat >= HEARTBEAT) {
+            if (now - lastBeat >= heartbeat) {
                 lastBeat = now
                 val view = state.value.first { it.id == run.id }
                 val of = if (view.expected > 0) " of ${view.expected}" else ""
@@ -343,6 +346,5 @@ public class Fleet(
 
     private companion object {
         const val EVENT_BUFFER = 256
-        val HEARTBEAT = 30.seconds
     }
 }

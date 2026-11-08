@@ -37,10 +37,16 @@ public fun fleetMain(args: Array<String>, bots: List<Bot>, prompt: Prompt = Term
     botMain(args, anonymous = true) { runCommand(bots, prompt) }
 }
 
+@Suppress("CyclomaticComplexMethod", "LongMethod", "ReturnCount")
 internal suspend fun BotStart.runCommand(
     bots: List<Bot>,
     prompt: Prompt,
     out: (String) -> Unit = ::println,
+    accounts: Accounts =
+        Accounts(
+            config.toWikiConfig().let(options::applyTo),
+            credentials = { account -> config.credentials(accountEnvironment(account)) },
+        ),
 ): Int {
     val command = arguments.firstOrNull()
     if (command == "list") {
@@ -63,11 +69,6 @@ internal suspend fun BotStart.runCommand(
 
     val scope = CoroutineScope(currentCoroutineContext() + SupervisorJob())
     val stopPage = options.stopPage ?: "User:${wiki.identity.name}/Stop"
-    val accounts =
-        Accounts(
-            config.toWikiConfig().let(options::applyTo),
-            credentials = { account -> config.credentials(accountEnvironment(account)) },
-        )
     val fleet =
         Fleet(
             bots,
@@ -76,9 +77,7 @@ internal suspend fun BotStart.runCommand(
             SharedStop.onPage(wiki, stopPage),
             scope,
             questions = { bot, question ->
-                prompt.confirm(
-                    "[$bot] ${question.title}${if (question.summary.isEmpty()) "" else " ${question.summary}"}"
-                )
+                prompt.confirm("[$bot] ${question.title} ${question.summary}".trim())
             },
             out = out,
         )
@@ -107,8 +106,10 @@ internal suspend fun BotStart.runCommand(
     }
 }
 
-private fun accountEnvironment(account: String?): (String) -> String? = { name ->
-    val prefixed =
-        if (account == null) name else name.replaceFirst("KWIKIBOT_", "KWIKIBOT_${account.uppercase()}_")
-    environmentVariable(prefixed)
+/** What [read] holds for [account], under `KWIKIBOT_<ACCOUNT>_` rather than `KWIKIBOT_`. */
+internal fun accountEnvironment(
+    account: String?,
+    read: (String) -> String? = ::environmentVariable,
+): (String) -> String? = { name ->
+    read(if (account == null) name else name.replaceFirst("KWIKIBOT_", "KWIKIBOT_${account.uppercase()}_"))
 }

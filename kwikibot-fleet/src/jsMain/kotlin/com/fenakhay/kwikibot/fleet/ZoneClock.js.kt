@@ -56,6 +56,7 @@ internal actual fun zoneClock(zone: String): ZoneClock {
 @Suppress("UNUSED_PARAMETER", "UnusedParameter")
 private fun dateTimeFormat(zone: String): dynamic =
     js(
-        "new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', " +
+        "new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', " +
+            "month: 'numeric', " +
             "day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })"
     )

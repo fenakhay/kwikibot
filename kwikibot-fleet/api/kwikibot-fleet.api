@@ -31,8 +31,8 @@ public final class com/fenakhay/kwikibot/fleet/Declined : java/lang/Exception {
 }
 
 public final class com/fenakhay/kwikibot/fleet/Fleet {
-	public fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/fleet/Accounts;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lkotlinx/coroutines/CoroutineScope;Lkotlinx/io/files/Path;Lkotlin/jvm/functions/Function3;Lkotlin/time/Clock;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/fleet/Accounts;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lkotlinx/coroutines/CoroutineScope;Lkotlinx/io/files/Path;Lkotlin/jvm/functions/Function3;Lkotlin/time/Clock;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/fleet/Accounts;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lkotlinx/coroutines/CoroutineScope;Lkotlinx/io/files/Path;Lkotlin/jvm/functions/Function3;Lkotlin/time/Clock;Lkotlin/jvm/functions/Function1;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Lcom/fenakhay/kwikibot/fleet/Accounts;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Lcom/fenakhay/kwikibot/bot/run/StopPolicy;Lkotlinx/coroutines/CoroutineScope;Lkotlinx/io/files/Path;Lkotlin/jvm/functions/Function3;Lkotlin/time/Clock;Lkotlin/jvm/functions/Function1;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun awaitIdle (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun cancel (J)Z
 	public final fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;

@@ -36,6 +36,7 @@ import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.CompletableDeferred
@@ -54,6 +55,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.io.files.Path
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FleetTest {
@@ -524,15 +526,168 @@ class FleetTest {
         val bots = listOf(SimpleBot("a"), SimpleBot("b"))
         val out = mutableListOf<String>()
 
-        start("list").runCommand(bots, NonInteractive()) { out += it } shouldBe 0
+        start("list").runCommand(bots, NonInteractive(), { out += it }, accounts()) shouldBe 0
         out shouldContain "a: a does things"
 
         out.clear()
-        start().runCommand(bots, NonInteractive()) { out += it } shouldBe 2
+        start().runCommand(bots, NonInteractive(), { out += it }, accounts()) shouldBe 2
         out.single() shouldContain "usage"
 
         out.clear()
-        start("run", "nobody").runCommand(bots, NonInteractive()) { out += it } shouldBe 2
+        start("run", "nobody").runCommand(bots, NonInteractive(), { out += it }, accounts()) shouldBe 2
         out.single() shouldContain "there is no bot"
     }
+
+    @Test
+    fun `the command line runs one bot or all of them and says what came of it`() = runTest {
+        val ran = mutableListOf<String>()
+        val bots =
+            listOf(
+                SimpleBot("a", work = { ran += "a ${it.arguments}" }),
+                SimpleBot("b", work = { ran += "b" }),
+            )
+        val failing = listOf(SimpleBot("c", work = { error("it broke") }))
+        val out = mutableListOf<String>()
+
+        start("run", "a", "x", "y").runCommand(bots, NonInteractive(), { out += it }, accounts()) shouldBe 0
+        ran.single() shouldBe "a [x, y]"
+
+        ran.clear()
+        start("run", "--all").runCommand(bots, NonInteractive(), { out += it }, accounts()) shouldBe 0
+        ran shouldContainExactlyInAnyOrder listOf("a []", "b")
+
+        out.clear()
+        start("run", "c").runCommand(failing, NonInteractive(), { out += it }, accounts()) shouldBe 1
+        out.last() shouldContain "it broke"
+    }
+
+    @Test
+    fun `a question from the command line goes to the prompt`() = runTest {
+        val answers = mutableListOf<Boolean>()
+        val bots = listOf(SimpleBot("a", work = { answers += it.ask(Question("Go on?")) }))
+
+        start("run", "a").runCommand(bots, NonInteractive(answer = true), {}, accounts()) shouldBe 0
+
+        answers.single() shouldBe true
+    }
+
+    @Test
+    fun `serve keeps running until it is cancelled and runs what is due`() = runTest {
+        var fired = 0
+        val bots = listOf(SimpleBot("a", schedule = Schedule.every(1.minutes), work = { fired++ }))
+
+        val serving = launch { start("serve").runCommand(bots, NonInteractive(), {}, accounts()) }
+        runCurrent()
+        serving.isActive shouldBe true
+        serving.cancelAndJoin()
+    }
+
+    @Test
+    fun `the default accounts read the environment and close what they opened`() = runTest {
+        val account = accounts()
+        account.wiki(endpoint)
+        account.wiki(endpoint)
+        logins.size shouldBe 1
+        account.close()
+        account.wiki(endpoint)
+        logins.size shouldBe 2
+
+        val real =
+            Accounts(
+                WikiConfig(UserAgent("TestBot", "1.0", "https://example.org/TestBot")),
+                clients = { config, login ->
+                    logins += login
+                    WikiClient(config, login, engine = MockEngine { error("not asked") })
+                },
+            )
+        assertFailsWith<Exception> { real.wiki(endpoint, "nobody") }
+        logins.last() shouldBe Credentials.Anonymous
+    }
+
+    @Test
+    fun `a run has a directory of its own when the fleet has one and a heartbeat when it runs long`() =
+        runTest {
+            val lines = mutableListOf<String>()
+            val wiki = FakeWiki(FakePageService("a" to "text"))
+            val directories = mutableListOf<String?>()
+            val bot =
+                SimpleBot(
+                    "slow",
+                    work = { run ->
+                        directories += run.directory?.toString()
+                        run.expect(1)
+                        withContext(Dispatchers.Default) { delay(40.milliseconds) }
+                        run.outcomes(PageOutcome.Unchanged(wiki.ref("a")))
+                    },
+                )
+            val scope = CoroutineScope(coroutineContext + SupervisorJob())
+            val fleet =
+                Fleet(
+                    listOf(bot),
+                    accounts(),
+                    endpoint,
+                    StopPolicy.NONE,
+                    scope,
+                    Path("runs"),
+                    out = { lines += it },
+                    heartbeat = 10.milliseconds,
+                )
+
+            fleet.start("slow")
+            fleet.awaitIdle()
+
+            directories.single()!! shouldContain "slow"
+            lines.single() shouldContain "1 of 1 pages, 0 saved"
+            scope.cancel()
+        }
+
+    @Test
+    fun `a named account reads its own variables and a bot needs say little`() = runTest {
+        val environment = mapOf("KWIKIBOT_PASSWORD" to "default", "KWIKIBOT_OTHER_PASSWORD" to "other")
+
+        accountEnvironment(null, environment::get)("KWIKIBOT_PASSWORD") shouldBe "default"
+        accountEnvironment("other", environment::get)("KWIKIBOT_PASSWORD") shouldBe "other"
+
+        val bot =
+            object : Bot {
+                override val id = "plain"
+                override val description = "says little"
+
+                override suspend fun run(context: RunContext) = Unit
+            }
+        bot.account.shouldBeNull()
+        bot.schedule.shouldBeNull()
+
+        val registry = BotRegistry(listOf(bot))
+        registry.find("plain") shouldBe bot
+        registry.get("plain") shouldBe bot
+        registry.find("nobody").shouldBeNull()
+        start("list").runCommand(listOf(bot), NonInteractive(), {}) shouldBe 0
+    }
+
+    @Test
+    fun `a stop page that fails while a run is asked is a reason to stop and cancelling passes through`() =
+        runTest {
+            var asked = 0
+            val (fleet, scope) =
+                fleet(
+                    SimpleBot(
+                        "checker",
+                        work = { run ->
+                            asked++
+                            run.mayContinue() shouldBe false
+                        },
+                    ),
+                    stop = StopPolicy { false },
+                )
+
+            fleet.start("checker")
+            fleet.awaitIdle()
+            asked shouldBe 1
+            scope.cancel()
+
+            val cancelled = launch { SharedStop({ awaitCancellation() }).mayContinue() }
+            runCurrent()
+            cancelled.cancelAndJoin()
+        }
 }
