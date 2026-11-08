@@ -17,6 +17,7 @@ import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.convert
@@ -347,11 +348,28 @@ internal class Version : SuspendingCliktCommand(name = "version") {
 }
 
 /** Runs the `kwikibot` command. */
-public fun main(args: Array<String>): Unit = runBlocking {
-    KotlinLoggingConfiguration.logStartupMessage = false
-    configureLogging()
-    kwikibot(CliEnvironment.SYSTEM).main(args)
+public fun main(args: Array<String>) {
+    val status = runBlocking {
+        KotlinLoggingConfiguration.logStartupMessage = false
+        configureLogging()
+        statusOf(kwikibot(CliEnvironment.SYSTEM), args)
+    }
+    exitWith(status)
 }
+
+/**
+ * Runs [command] on [args] and gives the status the process is to end with, which Clikt would otherwise end
+ * it with there and then: `0` when it succeeds, and the error's status when it fails, after the error is
+ * printed.
+ */
+internal suspend fun statusOf(command: SuspendingCliktCommand, args: Array<String>): Int {
+    var status = 0
+    command.context { exitProcess = { status = it } }.main(args)
+    return status
+}
+
+/** Ends the process with [status] once the command has run and closed its wikis. */
+internal expect fun exitWith(status: Int)
 
 /** The `kwikibot` command with its subcommands, reading from [environment]. */
 internal fun kwikibot(environment: CliEnvironment): SuspendingCliktCommand =

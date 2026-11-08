@@ -9,6 +9,10 @@ cannot reach a release without showing up as a diff first.
 
 ## [Unreleased]
 
+### Fixed
+
+- The Linux `kwikibot` binary no longer aborts now and then with `corrupted double-linked list` on exit.
+
 ## [1.4.0] — 2026-10-30
 
 kwikibot is a Kotlin Multiplatform library. Every library module builds for the JVM, macOS on
