@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.ByteReadChannel
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.SystemFileSystem
@@ -38,7 +39,7 @@ class SpoolTest {
 
     @Test
     fun `a file spool keeps its file in the temporary directory until closed`() = runTest {
-        val prefix = "kwikibot-spool-closed"
+        val prefix = "kwikibot-spool-closed-${Random.nextLong().toULong()}"
         fun files() = SystemFileSystem.list(temporaryDirectory).filter { it.name.startsWith(prefix) }
 
         FileSpool(prefix).use { spooled ->
