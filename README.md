@@ -884,5 +884,4 @@ not fit.
 
 ## License
 
-[Mozilla Public License 2.0](LICENSE). A fork that changes kwikibot must publish those changes under
-the same license; a bot that only uses kwikibot can be under any license.
+MPL-2.0. See [LICENSE](LICENSE).
