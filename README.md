@@ -14,7 +14,7 @@ macOS, Linux, Windows and JavaScript, with an npm package and a command-line too
 [![Kotlin](https://img.shields.io/badge/kotlin-2.5.0--Beta2-7F52FF.svg?logo=kotlin)](https://kotlinlang.org)
 [![CI](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml/badge.svg)](https://github.com/fenakhay/kwikibot/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/fenakhay/kwikibot/branch/main/graph/badge.svg)](https://codecov.io/gh/fenakhay/kwikibot)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](LICENSE)
 
 - **One API on five platforms.** The JVM, macOS on Apple Silicon, Linux (x64), Windows (x64) and
   JavaScript, from the same `commonMain` code.
@@ -884,4 +884,5 @@ not fit.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[Mozilla Public License 2.0](LICENSE). A fork that changes kwikibot must publish those changes under
+the same license; a bot that only uses kwikibot can be under any license.

@@ -31,7 +31,7 @@ kotlin {
                 name = "kwikibot"
                 version = packageVersion
                 customField("description", "Read, parse and edit MediaWiki wikis from JavaScript.")
-                customField("license", "MIT")
+                customField("license", "MPL-2.0")
                 customField("homepage", "https://github.com/fenakhay/kwikibot")
                 customField(
                     "repository",

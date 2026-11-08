@@ -88,5 +88,5 @@ carry `origin=*`, which MediaWiki answers as it would a logged-out reader, so lo
 Node and from a page on the wiki's own site. It logs to the console from `INFO` up, the login
 included, and the level cannot be set from JavaScript.
 
-MIT licensed. Release notes are in the
+Licensed under the Mozilla Public License 2.0. Release notes are in the
 [CHANGELOG](https://github.com/fenakhay/kwikibot/blob/main/CHANGELOG.md).

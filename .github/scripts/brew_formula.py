@@ -9,7 +9,7 @@ import sys
 TEMPLATE = '''class Kwikibot < Formula
   desc "Command-line tool for talking to a MediaWiki wiki"
   homepage "https://github.com/{repo}"
-  license "MIT"
+  license "MPL-2.0"
   version "{version}"
 
   on_macos do
