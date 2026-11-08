@@ -6,7 +6,7 @@ package com.fenakhay.kwikibot.tools
  * MediaWiki describes itself: `paraminfo` names every module, every parameter, the extension behind it and
  * what is on its way out. Kept in a file and diffed, it shows every change a wiki makes to its API.
  */
-internal enum class Lane(val title: String, val wikis: Map<String, String>, val failsOnDrift: Boolean) {
+internal enum class Lane(val title: String, val wikis: Map<String, String>) {
     /**
      * The wikis bots run against, chosen for the extensions they carry rather than their size. Between them
      * they cover core, Wikibase, the file stack and ProofreadPage.
@@ -23,22 +23,5 @@ internal enum class Lane(val title: String, val wikis: Map<String, String>, val 
             "wikidatawiki" to "www.wikidata.org",
             "enwikisource" to "en.wikisource.org",
         ),
-        failsOnDrift = true,
-    ),
-
-    /**
-     * The beta cluster, which runs MediaWiki's master branch and so shows a deprecation about a week before
-     * production does. Reported, never failed on, since beta can be broken.
-     *
-     * Its old `beta.wmflabs.org` names still answer, but with a redirect this tool would have to follow.
-     */
-    BETA(
-        "API surface: beta cluster (early warning)",
-        mapOf(
-            "enwiki" to "en.wikipedia.beta.wmcloud.org",
-            "commonswiki" to "commons.wikimedia.beta.wmcloud.org",
-            "wikidatawiki" to "www.wikidata.beta.wmcloud.org",
-        ),
-        failsOnDrift = false,
-    ),
+    )
 }

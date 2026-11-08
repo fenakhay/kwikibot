@@ -816,8 +816,7 @@ kwikibot looks for them in three places:
   `WARN`. kwikibot avoids deprecated values, so a deprecation warning means something needs fixing.
 - `api-surface.tsv` records the API of five Wikimedia wikis, and the build checks every value
   kwikibot sends against it. A weekly job compares the file with the wikis and reports what
-  changed, marking anything kwikibot uses. The same report runs on the beta cluster, which gets
-  each change minutes after it is merged and the week before it reaches production.
+  changed, marking anything kwikibot uses.
 
 When MediaWiki deprecates the value behind one of kwikibot's enum entries, the entry is marked
 `@Deprecated` with its replacement, and keeps working because it is sent as the replacement. When

@@ -16,7 +16,6 @@ application {
 }
 
 val surfaceFile = rootProject.layout.projectDirectory.file("api-surface.tsv")
-val betaSurfaceFile = rootProject.layout.projectDirectory.file("api-surface-beta.tsv")
 
 // Written by :kwikibot-client:wireContractTest, so the report can mark what the library sends.
 val wireRegistry = rootProject.layout.projectDirectory.file("kwikibot-client/build/wire-registry.tsv")
@@ -45,35 +44,6 @@ tasks.register<JavaExec>("wikiApiCheck") {
         wireRegistry.asFile.absolutePath,
         "--report",
         reports.get().file("production.md").asFile.absolutePath,
-    )
-}
-
-tasks.register<JavaExec>("wikiApiBetaDump") {
-    group = "verification"
-    description = "Rewrites api-surface-beta.tsv from what the beta cluster reports."
-
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set(application.mainClass)
-    args(betaSurfaceFile.asFile.absolutePath, "--lane", "beta")
-}
-
-tasks.register<JavaExec>("wikiApiBetaCheck") {
-    group = "verification"
-    description =
-        "Reports how the beta cluster differs from api-surface-beta.tsv. Never fails on a difference."
-
-    dependsOn(":kwikibot-client:wireContractTest")
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set(application.mainClass)
-    args(
-        betaSurfaceFile.asFile.absolutePath,
-        "--check",
-        "--lane",
-        "beta",
-        "--registry",
-        wireRegistry.asFile.absolutePath,
-        "--report",
-        reports.get().file("beta.md").asFile.absolutePath,
     )
 }
 

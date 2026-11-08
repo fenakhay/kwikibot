@@ -24,11 +24,6 @@ jobs:
       - name: Compare the reference wikis against the recorded surface
         run: ./gradlew wikiApiCheck --stacktrace
 
-      - name: Report what the beta cluster is about to ship
-        if: always()
-        continue-on-error: true
-        run: ./gradlew wikiApiBetaCheck --stacktrace
-
       - name: Keep the reports
         if: always()
         uses: actions/upload-artifact@v7

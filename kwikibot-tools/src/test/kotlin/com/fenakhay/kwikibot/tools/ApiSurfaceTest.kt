@@ -2,8 +2,6 @@ package com.fenakhay.kwikibot.tools
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import io.kotest.matchers.string.shouldStartWith
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -111,22 +109,6 @@ class ApiSurfaceTest {
     }
 
     @Test
-    fun `the beta lane reads the beta cluster`() = runTest {
-        val wikis = wikis()
-
-        val status = writeOrCheckSurface(arrayOf(target.toString(), "--lane", "beta"), wikis.environment)
-
-        status shouldBe 0
-        wikis.sent.map { it.host } shouldBe
-            listOf(
-                "en.wikipedia.beta.wmcloud.org",
-                "commons.wikimedia.beta.wmcloud.org",
-                "www.wikidata.beta.wmcloud.org",
-            )
-        target.readText() shouldBe surface
-    }
-
-    @Test
     fun `a check that finds production drifting prints the report, keeps it, and fails`() = runTest {
         target.writeText(earlier)
         val registry = directory.resolve("wire-registry.tsv")
@@ -182,35 +164,6 @@ class ApiSurfaceTest {
     }
 
     @Test
-    fun `a check that finds the beta cluster drifting reports it without failing`() = runTest {
-        val wikis = wikis()
-        // An empty variable is how a job without a summary looks, and is no file to append to.
-        wikis.variables["GITHUB_STEP_SUMMARY"] = ""
-
-        val status =
-            writeOrCheckSurface(
-                arrayOf(
-                    target.toString(),
-                    "--check",
-                    "--lane",
-                    "beta",
-                    "--registry",
-                    directory.resolve("not-built.tsv").toString(),
-                ),
-                wikis.environment,
-            )
-
-        val output = wikis.output.toString()
-        status shouldBe 0
-        output shouldStartWith "## API surface: beta cluster (early warning)\n"
-        // With nothing recorded, everything the wikis report is new, and nothing is marked as used.
-        output shouldContain "9 added, 0 removed, 0 changed, 0 newly deprecated"
-        output shouldNotContain "used by kwikibot"
-        output shouldContain "then run `./gradlew wikiApiBetaDump`."
-        target.exists() shouldBe false
-    }
-
-    @Test
     fun `a check that matches says so and passes`() = runTest {
         target.writeText(surface)
         val wikis = wikis()
@@ -223,26 +176,21 @@ class ApiSurfaceTest {
     }
 
     @Test
-    fun `without a file named, each lane checks its own file in the working directory`() = runTest {
+    fun `without a file named, a check reads api-surface tsv in the working directory`() = runTest {
         val production = wikis()
         production.workingDirectory.resolve("api-surface.tsv").writeText(surface)
         writeOrCheckSurface(arrayOf("--check"), production.environment)
 
-        val beta = wikis()
-        beta.workingDirectory.resolve("api-surface.tsv").writeText(surface)
-        writeOrCheckSurface(arrayOf("--check", "--lane", "BETA"), beta.environment)
-
         production.output.toString() shouldContain "`api-surface.tsv` matches"
-        beta.output.toString() shouldContain "`api-surface-beta.tsv` differs"
     }
 
     @Test
-    fun `without a file named, a dump writes the lane's own file in the working directory`() = runTest {
+    fun `without a file named, a dump writes api-surface tsv in the working directory`() = runTest {
         val wikis = wikis()
 
-        writeOrCheckSurface(arrayOf("--lane", "beta"), wikis.environment)
+        writeOrCheckSurface(arrayOf(), wikis.environment)
 
-        val written = wikis.workingDirectory.resolve("api-surface-beta.tsv")
+        val written = wikis.workingDirectory.resolve("api-surface.tsv")
         written.readText() shouldBe surface
         wikis.output.toString() shouldBe "wrote $written\n"
     }

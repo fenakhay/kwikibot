@@ -27,9 +27,9 @@ private val PATTERNS = arrayOf("main", "*", "query+*")
  * Writes or checks the recorded surface.
  *
  * The first argument is the file to write. `--check` compares instead of writing, prints what changed, and
- * exits non-zero when the production wikis differ from the file. `--lane beta` reads the beta cluster
- * instead. `--registry <file>` names the values the library sends, so changes that touch them are marked, and
- * `--report <file>` keeps the report as well as printing it.
+ * exits non-zero when the production wikis differ from the file. `--registry <file>` names the values the
+ * library sends, so changes that touch them are marked, and `--report <file>` keeps the report as well as
+ * printing it.
  */
 public fun main(args: Array<String>) {
     exitProcess(runBlocking { writeOrCheckSurface(args, ToolEnvironment.SYSTEM) })
@@ -37,7 +37,7 @@ public fun main(args: Array<String>) {
 
 /**
  * What [main] does with [args], reading the wikis and printing through [environment]. Returns the status to
- * exit with: 1 when a wiki could not be read or a lane that fails on drift has drifted, 0 otherwise.
+ * exit with: 1 when a wiki could not be read or has drifted from the file, 0 otherwise.
  */
 internal suspend fun writeOrCheckSurface(args: Array<String>, environment: ToolEnvironment): Int {
     val options = Options.parse(args, environment.workingDirectory)
@@ -74,7 +74,7 @@ internal suspend fun writeOrCheckSurface(args: Array<String>, environment: ToolE
         ?.takeIf { it.isNotEmpty() }
         ?.let { environment.workingDirectory.resolve(it).appendText(markdown + "\n") }
 
-    return if (!report.isEmpty && options.lane.failsOnDrift) 1 else 0
+    return if (report.isEmpty) 0 else 1
 }
 
 private class Options(
@@ -85,7 +85,7 @@ private class Options(
     val report: Path?,
 ) {
     val dumpTask: String
-        get() = if (lane == Lane.BETA) "wikiApiBetaDump" else "wikiApiDump"
+        get() = "wikiApiDump"
 
     companion object {
         /** The options [args] give, with each file in them taken from [directory] unless it names its own. */
@@ -99,11 +99,7 @@ private class Options(
             val lane = named["--lane"]?.let { Lane.valueOf(it.uppercase()) } ?: Lane.PRODUCTION
 
             return Options(
-                target =
-                    directory.resolve(
-                        positional.firstOrNull()
-                            ?: if (lane == Lane.BETA) "api-surface-beta.tsv" else "api-surface.tsv"
-                    ),
+                target = directory.resolve(positional.firstOrNull() ?: "api-surface.tsv"),
                 checking = "--check" in args,
                 lane = lane,
                 registry = named["--registry"]?.let(directory::resolve),
