@@ -52,6 +52,7 @@ kotlin {
             implementation(project(":kwikibot-client"))
             implementation(project(":kwikibot-wikibase"))
             implementation(project(":kwikibot-bot"))
+            implementation(project(":kwikibot-fleet"))
             implementation(libs.kotlin.logging)
         }
 

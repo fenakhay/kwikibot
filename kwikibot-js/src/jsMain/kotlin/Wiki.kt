@@ -220,7 +220,7 @@ internal constructor(
      * rejects with that error.
      *
      * [stopPage] names a page of the wiki that has to say `false` for the run to save, so that it can be
-     * stopped from the wiki.
+     * stopped from the wiki. [maxEdits] caps how many edits it saves.
      */
     public fun run(
         titles: Array<String>,
@@ -229,8 +229,9 @@ internal constructor(
         save: Boolean = false,
         onChange: ((change: Change) -> Unit)? = null,
         stopPage: String? = null,
+        maxEdits: Int? = null,
     ): Promise<RunReport> = scope.promise {
-        runBot(wiki, titles, summary, transform, save, onChange, stopPage)
+        runBot(wiki, titles, summary, transform, save, onChange, stopPage, maxEdits = maxEdits)
     }
 
     /** Ends what this wiki is still fetching and releases its connections. */

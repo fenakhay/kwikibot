@@ -24,16 +24,23 @@ internal suspend fun runBot(
     save: Boolean,
     onChange: ((change: Change) -> Unit)?,
     stopPage: String? = null,
+    stopPolicy: StopPolicy? = null,
+    maxEdits: Int? = null,
+    onOutcome: ((PageOutcome) -> Unit)? = null,
 ): RunReport {
-    if (save && stopPage == null) {
+    if (save && stopPage == null && stopPolicy == null) {
         log.warn { "This run saves with no stopPage, so it cannot be stopped from the wiki" }
     }
     val report =
-        wiki.botRun(stopPage?.let { wiki.stopPage(it) } ?: StopPolicy.NONE) {
+        wiki.botRun(stopPolicy ?: stopPage?.let { wiki.stopPage(it) } ?: StopPolicy.NONE) {
             exclusionPolicy = null
+            this.maxEdits = maxEdits
             source(titles.asList().asFlow().map { wiki.ref(it) })
             dryRun = !save
-            onChange?.let { onOutcome = { outcome -> change(outcome, wiki.namespaces)?.let(it) } }
+            this.onOutcome = { outcome ->
+                if (onChange != null) change(outcome, wiki.namespaces)?.let(onChange)
+                onOutcome?.invoke(outcome)
+            }
             transform { page ->
                 val title = wiki.namespaces.format(page.ref.title)
                 when (val text = settled(transform(page.text, title))) {
