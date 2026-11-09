@@ -117,6 +117,7 @@ final class com.fenakhay.kwikibot.protocol.decode/OptionSet { // com.fenakhay.kw
 
 final class com.fenakhay.kwikibot.protocol.decode/PageDecoder { // com.fenakhay.kwikibot.protocol.decode/PageDecoder|null[0]
     constructor <init>(com.fenakhay.kwikibot.model.page/WikiId, com.fenakhay.kwikibot.model.title/NamespaceMap) // com.fenakhay.kwikibot.protocol.decode/PageDecoder.<init>|<init>(com.fenakhay.kwikibot.model.page.WikiId;com.fenakhay.kwikibot.model.title.NamespaceMap){}[0]
+    constructor <init>(com.fenakhay.kwikibot.model.page/WikiId, com.fenakhay.kwikibot.model.title/NamespaceMap, com.fenakhay.kwikibot.model.title/InterwikiMap) // com.fenakhay.kwikibot.protocol.decode/PageDecoder.<init>|<init>(com.fenakhay.kwikibot.model.page.WikiId;com.fenakhay.kwikibot.model.title.NamespaceMap;com.fenakhay.kwikibot.model.title.InterwikiMap){}[0]
 
     final fun decode(kotlinx.serialization.json/JsonObject): com.fenakhay.kwikibot.protocol.decode/PageResult // com.fenakhay.kwikibot.protocol.decode/PageDecoder.decode|decode(kotlinx.serialization.json.JsonObject){}[0]
     final fun decodeContents(kotlinx.serialization.json/JsonObject, kotlin/Function1<kotlin/String, kotlin/Boolean>): kotlin.collections/List<com.fenakhay.kwikibot.model.page/PageContent> // com.fenakhay.kwikibot.protocol.decode/PageDecoder.decodeContents|decodeContents(kotlinx.serialization.json.JsonObject;kotlin.Function1<kotlin.String,kotlin.Boolean>){}[0]

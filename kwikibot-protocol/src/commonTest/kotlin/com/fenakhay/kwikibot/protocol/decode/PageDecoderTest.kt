@@ -8,6 +8,7 @@ import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.page.Revision
 import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.model.title.InterwikiMap
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
@@ -109,6 +110,30 @@ class PageDecoderTest {
             .decode(page("""{"pageid":1,"ns":0,"title":"A","redirect":true}"""))
             .shouldBeInstanceOf<PageResult.Existing>()
             .isRedirect shouldBe true
+    }
+
+    @Test
+    fun `a redirect to another project reads as one once the decoder knows the prefixes`() {
+        val page =
+            page(
+                """{"pageid":1,"ns":0,"title":"A","redirect":true,"revisions":[{"revid":1,
+                "slots":{"main":{"content":"#REDIRECT [[w:Etna]]"}}}]}"""
+            )
+        val interwiki = InterwikiMap(setOf("w"))
+
+        PageDecoder(wiki, NamespaceMap.CANONICAL, interwiki)
+            .decode(page)
+            .shouldBeInstanceOf<PageResult.Existing>()
+            .content
+            ?.redirectTarget
+            .shouldBeInstanceOf<Title.Interwiki>()
+            .prefix shouldBe "w"
+        decoder
+            .decode(page)
+            .shouldBeInstanceOf<PageResult.Existing>()
+            .content
+            ?.redirectTarget
+            .shouldBeInstanceOf<Title.Local>()
     }
 
     @Test

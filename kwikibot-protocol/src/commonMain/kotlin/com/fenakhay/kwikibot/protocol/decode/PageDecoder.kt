@@ -8,6 +8,7 @@ import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
 import com.fenakhay.kwikibot.model.page.Revision
 import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.model.title.InterwikiMap
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title
@@ -56,6 +57,24 @@ public class PageDecoder(
     private val wiki: WikiId,
     private val namespaces: NamespaceMap,
 ) {
+
+    private var interwiki: InterwikiMap = InterwikiMap.EMPTY
+
+    /**
+     * A decoder that also knows this wiki's interwiki prefixes, so a redirect to another project reads as
+     * one.
+     *
+     * @param wiki the wiki the pages are on.
+     * @param namespaces its namespaces.
+     * @param interwiki its interwiki prefixes.
+     */
+    public constructor(
+        wiki: WikiId,
+        namespaces: NamespaceMap,
+        interwiki: InterwikiMap,
+    ) : this(wiki, namespaces) {
+        this.interwiki = interwiki
+    }
 
     /** Decodes one page entry. */
     public fun decode(page: JsonObject): PageResult {
@@ -185,7 +204,7 @@ public class PageDecoder(
      * the magic word, with nothing but whitespace, line breaks included, and at most one colon between them.
      */
     private fun redirectTarget(text: String): Title? =
-        REDIRECT.find(text)?.groupValues?.get(1)?.let { Title.parse(it, namespaces) }
+        REDIRECT.find(text)?.groupValues?.get(1)?.let { Title.parse(it, namespaces, interwiki) }
 
     private companion object {
         const val EPOCH = "1970-01-01T00:00:00Z"

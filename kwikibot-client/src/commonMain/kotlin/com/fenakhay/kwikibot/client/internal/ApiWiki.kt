@@ -46,7 +46,7 @@ internal class ApiWiki(
     override val id: WikiId
         get() = info.id
 
-    private val decoder = PageDecoder(info.id, info.namespaces)
+    private val decoder = PageDecoder(info.id, info.namespaces, info.interwiki)
 
     /** As many titles per query as the account may name, which for a bot is ten times the default. */
     private val batch = identity.batchLimit

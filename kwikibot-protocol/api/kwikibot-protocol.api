@@ -254,6 +254,7 @@ public final class com/fenakhay/kwikibot/protocol/decode/OptionSet$Companion {
 }
 
 public final class com/fenakhay/kwikibot/protocol/decode/PageDecoder {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lcom/fenakhay/kwikibot/model/title/InterwikiMap;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/lang/String;Lcom/fenakhay/kwikibot/model/title/NamespaceMap;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun decode (Lkotlinx/serialization/json/JsonObject;)Lcom/fenakhay/kwikibot/protocol/decode/PageResult;
 	public final fun decodeContents (Lkotlinx/serialization/json/JsonObject;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
