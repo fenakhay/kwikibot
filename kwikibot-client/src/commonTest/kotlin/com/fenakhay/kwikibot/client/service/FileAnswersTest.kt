@@ -135,6 +135,25 @@ class FileAnswersTest {
     }
 
     @Test
+    fun `a file the server will not hand over fails and writes nothing`() = runTest {
+        val service = service { request ->
+            if (request.url.host == "upload.example.org") {
+                respond("<html>Not Found</html>", HttpStatusCode.NotFound)
+            } else {
+                respondJson(
+                    """{"query":{"pages":[{"ns":6,"title":"File:Volcano.jpg","imageinfo":[
+                    {"url":"https://upload.example.org/Volcano.jpg","size":4}]}]}}"""
+                )
+            }
+        }
+        val target = Path(temporaryDirectory("kwikibot-download"), "kept.jpg")
+
+        shouldThrow<WikiError.Transport.Refused> { service.download(file, target) }
+
+        SystemFileSystem.exists(target) shouldBe false
+    }
+
+    @Test
     fun `a chunk size must be positive`() = runTest {
         val service = service { respondJson("{}") }
 

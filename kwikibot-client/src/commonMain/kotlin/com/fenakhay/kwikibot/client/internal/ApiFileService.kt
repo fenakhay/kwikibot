@@ -23,6 +23,7 @@ import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
 import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.net.transport.TransportListener
+import com.fenakhay.kwikibot.net.transport.statusFailure
 import com.fenakhay.kwikibot.net.transport.transportFailure
 import com.fenakhay.kwikibot.net.transport.withRequestPermit
 import com.fenakhay.kwikibot.protocol.ApiFailure
@@ -48,6 +49,7 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.readTo
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
@@ -249,6 +251,9 @@ internal class ApiFileService(
             http
                 .prepareGet(info.url) { identifyAs(userAgent) }
                 .execute { response ->
+                    if (!response.status.isSuccess()) {
+                        statusFailure(info.url, response, response.bodyAsText())?.let { throw it }
+                    }
                     SystemFileSystem.sink(target).buffered().use { sink ->
                         response.bodyAsChannel().readTo(sink)
                     }
