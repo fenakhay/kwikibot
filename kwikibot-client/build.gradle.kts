@@ -15,7 +15,6 @@ kotlin {
             implementation(libs.kotlin.logging)
         }
 
-        // For bzip2, which Wikimedia publishes its dumps in and the JDK cannot read.
         jvmMain.dependencies { implementation(libs.commons.compress) }
 
         commonTest.dependencies {

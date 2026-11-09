@@ -46,7 +46,7 @@ class FleetTest {
                     context.save shouldBe false
                     null
                 },
-                bot("bad") { _ -> Promise.reject(Exception("it broke")) },
+                bot("bad") { _ -> js("Promise.reject(new Error('it broke'))") },
                 lines = lines,
             )
 

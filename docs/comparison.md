@@ -73,7 +73,27 @@ en.wiktionary, four Wikipedias and Commons, 764,000 characters in all, and eight
 of a megabyte each, 1.95 million characters. kwikibot, mwparserfromhell and wikiparser-node each
 wrote all 238 pages back exactly.
 
-### Parsing
+### Reading a dump
+
+A synthetic dump of 60,489 pages and 400 MB of XML, 172 MB as bzip2 and 234 MB as gzip, read on an
+11-core Apple Silicon machine. The old reader is the JDK's StAX with commons-compress, kept for its
+deprecated `java.nio` overloads.
+
+| | Plain | gzip | bzip2 |
+|---|---|---|---|
+| Old reader, one thread | 0.6 s | 2.1 s | 17.8 s |
+| JVM, one thread | 0.8 s | 2.2 s | 10.6 s |
+| JVM, 4 workers | 0.5 s | 2.1 s | 5.3 s |
+| JVM, 8 workers | 0.5 s | 2.0 s | 3.2 s |
+| Kotlin/Native debug build, one thread | 10 s | 42 s | 58 s |
+| Kotlin/Native debug build, 8 workers | 3.3 s | 35 s | 10 s |
+| Node, one thread | 17 s | 39 s | 37 s |
+| Node, 8 worker threads | – | – | 17 s |
+
+gzip has no boundaries to split on, so more workers only help its parsing. On Node, worker threads
+decompress and the main thread parses and runs your code, so they help bzip2 alone.
+
+## Parsing
 
 Milliseconds for one pass over a corpus, lower is better. Relative is against the fastest.
 

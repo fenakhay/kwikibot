@@ -19,6 +19,7 @@ import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.environmentVariable
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.ktor.client.engine.HttpClientEngine
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
@@ -375,6 +376,7 @@ private class SpecBot(private val spec: BotSpec) : FleetBot {
     override val schedule: ClientSchedule?
         get() = spec.schedule?.schedule
 
+    @Suppress("ThrowsCount", "SwallowedException")
     override suspend fun run(context: ClientRunContext) {
         val controller = js("new AbortController()")
         val job = currentCoroutineContext()[Job]
@@ -384,10 +386,20 @@ private class SpecBot(private val spec: BotSpec) : FleetBot {
             settled(spec.run(RunContext(context, scope, controller.signal)))
         } catch (e: DeclinedError) {
             throw Declined(e.message ?: "declined")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (@Suppress("TooGenericExceptionCaught") failure: Throwable) {
+            throw BotFailure(failure.message ?: failure.toString())
         } finally {
             listening?.dispose()
         }
     }
 }
+
+/**
+ * What a bot threw, as an exception: a JavaScript `Error` is not one, and a lane only keeps exceptions to
+ * itself.
+ */
+private class BotFailure(message: String) : Exception(message)
 
 private suspend fun settled(result: Any?): Any? = if (result is Promise<*>) result.await() else result

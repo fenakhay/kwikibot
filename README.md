@@ -177,6 +177,7 @@ program that wants less: a tool that only parses wikitext has no reason to pull 
 | `kwikibot-client` | `WikiClient`, the `Wiki` handle and its services, EventStreams, SPARQL, and XML dumps |
 | `kwikibot-wikibase` | Entities, statements and data values |
 | `kwikibot-bot` | `botRun`, `botMain`, page sources and filters, `{{nobots}}`, stop pages, run state, diffs, logs, plural forms, prompts |
+| `kwikibot-fleet` | Many bots in one process: `Bot`, `Fleet`, `fleetMain`, shared sessions and a shared stop page, schedules. Not in the umbrella: depend on it to use it |
 | `kwikibot-testkit` | `FakeWiki`, `FakePageService`, `MockTransport` and `FailOnDeprecation`, for testing a bot |
 
 Depend on every module at the same version. Sources and KDoc are published with each artifact, so
@@ -490,6 +491,44 @@ A run can last hours, and the client and `botRun` are built for that:
   instead of one each.
 - `RunLog` writes unified diffs and JSON Lines skip records, and `Progress` keeps the rate, the time
   left and what the run would change (or has saved) on one line that fits the terminal.
+
+## Many bots in one process
+
+`kwikibot-fleet` is for a project with several bots. Each implements one interface, and a fleet runs them in
+lanes: at the same time as each other, one at a time within a bot, with a failure staying in its run.
+
+```kotlin
+class NullEditBot : Bot {
+    override val id = "nulledit"
+    override val description = "Refreshes pages by saving them unchanged."
+    override val schedule = Schedule.cron("0 3 * * *", "Europe/Berlin")
+
+    override suspend fun run(context: RunContext) {
+        val wiki = context.wiki
+        wiki.botRun(context.stopPolicy) {
+            context.options.applyTo(this, wiki)
+            source(wiki.lists.categoryMembers(wiki.ref("Category:Pages to refresh")))
+            transform { page -> Edit(page.text, "null edit") }
+            maxEdits = 500
+            onOutcome = context.outcomes
+        }
+    }
+}
+
+fun main(args: Array<String>) = fleetMain(args, listOf(NullEditBot(), NewsletterBot()))
+```
+
+That program takes `list`, `run <bot>`, `run --all` and `serve`, which keeps running the bots with a
+schedule, along with the common flags and `kwikibot.toml`. Bots on one account share one login and one
+budget: a second login over a bot password session is an error, and requests are paced per account. A
+bot naming an `account` logs in with the credentials under `KWIKIBOT_<ACCOUNT>_`. They all answer to
+one stop page, read once a minute however many there are, and a run can `ask` a person a question
+while the other lanes go on.
+
+`Fleet` is the host underneath, for embedding: `start`, `cancel`, `runs` and `events`, knowing nothing
+of terminals or storage, so a dashboard or a store of past runs can sit on top. Nothing is kept once the
+process ends. A bot's tests need no fleet: `bot.run(RecordingContext(FakeWiki(pages)))` writes down what
+it said.
 
 ## Wikibase, SPARQL, streams and dumps
 

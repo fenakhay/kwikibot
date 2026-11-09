@@ -84,6 +84,7 @@ jobs:
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz
           node detect.mjs https://example.org/kwikibot-release
           node dump.mjs
+          node fleet.mjs https://example.org/kwikibot-release
 
       - uses: actions/setup-node@v7
         with:
@@ -218,19 +219,20 @@ jobs:
           name: package-windows-x64
           path: artifacts
 
-      - name: Point the bucket at the new release
+      - name: Point the bucket and the README at the new release
         run: |
           archive="artifacts/kwikibot-${{ needs.version.outputs.version }}-windows-x64.zip"
           python3 .github/scripts/update_scoop.py \
             "${{ needs.version.outputs.version }}" "$(sha256sum "$archive" | cut -d' ' -f1)"
+          python3 .github/scripts/update_readme.py "${{ needs.version.outputs.version }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bucket/kwikibot.json
+          git add bucket/kwikibot.json README.md
           if git diff --cached --quiet; then
-            echo "The bucket already points at $GITHUB_REF_NAME"
+            echo "The bucket and the README already point at $GITHUB_REF_NAME"
           else
-            git commit -m "build(scoop): point the bucket at $GITHUB_REF_NAME"
+            git commit -m "build(release): point the bucket and the README at $GITHUB_REF_NAME"
             git push origin main || (git pull --rebase origin main && git push origin main)
           fi
 

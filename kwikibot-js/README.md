@@ -79,9 +79,33 @@ for await (const page of kwikibot.dumpPages("enwiktionary-latest-pages-articles.
 }
 ```
 
+Many bots can run in one process, one lane each, sharing logins and a stop page. A bot that fails stays
+failed alone, and a schedule can run a bot through `serve`. JavaScript has one thread, so lanes take turns
+at each `await`:
+
+```js
+const fleet = await kwikibot.createFleet(
+  { server: "en.wiktionary.org", contact, login, stopPage: "User:MyBot/Stop", onLine: console.log },
+  [
+    {
+      id: "refresher",
+      description: "refreshes pages",
+      schedule: kwikibot.cron("0 3 * * *", "Europe/Berlin"),
+      run: (context) => context.run(["Volcano"], "null edit", (text) => text, 500),
+    },
+  ],
+);
+fleet.start("refresher", [], true);
+await fleet.idle();
+fleet.close();
+```
+
+`fleetMain` is the same thing as a command-line program, with `list`, `run <bot>`, `run --all` and
+`serve`.
+
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,
-category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps
-and bot runs. Revision ids are numbers and lists are arrays.
+category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps, bot runs
+and fleets. Revision ids are numbers and lists are arrays.
 
 It runs in browsers too, through a bundler. From a page on a site other than the wiki's, requests
 carry `origin=*`, which MediaWiki answers as it would a logged-out reader, so logging in works on

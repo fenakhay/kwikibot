@@ -70,6 +70,7 @@ jobs:
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz
           node detect.mjs https://example.org/kwikibot-ci
           node dump.mjs
+          node fleet.mjs https://example.org/kwikibot-ci
 
       - name: Upload coverage to Codecov
         if: always() && matrix.os == 'ubuntu-latest'
@@ -186,3 +187,4 @@ jobs:
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz
           node detect.mjs https://example.org/kwikibot-ci
           node dump.mjs
+          node fleet.mjs https://example.org/kwikibot-ci
