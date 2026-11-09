@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.testkit.FakePageService
 import com.fenakhay.kwikibot.testkit.FakeWiki
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -78,6 +79,32 @@ class BotRunEntryPointsTest {
 
         report.saved shouldBe 3
         report.stopReason shouldBe StopReason.POLICY
+    }
+
+    @Test
+    fun `reaching the cap does not drop the edits already allowed`() = runTest {
+        val many = FakePageService("a" to "text", "b" to "text", "c" to "text")
+        val capReached = CompletableDeferred<Unit>()
+        var startChecked = false
+
+        val report =
+            botRun(many, StopPolicy.NONE, null) {
+                source(listOf("a", "b", "c").map { many.ref(it) }.asFlow())
+                transform { Edit("new", "s") }
+                dryRun = false
+                readBatch = 3
+                writeConcurrency = 1
+                maxEdits = 2
+                stopPolicy = StopPolicy {
+                    if (startChecked) capReached.await()
+                    startChecked = true
+                    true
+                }
+                onOutcome = { if (it is PageOutcome.NotAttempted) capReached.complete(Unit) }
+            }
+
+        report.saved shouldBe 2
+        report.notAttempted shouldBe 1
     }
 
     @Test

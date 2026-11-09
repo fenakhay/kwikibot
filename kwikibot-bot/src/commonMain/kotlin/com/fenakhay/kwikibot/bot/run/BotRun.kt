@@ -13,6 +13,7 @@ import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.page.PageContent
 import com.fenakhay.kwikibot.model.page.PageRef
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -571,11 +572,14 @@ private class Runner(
 
     @OptIn(ExperimentalAtomicApi::class) private val editsClaimed = AtomicInt(0)
 
+    @OptIn(ExperimentalAtomicApi::class) private val capReached = AtomicBoolean(false)
+
     /** Takes one of the edits this run may make, or says none are left and stops the run. */
     @OptIn(ExperimentalAtomicApi::class)
     private fun claimEdit(): Boolean {
         val most = config.maxEdits ?: return true
         if (editsClaimed.fetchAndAdd(1) < most) return true
+        capReached.store(true)
         val _ = stopReason.compareAndSet(null, StopReason.POLICY)
         return false
     }
@@ -773,6 +777,7 @@ private class Runner(
      * to a page changed since with the change made in between if it can, and refuses it as a conflict if it
      * cannot; a page deleted since is refused, not recreated.
      */
+    @OptIn(ExperimentalAtomicApi::class)
     private suspend fun save(ref: PageRef, content: PageContent?, edit: Edit): PageOutcome {
         // Checked before every save, not once at the start: a run can last hours, and an
         // administrator stopping the bot expects it to stop within one edit.
@@ -786,7 +791,9 @@ private class Runner(
             // Pages are worked on in parallel, so by the time this one reaches the front of the
             // queue another may have found the session dead - and the whole point of stopping a
             // run is not to make the next edit after the reason to stop is known.
-            if (stopped) return@withPermit notAttempted(ref)
+            // Reaching the cap on edits stops the run taking more, and is no reason to drop an edit it
+            // already allowed: the page that went over the cap can get here before those within it.
+            if (stopped && !capReached.load()) return@withPermit notAttempted(ref)
 
             val outcome =
                 pages.edit(ref) {
