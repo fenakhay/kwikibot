@@ -245,6 +245,25 @@ class MetaServiceTest {
         meta.languages(listOf(LangCode("fr"))) shouldBe emptyMap()
     }
 
+    @Test
+    fun `a message is remembered per language`() = runTest {
+        val asked = mutableListOf<String?>()
+        val meta = meta { request ->
+            val language = request.url.parameters["amlang"]
+            asked += language
+            respondJson(
+                """{"query":{"allmessages":[{"name":"edit","content":"${language ?: "default"}"}]}}"""
+            )
+        }
+
+        meta.message("edit", "fr") shouldBe "fr"
+        meta.message("edit", "de") shouldBe "de"
+        meta.message("edit") shouldBe "default"
+        meta.message("edit", "fr") shouldBe "fr"
+
+        asked shouldBe listOf("fr", "de", null)
+    }
+
     private fun TestScope.meta(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
     ): MetaService =

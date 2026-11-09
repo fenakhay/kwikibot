@@ -30,7 +30,7 @@ internal class ApiMetaService(
 
     private val mutex = Mutex()
     private val properties = mutableMapOf<String, JsonElement?>()
-    private val messageCache = mutableMapOf<String, String>()
+    private val messageCache = mutableMapOf<Pair<String?, String>, String>()
 
     override suspend fun property(name: String): JsonElement? {
         if (name in properties) return properties[name]
@@ -54,7 +54,7 @@ internal class ApiMetaService(
         // Only the ones not already held: a bot asking for the same message per page would
         // otherwise ask the wiki per page.
         val wanted = keys.distinct()
-        val missing = wanted.filter { it !in messageCache }
+        val missing = wanted.filter { (language to it) !in messageCache }
 
         if (missing.isNotEmpty()) {
             val response =
@@ -73,11 +73,11 @@ internal class ApiMetaService(
                 val name = message.string("name") ?: return@forEach
                 // A message the wiki does not have comes back flagged rather than omitted.
                 if (message.containsKey("missing")) return@forEach
-                message.string("content")?.let { messageCache[name] = it }
+                message.string("content")?.let { messageCache[language to name] = it }
             }
         }
 
-        return wanted.mapNotNull { key -> messageCache[key]?.let { key to it } }.toMap()
+        return wanted.mapNotNull { key -> messageCache[language to key]?.let { key to it } }.toMap()
     }
 
     override suspend fun message(key: String, language: String?): String? =
