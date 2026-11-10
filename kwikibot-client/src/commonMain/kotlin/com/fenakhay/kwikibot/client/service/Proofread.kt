@@ -74,9 +74,14 @@ public data class ProofreadText(
     /**
      * The wikitext, with the quality marker rebuilt exactly as it was.
      *
-     * A page that had no marker gets none: adding one would assert an unreviewed quality.
+     * A page that had no marker gets none: adding one would assert an unreviewed quality. A page with only a
+     * body, which is how [parse] reads one not in the usual shape, is that body and nothing else.
      */
     public fun serialize(): String = buildString {
+        if (header.isEmpty() && footer.isEmpty() && quality == null) {
+            append(body)
+            return@buildString
+        }
         append("<noinclude>")
         if (quality != null) {
             append("<pagequality level=\"${quality.level}\" user=\"${proofreader.orEmpty()}\" />")
@@ -95,9 +100,10 @@ public data class ProofreadText(
         /**
          * Reads the wikitext of a `Page:` page.
          *
-         * A page not in this shape — hand-written, or from a wiki without the extension — comes back as all
-         * body. That reading loses nothing: rewriting the body then rewrites the whole page rather than
-         * silently dropping part of it.
+         * A page not in this shape — hand-written, from a wiki without the extension, or with anything
+         * [serialize] would not put back exactly, such as a marker with a level nobody knows — comes back as
+         * all body. That reading loses nothing: rewriting the body then rewrites the whole page rather than
+         * silently dropping part of it, and [serialize] gives back the page as it was.
          */
         public fun parse(wikitext: String): ProofreadText {
             val opening = OPENING.find(wikitext) ?: return ProofreadText("", wikitext, "")
@@ -109,13 +115,15 @@ public data class ProofreadText(
 
             val quality = QUALITY.find(opening.groupValues[1])
 
-            return ProofreadText(
-                header = opening.groupValues[1].removeRange(quality?.range ?: IntRange.EMPTY),
-                body = wikitext.substring(opening.range.last + 1, closing.range.first),
-                footer = closing.groupValues[1],
-                quality = quality?.groupValues?.get(1)?.toIntOrNull()?.let { ProofreadQuality.of(it) },
-                proofreader = quality?.groupValues?.get(2)?.takeIf { it.isNotEmpty() },
-            )
+            val parsed =
+                ProofreadText(
+                    header = opening.groupValues[1].removeRange(quality?.range ?: IntRange.EMPTY),
+                    body = wikitext.substring(opening.range.last + 1, closing.range.first),
+                    footer = closing.groupValues[1],
+                    quality = quality?.groupValues?.get(1)?.toIntOrNull()?.let { ProofreadQuality.of(it) },
+                    proofreader = quality?.groupValues?.get(2)?.takeIf { it.isNotEmpty() },
+                )
+            return if (parsed.serialize() == wikitext) parsed else ProofreadText("", wikitext, "")
         }
 
         private val OPENING = Regex("""^<noinclude>([\s\S]*?)</noinclude>""")

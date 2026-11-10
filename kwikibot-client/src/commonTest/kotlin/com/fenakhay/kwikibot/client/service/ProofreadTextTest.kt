@@ -94,4 +94,33 @@ class ProofreadTextTest {
         parsed.proofreader.shouldBeNull()
         parsed.serialize() shouldBe unsigned
     }
+
+    @Test
+    fun `any page comes back as it was whatever its shape`() {
+        val pages =
+            listOf(
+                "just text",
+                "",
+                "<noinclude>{{header}}</noinclude>the text with no footer",
+                """<noinclude><pagequality level="9" user="A" /></noinclude>Text<noinclude></noinclude>""",
+                """<noinclude>{{h}}<pagequality level="3" user="A" /></noinclude>T<noinclude></noinclude>""",
+                """<noinclude><pagequality level="3" user="A"/></noinclude>Text<noinclude></noinclude>""",
+                """<noinclude></noinclude>Text<noinclude></noinclude>""",
+                """<noinclude><pagequality level="3" user="A" /></noinclude>T<noinclude>f</noinclude>
+""",
+            )
+
+        pages.forEach { page -> ProofreadText.parse(page).serialize() shouldBe page }
+    }
+
+    @Test
+    fun `a page not in the usual shape is all body and a new body replaces it whole`() {
+        val odd = """<noinclude><pagequality level="9" user="A" /></noinclude>Text<noinclude></noinclude>"""
+
+        val parsed = ProofreadText.parse(odd)
+
+        parsed.body shouldBe odd
+        parsed.quality.shouldBeNull()
+        parsed.withBody("new").serialize() shouldBe "new"
+    }
 }
