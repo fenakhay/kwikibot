@@ -2,6 +2,8 @@ import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     id("kwikibot.kotlin-multiplatform-common")
@@ -9,6 +11,12 @@ plugins {
 }
 
 val libs = the<LibrariesForLibs>()
+
+/**
+ * Whether this machine runs [target]'s tests. Only its own platform can, so the tests of the others are not
+ * compiled or linked either: macOS checks macOS, Linux checks Linux and Windows checks Windows.
+ */
+fun runsTestsOf(target: KotlinNativeTarget): Boolean = target.konanTarget == HostManager.host
 
 kotlin {
     jvmToolchain(25)
@@ -33,6 +41,12 @@ kotlin {
     targets.withType<KotlinNativeTarget>().configureEach {
         binaries.matching { it.buildType == NativeBuildType.RELEASE }.configureEach {
             binaryOption("preCodegenInlineThreshold", "40")
+        }
+        if (!runsTestsOf(this)) {
+            val target = name
+            compilations.named("test") { compileTaskProvider.configure { enabled = false } }
+            binaries.withType<TestExecutable>().configureEach { linkTaskProvider.configure { enabled = false } }
+            tasks.matching { it.name == "${target}Test" }.configureEach { enabled = false }
         }
     }
 

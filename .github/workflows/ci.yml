@@ -28,7 +28,6 @@ jobs:
           - os: windows-latest
             target: mingwX64
             binary: kwikibot-cli/build/bin/mingwX64/releaseExecutable/kwikibot.exe
-            skip: -x linuxX64Test
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
@@ -46,7 +45,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Check, and link the release kwikibot
-        run: ./gradlew check detekt checkKotlinAbi koverXmlReport :kwikibot-cli:${{ matrix.target }}AppArchive -x liveTest ${{ matrix.skip }} --stacktrace
+        run: ./gradlew check detekt checkKotlinAbi koverXmlReport :kwikibot-cli:${{ matrix.target }}AppArchive -x liveTest --stacktrace
 
       - name: Smoke-test the release kwikibot
         env:
