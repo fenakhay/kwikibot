@@ -141,6 +141,34 @@ class LocalWikiTest {
         }
 
     @Test
+    fun `a conflict names the revision it lost to`(): Unit = onLocalWiki { wiki ->
+        val page = wiki.ref("Kwikibot conflict ${UUID.randomUUID()}")
+        val first =
+            wiki.pages
+                .edit(page) {
+                    text = "one"
+                    summary = "s"
+                }
+                .shouldBeInstanceOf<EditOutcome.Saved>()
+        val second =
+            wiki.pages
+                .edit(page) {
+                    text = "two"
+                    summary = "s"
+                }
+                .shouldBeInstanceOf<EditOutcome.Saved>()
+
+        val conflict =
+            wiki.pages.edit(page) {
+                text = "three"
+                summary = "s"
+                baseRevision = first.revision
+            }
+
+        conflict.shouldBeInstanceOf<EditOutcome.Conflict>().currentRevision shouldBe second.revision
+    }
+
+    @Test
     fun `a page written edited and read back says what was written`(): Unit = onLocalWiki { wiki ->
         val page = wiki.ref("Kwikibot test ${UUID.randomUUID()}")
 

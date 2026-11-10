@@ -116,7 +116,8 @@ internal class ApiPageService(
         }
 
         ApiFailure.from(response)?.let { failure ->
-            return failure.toEditRefusal(ref) ?: throw failure.toWikiError()
+            return failure.toEditRefusal(ref)?.withDetails(continuation, namespaces)
+                ?: throw failure.toWikiError()
         }
 
         val edit =
@@ -486,7 +487,8 @@ internal class ApiPageService(
         ApiFailure.from(response)?.let { failure ->
             // A rollback refused because the page was edited first is the mechanism working
             // rather than a fault, and is the reason to prefer a rollback over an undo.
-            return failure.toEditRefusal(ref) ?: throw failure.toWikiError()
+            return failure.toEditRefusal(ref)?.withDetails(continuation, namespaces)
+                ?: throw failure.toWikiError()
         }
 
         val rollback =
@@ -532,7 +534,8 @@ internal class ApiPageService(
         }
 
         ApiFailure.from(response)?.let { failure ->
-            return failure.toEditRefusal(ref) ?: throw failure.toWikiError()
+            return failure.toEditRefusal(ref)?.withDetails(continuation, namespaces)
+                ?: throw failure.toWikiError()
         }
 
         val edit =
@@ -733,6 +736,9 @@ internal class ApiPageService(
     private fun JsonObject.toOutcome(ref: PageRef): EditOutcome {
         val result = string("result").orEmpty()
         if (!result.equals("Success", ignoreCase = true)) {
+            obj("captcha")?.let { captcha ->
+                return EditOutcome.CaptchaRequired(ref, "the wiki asks for a CAPTCHA", captcha.string("id"))
+            }
             return EditOutcome.Rejected(ref, "edit returned $result", result.lowercase())
         }
 
