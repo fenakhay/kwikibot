@@ -1,3 +1,4 @@
+import com.fenakhay.kwikibot.bindings.connect.userAgent
 import com.fenakhay.kwikibot.client.model.SparqlClient
 import com.fenakhay.kwikibot.client.model.SparqlValue as Binding
 import com.fenakhay.kwikibot.net.transport.WikiHttpClient
@@ -52,8 +53,8 @@ public class SparqlRow internal constructor(private val bindings: Map<String, Bi
 public class SparqlValue internal constructor(private val binding: Binding) {
 
     /** `"uri"`, `"literal"` or `"bnode"`. */
-    public val type: String
-        get() = binding.type
+    public val type: SparqlValueType
+        get() = binding.type.unsafeCast<SparqlValueType>()
 
     /** The URI, the literal's text, or the blank node's label. */
     public val value: String

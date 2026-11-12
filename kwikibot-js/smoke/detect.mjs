@@ -1,14 +1,14 @@
-import kwikibot from "kwikibot";
+import { connect, detect } from "kwikibot";
 
 const contact = process.argv[2] ?? "https://github.com/fenakhay/kwikibot";
 
-const endpoint = await kwikibot.detect("https://en.wiktionary.org", contact);
+const endpoint = await detect("https://en.wiktionary.org", contact);
 if (endpoint?.apiUrl !== "https://en.wiktionary.org/w/api.php") {
   throw new Error(`detect found ${endpoint?.apiUrl}`);
 }
 console.log(`api:        ${endpoint.apiUrl}`);
 
-const wiki = await kwikibot.connect(endpoint.server, contact, null, endpoint.scriptPath);
+const wiki = await connect(endpoint.server, contact, null, endpoint.scriptPath);
 try {
   console.log(`wiki:       ${wiki.id} (${wiki.siteName}, MediaWiki ${wiki.mediaWikiVersion})`);
   console.log(`user:       ${wiki.user.name}${wiki.user.isAnonymous ? " (anonymous)" : ""}`);

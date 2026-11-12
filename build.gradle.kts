@@ -39,6 +39,7 @@ val covered = listOf(
     ":kwikibot-bot",
     ":kwikibot-fleet",
     ":kwikibot-testkit",
+    ":kwikibot-bindings",
     ":kwikibot-cli",
     ":kwikibot-tools",
     ":kwikibot-benchmarks",

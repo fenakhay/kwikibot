@@ -31,6 +31,19 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
     /** The parameters of every request, in order. */
     val requests: MutableList<Map<String, String>> = mutableListOf()
 
+    /**
+     * Answers given as they are, by the module asked for: a query's `list`, else its `prop`, else its `meta`;
+     * any other request's `action`, and `""` for a request with none, such as a file's or an upload's. They
+     * come before the built-in ones, apart from tokens and logging in.
+     */
+    val canned: MutableMap<String, String> = mutableMapOf()
+
+    /** The extensions it says it has, by the name MediaWiki reports. Read when it is opened. */
+    val extensions: MutableList<String> = mutableListOf()
+
+    /** The body of every request, in order. */
+    val bodies: MutableList<String> = mutableListOf()
+
     /** What was saved, by title. */
     val saved: MutableMap<String, String> = mutableMapOf()
 
@@ -47,29 +60,40 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
 
     private suspend fun MockRequestHandleScope.answer(request: HttpRequestData): HttpResponseData {
         val body = request.body.toByteArray().decodeToString()
+        bodies += body
         val parameters =
             (parseQueryString(request.url.encodedQuery).entries() + parseQueryString(body).entries())
                 .associate { it.key to it.value.first() }
         requests += parameters
 
         return when {
-            parameters["meta"] == "tokens" ->
-                json("""{"query":{"tokens":{"logintoken":"l+\\","csrftoken":"c+\\"}}}""")
+            parameters["meta"] == "tokens" -> json(TOKENS)
             parameters["action"] == "login" -> json(login(parameters))
+            module(parameters) in canned -> json(canned.getValue(module(parameters)))
             parameters["action"] == "edit" -> json(edit(parameters))
             parameters["action"] == "wbgetentities" -> json(ENTITY)
             parameters["meta"] == "userinfo" -> json(userinfo())
-            parameters["meta"] == "siteinfo" -> json(SITE_INFO)
+            parameters["meta"] == "siteinfo" -> json(siteInfo())
             parameters["meta"] == "allmessages" -> json(MONTHS)
-            parameters["list"] == "categorymembers" -> json(listing("categorymembers", members))
-            parameters["list"] == "search" -> json(listing("search", listOf("Volcano", "Volcanic ash")))
-            parameters["list"] == "embeddedin" -> json(listing("embeddedin", listOf("Volcano")))
-            "revisions" in parameters["prop"].orEmpty().split('|') ->
-                if ("content" in parameters["rvprop"].orEmpty()) json(page(parameters.getValue("titles")))
-                else json(HISTORY)
-            else -> json("""{"error":{"code":"unexpected","info":${JsonPrimitive(parameters.toString())}}}""")
+            else -> json(query(parameters))
         }
     }
+
+    private fun query(parameters: Map<String, String>): String =
+        when {
+            parameters["list"] == "categorymembers" -> listing("categorymembers", members)
+            parameters["list"] == "search" -> listing("search", listOf("Volcano", "Volcanic ash"))
+            parameters["list"] == "embeddedin" -> listing("embeddedin", listOf("Volcano"))
+            "revisions" in parameters["prop"].orEmpty().split('|') ->
+                if ("content" in parameters["rvprop"].orEmpty()) page(parameters.getValue("titles"))
+                else HISTORY
+            else -> """{"error":{"code":"unexpected","info":${JsonPrimitive(parameters.toString())}}}"""
+        }
+
+    private fun module(parameters: Map<String, String>): String =
+        if (parameters["action"] == "query")
+            parameters["list"] ?: parameters["prop"] ?: parameters["meta"].orEmpty()
+        else parameters["action"].orEmpty()
 
     private fun login(parameters: Map<String, String>): String =
         if (parameters["lgpassword"] == "secret") {
@@ -78,6 +102,11 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
         } else {
             """{"login":{"result":"Failed","reason":{"code":"wrongpassword","text":"Incorrect password."}}}"""
         }
+
+    private fun siteInfo(): String {
+        val names = extensions.joinToString(",") { """{"name":"$it"}""" }
+        return SITE_INFO.replace(""""interwikimap":""", """"extensions":[$names],"interwikimap":""")
+    }
 
     private fun userinfo(): String {
         val name = account ?: return """{"query":{"userinfo":{"id":0,"name":"192.0.2.1","groups":["*"]}}}"""
@@ -128,6 +157,10 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
                 retry = RetryPolicy.NONE,
             )
 
+        private const val TOKENS =
+            """{"query":{"tokens":{"logintoken":"l+\\","csrftoken":"c+\\","userrightstoken":"u+\\",""" +
+                """"rollbacktoken":"r+\\","watchtoken":"w+\\"}}}"""
+
         private val SITE_INFO =
             """
             {"query":{
@@ -137,8 +170,11 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
               "namespaces":{
                 "0":{"id":0,"name":"","case":"first-letter"},
                 "2":{"id":2,"name":"User","canonical":"User","case":"first-letter"},
+                "6":{"id":6,"name":"File","canonical":"File","case":"first-letter"},
                 "10":{"id":10,"name":"Template","canonical":"Template","case":"first-letter"},
-                "14":{"id":14,"name":"Category","canonical":"Category","case":"first-letter"}},
+                "14":{"id":14,"name":"Category","canonical":"Category","case":"first-letter"},
+                "104":{"id":104,"name":"Page","canonical":"Page","case":"first-letter"},
+                "106":{"id":106,"name":"Index","canonical":"Index","case":"first-letter"}},
               "interwikimap":[{"prefix":"w","url":"https://en.wikipedia.org/wiki/${'$'}1"}]}}
             """
                 .trimIndent()
@@ -188,6 +224,27 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
                 .trimIndent()
     }
 }
+
+/** An options object with [entries], as a TypeScript author writes one. */
+fun <T> optionsOf(vararg entries: Pair<String, Any?>): T {
+    val options: dynamic = js("({})")
+    entries.forEach { (name, value) -> options[name] = value }
+    return options.unsafeCast<T>()
+}
+
+/** [value], a string or array of strings, as the union of string literals it is in TypeScript. */
+internal fun <T> literal(value: Any): T = value.unsafeCast<T>()
+
+/** [value] as a callback's answer, which in TypeScript it is as it stands. */
+internal fun <T> answering(value: T): Awaitable<T> = value.unsafeCast<Awaitable<T>>()
+
+/** [promise] as a callback's answer, which in TypeScript it is as it stands. */
+internal fun <T> answering(promise: Promise<T>): Awaitable<T> = promise.unsafeCast<Awaitable<T>>()
+
+/**
+ * [value] as a callback's answer whatever it is, for what plain JavaScript can answer and TypeScript cannot.
+ */
+internal fun <T> untyped(value: Any?): Awaitable<T> = value.unsafeCast<Awaitable<T>>()
 
 /** Every item of this async iterable, or the first [limit], ending the walk there. */
 suspend fun <T> AsyncIterable<T>.take(limit: Int = Int.MAX_VALUE): List<T> {

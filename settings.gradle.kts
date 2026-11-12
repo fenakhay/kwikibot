@@ -51,6 +51,7 @@ include(
     "kwikibot-fleet",
     "kwikibot-testkit",
     "kwikibot-cli",
+    "kwikibot-bindings",
     "kwikibot-js",
     "kwikibot-tools",
     "kwikibot-benchmarks",

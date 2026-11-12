@@ -1,13 +1,13 @@
-import com.fenakhay.kwikibot.client.model.Compression
+import com.fenakhay.kwikibot.bindings.dumps.compressionNamed
+import com.fenakhay.kwikibot.bindings.dumps.dumpFlowWithDefaults
+import com.fenakhay.kwikibot.bindings.dumps.dumpPagesWithDefaults
+import com.fenakhay.kwikibot.bindings.dumps.scanDumpWithDefaults
 import com.fenakhay.kwikibot.client.model.DumpPage as ClientDumpPage
-import com.fenakhay.kwikibot.client.model.XmlDump
 import com.fenakhay.kwikibot.client.model.availableWorkers
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.await
-import kotlinx.coroutines.promise
 import kotlinx.io.Buffer
 import kotlinx.io.files.Path
 import kotlinx.io.write
@@ -56,7 +56,13 @@ public class DumpPage internal constructor(private val page: ClientDumpPage) {
     /** The page a redirect points to, or `null` for a page that is not one. */
     public val redirectTarget: String?
         get() = page.redirectTarget
+
+    /** Whether this page is in one of [namespaces]. Every namespace matches an empty array. */
+    public fun inNamespaces(namespaces: Array<Int>): Boolean = page.inNamespaces(namespaces.toSet())
 }
+
+/** How many threads `dumpPages` and `scanDump` decode on unless told. */
+@JsExport public fun availableDumpWorkers(): Int = availableWorkers()
 
 /**
  * The pages of the dump file at [path], in the dump's order, as an async iterable. Plain XML, `.gz` or
@@ -76,8 +82,7 @@ public fun dumpPages(
     namespaces: Array<Int>? = null,
     workers: Int? = null,
 ): AsyncIterable<DumpPage> =
-    XmlDump.flow(Path(path), namespaces.orEmptySet(), workers ?: availableWorkers())
-        .toAsyncIterable(GlobalScope, ::DumpPage)
+    dumpFlowWithDefaults(Path(path), namespaces?.asList(), workers).toAsyncIterable(GlobalScope, ::DumpPage)
 
 /**
  * The pages of a dump already in memory, which is the way to read one in a browser: on one thread, and only
@@ -90,11 +95,15 @@ public fun dumpPages(
 @JsExport
 public fun dumpPagesOf(
     bytes: Uint8Array,
-    compression: String = "none",
+    compression: DumpCompression = "none".unsafeCast<DumpCompression>(),
     namespaces: Array<Int>? = null,
 ): Array<DumpPage> {
     val source = Buffer().apply { write(asByteArray(bytes)) }
-    return XmlDump.pages(source, namespaces.orEmptySet(), compressionNamed(compression))
+    return dumpPagesWithDefaults(
+            source,
+            compressionNamed(compression.unsafeCast<String>()),
+            namespaces?.asList(),
+        )
         .map(::DumpPage)
         .toList()
         .toTypedArray()
@@ -114,25 +123,14 @@ public fun dumpPagesOf(
 @OptIn(DelicateCoroutinesApi::class)
 public fun scanDump(
     path: String,
-    block: (page: DumpPage) -> Any?,
+    block: (page: DumpPage) -> Awaitable<Ignored>,
     namespaces: Array<Int>? = null,
     workers: Int? = null,
-): Promise<Unit> = GlobalScope.promise {
-    XmlDump.scan(Path(path), namespaces.orEmptySet(), workers ?: availableWorkers()) { page ->
-        val answer = block(DumpPage(page))
-        if (answer is Promise<*>) answer.await()
+): Promise<Unit> = GlobalScope.promiseVoid {
+    scanDumpWithDefaults(Path(path), namespaces?.asList(), workers) { page ->
+        val _ = settledResult(block(DumpPage(page)))
     }
 }
-
-private fun Array<Int>?.orEmptySet(): Set<Int> = this?.toSet().orEmpty()
-
-private fun compressionNamed(name: String): Compression =
-    when (name) {
-        "none" -> Compression.NONE
-        "gzip" -> Compression.GZIP
-        "bzip2" -> Compression.BZIP2
-        else -> throw IllegalArgumentException("unknown compression '$name'; use none, gzip or bzip2")
-    }
 
 @Suppress("UNUSED_PARAMETER", "UnusedParameter")
 private fun asByteArray(bytes: Uint8Array): ByteArray =

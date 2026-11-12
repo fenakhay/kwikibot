@@ -1,26 +1,19 @@
-import com.fenakhay.kwikibot.bot.fix.Diffs
+import com.fenakhay.kwikibot.bindings.bot.RunChange
+import com.fenakhay.kwikibot.bindings.bot.problemOf
+import com.fenakhay.kwikibot.bindings.bot.runWithDefaults
+import com.fenakhay.kwikibot.bindings.common.argumentName
 import com.fenakhay.kwikibot.bot.run.BotReport
-import com.fenakhay.kwikibot.bot.run.Edit
 import com.fenakhay.kwikibot.bot.run.PageOutcome
 import com.fenakhay.kwikibot.bot.run.StopPolicy
-import com.fenakhay.kwikibot.bot.run.botRun
-import com.fenakhay.kwikibot.bot.run.stopPage
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
 import com.fenakhay.kwikibot.model.title.NamespaceMap
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlin.js.Promise
-import kotlinx.coroutines.await
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
-
-private val log = KotlinLogging.logger("kwikibot.run")
 
 /** The run `Wiki.run` describes, on [wiki]. */
 internal suspend fun runBot(
     wiki: ClientWiki,
     titles: Array<String>,
     summary: String,
-    transform: (text: String, title: String) -> Any?,
+    transform: (text: String, title: String) -> Awaitable<String?>,
     save: Boolean,
     onChange: ((change: Change) -> Unit)?,
     stopPage: String? = null,
@@ -28,35 +21,34 @@ internal suspend fun runBot(
     maxEdits: Int? = null,
     onOutcome: ((PageOutcome) -> Unit)? = null,
 ): RunReport {
-    if (save && stopPage == null && stopPolicy == null) {
-        log.warn { "This run saves with no stopPage, so it cannot be stopped from the wiki" }
-    }
     val report =
-        wiki.botRun(stopPolicy ?: stopPage?.let { wiki.stopPage(it) } ?: StopPolicy.NONE) {
-            exclusionPolicy = null
-            this.maxEdits = maxEdits
-            source(titles.asList().asFlow().map { wiki.ref(it) })
-            dryRun = !save
-            this.onOutcome = { outcome ->
-                if (onChange != null) change(outcome, wiki.namespaces)?.let(onChange)
-                onOutcome?.invoke(outcome)
-            }
-            transform { page ->
-                val title = wiki.namespaces.format(page.ref.title)
-                when (val text = settled(transform(page.text, title))) {
+        wiki.runWithDefaults(
+            titles.asList(),
+            summary,
+            { text, title ->
+                when (val changed = settledResult(transform(text, title))) {
                     null -> null
-                    is String -> Edit(text, summary)
+                    is String -> changed
                     else ->
                         throw IllegalArgumentException(
                             "the transform for $title returned neither text nor null"
                         )
                 }
-            }
-        }
+            },
+            save,
+            onChange?.let { changes(it) },
+            stopPage,
+            stopPolicy,
+            maxEdits,
+            onOutcome,
+        )
     return RunReport(report, wiki.namespaces)
 }
 
-private suspend fun settled(result: Any?): Any? = if (result is Promise<*>) result.await() else result
+/** [onChange], as the run calls it with each change. */
+private fun changes(onChange: (change: Change) -> Unit): (RunChange) -> Unit = { changed ->
+    onChange(Change(changed.title, changed.diff, changed.revision?.value?.toDouble()))
+}
 
 /** What a run did, in counts, with its refusals and failures. */
 @JsExport
@@ -91,13 +83,20 @@ internal constructor(private val report: BotReport, private val namespaces: Name
     public val notAttempted: Int
         get() = report.notAttempted
 
-    /** Why the run stopped early, such as `"limit"`, or `null` when it did not. */
-    public val stopReason: String?
-        get() = report.stopReason?.name?.lowercase()?.replace('_', '-')
+    /**
+     * Why the run stopped early, such as `"policy"`, which a reached `maxEdits` also says, or `null` when it
+     * did not.
+     */
+    public val stopReason: StopReason?
+        get() = report.stopReason?.argumentName().unsafeCast<StopReason?>()
 
     /** The refusals and failures, up to the first hundred. */
     public val problems: Array<Problem>
-        get() = report.problems.mapNotNull { problem(it, namespaces) }.toTypedArray()
+        get() =
+            report.problems
+                .mapNotNull { problemOf(it, namespaces) }
+                .map { Problem(it.title, it.kind.unsafeCast<ProblemKind>(), it.detail) }
+                .toTypedArray()
 }
 
 /** One page a run changed, or would change. */
@@ -119,40 +118,7 @@ internal constructor(
     /** The page's title. */
     public val title: String,
     /** `"refused"` when the wiki refused the edit, `"failed"` when the wiki could not serve the page. */
-    public val kind: String,
+    public val kind: ProblemKind,
     /** What went wrong. */
     public val detail: String,
 )
-
-private fun change(outcome: PageOutcome, namespaces: NamespaceMap): Change? {
-    val title = namespaces.format(outcome.ref.title)
-    return when (outcome) {
-        is PageOutcome.Pending -> Change(title, Diffs.unified(outcome.before, outcome.edit.text, title), null)
-        is PageOutcome.Saved -> {
-            val before = outcome.before
-            val edit = outcome.edit
-            val diff = if (before != null && edit != null) Diffs.unified(before, edit.text, title) else ""
-            Change(title, diff, outcome.revision.value.toDouble())
-        }
-        is PageOutcome.Unchanged,
-        is PageOutcome.Skipped,
-        is PageOutcome.Missing,
-        is PageOutcome.Refused,
-        is PageOutcome.Failed,
-        is PageOutcome.NotAttempted -> null
-    }
-}
-
-private fun problem(outcome: PageOutcome, namespaces: NamespaceMap): Problem? {
-    val title = namespaces.format(outcome.ref.title)
-    return when (outcome) {
-        is PageOutcome.Refused -> Problem(title, "refused", outcome.outcome.detail)
-        is PageOutcome.Failed -> Problem(title, "failed", outcome.error.message ?: outcome.error.toString())
-        is PageOutcome.Pending,
-        is PageOutcome.Saved,
-        is PageOutcome.Unchanged,
-        is PageOutcome.Skipped,
-        is PageOutcome.Missing,
-        is PageOutcome.NotAttempted -> null
-    }
-}

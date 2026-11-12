@@ -70,6 +70,13 @@ jobs:
           node detect.mjs https://example.org/kwikibot-ci
           node dump.mjs
           node fleet.mjs https://example.org/kwikibot-ci
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz typescript@5.9.3 @types/node@22
+          npx tsc -p .
+          npx tsc -p tsconfig.legacy.json
+          node build/bot.js
+          node build/typed/all.js
+          cd "$GITHUB_WORKSPACE"
+          python3 .github/scripts/check_ts_coverage.py
 
       - name: Upload coverage to Codecov
         if: always() && matrix.os == 'ubuntu-latest'
@@ -187,3 +194,8 @@ jobs:
           node detect.mjs https://example.org/kwikibot-ci
           node dump.mjs
           node fleet.mjs https://example.org/kwikibot-ci
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/kwikibot-*.tgz typescript@5.9.3 @types/node@22
+          npx tsc -p .
+          npx tsc -p tsconfig.legacy.json
+          node build/bot.js
+          node build/typed/all.js

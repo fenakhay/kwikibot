@@ -1,9 +1,9 @@
-import kwikibot from "kwikibot";
+import { createFleet } from "kwikibot/fleet";
 
 const contact = process.argv[2] ?? "https://github.com/fenakhay/kwikibot";
 const lines = [];
 
-const fleet = await kwikibot.createFleet(
+const fleet = await createFleet(
   { server: "en.wiktionary.org", contact, onLine: (line) => lines.push(line) },
   [
     {

@@ -32,8 +32,8 @@ class DumpTest {
 
     @Test
     fun `a compression nobody has heard of is refused and so is a damaged dump`() {
-        assertFails { dumpPagesOf(bytes, "zip") }
-        assertFails { dumpPagesOf(bytes, "bzip2") }
-        assertFails { dumpPagesOf(bytes, "gzip") }
+        assertFails { dumpPagesOf(bytes, literal("zip")) }
+        assertFails { dumpPagesOf(bytes, literal("bzip2")) }
+        assertFails { dumpPagesOf(bytes, literal("gzip")) }
     }
 }

@@ -68,7 +68,11 @@ class FleetTest {
         val fleet =
             open(
                 bot("editor") { context ->
-                    context.run(arrayOf("Volcano"), "naming it", { text: String, _: String -> text + "more" })
+                    context.run(
+                        arrayOf("Volcano"),
+                        "naming it",
+                        { text: String, _: String -> answering(text + "more") },
+                    )
                 }
             )
 
@@ -108,7 +112,7 @@ class FleetTest {
                 bot("stepper") { context ->
                     context.step("German") { inner ->
                         seen += inner.wiki.id
-                        inner.mayContinue()
+                        answering(inner.mayContinue())
                     }
                 },
                 bot("waiter", every(60_000.0)) { _ -> Promise<Any?> { _, _ -> } },

@@ -1,5 +1,7 @@
 import com.fenakhay.kwikibot.model.SignatureTime as FoundSignature
 import com.fenakhay.kwikibot.model.Signatures
+import com.fenakhay.kwikibot.model.page.render
+import com.fenakhay.kwikibot.model.page.renderPiped
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.title.Title as ParsedTitle
 import kotlin.js.Date
@@ -21,18 +23,18 @@ public fun signatureTimes(text: String, language: String = "en"): Array<Signatur
 /** A page title, read the way MediaWiki reads one. */
 @JsExport
 public class Title
-internal constructor(private val title: ParsedTitle, private val namespaces: NamespaceMap) {
+internal constructor(internal val title: ParsedTitle, private val namespaces: NamespaceMap) {
 
     /**
      * `"local"` for a page of this wiki, `"interwiki"` for one on another, `"invalid"` for no page at all.
      */
-    public val kind: String
+    public val kind: TitleKind
         get() =
             when (title) {
                 is ParsedTitle.Local -> "local"
                 is ParsedTitle.Interwiki -> "interwiki"
                 is ParsedTitle.Invalid -> "invalid"
-            }
+            }.unsafeCast<TitleKind>()
 
     /** The namespace number, or `null` unless the title is local. */
     public val namespace: Int?
@@ -51,8 +53,35 @@ internal constructor(private val title: ParsedTitle, private val namespaces: Nam
         get() = title.fragment
 
     /** Why the title is invalid, such as `"illegal-character"`, or `null` when it is valid. */
-    public val invalidReason: String?
-        get() = (title as? ParsedTitle.Invalid)?.reason?.name?.lowercase()?.replace('_', '-')
+    public val invalidReason: TitleProblem?
+        get() =
+            (title as? ParsedTitle.Invalid)
+                ?.reason
+                ?.name
+                ?.lowercase()
+                ?.replace('_', '-')
+                .unsafeCast<TitleProblem?>()
+
+    /** The text after an interwiki prefix, which is the other wiki's title, or `null` unless interwiki. */
+    public val rest: String?
+        get() = (title as? ParsedTitle.Interwiki)?.rest
+
+    /** The text as it was given, before any normalising, or `null` unless the title is invalid. */
+    public val raw: String?
+        get() = (title as? ParsedTitle.Invalid)?.raw
+
+    /**
+     * The wikitext of a link to this page, showing [text] when one is given, or `null` unless it is local.
+     * [forced] writes the leading colon a category or file needs to be linked to rather than used.
+     */
+    public fun render(text: String? = null, forced: Boolean = false): String? =
+        (title as? ParsedTitle.Local)?.render(namespaces, text, forced)
+
+    /**
+     * The wikitext of a link showing only the part of the title before a comma or bracket, as the pipe trick
+     * does, or `null` unless it is local.
+     */
+    public fun renderPiped(): String? = (title as? ParsedTitle.Local)?.renderPiped(namespaces)
 
     /**
      * The title in full, its fragment included: namespace prefix and text, or the interwiki prefix and the

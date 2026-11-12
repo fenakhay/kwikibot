@@ -1,9 +1,14 @@
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.js.Promise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
@@ -16,17 +21,42 @@ public external interface AsyncIterable<out T>
  * Ending a walk early, with `break` or `return`, stops the collection, so no page is fetched that is not
  * read.
  */
-internal fun <T, R> Flow<T>.toAsyncIterable(scope: CoroutineScope, convert: (T) -> R): AsyncIterable<R> {
-    val flow = this
+internal fun <T, R> Flow<T>.toAsyncIterable(scope: CoroutineScope, convert: (T) -> R): AsyncIterable<R> =
+    asyncIterable(this, scope, false, convert)
+
+/** This flow as [toAsyncIterable] makes it, a walk of which cancelling [scope] ends rather than rejects. */
+internal fun <T, R> Flow<T>.toAsyncIterableEndingWith(
+    scope: CoroutineScope,
+    convert: (T) -> R,
+): AsyncIterable<R> = asyncIterable(this, scope, true, convert)
+
+private fun <T, R> asyncIterable(
+    flow: Flow<T>,
+    scope: CoroutineScope,
+    endsWithScope: Boolean,
+    convert: (T) -> R,
+): AsyncIterable<R> {
     val iterable: dynamic = js("({})")
-    iterable[js("Symbol.asyncIterator")] = { FlowIterator(flow, scope, convert).toJs() }
+    iterable[js("Symbol.asyncIterator")] = { FlowIterator(flow, scope, endsWithScope, convert).toJs() }
     return iterable.unsafeCast<AsyncIterable<R>>()
 }
+
+/**
+ * The flow [listing] makes, or when what it asks of is left unimplemented, as a service of `createFakeWiki`
+ * is, a flow failing with that: a listing rejects as it is walked, as everything else on a fake wiki rejects.
+ */
+internal inline fun <T> listing(listing: () -> Flow<T>): Flow<T> =
+    try {
+        listing()
+    } catch (unimplemented: NotImplementedError) {
+        flow { throw unimplemented }
+    }
 
 /** One walk of a flow, as JavaScript's async iterator protocol asks for it. */
 private class FlowIterator<T, R>(
     flow: Flow<T>,
     private val scope: CoroutineScope,
+    private val endsWithScope: Boolean,
     private val convert: (T) -> R,
 ) {
     private val items = Channel<T>()
@@ -39,11 +69,22 @@ private class FlowIterator<T, R>(
                 .collect { items.send(it) }
         }
 
-    fun next(): Promise<dynamic> = scope.promise {
+    fun next(): Promise<dynamic> = if (endsWithScope) nextOrEnd() else scope.promise { receive() }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun nextOrEnd(): Promise<dynamic> = GlobalScope.promise {
+        try {
+            scope.async { receive() }.await()
+        } catch (_: CancellationException) {
+            iteratorResult(null, done = true)
+        }
+    }
+
+    private suspend fun receive(): dynamic {
         collector.start()
         val received = items.receiveCatching()
         received.exceptionOrNull()?.let { throw it }
-        if (received.isClosed) iteratorResult(null, done = true)
+        return if (received.isClosed) iteratorResult(null, done = true)
         else iteratorResult(convert(received.getOrThrow()), done = false)
     }
 

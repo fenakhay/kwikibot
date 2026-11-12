@@ -1,14 +1,19 @@
-import com.fenakhay.kwikibot.bot.CommonOptions
-import com.fenakhay.kwikibot.bot.run.StopPolicy
-import com.fenakhay.kwikibot.client.Family
+import com.fenakhay.kwikibot.bindings.common.argumentName
+import com.fenakhay.kwikibot.bindings.common.enumArgument
+import com.fenakhay.kwikibot.bindings.connect.userAgent
+import com.fenakhay.kwikibot.bindings.fleet.fleetEndpointOf
+import com.fenakhay.kwikibot.bindings.fleet.fleetWithDefaults
+import com.fenakhay.kwikibot.bindings.fleet.runOptionsOf
+import com.fenakhay.kwikibot.bot.CommonOptions as ClientCommonOptions
+import com.fenakhay.kwikibot.client.Family as ClientFamily
 import com.fenakhay.kwikibot.client.WikiClient
 import com.fenakhay.kwikibot.client.WikiConfig
-import com.fenakhay.kwikibot.fleet.Accounts
+import com.fenakhay.kwikibot.fleet.Accounts as ClientAccounts
 import com.fenakhay.kwikibot.fleet.Bot as FleetBot
 import com.fenakhay.kwikibot.fleet.Declined
 import com.fenakhay.kwikibot.fleet.Fleet as ClientFleet
 import com.fenakhay.kwikibot.fleet.FleetEvent as ClientFleetEvent
-import com.fenakhay.kwikibot.fleet.Question
+import com.fenakhay.kwikibot.fleet.Question as ClientQuestion
 import com.fenakhay.kwikibot.fleet.RunContext as ClientRunContext
 import com.fenakhay.kwikibot.fleet.RunView
 import com.fenakhay.kwikibot.fleet.Schedule as ClientSchedule
@@ -17,21 +22,28 @@ import com.fenakhay.kwikibot.fleet.fleetMain as clientFleetMain
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.environmentVariable
-import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.ktor.client.engine.HttpClientEngine
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.js.Date
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.await
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.promise
 
 /** When `serve` runs a bot. */
-@JsExport public class Schedule internal constructor(internal val schedule: ClientSchedule)
+@JsExport
+public class Schedule internal constructor(internal val schedule: ClientSchedule) {
+
+    /** The first firing after [after]. */
+    public fun next(after: Date): Date = dateOf(schedule.next(instantOf(after)))
+}
 
 /** A schedule firing every [milliseconds]. */
 @JsExport
@@ -64,7 +76,7 @@ public external interface BotSpec {
      * Does the work, and may return a promise. A rejection fails this run only, and a [DeclinedError] says
      * somebody answered no.
      */
-    public val run: (context: RunContext) -> Any?
+    public val run: (context: RunContext) -> Awaitable<Ignored>
 }
 
 /** What a fleet is opened with. */
@@ -86,13 +98,13 @@ public external interface FleetOptions {
      * Other accounts by name. In Node, a name not here is read from `KWIKIBOT_<NAME>_` in the environment. A
      * browser has no environment, so there it has to be here.
      */
-    public val accounts: dynamic
+    public val accounts: Record<String, BotPassword>?
 
     /** A page of the wiki that has to say `false` for bots to save, read once a minute for all of them. */
     public val stopPage: String?
 
     /** Answers a run's question, and may return a promise. Without it, the answer is no. */
-    public val onAsk: ((bot: String, title: String, summary: String) -> Any?)?
+    public val onAsk: ((bot: String, title: String, summary: String) -> Awaitable<Boolean>)?
 
     /** Takes each line the bots say, prefixed by the bot's id. */
     public val onLine: ((line: String) -> Unit)?
@@ -108,7 +120,7 @@ internal constructor(
     private val context: ClientRunContext,
     private val scope: CoroutineScope,
     /** Aborted when the run is cancelled, for handing to `fetch` and the like. */
-    public val signal: dynamic,
+    public val signal: AbortSignal,
 ) {
 
     /** The wiki this bot's account edits, shared with every bot on the account. */
@@ -128,7 +140,7 @@ internal constructor(
 
     /** Another wiki, as the same account, by language and family name, such as `"en"`, `"wiktionary"`. */
     public fun open(language: String, family: String): Promise<Wiki> = scope.promise {
-        val named = requireNotNull(Family.named(family)) { "there is no family called '$family'" }
+        val named = requireNotNull(ClientFamily.named(family)) { "there is no family called '$family'" }
         Wiki(context.open(LangCode(language), named), scope) {}
     }
 
@@ -148,13 +160,44 @@ internal constructor(
     }
 
     /** Runs [work] as a named phase of this run. */
-    public fun step(name: String, work: (context: RunContext) -> Any?): Promise<Any?> = scope.promise {
-        context.step(name) { inner -> settled(work(RunContext(inner, scope, signal))) }
-    }
+    public fun <T> step(name: String, work: (context: RunContext) -> Awaitable<T>): Promise<T> =
+        scope.promise {
+            context.step(name) { inner -> settled(work(RunContext(inner, scope, signal))) }
+        }
 
     /** Parks this lane and asks a person, while other bots keep going. */
     public fun ask(title: String, summary: String = ""): Promise<Boolean> = scope.promise {
-        context.ask(Question(title, summary))
+        context.ask(ClientQuestion(title, summary))
+    }
+
+    /** Parks this lane and asks a person [question], which can show a diff, while other bots keep going. */
+    public fun askQuestion(question: Question): Promise<Boolean> = scope.promise {
+        context.ask(ClientQuestion(question.title, question.summary.orEmpty(), question.diff))
+    }
+
+    /**
+     * Says one line about what the run is doing, with how much it matters: `"info"`, `"saved"`, `"skipped"`
+     * or `"error"`.
+     */
+    public fun sayAt(message: String, level: RunLevel) {
+        context.say(message, enumArgument<ClientRunContext.Level>("level", level.unsafeCast<String>()))
+    }
+
+    /** The fleet's stop page, to give a run as its `stopPolicy`. */
+    public val stopPolicy: StopPolicy
+        get() = StopPolicy(context.stopPolicy)
+
+    /** The common flags this run was started with. */
+    public val options: CommonOptions
+        get() = CommonOptions(context.options)
+
+    /** Hand this to a run's `onOutcome`, which counts each page and keeps the heartbeat going. */
+    public val outcomes: (outcome: PageOutcome) -> Unit
+        get() = { context.outcomes(it.outcome) }
+
+    /** Another wiki, as the same account, in [language] of [family], which may be one of your own. */
+    public fun openFamily(language: String, family: Family): Promise<Wiki> = scope.promise {
+        Wiki(context.open(LangCode(language), family.family), scope) {}
     }
 
     /** Whether the run may go on. A stop page that cannot be read answers `false`. */
@@ -171,7 +214,7 @@ internal constructor(
     public fun run(
         titles: Array<String>,
         summary: String,
-        transform: (text: String, title: String) -> Any?,
+        transform: (text: String, title: String) -> Awaitable<String?>,
         maxEdits: Int? = null,
     ): Promise<RunReport> = scope.promise {
         runBot(
@@ -201,8 +244,8 @@ public class FleetRun internal constructor(private val view: RunView) {
         get() = view.botId
 
     /** `"queued"`, `"running"`, `"waiting"`, `"done"`, `"failed"`, `"cancelled"` or `"declined"`. */
-    public val status: String
-        get() = view.status.name.lowercase()
+    public val status: RunStatus
+        get() = view.status.name.lowercase().unsafeCast<RunStatus>()
 
     /** How many items it said it had to do. */
     public val expected: Int
@@ -223,6 +266,10 @@ public class FleetRun internal constructor(private val view: RunView) {
     /** What went wrong, if something did. */
     public val failure: String?
         get() = view.failure
+
+    /** Whether the run is over, however it ended. */
+    public val isFinished: Boolean
+        get() = view.status.isFinished
 }
 
 /** Something a fleet did: a run said a line, or changed status. */
@@ -242,8 +289,27 @@ public class FleetEvent internal constructor(private val event: ClientFleetEvent
         get() = (event as? ClientFleetEvent.Said)?.message
 
     /** What the run's status became, or `null` for something said. */
-    public val status: String?
-        get() = (event as? ClientFleetEvent.Changed)?.status?.name?.lowercase()
+    public val status: RunStatus?
+        get() = (event as? ClientFleetEvent.Changed)?.status?.name?.lowercase().unsafeCast<RunStatus?>()
+
+    /** `"said"` for a line, `"changed"` for a change of status. */
+    public val kind: FleetEventKind
+        get() =
+            when (event) {
+                is ClientFleetEvent.Said -> "said"
+                is ClientFleetEvent.Changed -> "changed"
+            }.unsafeCast<FleetEventKind>()
+
+    /** The phases the run was in when it said this, outermost first, or `null` for a change of status. */
+    public val steps: Array<String>?
+        get() = (event as? ClientFleetEvent.Said)?.steps?.toTypedArray()
+
+    /**
+     * How much what the run said matters, `"info"`, `"saved"`, `"skipped"` or `"error"`, or `null` for a
+     * change of status.
+     */
+    public val level: RunLevel?
+        get() = (event as? ClientFleetEvent.Said)?.level?.argumentName().unsafeCast<RunLevel?>()
 }
 
 /**
@@ -255,7 +321,7 @@ public class FleetEvent internal constructor(private val event: ClientFleetEvent
 public class Fleet
 internal constructor(
     private val fleet: ClientFleet,
-    private val accounts: Accounts,
+    private val accounts: ClientAccounts?,
     private val scope: CoroutineScope,
 ) {
 
@@ -268,7 +334,7 @@ internal constructor(
      * @return what to call the run.
      */
     public fun start(id: String, arguments: Array<String> = emptyArray(), save: Boolean = false): Double =
-        fleet.start(id, CommonOptions(save = save), arguments.toList()).toDouble()
+        fleet.start(id, ClientCommonOptions(save = save), arguments.toList()).toDouble()
 
     /** Stops a run, and says whether there was such a run still to stop. */
     public fun cancel(run: Double): Boolean = fleet.cancel(run.toLong())
@@ -277,18 +343,55 @@ internal constructor(
     public fun runs(): Array<FleetRun> = fleet.runs.value.map(::FleetRun).toTypedArray()
 
     /** What is happening, as it happens. A walk sees only what follows its start. */
-    public fun events(): AsyncIterable<FleetEvent> = fleet.events.toAsyncIterable(scope, ::FleetEvent)
+    public fun events(): AsyncIterable<FleetEvent> =
+        fleet.events.toAsyncIterableEndingWith(scope, ::FleetEvent)
 
     /** Resolves once every run asked for so far has ended. */
-    public fun idle(): Promise<Unit> = scope.promise { fleet.awaitIdle() }
+    public fun idle(): Promise<Unit> = scope.promiseVoid { fleet.awaitIdle() }
 
     /** Runs each bot that has a schedule when it comes round, until the fleet is closed. */
-    public fun serve(): Promise<Unit> = scope.promise { fleet.serve() }
+    public fun serve(): Promise<Unit> = untilClosed { fleet.serve() }
 
     /** Stops every run and closes every account. */
     public fun close() {
         scope.cancel()
-        accounts.close()
+        accounts?.close()
+    }
+
+    /** The bots this fleet runs. */
+    public val registry: BotRegistry
+        get() = BotRegistry(fleet.registry.all.map { (it as SpecBot).spec }.toTypedArray())
+
+    /**
+     * Queues a run of the bot called [id] in its lane, with the common flags and the rest of its command
+     * line.
+     *
+     * @return what to call the run.
+     */
+    public fun startWith(
+        id: String,
+        options: CommonOptions? = null,
+        arguments: Array<String> = emptyArray(),
+    ): Double = fleet.start(id, runOptionsOf(options?.options), arguments.toList()).toDouble()
+
+    /** Every run, each time one changes, starting with how they are now. */
+    public fun watchRuns(): AsyncIterable<Array<FleetRun>> =
+        fleet.runs.toAsyncIterableEndingWith(scope) { views -> views.map(::FleetRun).toTypedArray() }
+
+    /**
+     * Runs each bot that has a schedule when it comes round, with the common flags, until the fleet is
+     * closed.
+     */
+    public fun serveWith(options: CommonOptions): Promise<Unit> = untilClosed { fleet.serve(options.options) }
+
+    /** [work] until it ends or the fleet is closed, which is how a server ends, so not a failure. */
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun untilClosed(work: suspend () -> Unit): Promise<Unit> = GlobalScope.promiseVoid {
+        try {
+            scope.async { work() }.await()
+        } catch (_: CancellationException) {
+            return@promiseVoid
+        }
     }
 }
 
@@ -311,28 +414,26 @@ internal fun createFleet(
     withoutLoggingBanner()
     val scope = CoroutineScope(SupervisorJob())
     return scope.promise {
-        val endpoint = ApiEndpoint(options.server, options.scriptPath ?: DEFAULT_FLEET_SCRIPT_PATH)
+        val endpoint = fleetEndpointOf(options.server, options.scriptPath)
         val accounts =
-            Accounts(
+            ClientAccounts(
                 WikiConfig(userAgent = userAgent(options.contact)),
                 credentials = { account -> credentialsOf(options, account) },
                 clients = { config, login -> WikiClient(config, login, engine = engine) },
             )
-        val stop =
-            options.stopPage?.let { page -> SharedStop.onPage(accounts.wiki(endpoint), page) }
-                ?: StopPolicy.NONE
+        val stop = options.stopPage?.let { page -> SharedStop.onPage(accounts.wiki(endpoint), page) }
         val fleet =
-            ClientFleet(
+            fleetWithDefaults(
                 bots.map(::SpecBot),
                 accounts,
                 endpoint,
-                stop,
                 scope,
                 questions = { bot, question ->
                     val ask = options.onAsk
-                    ask != null && settled(ask(bot, question.title, question.summary)) == true
+                    ask != null && settledResult(ask(bot, question.title, question.summary)) == true
                 },
                 out = { line -> options.onLine?.invoke(line) },
+                stop = stop,
             )
         Fleet(fleet, accounts, scope)
     }
@@ -351,7 +452,12 @@ public fun fleetMain(args: Array<String>, bots: Array<BotSpec>) {
     clientFleetMain(args, bots.map(::SpecBot))
 }
 
-private const val DEFAULT_FLEET_SCRIPT_PATH = "/w"
+/** `fleetMain`, with [prompt] answering a run's question in place of the terminal. */
+@JsExport
+public fun fleetMainWith(args: Array<String>, bots: Array<BotSpec>, prompt: Prompt) {
+    withoutLoggingBanner()
+    clientFleetMain(args, bots.map(::SpecBot), prompt.prompt)
+}
 
 private fun credentialsOf(options: FleetOptions, account: String?): Credentials {
     if (account == null) {
@@ -363,7 +469,8 @@ private fun credentialsOf(options: FleetOptions, account: String?): Credentials 
         ?: Credentials.fromEnvironment("KWIKIBOT_${account.uppercase()}", ::environmentVariable)
 }
 
-private class SpecBot(private val spec: BotSpec) : FleetBot {
+/** A bot written in JavaScript, as a fleet runs it. */
+internal class SpecBot(val spec: BotSpec) : FleetBot {
     override val id: String
         get() = spec.id
 
@@ -381,9 +488,10 @@ private class SpecBot(private val spec: BotSpec) : FleetBot {
         val controller = js("new AbortController()")
         val job = currentCoroutineContext()[Job]
         val listening = job?.invokeOnCompletion { cause -> if (cause != null) controller.abort() }
-        val scope = CoroutineScope(currentCoroutineContext())
+        val calls = SupervisorJob(job)
+        val scope = CoroutineScope(currentCoroutineContext() + calls)
         try {
-            settled(spec.run(RunContext(context, scope, controller.signal)))
+            settledResult(spec.run(RunContext(context, scope, controller.signal)))
         } catch (e: DeclinedError) {
             throw Declined(e.message ?: "declined")
         } catch (e: CancellationException) {
@@ -391,6 +499,7 @@ private class SpecBot(private val spec: BotSpec) : FleetBot {
         } catch (@Suppress("TooGenericExceptionCaught") failure: Throwable) {
             throw BotFailure(failure.message ?: failure.toString())
         } finally {
+            calls.complete()
             listening?.dispose()
         }
     }
@@ -401,5 +510,3 @@ private class SpecBot(private val spec: BotSpec) : FleetBot {
  * itself.
  */
 private class BotFailure(message: String) : Exception(message)
-
-private suspend fun settled(result: Any?): Any? = if (result is Promise<*>) result.await() else result

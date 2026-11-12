@@ -27,7 +27,8 @@ class ServicesTest {
         val instance = entity.claims("P31").single()
         listOf(instance.id, instance.property, instance.rank, instance.snakType, instance.dataType) shouldBe
             listOf("Q42$1", "P31", "normal", "value", "wikibase-item")
-        listOf(instance.value.type, instance.value.value.id) shouldBe listOf("wikibase-entityid", "Q5")
+        listOf(instance.value.asDynamic().type, instance.value.asDynamic().value.id) shouldBe
+            listOf("wikibase-entityid", "Q5")
         JSON.parse<dynamic>(JSON.stringify(instance)).mainsnak.property.unsafeCast<String>() shouldBe "P31"
         val death = entity.bestClaim("P20") ?: error("no best claim")
         listOf(death.snakType, death.rank, death.value) shouldBe listOf("somevalue", "preferred", null)

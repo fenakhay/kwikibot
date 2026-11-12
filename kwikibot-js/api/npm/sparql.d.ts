@@ -1,0 +1,2 @@
+export { COMMONS_QUERY_SERVICE, LINGUA_LIBRE_QUERY_SERVICE, pagePileSource, petScanSavedSource, petScanSource, petScanTitles, sparql, SparqlAuth, sparqlAuthCookie, sparqlAuthNone, sparqlAuthWcqs, sparqlClient, SparqlClient, SparqlRow, sparqlSource, SparqlValue, WIKIDATA_QUERY_SERVICE, withPetScanTitles } from "./core";
+export type { SparqlAuthKind, SparqlClientOptions, SparqlSourceOptions, SparqlValueType } from "./core";

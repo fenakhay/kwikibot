@@ -14,14 +14,17 @@ Kotlin library, compiled to JavaScript.
 npm install kwikibot
 ```
 
-The package is CommonJS with TypeScript definitions, and needs Node 22.3 or newer. Node cannot read
-the names a CommonJS module exports ahead of time, so an ES module imports the package whole:
+The package is CommonJS with TypeScript definitions, and needs Node 22.3 or newer. Its everyday names, such
+as `connect`, `Wiki`, `parse` and `botMain`, come from `"kwikibot"`; the rest come from the area they belong
+to: `kwikibot/client`, `kwikibot/errors`, `kwikibot/wikitext`, `kwikibot/titles`, `kwikibot/bot`,
+`kwikibot/dumps`, `kwikibot/wikibase`, `kwikibot/sparql`, `kwikibot/events`, `kwikibot/fleet`,
+`kwikibot/proofread` and `kwikibot/testing`:
 
 ```js
-import kwikibot from "kwikibot";
+import { connect } from "kwikibot";
 
 const contact = "https://en.wiktionary.org/wiki/User:MyBot";
-const wiki = await kwikibot.connect("en.wiktionary.org", contact);
+const wiki = await connect("en.wiktionary.org", contact);
 
 const page = await wiki.page("volcano");
 for (const template of page.wikitext().templates("col")) {
@@ -45,14 +48,16 @@ A bot run takes a transform that returns the page's new text, or `null` to leave
 and may return a promise of either:
 
 ```js
-const login = new kwikibot.BotPassword("MyBot", "task", process.env.MYBOT_PASSWORD);
-const bot = await kwikibot.connect("en.wikipedia.org", contact, login);
+import { BotPassword, connect, parse } from "kwikibot";
+
+const login = new BotPassword("MyBot", "task", process.env.MYBOT_PASSWORD);
+const bot = await connect("en.wikipedia.org", contact, login);
 
 const report = await bot.run(
   ["Mount Etna", "Mount Vesuvius"],
   "adding [[Category:Volcanoes]]",
   (text) => {
-    const code = kwikibot.parse(text);
+    const code = parse(text);
     if (code.categories().includes("Volcanoes")) return null;
     return code.addCategory("Volcanoes").toString();
   },
@@ -74,7 +79,9 @@ XML dumps read as async iterables, with bzip2 decoded on worker threads so the e
 A browser has no files, so `dumpPagesOf` reads a small dump from bytes, on one thread:
 
 ```js
-for await (const page of kwikibot.dumpPages("enwiktionary-latest-pages-articles.xml.bz2", [0])) {
+import { dumpPages } from "kwikibot/dumps";
+
+for await (const page of dumpPages("enwiktionary-latest-pages-articles.xml.bz2", [0])) {
   if (page.text.includes("{{col|")) console.log(page.title);
 }
 ```
@@ -84,13 +91,15 @@ failed alone, and a schedule can run a bot through `serve`. JavaScript has one t
 at each `await`:
 
 ```js
-const fleet = await kwikibot.createFleet(
+import { createFleet, cron } from "kwikibot/fleet";
+
+const fleet = await createFleet(
   { server: "en.wiktionary.org", contact, login, stopPage: "User:MyBot/Stop", onLine: console.log },
   [
     {
       id: "refresher",
       description: "refreshes pages",
-      schedule: kwikibot.cron("0 3 * * *", "Europe/Berlin"),
+      schedule: cron("0 3 * * *", "Europe/Berlin"),
       run: (context) => context.run(["Volcano"], "null edit", (text) => text, 500),
     },
   ],
@@ -102,6 +111,48 @@ fleet.close();
 
 `fleetMain` is the same thing as a command-line program, with `list`, `run <bot>`, `run --all` and
 `serve`.
+
+`wiki.botRun` is a run with every setting there is, and `botMain` starts one from a command line
+and `kwikibot.toml`:
+
+```js
+import { skipPage } from "kwikibot";
+import { parsePageSource } from "kwikibot/bot";
+
+const report = await wiki.botRun({
+  source: parsePageSource("cat:Volcanoes").titleNotMatching(/\//),
+  stopPolicy: wiki.stopPage(),
+  dryRun: false,
+  maxEdits: 100,
+  readBatch: 50,
+  transform: (page) => {
+    if (page.isRedirect) skipPage("a redirect");
+    return { text: page.text + "\n[[Category:Mountains]]", summary: "adding a category" };
+  },
+  onOutcome: (outcome) => console.log(outcome.title, outcome.kind),
+});
+```
+
+To test a bot without a wiki, `createFakeWiki` makes one in memory. It is a `Wiki`, so `botRun` and the rest
+work on it, and its `FakePageService` reads back what was saved. What the fake does not implement rejects
+saying so, such as `lists`, rather than answering with nothing; `globalThis.fetch` stubbed, in Node or in a
+browser, answers for the whole of a real `connect`, and a `MockTransport` for what `wiki.call` sends.
+`new RecordingContext(wiki)` stands in for a fleet, and `onWarning: failOnDeprecation()`
+fails a test whose request draws a deprecation.
+
+```js
+import { pageSourceOfTitles } from "kwikibot/bot";
+import { createFakeWiki, FakePageService } from "kwikibot/testing";
+
+const pages = new FakePageService({ pages: { Volcano: "ash" } });
+const wiki = createFakeWiki({ pages });
+await wiki.botRun({
+  source: pageSourceOfTitles(["Volcano"]),
+  dryRun: false,
+  transform: (page) => ({ text: page.text + "!", summary: "louder" }),
+});
+console.assert(pages.text("Volcano") === "ash!");
+```
 
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,
 category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps, bot runs

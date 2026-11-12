@@ -718,14 +718,15 @@ Wiktionary too.
 npm install kwikibot
 ```
 
-The package is CommonJS with TypeScript definitions, and needs Node 26 or newer. Node cannot read
-the names a CommonJS module exports ahead of time, so an ES module imports the package whole:
+The package is CommonJS with TypeScript definitions, and needs Node 26 or newer. Its everyday names,
+such as `connect`, `BotPassword` and `parse`, come from `"kwikibot"`, and the rest from the area they
+belong to, such as `kwikibot/wikitext` or `kwikibot/fleet`:
 
 ```js
-import kwikibot from "kwikibot";
+import { connect } from "kwikibot";
 
 const contact = "https://en.wiktionary.org/wiki/User:MyBot";
-const wiki = await kwikibot.connect("en.wiktionary.org", contact);
+const wiki = await connect("en.wiktionary.org", contact);
 
 const page = await wiki.page("volcano");
 for (const template of page.wikitext().templates("col")) {
@@ -746,14 +747,16 @@ as the loop asks, so `break` ends the paging. A bot run takes a transform that r
 new text, or `null` to leave the page alone, and may return a promise of either:
 
 ```js
-const login = new kwikibot.BotPassword("MyBot", "task", process.env.MYBOT_PASSWORD);
-const bot = await kwikibot.connect("en.wikipedia.org", contact, login);
+import { BotPassword, connect, parse } from "kwikibot";
+
+const login = new BotPassword("MyBot", "task", process.env.MYBOT_PASSWORD);
+const bot = await connect("en.wikipedia.org", contact, login);
 
 const report = await bot.run(
   ["Mount Etna", "Mount Vesuvius"],
   "adding [[Category:Volcanoes]]",
   (text) => {
-    const code = kwikibot.parse(text);
+    const code = parse(text);
     if (code.categories().includes("Volcanoes")) return null;
     return code.addCategory("Volcanoes").toString();
   },
@@ -774,7 +777,7 @@ respect it returns `null` when `code.templates("nobots").length` is not zero. Pa
 100 ms between reads and 10 s between saves.
 
 `connect` takes the wiki's host name, and a fourth argument for a `scriptPath` other than `/w`;
-`kwikibot.detect(url, contact)` finds both from any page URL. Requests go out as
+`detect(url, contact)` finds both from any page URL. Requests go out as
 `kwikibot/<version>` with your contact; the bot's own name cannot be set.
 
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,

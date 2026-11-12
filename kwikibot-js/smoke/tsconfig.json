@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmitOnError": true,
+    "skipLibCheck": false,
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "build",
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "files": ["bot.ts"],
+  "include": ["typed/**/*.ts"]
+}

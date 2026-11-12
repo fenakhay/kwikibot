@@ -11,8 +11,8 @@ class RunTest {
     private val login = BotPassword("TestBot", "task", "secret")
     private val pages = mapOf("Volcano" to "ash\n", "Etna" to "lava\n")
 
-    private val tephra: (String, String) -> Any? = { text, _ ->
-        if ("ash" in text) text.replace("ash", "tephra") else null
+    private val tephra: (String, String) -> Awaitable<String?> = { text, _ ->
+        answering(if ("ash" in text) text.replace("ash", "tephra") else null)
     }
 
     @Test
@@ -66,7 +66,11 @@ class RunTest {
 
         val report =
             wiki
-                .run(arrayOf("Etna"), "adding", { text, title -> Promise.resolve("$text[[$title]]\n") })
+                .run(
+                    arrayOf("Etna"),
+                    "adding",
+                    { text, title -> answering(Promise.resolve("$text[[$title]]\n")) },
+                )
                 .await()
 
         report.pending shouldBe 1
@@ -74,10 +78,22 @@ class RunTest {
     }
 
     @Test
+    fun `a transform may answer with a thenable that is not a promise`() = runTest {
+        val mock = MockWiki(pages)
+        val wiki = mock.open(login)
+        val thenable: dynamic = js("({})")
+        thenable.then = { resolve: (String) -> Unit, _: (Throwable) -> Unit -> resolve("settled\n") }
+
+        wiki.run(arrayOf("Etna"), "adding", { _, _ -> untyped(thenable) }, save = true).await()
+
+        mock.saved["Etna"] shouldBe "settled\n"
+    }
+
+    @Test
     fun `a transform answering with neither text nor null stops the run with an error`() = runTest {
         val wiki = MockWiki(pages).open(login)
 
-        val failure = assertFails { wiki.run(arrayOf("Etna"), "naming it", { _, _ -> 42 }).await() }
+        val failure = assertFails { wiki.run(arrayOf("Etna"), "naming it", { _, _ -> untyped(42) }).await() }
 
         failure.message shouldBe "the transform for Etna returned neither text nor null"
         wiki.close()

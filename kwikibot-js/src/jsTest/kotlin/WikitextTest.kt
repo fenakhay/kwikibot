@@ -97,7 +97,7 @@ class WikitextTest {
         val code = parse("[[volcano]] volcano {{volcano}}")
 
         code.replaceText(RegExp("volcano"), "mountain").toString() shouldBe "[[volcano]] mountain {{volcano}}"
-        code.replaceText(RegExp("volcano"), "mountain", "everywhere").toString() shouldBe
+        code.replaceText(RegExp("volcano"), "mountain", literal("everywhere")).toString() shouldBe
             "[[mountain]] mountain {{mountain}}"
     }
 
@@ -110,7 +110,9 @@ class WikitextTest {
     @Test
     fun `a flag with no equivalent here and an unknown scope are refused`() {
         assertFailsWith<IllegalArgumentException> { parse("a").replaceText(RegExp("a", "s"), "b") }
-        assertFailsWith<IllegalArgumentException> { parse("a").replaceText(RegExp("a"), "b", "templates") }
+        assertFailsWith<IllegalArgumentException> {
+            parse("a").replaceText(RegExp("a"), "b", literal("templates"))
+        }
     }
 
     @Test

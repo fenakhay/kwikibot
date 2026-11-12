@@ -1,16 +1,27 @@
+import com.fenakhay.kwikibot.bindings.wikitext.categoryPrefixesOf
+import com.fenakhay.kwikibot.bindings.wikitext.textScopeNamed
+import com.fenakhay.kwikibot.bindings.wikitext.textScopeOf
 import com.fenakhay.kwikibot.wikitext.Markup
 import com.fenakhay.kwikibot.wikitext.TextScope
+import com.fenakhay.kwikibot.wikitext.TitleRules as ClientTitleRules
 import com.fenakhay.kwikibot.wikitext.Wikitext as Parser
 import com.fenakhay.kwikibot.wikitext.node.Parameter as ParsedParameter
 import com.fenakhay.kwikibot.wikitext.node.Template as ParsedTemplate
 import com.fenakhay.kwikibot.wikitext.node.WikiLink as ParsedLink
 import com.fenakhay.kwikibot.wikitext.ops.Section as ParsedSection
 import com.fenakhay.kwikibot.wikitext.ops.addCategory
+import com.fenakhay.kwikibot.wikitext.ops.categories
 import com.fenakhay.kwikibot.wikitext.ops.categoryNames
+import com.fenakhay.kwikibot.wikitext.ops.changeCategory
+import com.fenakhay.kwikibot.wikitext.ops.containsText
+import com.fenakhay.kwikibot.wikitext.ops.languageLinks
+import com.fenakhay.kwikibot.wikitext.ops.mapNodes
 import com.fenakhay.kwikibot.wikitext.ops.outline
 import com.fenakhay.kwikibot.wikitext.ops.removeCategory
 import com.fenakhay.kwikibot.wikitext.ops.replaceSection
 import com.fenakhay.kwikibot.wikitext.ops.replaceText
+import com.fenakhay.kwikibot.wikitext.ops.sortLanguageLinks
+import com.fenakhay.kwikibot.wikitext.ops.textIn
 import kotlin.js.RegExp
 
 /**
@@ -71,8 +82,153 @@ public class Wikitext internal constructor(internal val markup: Markup) {
      * alone; or `"everywhere"`. The pattern's `i` and `m` flags apply; `s` and `y` have no equivalent here
      * and are refused.
      */
-    public fun replaceText(pattern: RegExp, replacement: String, scope: String = "prose"): Wikitext =
-        Wikitext(markup.replaceText(pattern.toRegex(), replacement, textScope(scope)))
+    public fun replaceText(
+        pattern: RegExp,
+        replacement: String,
+        scope: TextScopeName = "prose".unsafeCast<TextScopeName>(),
+    ): Wikitext =
+        Wikitext(
+            markup.replaceText(pattern.toRegex(), replacement, textScopeNamed(scope.unsafeCast<String>()))
+        )
+
+    /**
+     * This text with every match of [pattern] replaced by [replacement], taken as it is, in the regions
+     * [scope] opens up. The pattern's `i` and `m` flags apply; `s` and `y` are refused.
+     */
+    public fun replaceTextIn(pattern: RegExp, replacement: String, scope: TextScopeOptions): Wikitext =
+        Wikitext(markup.replaceText(pattern.toRegex(), replacement, scopeOf(scope)))
+
+    /**
+     * This text with every match of [pattern] replaced by what [replacement] makes of it, in the regions
+     * [scope] opens up, the prose a reader sees unless given. The pattern's `i` and `m` flags apply; `s` and
+     * `y` are refused.
+     */
+    public fun replaceTextWith(
+        pattern: RegExp,
+        replacement: (match: TextMatch) -> String,
+        scope: TextScopeOptions? = null,
+    ): Wikitext =
+        Wikitext(markup.replaceText(pattern.toRegex(), scopeOf(scope)) { replacement(TextMatch(it)) })
+
+    /** Whether any text in the regions [scope] opens up, the prose unless given, matches [pattern]. */
+    public fun containsText(pattern: RegExp, scope: TextScopeOptions? = null): Boolean =
+        markup.containsText(pattern.toRegex(), scopeOf(scope))
+
+    /** The text in the regions [scope] opens up, the prose unless given, node by node. */
+    public fun textIn(scope: TextScopeOptions? = null): Array<String> =
+        markup.textIn(scopeOf(scope)).toTypedArray()
+
+    /** The top-level nodes, in the order written. */
+    public val nodes: Array<Node>
+        get() = markup.nodes.map(::Node).toTypedArray()
+
+    /** Every node, those nested inside templates, links and tags included. */
+    public fun allNodes(): Array<Node> = markup.allNodes().map(::Node).toList().toTypedArray()
+
+    /**
+     * The templates that transclude one of [names] under [rules], nested ones included, Wikimedia's rules
+     * unless given. Each name is read as a page, so `l`, `Template:l` and `{{subst:l}}` all name
+     * `Template:L`.
+     */
+    public fun templatesNamed(names: Array<String>, rules: TitleRules? = null): Array<Template> =
+        markup
+            .templates(names.toList(), rules?.rules ?: ClientTitleRules.DEFAULT)
+            .map(::Template)
+            .toTypedArray()
+
+    /** The headings that open sections, not those inside a template parameter, a link or a `<ref>`. */
+    public fun headings(): Array<Heading> = markup.headings().map(::Heading).toTypedArray()
+
+    /** The tags, nested ones included, or only those called [name] when one is given. */
+    public fun tags(name: String? = null): Array<Tag> = markup.tags(name).map(::Tag).toTypedArray()
+
+    /** The comments, nested ones included. */
+    public fun comments(): Array<Comment> = markup.comments().map(::Comment).toTypedArray()
+
+    /** This text with every occurrence of [target], nested ones included, replaced by [replacement]. */
+    public fun replace(target: Node, replacement: Node): Wikitext =
+        Wikitext(markup.replace(target.node, replacement.node))
+
+    /** This text without [target]. */
+    public fun remove(target: Node): Wikitext = Wikitext(markup.remove(target.node))
+
+    /** This text with every template replaced by what [transform] makes of it. */
+    public fun mapAllTemplates(transform: (template: Template) -> Template): Wikitext =
+        Wikitext(markup.mapTemplates(null as String?) { transform(Template(it)).template })
+
+    /** This text with every template transcluding one of [names] under [rules] replaced by [transform]'s. */
+    public fun mapTemplatesNamed(
+        names: Array<String>,
+        transform: (template: Template) -> Template,
+        rules: TitleRules? = null,
+    ): Wikitext =
+        Wikitext(
+            markup.mapTemplates(names.toList(), rules?.rules ?: ClientTitleRules.DEFAULT) {
+                transform(Template(it)).template
+            }
+        )
+
+    /**
+     * This text with every node rewritten by [transform], those inside it first. It does not go into a tag
+     * MediaWiki does not parse, nor `<code>`.
+     */
+    public fun mapNodes(transform: (node: Node) -> Node): Wikitext =
+        Wikitext(markup.mapNodes { transform(Node(it)).node })
+
+    /** This text followed by [other]. */
+    public fun plus(other: Wikitext): Wikitext = Wikitext(markup + other.markup)
+
+    /** Where each piece of this text sits in what it writes back as. Ask with what a query here returned. */
+    public fun ranges(): SourceRanges = SourceRanges(markup.ranges())
+
+    /**
+     * The links filing the page in a category, or naming one, under [prefixes], `"Category"` unless given.
+     */
+    public fun categoryLinks(prefixes: Array<String>? = null): Array<Link> =
+        markup.categories(categoryPrefixesOf(prefixes?.asList())).map(::Link).toTypedArray()
+
+    /** The names of the page's categories under [prefixes], without the prefix or a sort key. */
+    public fun categoryNamesIn(prefixes: Array<String>): Array<String> =
+        markup.categoryNames(prefixes.toSet()).toTypedArray()
+
+    /** The language links, `[[fr:Foo]]` and friends, among the language [codes] this wiki recognises. */
+    public fun languageLinks(codes: Array<String>): Array<Link> =
+        markup.languageLinks(codes.toSet()).map(::Link).toTypedArray()
+
+    /** This text in category [name] as well, written with the namespace name [prefix] the wiki uses. */
+    public fun addCategoryAs(name: String, prefix: String, sortKey: String? = null): Wikitext =
+        Wikitext(markup.addCategory(name, sortKey, prefix))
+
+    /** This text out of category [name], which it names with the namespace name [prefix]. */
+    public fun removeCategoryAs(name: String, prefix: String): Wikitext =
+        Wikitext(markup.removeCategory(name, prefix))
+
+    /** This text with category [from] replaced by [to], keeping the sort key. */
+    public fun changeCategory(from: String, to: String, prefix: String = "Category"): Wikitext =
+        Wikitext(markup.changeCategory(from, to, prefix))
+
+    /**
+     * This text with the language links among [codes] sorted, by [order] when given and else by code. Only
+     * the links move.
+     */
+    public fun sortLanguageLinks(
+        codes: Array<String>,
+        order: ((a: String, b: String) -> Int)? = null,
+    ): Wikitext =
+        Wikitext(
+            if (order == null) markup.sortLanguageLinks(codes.toSet())
+            else markup.sortLanguageLinks(codes.toSet(), Comparator(order))
+        )
+
+    /** This text with [old] replaced by [replacement], read back as a wiki with [options] reads it. */
+    public fun replaceSectionWith(old: Section, replacement: Section, options: ParseOptions): Wikitext =
+        Wikitext(markup.replaceSection(old.section, replacement.section, options.options))
+
+    /** Whether [other] is the same wikitext, node for node. */
+    override fun equals(other: Any?): Boolean = other is Wikitext && markup == other.markup
+
+    /** A hash that agrees with [equals]. */
+    override fun hashCode(): Int = markup.hashCode()
 
     /** The wikitext, byte for byte as it was parsed apart from what was changed. */
     override fun toString(): String = markup.serialize()
@@ -116,13 +272,52 @@ public class Template internal constructor(internal val template: ParsedTemplate
     /** This template without parameter [name]. */
     public fun withoutParameter(name: String): Template = Template(template.withoutParameter(name))
 
+    /** The name as written, comments and whitespace included. */
+    public val rawName: String
+        get() = template.rawName
+
+    /** The name as wikitext, which may itself contain markup. */
+    public val nameMarkup: Wikitext
+        get() = Wikitext(template.name)
+
+    /** The parameter [name], or `null` when it is not given. */
+    public fun parameter(name: String): Parameter? = template.parameter(name)?.let(::Parameter)
+
+    /** Whether this is a parser function or a variable, such as `{{#if:...}}` or `{{PAGENAME}}`. */
+    public val isParserFunction: Boolean
+        get() = template.isParserFunction
+
+    /** Whether this is a parser function or a variable under [rules]. */
+    public fun isParserFunctionIn(rules: TitleRules): Boolean = template.isParserFunction(rules.rules)
+
+    /** The parser function or variable this calls, such as `#switch` or `PAGENAME`; `null` for a template. */
+    public val functionName: String?
+        get() = template.functionName
+
+    /** The parser function or variable this calls, under [rules]. */
+    public fun functionNameIn(rules: TitleRules): String? = template.functionName(rules.rules)
+
+    /** What a parser function is given after its colon, such as `sa-decl` in `{{#invoke:sa-decl|show}}`. */
+    public val functionArgument: String?
+        get() = template.functionArgument
+
+    /** What a parser function is given after its colon, under [rules]. */
+    public fun functionArgumentIn(rules: TitleRules): String? = template.functionArgument(rules.rules)
+
+    /** The page this transcludes, normalised under [rules], or `null` when it transcludes none. */
+    public fun keyIn(rules: TitleRules): String? = template.key(rules.rules)
+
+    /** This template as a node, to give to `Wikitext.replace` and the like. */
+    public val node: Node
+        get() = Node(template)
+
     /** The template as wikitext. */
     override fun toString(): String = template.serialize()
 }
 
 /** One parameter of a template. */
 @JsExport
-public class Parameter internal constructor(private val parameter: ParsedParameter) {
+public class Parameter internal constructor(internal val parameter: ParsedParameter) {
 
     /** The name as MediaWiki reads it, or for a positional parameter its number. */
     public val name: String
@@ -140,13 +335,25 @@ public class Parameter internal constructor(private val parameter: ParsedParamet
     public val rawValue: String
         get() = parameter.rawValue
 
+    /** The name as written, or `null` for a positional parameter, which has none written. */
+    public val rawName: String?
+        get() = parameter.rawKey
+
+    /** The name as wikitext, which for a positional parameter is its number. */
+    public val nameMarkup: Wikitext
+        get() = Wikitext(parameter.name)
+
+    /** The value as wikitext. */
+    public val valueMarkup: Wikitext
+        get() = Wikitext(parameter.value)
+
     /** The parameter as wikitext. */
     override fun toString(): String = parameter.serialize()
 }
 
 /** A link to another page of the wiki, `[[target|text]]`. */
 @JsExport
-public class Link internal constructor(private val link: ParsedLink) {
+public class Link internal constructor(internal val link: ParsedLink) {
 
     /** The page linked to, as plain text. */
     public val target: String
@@ -155,6 +362,18 @@ public class Link internal constructor(private val link: ParsedLink) {
     /** What is shown in place of the target when the link is piped, as visible text, or `null`. */
     public val text: String?
         get() = link.text?.text
+
+    /** The page linked to, as wikitext. */
+    public val targetMarkup: Wikitext
+        get() = Wikitext(link.target)
+
+    /** What is shown in place of the target, as wikitext, or `null`. */
+    public val textMarkup: Wikitext?
+        get() = link.text?.let(::Wikitext)
+
+    /** This link as a node, to give to `Wikitext.replace` and the like. */
+    public val node: Node
+        get() = Node(link)
 
     /** The link as wikitext. */
     override fun toString(): String = link.serialize()
@@ -186,18 +405,65 @@ public class Section internal constructor(internal val section: ParsedSection) {
     /** This section with what is directly under its heading replaced by [content]. */
     public fun withContent(content: Wikitext): Section = Section(section.withContent(content.markup))
 
+    /** The heading that opened this section, or `null` for the lead. */
+    public val heading: Heading?
+        get() = section.heading?.let(::Heading)
+
+    /** The nodes directly under the heading, before any subsection. */
+    public val nodes: Array<Node>
+        get() = section.nodes.map(::Node).toTypedArray()
+
+    /** This section and every section nested inside it, depth first. */
+    public fun all(): Array<Section> = section.all().map(::Section).toList().toTypedArray()
+
+    /** The sections directly under this one headed [title]. */
+    public fun children(title: String): Array<Section> = section.children(title).map(::Section).toTypedArray()
+
+    /** This section with [subsection] added at the end. */
+    public fun withSubsection(subsection: Section): Section =
+        Section(section.withSubsection(subsection.section))
+
+    /** This section with [subsection] added at [index] among its direct children. Throws outside them. */
+    public fun withSubsectionAt(index: Int, subsection: Section): Section =
+        Section(section.withSubsectionAt(index, subsection.section))
+
+    /** This section with [target] replaced by [replacement] wherever it is nested. */
+    public fun replace(target: Section, replacement: Section): Section =
+        Section(section.replace(target.section, replacement.section))
+
     /** The section as wikitext, heading and subsections included. */
     override fun toString(): String = section.serialize()
 }
 
-private fun textScope(name: String): TextScope =
-    when (name) {
-        "prose" -> TextScope.PROSE
-        "everywhere" -> TextScope.EVERYWHERE
-        else -> throw IllegalArgumentException("unknown scope '$name'; use \"prose\" or \"everywhere\"")
-    }
+/** The prose a reader sees: not templates, link targets, comments or nowiki. */
+@JsExport public val TEXT_SCOPE_PROSE: TextScopeOptions = textScopeOptions(TextScope.PROSE)
 
-private fun RegExp.toRegex(): Regex {
+/** Every piece of text, wherever it sits. */
+@JsExport public val TEXT_SCOPE_EVERYWHERE: TextScopeOptions = textScopeOptions(TextScope.EVERYWHERE)
+
+internal fun textScopeOptions(scope: TextScope): TextScopeOptions {
+    val options: dynamic = js("({})")
+    options.templates = scope.templates
+    options.linkTargets = scope.linkTargets
+    options.comments = scope.comments
+    options.rawTags = scope.rawTags
+    options.headings = scope.headings
+    options.tagAttributes = scope.tagAttributes
+    return options.unsafeCast<TextScopeOptions>()
+}
+
+internal fun scopeOf(options: TextScopeOptions?): TextScope =
+    textScopeOf(
+        options?.templates,
+        options?.linkTargets,
+        options?.comments,
+        options?.rawTags,
+        options?.headings,
+        options?.tagAttributes,
+    )
+
+/** This regular expression as Kotlin's, refusing the flags that have no equivalent. */
+internal fun RegExp.toRegex(): Regex {
     val flags: String = asDynamic().flags.unsafeCast<String>()
     val unsupported = flags.filter { it == 's' || it == 'y' }
     require(unsupported.isEmpty()) { "the regular expression flags '$unsupported' are not supported" }
