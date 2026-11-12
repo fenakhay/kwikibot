@@ -5,6 +5,7 @@ import kotlin.js.Promise
 import kotlin.test.Test
 import kotlinx.coroutines.await
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.files.Path
 
 class FleetHostTest {
 
@@ -71,7 +72,7 @@ class FleetHostTest {
         run.isFinished shouldBe true
         seenStop shouldBe true
         seenOptions?.limit shouldBe 3
-        directory shouldBe if (hasFileSystem()) "runs/full/1" else null
+        directory shouldBe if (hasFileSystem()) Path("runs", "full", "1").toString() else null
         lines shouldBe listOf("[full] saved one")
         listOf(questions.single().title, questions.single().summary, questions.single().diff) shouldBe
             listOf("Go?", "yes", "+x")
