@@ -99,6 +99,12 @@ async function aSimpleFleet(): Promise<void> {
     },
   };
   let reviewerName: string | undefined;
+  let waiterSignal: AbortSignal | undefined;
+  let waiterHeardAbort = false;
+  let waiterStarted: () => void = () => {};
+  const waiterHasStarted = new Promise<void>((resolve) => {
+    waiterStarted = resolve;
+  });
   const bots: BotSpec[] = [
     {
       id: "reader",
@@ -149,12 +155,12 @@ async function aSimpleFleet(): Promise<void> {
         const signal: AbortSignal = context.signal;
         assert.ok(signal instanceof AbortSignal);
         assert.equal(signal.aborted, false);
-        await new Promise<void>((resolve) => {
-          signal.addEventListener("abort", () => {
-            resolve();
-          });
+        waiterSignal = signal;
+        signal.addEventListener("abort", () => {
+          waiterHeardAbort = true;
         });
-        assert.equal(signal.aborted, true);
+        waiterStarted();
+        await new Promise<void>(() => {});
       },
     },
   ];
@@ -172,10 +178,12 @@ async function aSimpleFleet(): Promise<void> {
     fleet.start("asker");
     const waiting = fleet.start("waiter", [], false);
     assert.equal(statusOf(fleet, "waiter") === "done", false);
-    await new Promise((resolve) => {
-      setTimeout(resolve, 20);
-    });
+    await waiterHasStarted;
+    assert.equal(waiterHeardAbort, false);
     assert.equal(fleet.cancel(waiting), true);
+    assert.equal(waiterHeardAbort, true);
+    assert.equal(waiterSignal?.aborted, true);
+    assert.equal((waiterSignal?.reason as Error | undefined)?.name, "AbortError");
     assert.equal(fleet.cancel(12345), false);
 
     const idle: Promise<void> = fleet.idle();
@@ -581,7 +589,9 @@ function rejectedFleetShapes(fleet: Fleet, context: RunContext, run: FleetRun, e
   void context.askQuestion({ summary: "what?" });
   // @ts-expect-error run ids are numbers
   fleet.cancel("1");
-  void [status, compared, kind, nothing];
+  // @ts-expect-error a look-alike is no schedule: the fleet could not read when it fires
+  const schedule: Schedule = { next: (after: Date) => after };
+  void [status, compared, kind, nothing, schedule];
 }
 void rejectedFleetShapes;
 

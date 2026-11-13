@@ -68,12 +68,13 @@ public class DumpPage internal constructor(private val page: ClientDumpPage) {
  * The pages of the dump file at [path], in the dump's order, as an async iterable. Plain XML, `.gz` or
  * `.bz2`, going by the name. Node only.
  *
- * bzip2 is decoded on [workers] worker threads, one per processor unless told otherwise, so reading a dump
- * leaves the event loop free. Stopping the loop early, with `break`, stops the reading and the threads.
+ * bzip2 is decoded on worker threads, one per processor or [workers] if that is fewer, so reading a dump
+ * leaves the event loop free. Stopping the loop early, with `break`, stops the reading and the threads. A
+ * damaged dump rejects the walk after every whole page before the damage.
  *
  * @param path the dump.
  * @param namespaces the namespaces wanted, or every one when `null`.
- * @param workers how many threads to decode on.
+ * @param workers how many threads to work on, of which decoding takes at most one per processor.
  */
 @JsExport
 @OptIn(DelicateCoroutinesApi::class)
@@ -117,7 +118,7 @@ public fun dumpPagesOf(
  * @param path the dump.
  * @param block what to do with each page.
  * @param namespaces the namespaces wanted, or every one when `null`.
- * @param workers how many threads to decode on.
+ * @param workers how many threads to work on, of which decoding takes at most one per processor.
  */
 @JsExport
 @OptIn(DelicateCoroutinesApi::class)
@@ -128,7 +129,7 @@ public fun scanDump(
     workers: Int? = null,
 ): Promise<Unit> = GlobalScope.promiseVoid {
     scanDumpWithDefaults(Path(path), namespaces?.asList(), workers) { page ->
-        val _ = settledResult(block(DumpPage(page)))
+        val _ = settledCall { block(DumpPage(page)) }
     }
 }
 

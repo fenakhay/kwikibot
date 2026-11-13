@@ -2,19 +2,19 @@ package com.fenakhay.kwikibot.client.model
 
 import com.fenakhay.kwikibot.client.model.dump.compressionOf
 import com.fenakhay.kwikibot.client.model.dump.dumpFlow
+import com.fenakhay.kwikibot.client.model.dump.openDumpFile
 import com.fenakhay.kwikibot.client.model.dump.scanDump
 import com.fenakhay.kwikibot.client.model.dump.sequentialPages
 import kotlinx.coroutines.flow.Flow
 import kotlinx.io.Source
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 
 /** Reads a MediaWiki XML dump without holding it in memory. */
 public actual object XmlDump {
 
     /** See the common declaration. */
     public actual fun pages(path: Path, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
-        yieldAll(sequentialPages(SystemFileSystem.source(path), compressionOf(path), namespaces))
+        yieldAll(sequentialPages(openDumpFile(path), compressionOf(path), namespaces))
     }
 
     /** See the common declaration. */

@@ -5,14 +5,25 @@ import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.LanguageInfo
 import com.fenakhay.kwikibot.model.TextDirection
 import com.fenakhay.kwikibot.net.auth.TokenStore
+import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import com.fenakhay.kwikibot.net.transport.ApiRequest
+import com.fenakhay.kwikibot.net.transport.MediaWikiTransport
 import com.fenakhay.kwikibot.testkit.MockTransport
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
 
 /** What the meta service makes of site information, messages and languages that say little. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class MetaAnswersTest {
 
     @Test
@@ -80,6 +91,53 @@ class MetaAnswersTest {
         val sent = transport.requests.single { it.action == "tag" }.params
         sent["remove"] shouldBe "mobile edit"
         sent["add"].shouldBeNull()
+    }
+
+    /** A wiki that answers nothing while [hold] is set, counting what it is asked. */
+    private class HeldTransport(private val answer: String) : MediaWikiTransport {
+        override val endpoint = ApiEndpoint("test.example.org")
+        var hold: CompletableDeferred<Unit>? = null
+        var calls = 0
+
+        override suspend fun call(request: ApiRequest): JsonObject {
+            calls++
+            hold?.await()
+            return MockTransport.json(answer)
+        }
+    }
+
+    @Test
+    fun `callers asking for a message at once make one request between them`() = runTest {
+        val release = CompletableDeferred<Unit>()
+        val transport = HeldTransport("""{"query":{"allmessages":[{"name":"edit","content":"Edit"}]}}""")
+        transport.hold = release
+        val service = ApiMetaService(transport, TokenStore(transport))
+
+        val asking = List(2) { async { service.message("edit") } }
+        runCurrent()
+        release.complete(Unit)
+
+        asking.awaitAll() shouldBe listOf("Edit", "Edit")
+        transport.calls shouldBe 1
+    }
+
+    @Test
+    fun `reading a property takes its turn with one being written`() = runTest {
+        val release = CompletableDeferred<Unit>()
+        val transport = HeldTransport("""{"query":{"general":{"a":1},"other":{"b":2}}}""")
+        val service = ApiMetaService(transport, TokenStore(transport))
+        val general = service.property("general")
+        transport.hold = release
+
+        val writing = async { service.property("other") }
+        runCurrent()
+        val reading = async { service.property("general") }
+        runCurrent()
+
+        reading.isCompleted shouldBe false
+        release.complete(Unit)
+        reading.await() shouldBe general
+        writing.await().shouldNotBeNull()
     }
 
     private fun meta(answer: String): MetaService {

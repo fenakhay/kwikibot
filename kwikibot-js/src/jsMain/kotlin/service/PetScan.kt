@@ -106,7 +106,7 @@ internal fun <T> withPetScanTitles(
 ): Promise<T> = GlobalScope.promise {
     WikiHttpClient.create(engine = engine).use { http ->
         ExternalSources.withPetScanTitles(query.toMap(), http, agent.orContact(contact)) { titles ->
-            settled(use(titles.asFlow().toAsyncIterable(GlobalScope) { it }))
+            settled { use(titles.asFlow().toAsyncIterable(GlobalScope) { it }) }
         }
     }
 }

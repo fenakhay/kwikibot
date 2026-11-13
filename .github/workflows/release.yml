@@ -13,7 +13,7 @@ jobs:
     outputs:
       version: ${{ steps.read.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - id: read
         run: |
@@ -30,14 +30,14 @@ jobs:
     runs-on: macos-26
     environment: maven-central
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           distribution: temurin
           java-version: 25
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
 
       - name: Build and check
         run: ./gradlew build jvm21Test detekt checkKotlinAbi -x liveTest -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
@@ -51,7 +51,7 @@ jobs:
         run: ./gradlew nmcpPublishAggregationToCentralPortal -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
 
       - name: Say what is left to do by hand
-        run: echo "The deployment is on the Central Portal and stays private until it is published there." >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Maven artifacts are not public yet. The deployment waits on the Central Portal until it is published there by hand, while npm and the GitHub release go out without it." >> "$GITHUB_STEP_SUMMARY"
 
   npm:
     needs: [version, maven-central]
@@ -61,16 +61,16 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           distribution: temurin
           java-version: 25
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 26
 
@@ -85,8 +85,9 @@ jobs:
           node detect.mjs https://example.org/kwikibot-release
           node dump.mjs
           node fleet.mjs https://example.org/kwikibot-release
+          node lifetime.mjs
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 26
           registry-url: https://registry.npmjs.org
@@ -99,7 +100,9 @@ jobs:
           if npm view "kwikibot@$VERSION" version > /dev/null 2>&1; then
             echo "kwikibot@$VERSION is already on npm"
           else
-            npm publish --provenance --access public
+            latest=$(npm view kwikibot dist-tags.latest 2> /dev/null || true)
+            tag=$(python3 "$GITHUB_WORKSPACE/.github/scripts/npm_dist_tag.py" "$VERSION" "$latest")
+            npm publish --provenance --access public --tag "$tag"
           fi
 
   package:
@@ -127,14 +130,14 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           distribution: temurin
           java-version: 25
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
 
       - name: Build the native binary
         run: ./gradlew :kwikibot-cli:${{ matrix.target }}AppArchive -PreleaseVersion=${{ needs.version.outputs.version }} --stacktrace
@@ -166,7 +169,7 @@ jobs:
           "$binary" detect https://en.wiktionary.org
           "$binary" whoami --contact https://example.org/kwikibot-ci
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: package-${{ matrix.name }}
           path: kwikibot-cli/build/distributions/*
@@ -178,9 +181,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: artifacts
           merge-multiple: true
@@ -210,11 +213,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: main
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: package-windows-x64
           path: artifacts
@@ -230,7 +233,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add bucket/kwikibot.json README.md
           if git diff --cached --quiet; then
-            echo "The bucket and the README already point at $GITHUB_REF_NAME"
+            echo "The bucket and the README have nothing to change for $GITHUB_REF_NAME"
           else
             git commit -m "build(release): point the bucket and the README at $GITHUB_REF_NAME"
             git push origin main || (git pull --rebase origin main && git push origin main)
@@ -241,9 +244,9 @@ jobs:
     if: vars.HOMEBREW_TAP != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: artifacts
           merge-multiple: true
@@ -270,5 +273,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/kwikibot.rb
-          git commit -m "kwikibot $VERSION"
-          git push || (git pull --rebase && git push)
+          if git diff --cached --quiet; then
+            echo "The tap has nothing to change for kwikibot $VERSION"
+          else
+            git commit -m "kwikibot $VERSION"
+            git push || (git pull --rebase && git push)
+          fi

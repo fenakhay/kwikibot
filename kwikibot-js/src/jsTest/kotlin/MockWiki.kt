@@ -25,8 +25,13 @@ import kotlinx.serialization.json.JsonPrimitive
  *
  * @param pages the pages it has, by title, each at revision 9001 until saved.
  * @param members the titles in Category:Volcanoes.
+ * @param password what logging in has to say.
  */
-class MockWiki(pages: Map<String, String> = emptyMap(), private val members: List<String> = emptyList()) {
+class MockWiki(
+    pages: Map<String, String> = emptyMap(),
+    private val members: List<String> = emptyList(),
+    private val password: String = "secret",
+) {
 
     /** The parameters of every request, in order. */
     val requests: MutableList<Map<String, String>> = mutableListOf()
@@ -96,7 +101,7 @@ class MockWiki(pages: Map<String, String> = emptyMap(), private val members: Lis
         else parameters["action"].orEmpty()
 
     private fun login(parameters: Map<String, String>): String =
-        if (parameters["lgpassword"] == "secret") {
+        if (parameters["lgpassword"] == password) {
             account = parameters.getValue("lgname").substringBefore('@')
             """{"login":{"result":"Success","lguserid":7,"lgusername":"$account"}}"""
         } else {

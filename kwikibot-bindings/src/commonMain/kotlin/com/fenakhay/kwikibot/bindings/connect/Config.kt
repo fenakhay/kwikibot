@@ -2,7 +2,9 @@ package com.fenakhay.kwikibot.bindings.connect
 
 import com.fenakhay.kwikibot.bindings.common.Setting
 import com.fenakhay.kwikibot.bindings.common.resolve
+import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.client.WikiConfig
+import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.Kwikibot
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.Throttle
@@ -89,3 +91,14 @@ public fun httpOf(
 /** Where the API of the wiki at [server] is: under `/w` and over HTTPS unless told. */
 public fun endpointOf(server: String, scriptPath: String? = null, secure: Boolean? = null): ApiEndpoint =
     ApiEndpoint(server, scriptPath ?: DEFAULT_SCRIPT_PATH, secure ?: true)
+
+/** Where the API of [family]'s wiki in [language] is: where the family says, unless told otherwise. */
+public fun endpointOf(
+    language: String,
+    family: Family,
+    scriptPath: String? = null,
+    secure: Boolean? = null,
+): ApiEndpoint {
+    val endpoint = family.endpoint(LangCode(language))
+    return ApiEndpoint(endpoint.server, scriptPath ?: endpoint.scriptPath, secure ?: endpoint.secure)
+}

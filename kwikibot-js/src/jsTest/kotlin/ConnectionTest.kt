@@ -27,6 +27,58 @@ class ConnectionTest {
 
     private val mock = MockWiki()
 
+    private fun anyFamily(): Family = FAMILY_WIKTIONARY
+
+    @Test
+    fun `connectFamily goes where scriptPath and secure say`() = runTest {
+        val wiki =
+            connectFamily(
+                    "fr",
+                    anyFamily(),
+                    contact,
+                    settings("scriptPath" to "/custom", "secure" to false),
+                    mock.engine,
+                )
+                .await()
+
+        val url = mock.engine.requestHistory.first().url.toString()
+        url shouldStartWith "http://fr.wiktionary.org/custom/api.php"
+        wiki.close()
+    }
+
+    @Test
+    fun `connectFamily goes where the family says when told nothing else`() = runTest {
+        val wiki = connectFamily("fr", anyFamily(), contact, settings(), mock.engine).await()
+
+        mock.engine.requestHistory.first().url.toString() shouldStartWith
+            "https://fr.wiktionary.org/w/api.php"
+        wiki.close()
+    }
+
+    @Test
+    fun `a client's wikiOf goes where its scriptPath and secure say`() = runTest {
+        val client =
+            createClient(contact, settings("scriptPath" to "/custom", "secure" to false), mock.engine)
+
+        client.wikiOf("fr", anyFamily()).await()
+
+        val url = mock.engine.requestHistory.first().url.toString()
+        url shouldStartWith "http://fr.wiktionary.org/custom/api.php"
+        client.close()
+    }
+
+    @Test
+    fun `a client's wikiOf honours scriptPath and secure each on its own`() = runTest {
+        val onlyPath = createClient(contact, settings("scriptPath" to "/only"), mock.engine)
+        onlyPath.wikiOf("fr", anyFamily()).await()
+        mock.engine.requestHistory.last().url.toString() shouldStartWith
+            "https://fr.wiktionary.org/only/api.php"
+        onlyPath.close()
+
+        val onlyPlain = createClient(contact, settings("secure" to false), MockWiki().engine)
+        onlyPlain.close()
+    }
+
     @Test
     fun `an OAuth2 token goes as a bearer header, with no login round trip`() = runTest {
         val seen = mutableListOf<HttpRequestData>()

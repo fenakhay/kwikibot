@@ -1,9 +1,15 @@
 public final class com/fenakhay/kwikibot/fleet/Accounts : java/lang/AutoCloseable {
+	public static final field Companion Lcom/fenakhay/kwikibot/fleet/Accounts$Companion;
 	public fun <init> (Lcom/fenakhay/kwikibot/client/WikiConfig;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Lcom/fenakhay/kwikibot/client/WikiConfig;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public final fun wiki (Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun wiki$default (Lcom/fenakhay/kwikibot/fleet/Accounts;Lcom/fenakhay/kwikibot/net/transport/ApiEndpoint;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/fleet/Accounts$Companion {
+	public final fun namedCredentials (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/fenakhay/kwikibot/net/auth/Credentials;
+	public static synthetic fun namedCredentials$default (Lcom/fenakhay/kwikibot/fleet/Accounts$Companion;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/net/auth/Credentials;
 }
 
 public abstract interface class com/fenakhay/kwikibot/fleet/Bot {
@@ -211,8 +217,8 @@ public final class com/fenakhay/kwikibot/fleet/Schedule$Companion {
 
 public final class com/fenakhay/kwikibot/fleet/SharedStop : com/fenakhay/kwikibot/bot/run/StopPolicy {
 	public static final field Companion Lcom/fenakhay/kwikibot/fleet/SharedStop$Companion;
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;JJLkotlin/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;JJLkotlin/time/Clock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;JJLkotlin/time/TimeSource;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;JJLkotlin/time/TimeSource;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun check (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun mayContinue (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

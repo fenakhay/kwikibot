@@ -1,7 +1,6 @@
 import com.fenakhay.kwikibot.model.RevisionId
 import kotlin.js.Promise
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.await
 import kotlinx.coroutines.promise
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -29,22 +28,6 @@ internal fun jsonObjectOf(value: Any?): JsonObject = jsonElementOf(value).jsonOb
 
 /** Revision [id] as this library's own id. */
 internal fun revisionIdOf(id: Double): RevisionId = RevisionId(id.toLong())
-
-/** What [result] settles to, when it is a promise or anything else with a `then`, or [result] itself. */
-internal suspend fun settledResult(result: Any?): Any? {
-    val candidate: dynamic = result
-    return if (result != null && jsTypeOf(candidate.then) == "function") {
-        Promise.resolve<Any?>(result).await()
-    } else {
-        result
-    }
-}
-
-/**
- * What [result] settles to, taken to be what its type says, for a value that goes back to JavaScript as it
- * is.
- */
-internal suspend fun <T> settled(result: Awaitable<T>): T = settledResult(result).unsafeCast<T>()
 
 /**
  * A promise of [block] that resolves to `undefined`, as TypeScript's `Promise<void>` says: a coroutine that

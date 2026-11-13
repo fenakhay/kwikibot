@@ -5,6 +5,9 @@ package com.fenakhay.kwikibot.client.model.dump
 import com.fenakhay.kwikibot.client.internal.ioDispatcher
 import com.fenakhay.kwikibot.client.model.Compression
 import com.fenakhay.kwikibot.client.model.DumpPage
+import com.fenakhay.kwikibot.client.model.availableWorkers
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +22,6 @@ import kotlinx.coroutines.yield
 import kotlinx.io.Buffer
 import kotlinx.io.RawSource
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 
 private const val PIECE = 1 shl 20
 private const val QUEUED_PER_WORKER = 4
@@ -43,14 +45,32 @@ private fun decompressing(source: RawSource, compression: Compression): RawSourc
 /** gzip through whatever is fastest here: the JDK's own zlib on the JVM, and [GzipSource] elsewhere. */
 internal expect fun gunzipping(source: RawSource): RawSource
 
-/** Reads up to a whole array, taking as many reads as that needs, and says how many bytes came. */
-private fun RawSource.readPiece(into: ByteArray, holding: Buffer): Int {
-    var filled = 0
-    while (filled < into.size) {
-        if (holding.exhausted() && readAtMostTo(holding, (into.size - filled).toLong()) < 0) break
-        filled += holding.readAtMostTo(into, filled, into.size)
+/**
+ * Reads from a source up to a whole array at a time, taking as many reads as that needs.
+ *
+ * A failure part way through an array waits for the next read, so that what came before it is still handed
+ * on.
+ */
+private class PieceReader(private val source: RawSource) {
+    private val holding = Buffer()
+    private var failure: DumpFormatException? = null
+
+    /** Says how many bytes came into [into], which is none only at the end of the source. */
+    fun read(into: ByteArray): Int {
+        failure?.let { throw it }
+        var filled = 0
+        try {
+            while (filled < into.size) {
+                if (holding.exhausted() && source.readAtMostTo(holding, (into.size - filled).toLong()) < 0)
+                    break
+                filled += holding.readAtMostTo(into, filled, into.size)
+            }
+        } catch (e: DumpFormatException) {
+            if (filled == 0) throw e
+            failure = e
+        }
+        return filled
     }
-    return filled
 }
 
 /** The pages of [source], on the calling thread and in the order of the dump. Closes it when they end. */
@@ -62,9 +82,9 @@ internal fun sequentialPages(
     decompressing(source, compression).use { input ->
         val splitter = PageSplitter()
         val piece = ByteArray(PIECE)
-        val holding = Buffer()
+        val reader = PieceReader(input)
         while (true) {
-            val count = input.readPiece(piece, holding)
+            val count = reader.read(piece)
             if (count == 0) break
             val pages = ArrayList<ByteArray>()
             splitter.feed(piece, count) { pages += it }
@@ -74,13 +94,17 @@ internal fun sequentialPages(
     }
 }
 
+/** The file at [path], read without holding it in memory. */
+internal expect fun openDumpFile(path: Path): RawSource
+
+/** How many threads are worth decoding on for [workers] workers: no more than there are processors. */
+internal fun decodersFor(workers: Int): Int = minOf(workers, availableWorkers())
+
 /**
  * Passes the pieces of decompressed XML in [path] to [piece], in order.
  *
- * bzip2 is decoded by [workers] threads, a block each, with the results put back in order. A range that fails
- * either ended early at a coincidental block marker or is one, so it is tried again with the range after it;
- * data that fails again is corrupt. gzip has no boundaries to split on, so it takes one thread however many
- * are offered.
+ * bzip2 is decoded by [decodersFor] threads, a block each, with [BlockChain] putting the results back in
+ * order. gzip has no boundaries to split on, so it takes one thread however many are offered.
  */
 private suspend fun decompressedPieces(
     path: Path,
@@ -88,16 +112,17 @@ private suspend fun decompressedPieces(
     workers: Int,
     piece: suspend (ByteArray, Int) -> Unit,
 ) {
-    if (compression == Compression.BZIP2 && workers > 1) {
-        parallelBzip2(path, workers, piece)
+    val decoders = decodersFor(workers)
+    if (compression == Compression.BZIP2 && decoders > 1) {
+        parallelBzip2(path, decoders, piece)
         return
     }
 
-    decompressing(SystemFileSystem.source(path), compression).use { input ->
+    decompressing(openDumpFile(path), compression).use { input ->
         val bytes = ByteArray(PIECE)
-        val holding = Buffer()
+        val reader = PieceReader(input)
         while (true) {
-            val count = input.readPiece(bytes, holding)
+            val count = reader.read(bytes)
             if (count == 0) break
             piece(bytes, count)
             yield()
@@ -108,10 +133,12 @@ private suspend fun decompressedPieces(
 /** UTF-8 through whatever is fastest here, which on JavaScript is the runtime's own decoder. */
 internal expect fun decodeUtf8(bytes: ByteArray, start: Int, end: Int): String
 
-/** Decodes bzip2 blocks somewhere other than the calling thread, a block at a time and [workers] at once. */
+/**
+ * Decodes bzip2 blocks somewhere other than the calling thread, a block at a time and some number at once.
+ */
 internal interface BlockDecoders {
-    /** The decoded bytes of the range, or `null` if it does not hold a whole valid block. */
-    suspend fun decode(bytes: ByteArray, start: Long, end: Long): ByteArray?
+    /** The block the range starts with, or `null` if it does not hold a whole valid one. */
+    suspend fun decode(bytes: ByteArray, start: Long, end: Long): DecodedRange?
 
     fun close()
 }
@@ -128,107 +155,60 @@ private class PooledBlockDecoders(workers: Int) : BlockDecoders {
         }
     }
 
-    override suspend fun decode(bytes: ByteArray, start: Long, end: Long): ByteArray? {
+    override suspend fun decode(bytes: ByteArray, start: Long, end: Long): DecodedRange? {
         val decoder = decoders.receive()
         return try {
-            withContext(Dispatchers.Default) { decoder.decodeRange(bytes, start, end) }
+            withContext(Dispatchers.Default) { decoder.decodeRange(bytes, start, end, MAX_AHEAD_OUTPUT) }
         } finally {
-            decoders.send(decoder)
+            val _ = decoders.trySend(decoder)
         }
     }
 
-    override fun close() {
-        val _ = decoders.close()
-    }
+    override fun close() = Unit
 }
 
-/** A block's bit range in the bytes that hold it. */
-internal class BlockRange(val bytes: ByteArray, val start: Long, val end: Long)
-
-/** A decoded block, or the range to try again if it did not decode. */
-private class DecodedBlock(val range: BlockRange, val output: ByteArray?)
-
-private suspend fun parallelBzip2(path: Path, workers: Int, piece: suspend (ByteArray, Int) -> Unit) =
+private suspend fun parallelBzip2(path: Path, decoderCount: Int, piece: suspend (ByteArray, Int) -> Unit) =
     coroutineScope {
-        val decoders = platformBlockDecoders(workers) ?: PooledBlockDecoders(workers)
-        val tasks = Channel<Deferred<DecodedBlock>>(workers * 2)
-        val scanner = BlockScanner()
+        val decoders = platformBlockDecoders(decoderCount) ?: PooledBlockDecoders(decoderCount)
+        val stretches = Channel<BlockStretch>(decoderCount * 2)
 
         launch(ioDispatcher) {
             try {
-                SystemFileSystem.source(path).use { source ->
+                openDumpFile(path).use { source ->
+                    val scanner = BlockScanner()
                     val bytes = ByteArray(PIECE)
-                    val holding = Buffer()
+                    val reader = PieceReader(source)
                     while (true) {
-                        val count = source.readPiece(bytes, holding)
+                        val count = reader.read(bytes)
                         val last = count < bytes.size
                         val ranges = scanner.feed(bytes, count, last)
                         for (index in ranges.starts.indices) {
-                            val range = BlockRange(ranges.bytes, ranges.starts[index], ranges.ends[index])
-                            tasks.send(decodeLater(range, decoders))
+                            stretches.send(stretchOf(ranges, index, decoders))
                         }
-                        if (last) break
+                        if (last || ranges.gaveUp) break
                         yield()
                     }
                 }
             } finally {
-                tasks.close()
+                stretches.close()
             }
         }
 
-        val retry = Bzip2BlockDecoder()
-        var held: DecodedBlock? = null
-        var any = false
         try {
-            for (task in tasks) {
-                val block = task.await()
-                val earlier = held
-                if (earlier != null) {
-                    held = null
-                    val joined = joinRanges(earlier.range, block.range)
-                    val output =
-                        retry.decodeRange(joined.bytes, joined.start, joined.end)
-                            ?: badChecksum("a bzip2 block cannot be decoded")
-                    piece(output, output.size)
-                    any = true
-                    continue
-                }
-                if (block.output == null) {
-                    held = block
-                } else {
-                    piece(block.output, block.output.size)
-                    any = true
-                }
-            }
+            BlockChain { stretches.receiveCatching().getOrNull() }.follow(piece)
         } finally {
             decoders.close()
         }
-        if (held != null) truncated("a bzip2 block")
-        if (!scanner.endedCleanly) {
-            if (any) truncated("a bzip2 stream") else corrupt("this is not a bzip2 stream")
-        }
     }
 
-private fun CoroutineScope.decodeLater(
-    range: BlockRange,
-    decoders: BlockDecoders,
-): Deferred<DecodedBlock> = async {
-    DecodedBlock(range, decoders.decode(range.bytes, range.start, range.end))
-}
-
-/** One range covering two neighbours, which may sit in different arrays. */
-internal fun joinRanges(first: BlockRange, second: BlockRange): BlockRange {
-    if (first.bytes === second.bytes) return BlockRange(first.bytes, first.start, second.end)
-
-    val firstByte = (first.start ushr 3).toInt()
-    val secondEnd = ((second.end + 7) ushr 3).toInt()
-    val secondFirst = (second.start ushr 3).toInt()
-    val joined =
-        first.bytes.copyOfRange(firstByte, first.bytes.size).let { head ->
-            val overlapInSecond = (first.end ushr 3).toInt() - firstByte
-            head.copyOf(overlapInSecond) + second.bytes.copyOfRange(secondFirst, secondEnd)
-        }
-    return BlockRange(joined, first.start and 7, joined.size * 8L)
+private fun CoroutineScope.stretchOf(ranges: BlockRanges, index: Int, decoders: BlockDecoders): BlockStretch {
+    val start = ranges.starts[index]
+    val end = ranges.ends[index]
+    val kind = ranges.kinds[index]
+    val gaveUp = ranges.gaveUp && index == ranges.starts.lastIndex
+    val decoded =
+        if (kind == MarkerKind.BLOCK && !gaveUp) async { decoders.decode(ranges.bytes, start, end) } else null
+    return BlockStretch(ranges.bytes, start, end, ranges.base + start, kind, decoded, gaveUp)
 }
 
 /** Decompresses and cuts the file on this coroutine's helpers, handing each page's bytes to [page]. */
@@ -247,46 +227,81 @@ private suspend fun pagesOf(
     splitter.finish()
 }
 
-/** Every page of the dump at [path] handed to [block] by [workers] coroutines, in no particular order. */
+/**
+ * Every page of the dump at [path] handed to [block] by [workers] coroutines, in no particular order.
+ *
+ * A damaged dump ends the reading rather than the workers, so each page before the damage still reaches
+ * [block] before the failure is thrown. The first exception from [block] ends everything at once.
+ */
+@OptIn(ExperimentalAtomicApi::class)
 internal suspend fun scanDump(
     path: Path,
     workers: Int,
     namespaces: Set<Int>,
     block: suspend (DumpPage) -> Unit,
-) = coroutineScope {
-    val compression = compressionOf(path)
-    val slices = Channel<ByteArray>(workers * QUEUED_PER_WORKER)
-    launch(ioDispatcher) {
-        try {
-            pagesOf(path, compression, workers) { slices.send(it) }
-        } finally {
-            slices.close()
+) {
+    val failure = AtomicReference<DumpFormatException?>(null)
+    coroutineScope {
+        val compression = compressionOf(path)
+        val slices = Channel<ByteArray>(workers * QUEUED_PER_WORKER)
+        launch(ioDispatcher) {
+            try {
+                pagesOf(path, compression, workers) { slices.send(it) }
+            } catch (e: DumpFormatException) {
+                val _ = failure.compareAndSet(null, e)
+            } finally {
+                slices.close()
+            }
         }
-    }
-    repeat(workers) {
-        launch(Dispatchers.Default) {
-            for (slice in slices) {
-                parsePage(slice, namespaces)?.let { block(it) }
-                yield()
+        repeat(workers) {
+            launch(Dispatchers.Default) {
+                for (slice in slices) {
+                    val page =
+                        try {
+                            parsePage(slice, namespaces)
+                        } catch (e: DumpFormatException) {
+                            val _ = failure.compareAndSet(null, e)
+                            slices.cancel()
+                            break
+                        }
+                    page?.let { block(it) }
+                    yield()
+                }
             }
         }
     }
+    failure.load()?.let { throw it }
 }
 
-/** Every page of the dump at [path], decoded by [workers] coroutines and delivered in the dump's order. */
+/**
+ * Every page of the dump at [path], decoded by [workers] coroutines and delivered in the dump's order.
+ *
+ * A failure takes its place in that order, behind each page before the damage.
+ */
 internal fun dumpFlow(path: Path, workers: Int, namespaces: Set<Int>): Flow<DumpPage> = flow {
     coroutineScope {
         val compression = compressionOf(path)
-        val parsed = Channel<Deferred<DumpPage?>>(workers * QUEUED_PER_WORKER)
+        val parsed = Channel<Deferred<Result<DumpPage?>>>(workers * QUEUED_PER_WORKER)
+        var failure: DumpFormatException? = null
         launch(ioDispatcher) {
             try {
                 pagesOf(path, compression, workers) { slice ->
-                    parsed.send(async(Dispatchers.Default) { parsePage(slice, namespaces) })
+                    parsed.send(async(Dispatchers.Default) { parsedOrFailure(slice, namespaces) })
                 }
+            } catch (e: DumpFormatException) {
+                failure = e
             } finally {
                 parsed.close()
             }
         }
-        for (page in parsed) page.await()?.let { emit(it) }
+        for (page in parsed) page.await().getOrThrow()?.let { emit(it) }
+        failure?.let { throw it }
     }
 }
+
+private fun parsedOrFailure(slice: ByteArray, namespaces: Set<Int>): Result<DumpPage?> =
+    try {
+        Result.success(parsePage(slice, namespaces))
+    } catch (e: DumpFormatException) {
+        Result.failure(e)
+    }

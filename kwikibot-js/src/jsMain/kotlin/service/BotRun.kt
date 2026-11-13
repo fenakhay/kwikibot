@@ -263,7 +263,7 @@ internal suspend fun botRunWith(wiki: ClientWiki, options: BotRunOptions): BotRe
         wiki.botRunWithDefaults(
             transform = { page ->
                 try {
-                    editFrom(settledResult(options.transform(Page(page, namespaces))))
+                    editFrom(settledCall { options.transform(Page(page, namespaces)) })
                 } catch (e: SkipPageError) {
                     skip(e.reason)
                 }
@@ -280,7 +280,15 @@ internal suspend fun botRunWith(wiki: ClientWiki, options: BotRunOptions): BotRe
             exclusionPolicy = exclusionOf(options),
             onOutcome =
                 options.onOutcome?.let { handler ->
-                    { outcome: ClientPageOutcome -> handler(PageOutcome(outcome, namespaces)) }
+                    val rejections = ObserverReport("onOutcome")
+                    val observer: (ClientPageOutcome) -> Unit = { outcome ->
+                        fromJs {
+                            rejections.reportRejection(
+                                handler(PageOutcome(outcome, namespaces)).unsafeCast<Any?>()
+                            )
+                        }
+                    }
+                    observer
                 },
             state = options.state?.state,
             resume = options.resume,
@@ -296,7 +304,7 @@ private fun creating(
     namespaces: NamespaceMap,
 ): suspend BotRunBuilder.(PageRef) -> Edit? = { ref ->
     try {
-        editFrom(settledResult(create(namespaces.format(ref.title))))
+        editFrom(settledCall { create(namespaces.format(ref.title)) })
     } catch (e: SkipPageError) {
         skip(e.reason)
     }

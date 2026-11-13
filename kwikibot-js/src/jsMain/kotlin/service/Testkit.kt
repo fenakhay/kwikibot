@@ -106,9 +106,9 @@ public class FakePageService(options: FakePageServiceOptions? = null) {
         ClientFakePageService(
             options?.pages?.toMap().orEmpty(),
             fakeWikiIdOf(options?.wiki),
-            { ref -> options?.refuse?.invoke(nameOf(ref))?.let { refusalOf(ref, it) } },
-            options?.failWith?.let { fail -> { wikiErrorOf(fail()) } },
-            { text, ref -> options?.expand?.invoke(text, ref?.let(::nameOf)) ?: text },
+            { ref -> fromJs { options?.refuse?.invoke(nameOf(ref)) }?.let { refusalOf(ref, it) } },
+            options?.failWith?.let { fail -> { wikiErrorOf(fromJs { fail() }) } },
+            { text, ref -> fromJs { options?.expand?.invoke(text, ref?.let(::nameOf)) } ?: text },
         )
 
     /** The current text of the page [title], or `null` if it does not exist. */
@@ -223,7 +223,7 @@ public class MockTransport(
 ) {
     internal val transport: ClientMockTransport =
         ClientMockTransport(endpoint?.endpoint ?: ApiEndpoint("test.example.org")) { request ->
-            jsonObjectOf(settledResult(handler(request.params.toRecord { it })))
+            jsonObjectOf(settledCall { handler(request.params.toRecord { it }) })
         }
 
     /** Every request it was asked to send, in order. */

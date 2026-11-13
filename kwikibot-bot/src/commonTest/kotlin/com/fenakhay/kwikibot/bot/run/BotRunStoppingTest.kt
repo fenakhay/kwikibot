@@ -15,18 +15,103 @@ import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 /** Which errors stop a run, and what becomes of the pages a stopped run already had in hand. */
 class BotRunStoppingTest {
 
     private val pages = FakePageService("a" to "t", "b" to "t", "c" to "t", "d" to "t")
+
+    /** Pages whose first save runs [during] before it is sent, and which keeps count of what was saved. */
+    private inner class FirstSaveHeld(private val during: suspend () -> Unit) : PageService by pages {
+        var edits = 0
+
+        override suspend fun edit(ref: PageRef, block: EditBuilder.() -> Unit): EditOutcome {
+            if (++edits == 1) during()
+            return pages.edit(ref, block)
+        }
+    }
+
+    @Test
+    fun `a page queued behind the write permit sees a stop set while it waits`() = runTest {
+        var allowed = true
+        var checks = 0
+        val held = FirstSaveHeld {
+            repeat(200) {
+                if (checks < 3) withContext(Dispatchers.Default) { delay(1) }
+            }
+            allowed = false
+        }
+
+        val report =
+            botRun(
+                held,
+                StopPolicy {
+                    checks++
+                    allowed
+                },
+                null,
+            ) {
+                source(listOf(pages.ref("a"), pages.ref("b")).asFlow())
+                transform { Edit("new", "s") }
+                dryRun = false
+                readConcurrency = 2
+                writeConcurrency = 1
+            }
+
+        held.edits shouldBe 1
+        report.saved shouldBe 1
+        report.notAttempted shouldBe 1
+        report.stopReason shouldBe StopReason.POLICY
+    }
+
+    @Test
+    fun `reaching the cap does not let a lost session keep saving`() = runTest {
+        val capReached = CompletableDeferred<Unit>()
+        val held = FirstSaveHeld {
+            capReached.await()
+            throw WikiError.Auth.NotLoggedIn("editing")
+        }
+
+        val report =
+            botRun(held, StopPolicy.NONE, null) {
+                source(listOf(pages.ref("a"), pages.ref("b"), pages.ref("c")).asFlow())
+                transform { Edit("new", "s") }
+                dryRun = false
+                readConcurrency = 3
+                writeConcurrency = 1
+                maxEdits = 2
+                onOutcome = { if (it is PageOutcome.NotAttempted) capReached.complete(Unit) }
+            }
+
+        held.edits shouldBe 1
+        report.stopReason shouldBe StopReason.AUTH
+    }
+
+    @Test
+    fun `reaching the cap alone reports the stop as the policy`() = runTest {
+        val report =
+            botRun(pages, StopPolicy.NONE, null) {
+                source(listOf(pages.ref("a"), pages.ref("b")).asFlow())
+                transform { Edit("new", "s") }
+                dryRun = false
+                readConcurrency = 1
+                maxEdits = 1
+            }
+
+        report.saved shouldBe 1
+        report.stopped shouldBe true
+        report.stopReason shouldBe StopReason.POLICY
+    }
 
     @Test
     fun `a policy that times out stops the run as unreachable`() = runTest {

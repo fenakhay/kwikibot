@@ -30,27 +30,30 @@ internal class ApiMetaService(
 
     private val mutex = Mutex()
     private val properties = mutableMapOf<String, JsonElement?>()
+    private val messageLock = Mutex()
     private val messageCache = mutableMapOf<Pair<String?, String>, String>()
 
-    override suspend fun property(name: String): JsonElement? {
-        if (name in properties) return properties[name]
+    /** Read and written only under [mutex], since a bot's transforms ask from several threads at once. */
+    override suspend fun property(name: String): JsonElement? = mutex.withLock {
+        if (name in properties) return@withLock properties[name]
 
-        return mutex.withLock {
-            if (name in properties) return@withLock properties[name]
+        val response =
+            transport.call(ApiRequest.of("query", "meta" to "siteinfo", "siprop" to name)).throwOnError()
 
-            val response =
-                transport.call(ApiRequest.of("query", "meta" to "siteinfo", "siprop" to name)).throwOnError()
-
-            response.obj("query")?.get(name).also { properties[name] = it }
-        }
+        response.obj("query")?.get(name).also { properties[name] = it }
     }
 
+    /** Read and written only under [messageLock], so callers asking at once make one request between them. */
     override suspend fun messages(
         keys: Collection<String>,
         language: String?,
     ): Map<String, String> {
         if (keys.isEmpty()) return emptyMap()
 
+        return messageLock.withLock { cachedMessages(keys, language) }
+    }
+
+    private suspend fun cachedMessages(keys: Collection<String>, language: String?): Map<String, String> {
         // Only the ones not already held: a bot asking for the same message per page would
         // otherwise ask the wiki per page.
         val wanted = keys.distinct()

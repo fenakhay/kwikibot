@@ -53,6 +53,49 @@ class StreamsTest {
     private fun quickRetry() =
         optionsOf<RetryOptions>("maxRetries" to 0, "initialDelay" to 1.0, "maxDelay" to 1.0)
 
+    private suspend fun stepDone(step: dynamic): Boolean =
+        step.unsafeCast<kotlin.js.Promise<dynamic>>().await().done == true
+
+    private fun endlessEngine() = MockEngine { _ ->
+        respond(events, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/event-stream"))
+    }
+
+    @Test
+    fun `closing the event streams ends a walk rather than rejecting it`() = runTest {
+        val streams = eventStreams(contact, optionsOf("retry" to quickRetry()), endlessEngine())
+        val iterator = streams.recentChanges().asDynamic()[js("Symbol.asyncIterator")]()
+        stepDone(iterator.next()) shouldBe false
+
+        streams.close()
+
+        while (!stepDone(iterator.next())) {
+            continue
+        }
+    }
+
+    @Test
+    fun `leaving a walk after closing the event streams is clean`() = runTest {
+        val streams = eventStreams(contact, optionsOf("retry" to quickRetry()), endlessEngine())
+        val iterator = streams.recentChanges().asDynamic()[js("Symbol.asyncIterator")]()
+        stepDone(iterator.next()) shouldBe false
+
+        streams.close()
+
+        stepDone(iterator["return"]()) shouldBe true
+    }
+
+    @Test
+    fun `closing a query client rejects a walk still going, and leaving after that is clean`() = runTest {
+        val client = sparqlClient(contact, null, sparqlEngine)
+        val iterator = client.selectStreamed("SELECT ?item").asDynamic()[js("Symbol.asyncIterator")]()
+        stepDone(iterator.next()) shouldBe false
+
+        client.close()
+
+        shouldThrow<Throwable> { stepDone(iterator.next()) }
+        stepDone(iterator["return"]()) shouldBe true
+    }
+
     @Test
     fun `a query client selects rows and entity ids with its endpoint and agent`() = runTest {
         val client =

@@ -13,6 +13,7 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
@@ -20,6 +21,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
+import io.ktor.utils.io.ByteChannel
+import io.ktor.utils.io.cancel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration
@@ -300,6 +303,85 @@ class EventStreamsTest {
         assertFailsWith<IllegalArgumentException> {
             EventStreams(broken, userAgent, RetryPolicy.NONE).recentChanges().toList()
         }
+    }
+
+    /** A body that closes with [failure] once the response has begun. */
+    private fun cutBy(failure: Throwable): ByteChannel = ByteChannel().also { it.cancel(failure) }
+
+    @Test
+    fun `a quiet stream closed again and again costs no retries and resumes from the last id`() = runTest {
+        val quiet = ":ok" + BLANK_LINE
+        val answers = ArrayDeque(listOf(stream) + List(10) { quiet })
+        val resumed = mutableListOf<String?>()
+        val client =
+            HttpClient(
+                MockEngine { request ->
+                    resumed += request.headers["Last-Event-ID"]
+                    respond(answers.removeFirstOrNull() ?: stream, HttpStatusCode.OK)
+                }
+            )
+
+        EventStreams(client, userAgent, RetryPolicy(maxRetries = 1)).recentChanges().take(3).toList()
+
+        resumed.size shouldBe 12
+        resumed.last() shouldBe """[{"topic":"codfw.mediawiki.recentchange","offset":42}]"""
+    }
+
+    @Test
+    fun `a stream that answered and then said nothing until it timed out costs no retries`() = runTest {
+        var asked = 0
+        val client =
+            HttpClient(
+                MockEngine {
+                    if (++asked <= 10) {
+                        respond(cutBy(SocketTimeoutException("silent", null)), HttpStatusCode.OK)
+                    } else {
+                        respond(stream, HttpStatusCode.OK)
+                    }
+                }
+            )
+
+        val events =
+            EventStreams(client, userAgent, RetryPolicy(maxRetries = 1)).recentChanges().take(1).toList()
+
+        events.single().title shouldBe "volcano"
+        asked shouldBe 11
+    }
+
+    @Test
+    fun `a timeout before the server answers still spends the retries`() = runTest {
+        var asked = 0
+        val client =
+            HttpClient(
+                MockEngine {
+                    asked++
+                    throw SocketTimeoutException("never answered", null)
+                }
+            )
+
+        assertFailsWith<WikiError.Transport.Timeout> {
+            EventStreams(client, userAgent, RetryPolicy(maxRetries = 2)).recentChanges().toList()
+        }
+        asked shouldBe 3
+    }
+
+    @Test
+    fun `a connection that delivered events starts the count again`() = runTest {
+        val plan = ArrayDeque(listOf(false, true, false, true, false, false))
+        var asked = 0
+        val client =
+            HttpClient(
+                MockEngine {
+                    asked++
+                    if (plan.removeFirst()) respond(stream, HttpStatusCode.OK)
+                    else throw IOException("connection refused")
+                }
+            )
+
+        assertFailsWith<WikiError.Transport.Unreachable> {
+            EventStreams(client, userAgent, RetryPolicy(maxRetries = 1)).recentChanges().toList()
+        }
+        asked shouldBe 6
     }
 
     @Test

@@ -475,7 +475,7 @@ public suspend fun botRun(
 @Deprecated(
     "Name the stop policy and the exclusion policy, StopPolicy.NONE and null if you mean none. " +
         "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
-    ReplaceWith("botRun(pages, StopPolicy.NONE, null, block)"),
+    ReplaceWith("botRun(pages, StopPolicy.NONE, null, block)", "com.fenakhay.kwikibot.bot.run.StopPolicy"),
 )
 public suspend fun botRun(pages: PageService, block: BotRunBuilder.() -> Unit): BotReport = run(pages, block)
 
@@ -522,7 +522,10 @@ public suspend fun Wiki.botRun(stopPolicy: StopPolicy, block: BotRunBuilder.() -
 @Deprecated(
     "Name the stop policy, with stopPage() or StopPolicy.NONE. The new form also honours {{nobots}} " +
         "as this account unless told not to. Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
-    ReplaceWith("botRun(StopPolicy.NONE) { exclusionPolicy = null; block() }"),
+    ReplaceWith(
+        "botRun(StopPolicy.NONE) { exclusionPolicy = null; block() }",
+        "com.fenakhay.kwikibot.bot.run.StopPolicy",
+    ),
 )
 public suspend fun Wiki.botRun(block: BotRunBuilder.() -> Unit): BotReport = run(pages, block)
 
@@ -580,16 +583,15 @@ private class Runner(
         val most = config.maxEdits ?: return true
         if (editsClaimed.fetchAndAdd(1) < most) return true
         capReached.store(true)
-        val _ = stopReason.compareAndSet(null, StopReason.POLICY)
         return false
     }
 
-    /** Why the run stopped; the first reason found wins. */
+    /** Why the run must not save again; the first reason found wins. Reaching the cap is not one. */
     @OptIn(ExperimentalAtomicApi::class) private val stopReason = AtomicReference<StopReason?>(null)
 
     @OptIn(ExperimentalAtomicApi::class)
     private val stopped: Boolean
-        get() = stopReason.load() != null
+        get() = stopReason.load() != null || capReached.load()
 
     @OptIn(ExperimentalAtomicApi::class)
     suspend fun run(source: Flow<PageRef>): BotReport {
@@ -626,7 +628,7 @@ private class Runner(
             problems = problems.toList(),
             stopped = stopped,
             notAttempted = notAttempted,
-            stopReason = stopReason.load(),
+            stopReason = stopReason.load() ?: StopReason.POLICY.takeIf { capReached.load() },
         )
     }
 
@@ -776,24 +778,21 @@ private class Runner(
      * An update is sent with the revision it was computed from and with `nocreate`. The wiki merges an edit
      * to a page changed since with the change made in between if it can, and refuses it as a conflict if it
      * cannot; a page deleted since is refused, not recreated.
+     *
+     * The stop policy is asked once the write permit is held, right before the edit is sent. A run can last
+     * hours and pages queue here behind the write throttle, and an administrator stopping the bot expects it
+     * to stop within one edit. Whatever else has stopped the run since this page was picked up, such as a
+     * dead session, stops it too. Reaching the cap on edits does not: the edits it already allowed still go,
+     * since the page that went over the cap can get here before those within it.
      */
     @OptIn(ExperimentalAtomicApi::class)
     private suspend fun save(ref: PageRef, content: PageContent?, edit: Edit): PageOutcome {
-        // Checked before every save, not once at the start: a run can last hours, and an
-        // administrator stopping the bot expects it to stop within one edit.
-        stopCheck(config.stopPolicy)?.let { reason ->
-            stopFor(reason)
-            return notAttempted(ref)
-        }
-
         return writes.withPermit {
-            // Re-checked here, under the permit, and not only when the page was picked up.
-            // Pages are worked on in parallel, so by the time this one reaches the front of the
-            // queue another may have found the session dead - and the whole point of stopping a
-            // run is not to make the next edit after the reason to stop is known.
-            // Reaching the cap on edits stops the run taking more, and is no reason to drop an edit it
-            // already allowed: the page that went over the cap can get here before those within it.
-            if (stopped && !capReached.load()) return@withPermit notAttempted(ref)
+            if (stopReason.load() != null) return@withPermit notAttempted(ref)
+            stopCheck(config.stopPolicy)?.let { reason ->
+                stopFor(reason)
+                return@withPermit notAttempted(ref)
+            }
 
             val outcome =
                 pages.edit(ref) {

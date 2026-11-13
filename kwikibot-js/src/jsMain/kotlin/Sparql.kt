@@ -52,7 +52,9 @@ public class SparqlRow internal constructor(private val bindings: Map<String, Bi
 @JsExport
 public class SparqlValue internal constructor(private val binding: Binding) {
 
-    /** `"uri"`, `"literal"` or `"bnode"`. */
+    /**
+     * `"uri"`, `"literal"` or `"bnode"`, or what else the service calls it, as older ones `"typed-literal"`.
+     */
     public val type: SparqlValueType
         get() = binding.type.unsafeCast<SparqlValueType>()
 

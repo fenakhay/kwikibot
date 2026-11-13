@@ -498,32 +498,41 @@ A run can last hours, and the client and `botRun` are built for that:
 lanes: at the same time as each other, one at a time within a bot, with a failure staying in its run.
 
 ```kotlin
-class NullEditBot : Bot {
-    override val id = "nulledit"
-    override val description = "Refreshes pages by saving them unchanged."
+class OldTemplateBot : Bot {
+    override val id = "oldtemplate"
+    override val description = "Takes {{old}} off the pages that use it."
     override val schedule = Schedule.cron("0 3 * * *", "Europe/Berlin")
 
     override suspend fun run(context: RunContext) {
         val wiki = context.wiki
         wiki.botRun(context.stopPolicy) {
             context.options.applyTo(this, wiki)
-            source(wiki.lists.categoryMembers(wiki.ref("Category:Pages to refresh")))
-            transform { page -> Edit(page.text, "null edit") }
+            source(wiki.lists.transclusions(wiki.ref("Template:old")))
+            transform { page -> Edit(page.text.replace("{{old}}", ""), "removing {{old}}") }
             maxEdits = 500
             onOutcome = context.outcomes
         }
     }
 }
 
-fun main(args: Array<String>) = fleetMain(args, listOf(NullEditBot(), NewsletterBot()))
+fun main(args: Array<String>) = fleetMain(args, listOf(OldTemplateBot(), NewsletterBot()))
 ```
 
 That program takes `list`, `run <bot>`, `run --all` and `serve`, which keeps running the bots with a
-schedule, along with the common flags and `kwikibot.toml`. Bots on one account share one login and one
-budget: a second login over a bot password session is an error, and requests are paced per account. A
-bot naming an `account` logs in with the credentials under `KWIKIBOT_<ACCOUNT>_`. They all answer to
-one stop page, read once a minute however many there are, and a run can `ask` a person a question
-while the other lanes go on.
+schedule, along with the common flags and `kwikibot.toml`. `--all` means every bot only straight after
+`run`; after a bot's name it is that bot's own argument. Bots on one account share one login and one
+budget: a second login over a bot password session is an error, and requests are paced per account, so
+different accounts do not hold each other back. A bot naming an `account` logs in only with the
+credentials under `KWIKIBOT_<ACCOUNT>_`, `OAUTH_TOKEN` or `ACCOUNT`, `BOT_NAME` and `PASSWORD`, and its
+run fails if they are not there, or if it is told to save as an account outside the bot group without
+`--trial`. They all answer to one stop page, read once a minute however many there are, and a run can
+`ask` a person a question while the other lanes go on, with one question on screen at a time.
+
+| Exit status | When |
+|-------------|------|
+| 0 | `list`, or every run ended `DONE` and none stopped early |
+| 1 | A run ended `FAILED`, `CANCELLED` or `DECLINED`, or stopped early, each with a line saying why; or the bot could not start |
+| 2 | A bad command line |
 
 `Fleet` is the host underneath, for embedding: `start`, `cancel`, `runs` and `events`, knowing nothing
 of terminals or storage, so a dashboard or a store of past runs can sit on top. Nothing is kept once the
@@ -576,7 +585,7 @@ XmlDump.scan(Path("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = se
 
 bzip2 is decoded block by block on every thread, with or without a multistream index. gzip has no
 boundaries to split on, so its decompression takes one thread and only the parsing shares out. A
-truncated or corrupt dump throws `DumpFormatException` after yielding the pages before the damage.
+truncated or corrupt dump throws `DumpFormatException` after yielding every whole page before the damage.
 
 ## Testing a bot
 

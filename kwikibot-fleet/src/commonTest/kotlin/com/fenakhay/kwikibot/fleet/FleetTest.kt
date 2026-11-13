@@ -39,6 +39,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+import kotlin.time.TestTimeSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -397,11 +398,7 @@ class FleetTest {
     @Test
     fun `a shared stop reads once per interval keeps a good answer through a blip and then fails closed`() =
         runTest {
-            var now = Instant.parse("2026-10-30T12:00:00Z")
-            val clock =
-                object : Clock {
-                    override fun now(): Instant = now
-                }
+            val time = TestTimeSource()
             var reads = 0
             var page: String? = "false"
             var failing = false
@@ -412,32 +409,32 @@ class FleetTest {
                         if (failing) error("down")
                         page
                     },
-                    clock = clock,
+                    timeSource = time,
                 )
 
             stop.mayContinue() shouldBe true
             stop.mayContinue() shouldBe true
             reads shouldBe 1
 
-            now += 2.minutes
+            time += 2.minutes
             page = "stop"
             stop.mayContinue() shouldBe false
             reads shouldBe 2
 
             page = "false"
-            now += 2.minutes
+            time += 2.minutes
             stop.mayContinue() shouldBe true
 
             failing = true
-            now += 2.minutes
+            time += 2.minutes
             stop.mayContinue() shouldBe true
-            now += 4.minutes
+            time += 4.minutes
             stop.mayContinue() shouldBe false
 
-            val neverRead = SharedStop({ error("down") }, clock = clock)
+            val neverRead = SharedStop({ error("down") }, timeSource = time)
             neverRead.mayContinue() shouldBe false
 
-            val gone = SharedStop({ null }, clock = clock)
+            val gone = SharedStop({ null }, timeSource = time)
             gone.mayContinue() shouldBe false
         }
 
@@ -600,8 +597,8 @@ class FleetTest {
                     WikiClient(config, login, engine = MockEngine { error("not asked") })
                 },
             )
-        assertFailsWith<Exception> { real.wiki(endpoint, "nobody") }
-        logins.last() shouldBe Credentials.Anonymous
+        assertFailsWith<IllegalStateException> { real.wiki(endpoint, "nobody") }.message!! shouldContain
+            "KWIKIBOT_NOBODY_PASSWORD"
     }
 
     @Test
@@ -642,12 +639,7 @@ class FleetTest {
         }
 
     @Test
-    fun `a named account reads its own variables and a bot needs say little`() = runTest {
-        val environment = mapOf("KWIKIBOT_PASSWORD" to "default", "KWIKIBOT_OTHER_PASSWORD" to "other")
-
-        accountEnvironment(null, environment::get)("KWIKIBOT_PASSWORD") shouldBe "default"
-        accountEnvironment("other", environment::get)("KWIKIBOT_PASSWORD") shouldBe "other"
-
+    fun `a bot needs say little`() = runTest {
         val bot =
             object : Bot {
                 override val id = "plain"

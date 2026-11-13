@@ -42,10 +42,14 @@ public fun statusFailure(url: String, response: HttpResponse, body: String = "")
 
 /**
  * Whether this is one of the three timeouts the client applies: on connecting, on a silent socket, and on the
- * whole request.
+ * whole request. A channel hands on what closed it wrapped in a failure of its own, so a cause counts too.
  */
 internal fun Throwable.isTimeout(): Boolean =
-    this is HttpRequestTimeoutException || this is ConnectTimeoutException || this is SocketTimeoutException
+    generateSequence(this) { it.cause }
+        .take(MAX_CAUSES)
+        .any {
+            it is HttpRequestTimeoutException || it is ConnectTimeoutException || it is SocketTimeoutException
+        }
 
 /** How long the server asked us to wait, when it said so in seconds rather than as a date. */
 internal fun HttpResponse.retryAfter(): Duration? =
@@ -53,6 +57,9 @@ internal fun HttpResponse.retryAfter(): Duration? =
 
 /** The start of an error page as one line of text, without its markup. */
 internal fun String.gist(): String = replace(MARKUP, " ").replace(WHITESPACE, " ").trim().take(MAX_DETAIL)
+
+/** How far down its causes a failure is searched, since a chain can loop. */
+private const val MAX_CAUSES = 8
 
 /** How much of an error page goes into [WikiError.Transport.Refused.detail]. */
 private const val MAX_DETAIL = 300

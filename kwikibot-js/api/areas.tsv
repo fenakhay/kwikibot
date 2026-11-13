@@ -265,6 +265,7 @@ scanDump	dumps
 describeError	root,errors
 ErrorInfo	errors
 ErrorKind	errors
+ThrownValue	errors
 ChangeType	events
 eventStreams	events
 EventStreams	events
@@ -309,6 +310,7 @@ Ignored	root
 JsonValue	root
 MessageValue	root
 Negatable	root
+Thrown	root
 COMMONS_QUERY_SERVICE	sparql
 LINGUA_LIBRE_QUERY_SERVICE	sparql
 pagePileSource	sparql

@@ -8,12 +8,13 @@ export declare function availableDumpWorkers(): number;
  * The pages of the dump file at [path], in the dump's order, as an async iterable. Plain XML, `.gz` or
  * `.bz2`, going by the name. Node only.
  * 
- * bzip2 is decoded on [workers] worker threads, one per processor unless told otherwise, so reading a dump
- * leaves the event loop free. Stopping the loop early, with `break`, stops the reading and the threads.
+ * bzip2 is decoded on worker threads, one per processor or [workers] if that is fewer, so reading a dump
+ * leaves the event loop free. Stopping the loop early, with `break`, stops the reading and the threads. A
+ * damaged dump rejects the walk after every whole page before the damage.
  * 
  * @param path - the dump.
  * @param namespaces - the namespaces wanted, or every one when `null`.
- * @param workers - how many threads to decode on.
+ * @param workers - how many threads to work on, of which decoding takes at most one per processor.
  */
 export declare function dumpPages(path: string, namespaces?: Nullable<Array<number>>, workers?: Nullable<number>): AsyncIterable<DumpPage>;
 /**
@@ -33,13 +34,14 @@ export declare function dumpPagesOf(bytes: Uint8Array, compression?: DumpCompres
  * @param path - the dump.
  * @param block - what to do with each page.
  * @param namespaces - the namespaces wanted, or every one when `null`.
- * @param workers - how many threads to decode on.
+ * @param workers - how many threads to work on, of which decoding takes at most one per processor.
  */
 export declare function scanDump(path: string, block: (page: DumpPage) => Awaitable<Ignored>, namespaces?: Nullable<Array<number>>, workers?: Nullable<number>): Promise<void>;
 /**
  * One page of an XML dump, with the one revision the dump carries.
  */
 export declare class DumpPage {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether this page is in one of [namespaces]. Every namespace matches an empty array.
@@ -110,7 +112,8 @@ export declare function cron(expression: string, zone?: string): Schedule;
 export declare function createFleet(options: FleetOptions, bots: Array<BotSpec>): Promise<Fleet>;
 /**
  * Starts a program of many bots from its command line, in Node: `list`, `run <bot>`, `run --all` or `serve`,
- * with `kwikibot.toml` and the common flags. Exits with the status: 0 only if every run finished.
+ * with `kwikibot.toml` and the common flags. Exits with the status: 0 only if every run ended clean, 1 if one
+ * failed, was cancelled or declined, or stopped early, and 2 for a bad command line.
  * 
  * @param args - the command line, without Node's own two entries.
  * @param bots - the bots.
@@ -124,6 +127,7 @@ export declare function fleetMainWith(args: Array<string>, bots: Array<BotSpec>,
  * When `serve` runs a bot.
  */
 export declare class Schedule {
+    private readonly __nominal;
     private constructor();
     /**
      * The first firing after [after].
@@ -204,6 +208,7 @@ export declare interface FleetOptions {
  * Thrown by a bot whose question was answered no, which ends its run as declined rather than failed.
  */
 export declare class DeclinedError extends Error {
+    private readonly __nominal;
     constructor(message: string);
 }
 export declare namespace DeclinedError {
@@ -216,9 +221,11 @@ export declare namespace DeclinedError {
  * What a run has of its fleet, and how it talks back.
  */
 export declare class RunContext {
+    private readonly __nominal;
     private constructor();
     /**
-     * Another wiki, as the same account, by language and family name, such as `"en"`, `"wiktionary"`.
+     * Another wiki, as the same account, by language and family name, such as `"en"`, `"wiktionary"`. Its
+     * session is shared and the fleet's to close, so its `close` does nothing, and the run goes on.
      */
     open(language: string, family: string): Promise<Wiki>;
     /**
@@ -251,7 +258,8 @@ export declare class RunContext {
      */
     sayAt(message: string, level: RunLevel): void;
     /**
-     * Another wiki, as the same account, in [language] of [family], which may be one of your own.
+     * Another wiki, as the same account, in [language] of [family], which may be one of your own. As with
+     * `open`, its `close` does nothing, since the session is the fleet's.
      */
     openFamily(language: string, family: Family): Promise<Wiki>;
     /**
@@ -268,11 +276,15 @@ export declare class RunContext {
      */
     run(titles: Array<string>, summary: string, transform: (text: string, title: string) => Awaitable<Nullable<string>>, maxEdits?: Nullable<number>): Promise<RunReport>;
     /**
-     * Aborted when the run is cancelled, for handing to `fetch` and the like.
+     * Aborted the moment the run is cancelled or its fleet closed, for handing to `fetch` and the like, with
+     * an `AbortError` as its `reason`. The run does not wait for a bot that ignores it: it ends `"cancelled"`
+     * at once and its lane takes the next run, since a promise may never settle, while what the bot is still
+     * doing goes on beside that, and every call it makes on this context rejects.
      */
     get signal(): AbortSignal;
     /**
-     * The wiki this bot's account edits, shared with every bot on the account.
+     * The wiki this bot's account edits, shared with every bot on the account. It is the fleet's to close, so
+     * its `close` does nothing.
      */
     get wiki(): Wiki;
     /**
@@ -310,6 +322,7 @@ export declare namespace RunContext {
  * One run, as a fleet sees it.
  */
 export declare class FleetRun {
+    private readonly __nominal;
     private constructor();
     /**
      * What the fleet calls it.
@@ -358,6 +371,7 @@ export declare namespace FleetRun {
  * Something a fleet did: a run said a line, or changed status.
  */
 export declare class FleetEvent {
+    private readonly __nominal;
     private constructor();
     /**
      * Which run it is about.
@@ -401,6 +415,7 @@ export declare namespace FleetEvent {
  * `await`, and a transform that blocks holds them all.
  */
 export declare class Fleet {
+    private readonly __nominal;
     private constructor();
     /**
      * Queues a run of the bot called [id] in its lane.
@@ -409,6 +424,7 @@ export declare class Fleet {
      * @param arguments - what to hand it.
      * @param save - whether it may save. A dry run unless told.
      * @returns what to call the run.
+     * @throws IllegalStateException if the fleet is closed, since nothing would ever run it.
      */
     start(id: string, arguments?: Array<string>, save?: boolean): number;
     /**
@@ -420,11 +436,12 @@ export declare class Fleet {
      */
     runs(): Array<FleetRun>;
     /**
-     * What is happening, as it happens. A walk sees only what follows its start.
+     * What is happening, as it happens. A walk sees only what follows its start, and closing the fleet ends
+     * it: it finishes as a loop does, rather than rejecting.
      */
     events(): AsyncIterable<FleetEvent>;
     /**
-     * Resolves once every run asked for so far has ended.
+     * Resolves once every run asked for so far has ended, or the fleet is closed, which ends them all.
      */
     idle(): Promise<void>;
     /**
@@ -440,10 +457,12 @@ export declare class Fleet {
      * line.
      * 
      * @returns what to call the run.
+     * @throws IllegalStateException if the fleet is closed, since nothing would ever run it.
      */
     startWith(id: string, options?: Nullable<CommonOptions>, arguments?: Array<string>): number;
     /**
-     * Every run, each time one changes, starting with how they are now.
+     * Every run, each time one changes, starting with how they are now. Closing the fleet ends a walk, as it
+     * does one of `events`.
      */
     watchRuns(): AsyncIterable<Array<FleetRun>>;
     /**
@@ -475,6 +494,7 @@ export declare function sparql(query: string, contact: string, endpoint?: string
  * One row of a SPARQL result.
  */
 export declare class SparqlRow {
+    private readonly __nominal;
     private constructor();
     /**
      * What variable [name], without its `?`, is bound to, or `null` when it is unbound in this row.
@@ -495,9 +515,10 @@ export declare namespace SparqlRow {
  * What a variable is bound to.
  */
 export declare class SparqlValue {
+    private readonly __nominal;
     private constructor();
     /**
-     * `"uri"`, `"literal"` or `"bnode"`.
+     * `"uri"`, `"literal"` or `"bnode"`, or what else the service calls it, as older ones `"typed-literal"`.
      */
     get type(): SparqlValueType;
     /**
@@ -537,6 +558,7 @@ export declare function signatureTimes(text: string, language?: string): Array<S
  * A page title, read the way MediaWiki reads one.
  */
 export declare class Title {
+    private readonly __nominal;
     private constructor();
     /**
      * The wikitext of a link to this page, showing [text] when one is given, or `null` unless it is local.
@@ -596,6 +618,7 @@ export declare namespace Title {
  * The time of one signature, and where it is in the text.
  */
 export declare class SignatureTime {
+    private readonly __nominal;
     private constructor();
     /**
      * When it was signed.
@@ -644,6 +667,7 @@ export declare function detect(url: string, contact: string): Promise<Nullable<E
  * A bot password from Special:BotPasswords, to log in with.
  */
 export declare class BotPassword {
+    private readonly __nominal;
     constructor(account: string, botName: string, password: string);
     /**
      * The account the bot password belongs to.
@@ -664,6 +688,7 @@ export declare namespace BotPassword {
  * Where a wiki's API is.
  */
 export declare class Endpoint {
+    private readonly __nominal;
     private constructor();
     /**
      * The URL of the page [title], as it appears in a browser.
@@ -697,9 +722,12 @@ export declare namespace Endpoint {
     }
 }
 /**
- * An open wiki. Close it when done, which ends what it is still fetching.
+ * An open wiki. Close it when done, which ends what it is still fetching: a call or a walk of a listing still
+ * going rejects, since a list cut short is not the list, while a loop that closes the wiki and then leaves
+ * leaves cleanly. One a fleet gave a run is the fleet's to close, so closing it does nothing.
  */
 export declare class Wiki {
+    private readonly __nominal;
     private constructor();
     /**
      * The full title [raw] names on this wiki, normalised and with its prefix, as a page of the namespace
@@ -875,7 +903,8 @@ export declare class Wiki {
      */
     stopPage(title?: Nullable<string>): StopPolicy;
     /**
-     * Ends what this wiki is still fetching and releases its connections.
+     * Ends what this wiki is still fetching and releases its connections. On a wiki a fleet gave a run, or
+     * `botMain` gave a bot, it does nothing, since that session is theirs to close and others share it.
      */
     close(): void;
     /**
@@ -982,6 +1011,7 @@ export declare namespace Wiki {
  * A page's current text and the revision it is.
  */
 export declare class Page {
+    private readonly __nominal;
     private constructor();
     /**
      * The text, parsed.
@@ -1030,6 +1060,7 @@ export declare namespace Page {
  * How the wiki answered an edit.
  */
 export declare class EditResult {
+    private readonly __nominal;
     private constructor();
     /**
      * `"saved"`, `"unchanged"`, or why the wiki refused: `"conflict"`, `"protected"`, `"permission-denied"`,
@@ -1097,6 +1128,7 @@ export declare namespace EditResult {
  * One revision of a page.
  */
 export declare class Revision {
+    private readonly __nominal;
     private constructor();
     /**
      * The revision's id.
@@ -1157,6 +1189,7 @@ export declare namespace Revision {
  * An account, or an anonymous user.
  */
 export declare class User {
+    private readonly __nominal;
     private constructor();
     /**
      * The account name, or the address an anonymous user edits from.
@@ -1199,6 +1232,7 @@ export declare function parse(text: string): Wikitext;
  * Parsed wikitext. Every change returns a new one and leaves this one as it was.
  */
 export declare class Wikitext {
+    private readonly __nominal;
     private constructor();
     /**
      * The templates, outermost first, or only those whose name is [name] when one is given.
@@ -1380,6 +1414,7 @@ export declare namespace Wikitext {
  * A template, or a parser function, and the parameters it was given.
  */
 export declare class Template {
+    private readonly __nominal;
     private constructor();
     /**
      * The value of parameter [name] as visible text, trimmed, or `null` when it is not given.
@@ -1474,6 +1509,7 @@ export declare namespace Template {
  * One parameter of a template.
  */
 export declare class Parameter {
+    private readonly __nominal;
     private constructor();
     /**
      * The parameter as wikitext.
@@ -1518,6 +1554,7 @@ export declare namespace Parameter {
  * A link to another page of the wiki, `[[target|text]]`.
  */
 export declare class Link {
+    private readonly __nominal;
     private constructor();
     /**
      * The link as wikitext.
@@ -1554,6 +1591,7 @@ export declare namespace Link {
  * A section: its heading, what is directly under it, and the sections nested under it.
  */
 export declare class Section {
+    private readonly __nominal;
     private constructor();
     /**
      * The first section under this one, at any depth, headed [title], and at [level] when one is given.
@@ -1657,6 +1695,7 @@ export declare function botConfigTemplate(): string;
  * How the bot identifies itself. Required by the Wikimedia user-agent policy.
  */
 export declare class BotIdentity {
+    private readonly __nominal;
     constructor(name: string, contact: string, version?: string);
     /**
      * The bot's name, which goes in the user agent.
@@ -1681,6 +1720,7 @@ export declare namespace BotIdentity {
  * Which wiki to work on unless a command says otherwise.
  */
 export declare class WikiSelection {
+    private readonly __nominal;
     constructor(lang?: string, family?: string, server?: Nullable<string>, scriptPath?: string);
     /**
      * The language code of the wiki to work on; `"en"` unless given.
@@ -1709,6 +1749,7 @@ export declare namespace WikiSelection {
  * How fast requests may go out.
  */
 export declare class ThrottleSettings {
+    private readonly __nominal;
     constructor(read?: string, write?: string);
     /**
      * Between reads, as a Kotlin duration such as `"100ms"`, which is the default.
@@ -1729,6 +1770,7 @@ export declare namespace ThrottleSettings {
  * Where the account name lives, and where its password does not.
  */
 export declare class LoginSettings {
+    private readonly __nominal;
     constructor(account: string, botName: string, passwordEnv?: string, optional?: boolean);
     /**
      * The account name, without the bot-password suffix.
@@ -1757,6 +1799,7 @@ export declare namespace LoginSettings {
  * An OAuth 2.0 login: an owner-only consumer's access token, which needs no login round trip.
  */
 export declare class OAuthSettings {
+    private readonly __nominal;
     constructor(tokenEnv?: string, username?: Nullable<string>, optional?: boolean);
     /**
      * The name of an environment variable holding the access token; `"KWIKIBOT_OAUTH_TOKEN"` unless given.
@@ -1781,6 +1824,7 @@ export declare namespace OAuthSettings {
  * How a run reads and writes. Anything left out keeps the run's own default.
  */
 export declare class RunSettings {
+    private readonly __nominal;
     constructor(readConcurrency?: Nullable<number>, writeConcurrency?: Nullable<number>, readBatch?: Nullable<number>);
     /**
      * How many pages, or batches, a run works on at once.
@@ -1805,6 +1849,7 @@ export declare namespace RunSettings {
  * How many requests the client has in flight, and how long a request may take.
  */
 export declare class HttpSection {
+    private readonly __nominal;
     constructor(maxConcurrentRequests?: number, maxIdleConnections?: number, timeout?: string);
     /**
      * How many requests may be in flight at once, to every wiki together; 3 unless given.
@@ -1829,6 +1874,7 @@ export declare namespace HttpSection {
  * How failed requests and lost sessions are retried. Anything left out keeps the client's default.
  */
 export declare class RetrySettings {
+    private readonly __nominal;
     constructor(maxRetries?: Nullable<number>, initialDelay?: Nullable<string>, maxDelay?: Nullable<string>, relogins?: number);
     /**
      * How many times a request may be retried before its failure is raised.
@@ -1857,6 +1903,7 @@ export declare namespace RetrySettings {
  * Where read responses are remembered.
  */
 export declare class CacheSettings {
+    private readonly __nominal;
     constructor(path?: string, ttl?: string);
     /**
      * Where on disk to keep them; `"apicache"` unless given.
@@ -1879,6 +1926,7 @@ export declare namespace CacheSettings {
  * `createBotConfig` makes one.
  */
 export declare class BotConfig {
+    private readonly __nominal;
     private constructor();
     /**
      * What to open a client with, as this configuration describes it, for `createClient` and `connectWith`.
@@ -2129,6 +2177,7 @@ export declare interface BotRunOptions {
  * What a run did. A caller that wants every page takes `onOutcome`.
  */
 export declare class BotReport {
+    private readonly __nominal;
     private constructor();
     /**
      * The counts as a line of text.
@@ -2194,6 +2243,7 @@ export declare namespace BotReport {
  * What became of one page in a run.
  */
 export declare class PageOutcome {
+    private readonly __nominal;
     private constructor();
     /**
      * `"missing"`, `"skipped"`, `"unchanged"`, `"pending"` for an edit a dry run computed, `"saved"`,
@@ -2248,6 +2298,7 @@ export declare namespace PageOutcome {
  * Thrown by `skipPage` to abandon one page with a reason.
  */
 export declare class SkipPageError extends Error {
+    private readonly __nominal;
     constructor(reason: string);
     /**
      * Why the page was left alone, which the outcome records.
@@ -2351,6 +2402,7 @@ export declare interface CommonOptionsInit {
  * them to a run as its `common`.
  */
 export declare class CommonOptions {
+    private readonly __nominal;
     private constructor();
     /**
      * [base] with what these flags change about a client: its pace, its connections and its contact. A
@@ -2425,6 +2477,7 @@ export declare namespace CommonOptions {
  * The common flags read off a command line, and what they left.
  */
 export declare class ParsedCommandLine {
+    private readonly __nominal;
     private constructor();
     /**
      * The common flags.
@@ -2445,9 +2498,11 @@ export declare namespace ParsedCommandLine {
  * What `botMain` hands to a bot.
  */
 export declare class BotStart {
+    private readonly __nominal;
     private constructor();
     /**
-     * The wiki `kwikibot.toml` names, opened as its account.
+     * The wiki `kwikibot.toml` names, opened as its account. `botMain` closes it, so its `close` does
+     * nothing.
      */
     get wiki(): Wiki;
     /**
@@ -2476,7 +2531,8 @@ export declare namespace BotStart {
 export declare function connectWith(server: string, contact: string, options?: Nullable<ConnectOptions>): Promise<Wiki>;
 /**
  * Opens the wiki of [family] in [language], such as `"en"` and `FAMILY_WIKTIONARY`, with every setting
- * [options] gives. [language] is ignored by a family with one wiki.
+ * [options] gives, `scriptPath` and `secure` over the family's own. [language] is ignored by a family with
+ * one wiki.
  */
 export declare function connectFamily(language: string, family: Family, contact: string, options?: Nullable<ConnectOptions>): Promise<Wiki>;
 /**
@@ -2489,13 +2545,15 @@ export declare function createClient(contact: string, options?: Nullable<Connect
  * Opens wikis that share one set of connections and one throttle.
  */
 export declare class WikiClient {
+    private readonly __nominal;
     private constructor();
     /**
      * Opens the wiki at [server]. Closing it leaves the client and its other wikis open.
      */
     wiki(server: string): Promise<Wiki>;
     /**
-     * Opens the wiki of [family] in [language]. Closing it leaves the client and its other wikis open.
+     * Opens the wiki of [family] in [language], with the client's `scriptPath` and `secure` over the family's
+     * own. Closing it leaves the client and its other wikis open.
      */
     wikiOf(language: string, family: Family): Promise<Wiki>;
     /**
@@ -2564,6 +2622,8 @@ export declare interface HttpOptions {
 }
 /**
  * Hears what a client does on a bot's behalf. Every function is optional. One that throws fails the request.
+ * What it is given never holds a password, a token or an auth header: the value of any parameter or field
+ * named so is `"[redacted]"` instead, whatever was sent.
  */
 export declare interface ListenerOptions {
     /**
@@ -2605,6 +2665,7 @@ export declare interface ResponseCache {
  * Works in Node only: in a browser, which has no filesystem, making one throws.
  */
 export declare class DiskCache {
+    private readonly __nominal;
     constructor(root: string, ttl?: Nullable<number>);
     /**
      * The stored response for the request with [params], or `null` when there is none or it has expired.
@@ -2687,6 +2748,7 @@ export declare interface ConnectOptions {
  * A warning a wiki attached to an answer.
  */
 export declare class ApiWarning {
+    private readonly __nominal;
     private constructor();
     /**
      * The warning as a line of text.
@@ -2773,6 +2835,7 @@ export declare function isValidIsbn(raw: string): boolean;
  * differs between projects.
  */
 export declare class CosmeticPass {
+    private readonly __nominal;
     private constructor();
     /**
      * The page after this pass.
@@ -2789,6 +2852,7 @@ export declare namespace CosmeticPass {
  * Tidying passes over a page. None is on by default: many wikis prohibit cosmetic-only edits.
  */
 export declare class CosmeticChanges {
+    private readonly __nominal;
     private constructor();
     /**
      * The page with every pass applied, in order.
@@ -2813,6 +2877,7 @@ export declare namespace CosmeticChanges {
  * An ISBN whose check digit adds up.
  */
 export declare class Isbn {
+    private readonly __nominal;
     private constructor();
     /**
      * This ISBN as thirteen digits.
@@ -2866,6 +2931,7 @@ export declare function daysInMonth(month: number): number;
  * How one language titles its pages about a calendar day.
  */
 export declare class DayFormat {
+    private readonly __nominal;
     constructor(months: Array<string>, pattern: string, firstOrdinal?: Nullable<string>);
     /**
      * The month names in this language, January first.
@@ -2890,6 +2956,7 @@ export declare namespace DayFormat {
  * A calendar day, without a year.
  */
 export declare class MonthDay {
+    private readonly __nominal;
     private constructor();
     /**
      * The month, from 1 to 12.
@@ -3084,6 +3151,7 @@ export declare interface EntityEditOptions {
  * Reading and writing a Wikibase repository's entities. Reached as `wiki.entities`.
  */
 export declare class EntityService {
+    private readonly __nominal;
     private constructor();
     /**
      * The entity [id], such as `"Q42"`, or `null` when there is none.
@@ -3153,6 +3221,7 @@ export declare namespace EntityService {
  * One entity found for a page, with the title it was asked for.
  */
 export declare class EntityOfPage {
+    private readonly __nominal;
     private constructor();
     /**
      * The title as it was asked for.
@@ -3173,6 +3242,7 @@ export declare namespace EntityOfPage {
  * One hit from an entity search: enough to choose between candidates.
  */
 export declare class EntityMatch {
+    private readonly __nominal;
     private constructor();
     /**
      * The entity found.
@@ -3315,6 +3385,7 @@ export declare function endpointFromHtml(html: string, pageUrl: string): Nullabl
  * A group of wikis that share a domain pattern, such as the Wiktionaries.
  */
 export declare class Family {
+    private readonly __nominal;
     private constructor();
     /**
      * Where the API of this family's wiki in [language] is.
@@ -3437,6 +3508,7 @@ export declare interface Replacement {
  * A named bundle of replacements.
  */
 export declare class Fix {
+    private readonly __nominal;
     private constructor();
     /**
      * [wikitext] with this fix applied, parsed as a wiki with [options] parses it, when given.
@@ -3479,6 +3551,7 @@ export declare namespace Fix {
  * falls back through its chain and then to English; one missing everywhere comes back as the key itself.
  */
 export declare class Messages {
+    private readonly __nominal;
     private constructor();
     /**
      * The message for [key] in [language], with `$1`, `$2`… replaced by [values] in order.
@@ -3508,6 +3581,7 @@ export declare namespace Messages {
  * becomes `volcano` and `[[volcano|volcanoes]]` becomes `volcanoes`, at any depth.
  */
 export declare class Unlinker {
+    private readonly __nominal;
     constructor(capitalLinks?: boolean);
     /**
      * [wikitext] with every link to [target] replaced by the words it was showing.
@@ -3552,6 +3626,7 @@ export declare function createFleetWith(options: FleetHostOptions, bots: Array<B
  * The bots a fleet runs, by id. Throws when two of them have the same id.
  */
 export declare class BotRegistry {
+    private readonly __nominal;
     constructor(bots: Array<BotSpec>);
     /**
      * The bot called [id], or `null`.
@@ -3595,6 +3670,7 @@ export declare interface Question {
  * fleet. Close it when done.
  */
 export declare class Accounts {
+    private readonly __nominal;
     private constructor();
     /**
      * The wiki at [endpoint], as [account], or the default one, logging in if this is the first time it is
@@ -3680,6 +3756,7 @@ export declare interface RecordingOptions {
  * told. `open` gives back another handle on the same wiki, and `step` runs in the same context.
  */
 export declare class RecordingContext {
+    private readonly __nominal;
     constructor(wiki: Wiki, options?: Nullable<RecordingOptions>);
     /**
      * What to hand the bot.
@@ -3778,6 +3855,7 @@ export declare namespace OAuth2 {
  * The `User-Agent` a bot sends: Wikimedia's policy asks for a name and a way to reach its operator.
  */
 export declare class UserAgent {
+    private readonly __nominal;
     constructor(tool: string, version: string, contact: string);
     /**
      * The header's value.
@@ -3934,6 +4012,7 @@ export declare function compareMediaWikiVersions(first: string, second: string):
  * A namespace by its number, which is what identifies it on every wiki.
  */
 export declare class Namespace {
+    private readonly __nominal;
     constructor(id: number);
     /**
      * The number with a marker, `ns:14`.
@@ -4016,6 +4095,7 @@ export declare interface TitleOptions {
  * A link to a page on another wiki, such as `[[fr:Volcan]]`, to build rather than to parse.
  */
 export declare class SiteLink {
+    private readonly __nominal;
     constructor(prefix: string, title: string, text?: Nullable<string>);
     /**
      * The wikitext of this link. [forced] writes the leading colon that makes it a link in the sentence
@@ -4160,6 +4240,7 @@ export declare function pageSourceKinds(): Array<string>;
  * source and leaves this one as it was. None of them fetches a page's text.
  */
 export declare class PageSource {
+    private readonly __nominal;
     private constructor();
     /**
      * The titles this source names on [wiki], prefix included, fetched as the walk asks.
@@ -4220,6 +4301,7 @@ export declare namespace PageSource {
  * Pages with their text. Each narrowing makes a new stream and leaves this one as it was.
  */
 export declare class PageContents {
+    private readonly __nominal;
     private constructor();
     /**
      * The pages, fetched as the walk asks.
@@ -4397,6 +4479,7 @@ export declare interface Choice {
  * `promptFrom` makes one of your own.
  */
 export declare class Prompt {
+    private readonly __nominal;
     private constructor();
     /**
      * Asks a yes-or-no question, whose answer is [fallback] when a person gives none.
@@ -4507,6 +4590,7 @@ export declare function parseProofreadText(wikitext: string): ProofreadText;
  * extension rather than answering with nothing.
  */
 export declare class ProofreadService {
+    private readonly __nominal;
     private constructor();
     /**
      * The proofreading quality of each of [titles] that has one.
@@ -4531,6 +4615,7 @@ export declare namespace ProofreadService {
  * How far one scanned page has got through proofreading.
  */
 export declare class PageQuality {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -4556,6 +4641,7 @@ export declare namespace PageQuality {
  * 
  */
 export declare class ProofreadText {
+    private readonly __nominal;
     /**
      * @param header - everything inside the opening `<noinclude>`, after the quality marker.
      * @param body - the transcribed text, which is what a reader of the book sees.
@@ -4619,6 +4705,7 @@ export declare function throwOnResponseError(response: Record<string, JsonValue>
  * JSON. Titles are read with the wiki's namespaces.
  */
 export declare class ResponseDecoder {
+    private readonly __nominal;
     private constructor();
     /**
      * One entry of a `query` result's `pages`.
@@ -4674,6 +4761,7 @@ export declare namespace ResponseDecoder {
  * One entry of a `query` result's `pages`.
  */
 export declare class DecodedPage {
+    private readonly __nominal;
     private constructor();
     /**
      * `"existing"`, `"missing"`, or `"invalid"` for a title the wiki refused.
@@ -4727,6 +4815,7 @@ export declare function createProgress(options?: Nullable<ProgressOptions>): Pro
  * Works in Node only: in a browser, which has no filesystem, making one throws.
  */
 export declare class RunState {
+    private readonly __nominal;
     constructor(directory: string);
     /**
      * How many pages earlier runs into this directory finished.
@@ -4795,6 +4884,7 @@ export declare interface RunLogOptions {
  * usable record.
  */
 export declare class RunLog {
+    private readonly __nominal;
     private constructor();
     /**
      * Writes what [outcome] calls for: a diff for an edit, a record for a page left alone.
@@ -4838,6 +4928,7 @@ export declare interface ProgressOptions {
  * call [finish] when the run is over.
  */
 export declare class Progress {
+    private readonly __nominal;
     private constructor();
     /**
      * Counts [outcome], and redraws the line if it has not been drawn for a moment.
@@ -4878,6 +4969,7 @@ export declare function signatureFormat(language: string, pattern: RegExp, month
  * ships.
  */
 export declare class Signatures {
+    private readonly __nominal;
     private constructor();
     /**
      * Every signature time in [wikitext], in the order they appear.
@@ -4914,6 +5006,7 @@ export declare namespace Signatures {
  * One wiki's signature format.
  */
 export declare class SignatureFormat {
+    private readonly __nominal;
     private constructor();
     /**
      * Every timestamp in [wikitext] this format matches. Comments are left out.
@@ -4938,6 +5031,7 @@ export declare function decodeSiteMatrix(response: Record<string, JsonValue>): S
  * Every Wikimedia wiki, from `wiki.siteMatrix()`.
  */
 export declare class SiteMatrix {
+    private readonly __nominal;
     private constructor();
     /**
      * The wikis of one [project], such as `"wiktionary"`.
@@ -4974,6 +5068,7 @@ export declare namespace SiteMatrix {
  * One wiki in the Wikimedia site matrix.
  */
 export declare class MatrixWiki {
+    private readonly __nominal;
     private constructor();
     /**
      * The wiki's database name.
@@ -5031,6 +5126,7 @@ export declare function claim(mainSnak: Snak, options?: Nullable<ClaimOptions>):
  * One property-value assertion: that [property] has a value, that it has none, or that it has one not known.
  */
 export declare class Snak {
+    private readonly __nominal;
     private constructor();
     /**
      * The snak as Wikibase writes it.
@@ -5063,6 +5159,7 @@ export declare namespace Snak {
  * A source cited for a statement.
  */
 export declare class Reference {
+    private readonly __nominal;
     constructor(snaks: Array<Snak>);
     /**
      * The snaks for [property] in this reference.
@@ -5136,6 +5233,7 @@ export declare function sharedStopOnPage(wiki: Wiki, title: string): StopPolicy;
  * bot that keeps editing because its emergency stop was unreachable is what this prevents.
  */
 export declare class StopPolicy {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether the bot may continue. Rejecting is treated as "stop".
@@ -5209,6 +5307,7 @@ export declare function eventStreams(contact: string, options?: Nullable<EventSt
  * How a query service is told who is asking.
  */
 export declare class SparqlAuth {
+    private readonly __nominal;
     private constructor();
     /**
      * `"none"`, what a public endpoint wants, or `"cookie"`.
@@ -5254,6 +5353,7 @@ export declare interface SparqlClientOptions {
  * Runs SPARQL queries against a query service.
  */
 export declare class SparqlClient {
+    private readonly __nominal;
     private constructor();
     /**
      * The rows a `SELECT` [query] gives. Rejects with what the service said when it refuses the query.
@@ -5269,7 +5369,8 @@ export declare class SparqlClient {
      */
     selectStreamed(query: string): AsyncIterable<SparqlRow>;
     /**
-     * Ends what is still being fetched and releases the connections.
+     * Ends what is still being fetched and releases the connections. A walk of `selectStreamed` still going
+     * rejects, as does a query, since a table cut short is not the answer.
      */
     close(): void;
 }
@@ -5308,6 +5409,7 @@ export declare interface EventStreamsOptions {
  * allows a page's origin decides whether it can be read.
  */
 export declare class EventStreams {
+    private readonly __nominal;
     private constructor();
     /**
      * Recent changes, as they happen. [since] is where to resume from: a previous event's `offset`, or an ISO
@@ -5323,7 +5425,7 @@ export declare class EventStreams {
      */
     events(stream: string, since?: Nullable<string>): AsyncIterable<WikiEvent>;
     /**
-     * Ends every walk and releases the connections.
+     * Ends every walk, which finishes as a loop does rather than rejecting, and releases the connections.
      */
     close(): void;
 }
@@ -5337,6 +5439,7 @@ export declare namespace EventStreams {
  * One change, as an event stream reports it. Every wiki is on a stream at once, so filter on [wiki].
  */
 export declare class WikiEvent {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether the event is from [wiki] and in one of [namespaces], any namespace when none are given.
@@ -5502,6 +5605,7 @@ export declare interface FakePageServiceOptions {
  * one that does not are refused. It does not edit numbered sections, and an edit of one rejects saying so.
  */
 export declare class FakePageService {
+    private readonly __nominal;
     constructor(options?: Nullable<FakePageServiceOptions>);
     /**
      * The current text of the page [title], or `null` if it does not exist.
@@ -5530,6 +5634,7 @@ export declare namespace FakePageService {
  * One edit a `FakePageService` applied, with everything the bot said of it.
  */
 export declare class FakeEdit {
+    private readonly __nominal;
     private constructor();
     /**
      * The page edited, prefix included in English.
@@ -5602,6 +5707,7 @@ export declare namespace FakeEdit {
  * A request a `MockTransport` was asked to send.
  */
 export declare class MockRequest {
+    private readonly __nominal;
     private constructor();
     /**
      * Its parameters.
@@ -5632,6 +5738,7 @@ export declare namespace MockRequest {
  * answers as a wiki would, in plain JSON or a promise of it. Throwing from it fails the call.
  */
 export declare class MockTransport {
+    private readonly __nominal;
     constructor(handler: (params: Record<string, string>) => Awaitable<Record<string, JsonValue>>, endpoint?: Nullable<Endpoint>);
     /**
      * Every request it was asked to send, in order.
@@ -5706,6 +5813,7 @@ export declare function describeError(error: unknown): Nullable<ErrorInfo>;
  * One of this library's errors. [kind] says which, and so which of the other fields are set.
  */
 export declare class ErrorInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * `"timeout"`, `"unreachable"`, `"server-error"`, `"refused"`, `"rate-limited"` or `"maxlag"` when the
@@ -5900,6 +6008,7 @@ export declare function unknownValue(type: string, value: JsonValue): DataValue;
  * library does not model is kept whole as an `"unknown"`, and written back unchanged.
  */
 export declare class DataValue {
+    private readonly __nominal;
     private constructor();
     /**
      * The value as Wikibase writes it, `{ type, value }`.
@@ -6030,6 +6139,7 @@ export declare function roundTrips(text: string, options?: Nullable<ParseOptions
  * What a run did, in counts, with its refusals and failures.
  */
 export declare class RunReport {
+    private readonly __nominal;
     private constructor();
     /**
      * How many pages were handled.
@@ -6079,6 +6189,7 @@ export declare namespace RunReport {
  * One page a run changed, or would change.
  */
 export declare class Change {
+    private readonly __nominal;
     private constructor();
     /**
      * The page's title.
@@ -6103,6 +6214,7 @@ export declare namespace Change {
  * One page a run could not do.
  */
 export declare class Problem {
+    private readonly __nominal;
     private constructor();
     /**
      * The page's title.
@@ -6127,6 +6239,7 @@ export declare namespace Problem {
  * A Wikibase entity: an item, a property, a lexeme or a file's structured data.
  */
 export declare class Entity {
+    private readonly __nominal;
     private constructor();
     /**
      * The label in [language], or `null` when it has none there.
@@ -6235,6 +6348,7 @@ export declare namespace Entity {
  * One statement of an entity.
  */
 export declare class Claim {
+    private readonly __nominal;
     private constructor();
     /**
      * The whole statement as Wikibase writes it, qualifiers and references included.
@@ -6304,6 +6418,7 @@ export declare namespace Claim {
  * `allow` is a whitelist: everybody not on it is denied.
  */
 export declare class BotPolicy {
+    private readonly __nominal;
     constructor(botName: string, task?: Nullable<string>);
     /**
      * Whether this bot may edit [wikitext].
@@ -6324,6 +6439,7 @@ export declare namespace BotPolicy {
  * Why a page may or may not be edited by a bot.
  */
 export declare class EditPermission {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether editing is allowed.
@@ -6344,6 +6460,7 @@ export declare namespace EditPermission {
  * Text in one language, as labels, descriptions and lemmas are stored.
  */
 export declare class LanguageValue {
+    private readonly __nominal;
     constructor(language: string, value: string);
     /**
      * The language code, or `"mul"` for a value that applies to all.
@@ -6364,6 +6481,7 @@ export declare namespace LanguageValue {
  * A page on a wiki that an item is about.
  */
 export declare class EntitySiteLink {
+    private readonly __nominal;
     constructor(site: string, title: string, badges?: Array<string>);
     /**
      * The wiki's database name, such as `"enwiktionary"`.
@@ -6388,6 +6506,7 @@ export declare namespace EntitySiteLink {
  * One inflected form of a lexeme.
  */
 export declare class LexemeForm {
+    private readonly __nominal;
     private constructor();
     /**
      * The form's id, such as `"L1-F2"`.
@@ -6416,6 +6535,7 @@ export declare namespace LexemeForm {
  * One sense of a lexeme.
  */
 export declare class LexemeSense {
+    private readonly __nominal;
     private constructor();
     /**
      * The sense's id, such as `"L1-S1"`.
@@ -6517,6 +6637,7 @@ export declare interface NewPageStatsOptions {
  * would read as "nothing there".
  */
 export declare class ExtensionService {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [extension] is installed, by the name MediaWiki reports.
@@ -6647,6 +6768,7 @@ export declare namespace ExtensionService {
  * One page, and one thing an extension says about it.
  */
 export declare class PageValue {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -6667,6 +6789,7 @@ export declare namespace PageValue {
  * A point on the globe, as GeoData records it for a page.
  */
 export declare class Coordinate {
+    private readonly __nominal;
     private constructor();
     /**
      * Degrees north, negative for south.
@@ -6699,6 +6822,7 @@ export declare namespace Coordinate {
  * The coordinates of one page.
  */
 export declare class PageCoordinates {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -6719,6 +6843,7 @@ export declare namespace PageCoordinates {
  * One problem the Linter extension found on a page.
  */
 export declare class LintError {
+    private readonly __nominal;
     private constructor();
     /**
      * The error's own id, stable while the problem is still on the page.
@@ -6755,6 +6880,7 @@ export declare namespace LintError {
  * One notification from Echo.
  */
 export declare class Notification {
+    private readonly __nominal;
     private constructor();
     /**
      * Its own id.
@@ -6791,6 +6917,7 @@ export declare namespace Notification {
  * What a wiki running FlaggedRevs says about a page's reviewed state.
  */
 export declare class FlaggedInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -6827,6 +6954,7 @@ export declare namespace FlaggedInfo {
  * The state of an abuse filter.
  */
 export declare class AbuseFilterFlags {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether it checks edits at all.
@@ -6859,6 +6987,7 @@ export declare namespace AbuseFilterFlags {
  * One abuse filter: what was asked for, and what this account may see.
  */
 export declare class AbuseFilter {
+    private readonly __nominal;
     private constructor();
     /**
      * The filter's number.
@@ -6911,6 +7040,7 @@ export declare namespace AbuseFilter {
  * One page in the new pages feed.
  */
 export declare class TriagePage {
+    private readonly __nominal;
     private constructor();
     /**
      * The page's title.
@@ -6960,6 +7090,7 @@ export declare namespace TriagePage {
  * A queue in the new pages feed.
  */
 export declare class TriageBacklog {
+    private readonly __nominal;
     private constructor();
     /**
      * How many pages are in it.
@@ -6980,6 +7111,7 @@ export declare namespace TriageBacklog {
  * How long the new pages backlog is.
  */
 export declare class TriageStats {
+    private readonly __nominal;
     private constructor();
     /**
      * Articles waiting for review.
@@ -7061,6 +7193,7 @@ export declare interface UploadOptions {
  * saying so.
  */
 export declare class FileService {
+    private readonly __nominal;
     private constructor();
     /**
      * The upload history of each of [files] the wiki has, newest version first, [versions] of each: one, the
@@ -7125,6 +7258,7 @@ export declare namespace FileService {
  * The upload history of one file.
  */
 export declare class FileVersions {
+    private readonly __nominal;
     private constructor();
     /**
      * The file, prefix included.
@@ -7145,6 +7279,7 @@ export declare namespace FileVersions {
  * One version of a file.
  */
 export declare class FileInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * Where the file itself can be fetched, `""` on a version hidden from this account.
@@ -7205,6 +7340,7 @@ export declare namespace FileInfo {
  * Where a file on a shared repository is used, on another wiki.
  */
 export declare class GlobalUsage {
+    private readonly __nominal;
     private constructor();
     /**
      * The database name of the wiki using it.
@@ -7229,6 +7365,7 @@ export declare namespace GlobalUsage {
  * Where a wiki's files come from.
  */
 export declare class FileRepository {
+    private readonly __nominal;
     private constructor();
     /**
      * The internal name, such as `"local"` or `"shared"`.
@@ -7265,6 +7402,7 @@ export declare namespace FileRepository {
  * What became of an upload.
  */
 export declare class UploadResult {
+    private readonly __nominal;
     private constructor();
     /**
      * `"uploaded"`, `"warned"`, when the wiki holds the bytes but wants its warnings acknowledged, or
@@ -7528,6 +7666,7 @@ export declare interface ExternalLinkUsageOptions {
  * `IllegalArgumentException` when the listing is asked for, as does a title the wiki would not accept.
  */
 export declare class ListService {
+    private readonly __nominal;
     private constructor();
     /**
      * The titles in [category], which needs no `Category:` prefix.
@@ -7646,6 +7785,7 @@ export declare namespace ListService {
  * differ from this one's.
  */
 export declare class LanguageLink {
+    private readonly __nominal;
     private constructor();
     /**
      * The language code, as the wiki's interwiki map spells it.
@@ -7678,6 +7818,7 @@ export declare namespace LanguageLink {
  * A link to another wiki through the interwiki map.
  */
 export declare class InterwikiLink {
+    private readonly __nominal;
     private constructor();
     /**
      * The interwiki prefix, `"w"` for Wikipedia.
@@ -7830,6 +7971,7 @@ export declare interface WatchlistChangesOptions {
  * names none of its values throws `IllegalArgumentException` when the listing is asked for.
  */
 export declare class LogService {
+    private readonly __nominal;
     private constructor();
     /**
      * Entries from the wiki's logs, every log unless told.
@@ -7854,6 +7996,7 @@ export declare namespace LogService {
  * One entry from a wiki log: a block, a move, a deletion, an upload.
  */
 export declare class LogEvent {
+    private readonly __nominal;
     private constructor();
     /**
      * The entry's own id, which orders the log and never repeats.
@@ -7911,6 +8054,7 @@ export declare namespace LogEvent {
  * names are set: the others are `null`.
  */
 export declare class LogDetails {
+    private readonly __nominal;
     private constructor();
     /**
      * `"none"` for an entry with no fields of its own; `"move"`, with [target] and [suppressedRedirect];
@@ -7995,6 +8139,7 @@ export declare namespace LogDetails {
  * One restriction on a page: an action, who may still do it, and until when.
  */
 export declare class Protection {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether it is still in force at [now].
@@ -8027,6 +8172,7 @@ export declare namespace Protection {
  * One entry from recent changes or a watchlist: an edit, a page creation or a log action.
  */
 export declare class RecentChange {
+    private readonly __nominal;
     private constructor();
     /**
      * The recent-changes id, which orders the stream.
@@ -8142,6 +8288,7 @@ export declare interface ApplyTagsOptions {
  * for and kept for as long as the wiki is open.
  */
 export declare class MetaService {
+    private readonly __nominal;
     private constructor();
     /**
      * One `siprop` block of the wiki's site information, such as `"rightsinfo"`, as plain JSON, or `null`
@@ -8193,6 +8340,7 @@ export declare namespace MetaService {
  * What a wiki knows about a language.
  */
 export declare class LanguageInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * The wiki's own code for it.
@@ -8479,6 +8627,7 @@ export declare interface ExpandTextsOptions {
  * option that names none of its values.
  */
 export declare class PageService {
+    private readonly __nominal;
     private constructor();
     /**
      * The current text of [title], or `null` when there is no such page.
@@ -8616,6 +8765,7 @@ export declare namespace PageService {
  * The protections in force on one page.
  */
 export declare class PageProtections {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -8636,6 +8786,7 @@ export declare namespace PageProtections {
  * What the logged-in account may do to one page.
  */
 export declare class PageActions {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [action] is permitted. `false` for an action that was not tested.
@@ -8664,6 +8815,7 @@ export declare namespace PageActions {
  * Someone who has edited a page.
  */
 export declare class Contributor {
+    private readonly __nominal;
     private constructor();
     /**
      * The account name.
@@ -8684,6 +8836,7 @@ export declare namespace Contributor {
  * Who has edited one page.
  */
 export declare class PageContributors {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -8708,6 +8861,7 @@ export declare namespace PageContributors {
  * How much one category holds, as the wiki counts it.
  */
 export declare class CategoryInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * The category, prefix included.
@@ -8744,6 +8898,7 @@ export declare namespace CategoryInfo {
  * One page, and the pages that point at it.
  */
 export declare class RelatedPages {
+    private readonly __nominal;
     private constructor();
     /**
      * The page.
@@ -8764,6 +8919,7 @@ export declare namespace RelatedPages {
  * What `expandTexts` made of one text.
  */
 export declare class ExpandedText {
+    private readonly __nominal;
     private constructor();
     /**
      * The expanded wikitext.
@@ -8844,6 +9000,7 @@ export declare interface ParseRequest {
  * templates and all. Where a property is taken, it is one of those [ParseRequest.properties] lists.
  */
 export declare class RenderService {
+    private readonly __nominal;
     private constructor();
     /**
      * The headings of [page], in order, each with the `index` an edit takes as its section.
@@ -8889,6 +9046,7 @@ export declare namespace RenderService {
  * One heading of a page, as the wiki renders it.
  */
 export declare class RenderedSection {
+    private readonly __nominal;
     private constructor();
     /**
      * What an edit takes as its `section`. A string: the wiki numbers some subsections `T-1`.
@@ -8929,6 +9087,7 @@ export declare namespace RenderedSection {
  * A link a page resolves to once its templates have expanded.
  */
 export declare class ResolvedLink {
+    private readonly __nominal;
     private constructor();
     /**
      * Where it points.
@@ -8949,6 +9108,7 @@ export declare namespace ResolvedLink {
  * How much of each parser limit a parse used.
  */
 export declare class LimitReport {
+    private readonly __nominal;
     private constructor();
     /**
      * Every row of the report by name, such as `limitreport-expensivefunctioncount`, each with its values in
@@ -8978,6 +9138,7 @@ export declare namespace LimitReport {
  * What a page or a draft turns into once the wiki has parsed it: what was asked for, the rest empty.
  */
 export declare class ParsedPage {
+    private readonly __nominal;
     private constructor();
     /**
      * The rendered HTML, when it was asked for.
@@ -9106,6 +9267,7 @@ export declare interface RevisionDeleteOptions {
  * `IllegalArgumentException` when a listing is asked for, and rejects a promise otherwise.
  */
 export declare class RevisionService {
+    private readonly __nominal;
     private constructor();
     /**
      * The revisions of [page], newest first unless told.
@@ -9156,6 +9318,24 @@ export declare namespace RevisionService {
     /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
     namespace $metadata$ {
         const constructor: abstract new () => RevisionService;
+    }
+}
+/**
+ * What a callback threw or rejected with when that was not an `Error`, such as a string, `undefined` or a
+ * plain object: a run or a walk rejects with one of these, and [value] is what was thrown.
+ */
+export declare class ThrownValue extends Error {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * Exactly what was thrown.
+     */
+    get value(): Thrown;
+}
+export declare namespace ThrownValue {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => ThrownValue;
     }
 }
 /**
@@ -9293,6 +9473,7 @@ export declare interface ChangeRightsOptions {
  * The people editing a wiki, reached as `wiki.users`.
  */
 export declare class UserService {
+    private readonly __nominal;
     private constructor();
     /**
      * What the wiki knows about the accounts [names], by the name asked for. A name with no account behind it
@@ -9341,6 +9522,7 @@ export declare namespace UserService {
  * What a wiki knows about one account, at the moment it was asked.
  */
 export declare class UserInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether the user holds [right].
@@ -9418,6 +9600,7 @@ export declare namespace UserInfo {
  * A block in force.
  */
 export declare class BlockInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * The block's own id, or `null` when the wiki did not say.
@@ -9458,6 +9641,7 @@ export declare namespace BlockInfo {
  * One entry in a wiki's block list, which names what is blocked.
  */
 export declare class BlockRecord {
+    private readonly __nominal;
     private constructor();
     /**
      * The block itself.
@@ -9486,6 +9670,7 @@ export declare namespace BlockRecord {
  * One edit by a user.
  */
 export declare class Contribution {
+    private readonly __nominal;
     private constructor();
     /**
      * The title of the page edited.
@@ -9535,6 +9720,7 @@ export declare interface CallOptions {
  * What a wiki says about itself, read once when it is opened.
  */
 export declare class SiteInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [extension] is installed, compared ignoring case.
@@ -9607,6 +9793,7 @@ export declare namespace SiteInfo {
  * Whether a wiki creates temporary accounts, and the shape of their names.
  */
 export declare class TempAccountConfig {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [name] is a temporary account on this wiki.
@@ -9631,6 +9818,7 @@ export declare namespace TempAccountConfig {
  * The account a wiki sees, or an anonymous session.
  */
 export declare class Identity {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether the account holds [right].
@@ -9675,6 +9863,7 @@ export declare namespace Identity {
  * One namespace as a wiki describes it.
  */
 export declare class NamespaceInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * Its number, which is its identity across wikis.
@@ -9715,6 +9904,7 @@ export declare namespace NamespaceInfo {
  * The namespaces of one wiki.
  */
 export declare class Namespaces {
+    private readonly __nominal;
     private constructor();
     /**
      * The namespace numbered [id], or `null` when the wiki has none.
@@ -9745,6 +9935,7 @@ export declare namespace Namespaces {
  * The interwiki prefixes a wiki recognises, such as `w`, `wikt` or `de`.
  */
 export declare class Interwiki {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [prefix] is an interwiki prefix on this wiki rather than page text.
@@ -9765,6 +9956,7 @@ export declare namespace Interwiki {
  * One parameter of an API module, as the wiki describes it.
  */
 export declare class ParamDescription {
+    private readonly __nominal;
     private constructor();
     /**
      * Its name, without the module's prefix.
@@ -9833,6 +10025,7 @@ export declare namespace ParamDescription {
  * One API module, as the wiki describes it.
  */
 export declare class ModuleDescription {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether it takes a parameter called [parameter] on this wiki.
@@ -9871,7 +10064,8 @@ export declare class ModuleDescription {
      */
     get sourceName(): Nullable<string>;
     /**
-     * For a submodule of `query`, which of `list`, `prop` or `meta` it belongs to.
+     * Which of its parent's groups it is in, as the wiki says it: `"action"`, `"format"`, for a submodule of
+     * `query` `"list"`, `"prop"` or `"meta"`, or what an extension calls its own, such as `"submodule"`.
      */
     get group(): Nullable<ModuleGroup>;
     /**
@@ -9898,6 +10092,7 @@ export declare namespace ModuleDescription {
  * is open.
  */
 export declare class ParamInfo {
+    private readonly __nominal;
     private constructor();
     /**
      * The description of [module], named as `paraminfo` names it, such as `"query+categorymembers"`, or
@@ -9946,6 +10141,7 @@ export declare namespace ParamInfo {
  * wiki's token types, `"csrf"`, what an ordinary write needs, unless given.
  */
 export declare class TokenStore {
+    private readonly __nominal;
     private constructor();
     /**
      * The token of [type]. Rejects in an anonymous session, which has no real one.
@@ -10000,6 +10196,7 @@ export declare namespace TokenStore {
  * What a wiki's configuration changes about how its wikitext parses, from `wiki.parseOptions()`.
  */
 export declare class ParseOptions {
+    private readonly __nominal;
     private constructor();
     /**
      * Parses [text] the way the wiki these options came from reads it.
@@ -10044,6 +10241,7 @@ export declare namespace ParseOptions {
  * Names a wiki recognises in `{{...}}`, each compared exactly or ignoring case.
  */
 export declare class MagicWords {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether [name] is one of them.
@@ -10068,6 +10266,7 @@ export declare namespace MagicWords {
  * How a wiki names pages, as far as telling which page a `{{...}}` transcludes needs.
  */
 export declare class TitleRules {
+    private readonly __nominal;
     private constructor();
     /**
      * Whether a template named [title] is a parser function or a variable rather than a page. [hasArguments]
@@ -10155,6 +10354,7 @@ export declare interface TextScopeOptions {
  * One match of a regular expression in the text, as a replacement is given it.
  */
 export declare class TextMatch {
+    private readonly __nominal;
     private constructor();
     /**
      * The text matched.
@@ -10180,6 +10380,7 @@ export declare namespace TextMatch {
  * back exactly as it was read.
  */
 export declare class Node {
+    private readonly __nominal;
     private constructor();
     /**
      * This node as wikitext.
@@ -10237,6 +10438,7 @@ export declare namespace Node {
  * A comment, `<!-- ... -->`.
  */
 export declare class Comment {
+    private readonly __nominal;
     private constructor();
     /**
      * This comment as wikitext.
@@ -10265,6 +10467,7 @@ export declare namespace Comment {
  * A template's argument, `{{{name|default}}}`.
  */
 export declare class Argument {
+    private readonly __nominal;
     private constructor();
     /**
      * This argument as wikitext.
@@ -10293,6 +10496,7 @@ export declare namespace Argument {
  * A link off the wiki, `[url title]`, or a bare URL in running text.
  */
 export declare class ExternalLink {
+    private readonly __nominal;
     private constructor();
     /**
      * This link as wikitext.
@@ -10329,6 +10533,7 @@ export declare namespace ExternalLink {
  * A heading, `== Heading ==`.
  */
 export declare class Heading {
+    private readonly __nominal;
     private constructor();
     /**
      * This heading as wikitext.
@@ -10357,6 +10562,7 @@ export declare namespace Heading {
  * An entity, `&amp;`, `&#65;` or `&#x41;`.
  */
 export declare class HtmlEntity {
+    private readonly __nominal;
     private constructor();
     /**
      * This entity as wikitext.
@@ -10389,6 +10595,7 @@ export declare namespace HtmlEntity {
  * One attribute of a tag, with the whitespace that surrounded it.
  */
 export declare class Attribute {
+    private readonly __nominal;
     private constructor();
     /**
      * This attribute as it was written.
@@ -10429,6 +10636,7 @@ export declare namespace Attribute {
  * A tag: `<ref>...</ref>`, `<br />`, or the wiki markup that stands in for one.
  */
 export declare class Tag {
+    private readonly __nominal;
     private constructor();
     /**
      * This tag as wikitext.
@@ -10485,6 +10693,7 @@ export declare namespace Tag {
  * Where a piece of wikitext sits in the text it writes back as: from [start] up to just before [end].
  */
 export declare class SourceRange {
+    private readonly __nominal;
     private constructor();
     /**
      * Where it starts, counted in UTF-16 code units as JavaScript counts them.
@@ -10505,6 +10714,7 @@ export declare namespace SourceRange {
  * Where the pieces of parsed wikitext sit in its text, from `Wikitext.ranges`.
  */
 export declare class SourceRanges {
+    private readonly __nominal;
     private constructor();
     /**
      * Where [node] was written, or `null` when it is not part of the wikitext these came from.
@@ -10534,14 +10744,15 @@ export type JsonValue = string | number | boolean | null | JsonValue[] | { [key:
 export type ApiValue = string | number | boolean | Date | null | undefined | Array<string | number | Date>;
 export type MessageValue = string | number;
 export type Ignored = unknown;
+export type Thrown = unknown;
 export type ExitStatus = number | void;
 export type Negatable<T extends string> = T | `!${T}`;
 export type RunStatus = "queued" | "running" | "waiting" | "done" | "failed" | "cancelled" | "declined";
 export type RunLevel = "info" | "saved" | "skipped" | "error";
 export type FleetEventKind = "said" | "changed";
-export type SparqlValueType = "uri" | "literal" | "bnode";
+export type SparqlValueType = "uri" | "literal" | "bnode" | (string & {});
 export type TitleKind = "local" | "interwiki" | "invalid";
-export type TitleProblem = "empty" | "illegal-character" | "relative-path" | "signature" | "percent-escape" | "too-long";
+export type TitleProblem = "empty" | "illegal-character" | "relative-path" | "signature" | "percent-escape" | "too-long" | "talk-of-non-main" | "unknown-namespace";
 export type EditRefusal = "conflict" | "protected" | "permission-denied" | "rate-limited" | "filtered" | "captcha" | "page-changed" | "rejected";
 export type EditStatus = "saved" | "unchanged" | EditRefusal;
 export type TextScopeName = "prose" | "everywhere";
@@ -10584,7 +10795,7 @@ export type ParseProperty = "text" | "links" | "templates" | "categories" | "ima
 export type ParserName = "legacy" | "parsoid";
 export type RevisionPart = "content" | "comment" | "user";
 export type NodeKind = "text" | "comment" | "template" | "argument" | "wiki-link" | "external-link" | "heading" | "html-entity" | "tag";
-export type ModuleGroup = "list" | "prop" | "meta";
+export type ModuleGroup = "action" | "format" | "list" | "prop" | "meta" | (string & {});
 export type EntitySearchKind = Exclude<NewEntityKind, "mediainfo">;
 export type EventType = ChangeType | (string & {});
 export type HexMarker = "x" | "X";

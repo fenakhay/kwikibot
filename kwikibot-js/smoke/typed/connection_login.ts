@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { inspect } from "node:util";
 import {
   BotPassword,
   connect,
@@ -60,6 +61,7 @@ import {
 } from "kwikibot/client";
 import { dumpPagesOf } from "kwikibot/dumps";
 import { type ErrorInfo } from "kwikibot/errors";
+import { sparqlAuthWcqs } from "kwikibot/sparql";
 import { customFamily, type Endpoint } from "kwikibot/titles";
 import { type Answer, FakeSite, QUICK, assertArray, assertDate, assertNone, assertRecord, collect, json, withWiki } from "./support.js";
 
@@ -713,11 +715,45 @@ function rejectedConnectionShapes(wiki: Wiki, info: ErrorInfo, decoded: DecodedP
   const throttle: ThrottleOptions = { read: "200ms" };
   // @ts-expect-error a cache has both a get and a put
   const cache: ResponseCache = { get: () => null };
-  void [wiki, kind, problem, state, throttle, cache];
+  // @ts-expect-error a look-alike is no login: it holds no password
+  const login: BotPassword = { account: "Bot", botName: "task" };
+  // @ts-expect-error a look-alike is no user agent: the wiki would never see it
+  const agent: UserAgent = { tool: "t", version: "1", contact: "c", headerValue: "t/1" };
+  void [wiki, kind, problem, state, throttle, cache, login, agent];
 }
 void rejectedConnectionShapes;
 
+/** What looks at a wiki over a real session, stubbed `fetch` and all, for a password. */
+async function nothingLooksAtASecret(): Promise<void> {
+  const site = new FakeSite();
+  const login = new BotPassword("Bot", "task", "secret");
+  await withWiki(
+    site,
+    async (wiki) => {
+      assert.ok(site.requests.some((request) => request.lgpassword === "secret"));
+      for (const value of [login, wiki]) {
+        assert.equal(JSON.stringify(value).includes("secret"), false);
+        assert.equal(Object.values({ ...value }).join().includes("secret"), false);
+      }
+      for (const value of [login, wiki, wiki.lists, wiki.pagesService]) {
+        assert.equal(inspect(value, { depth: null }).includes("secret"), false);
+      }
+    },
+    login,
+  );
+  const token = new OAuth2("tok-very-private", "Bot");
+  assert.equal(JSON.stringify(token).includes("tok-very-private"), false);
+  assert.equal(inspect(token, { depth: null }).includes("tok-very-private"), false);
+  assert.deepEqual(Object.keys(token).includes("password"), false);
+  assert.equal(token.username, "Bot");
+  const cookie = sparqlAuthWcqs("tok-very-private");
+  assert.equal(JSON.stringify(cookie).includes("tok-very-private"), false);
+  assert.equal(inspect(cookie, { depth: null }).includes("tok-very-private"), false);
+  assert.equal(cookie.value, "tok-very-private");
+}
+
 try {
+  await nothingLooksAtASecret();
   theConstants();
   whoThisLibraryIs();
   credentials();

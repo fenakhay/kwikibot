@@ -558,7 +558,6 @@ internal class ApiFileService(
                         },
                     )
                 }
-                // Last, as MediaWiki requires of anything following a token.
                 append("token", token)
             }
         )

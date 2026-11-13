@@ -9,6 +9,7 @@ import com.fenakhay.kwikibot.net.temporaryDirectory
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
 import com.fenakhay.kwikibot.net.transport.KtorTransport
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotContain
@@ -22,7 +23,6 @@ import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.buffered
@@ -33,6 +33,8 @@ import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+
+private const val SHARDS = 256
 
 class ResponseCacheTest {
 
@@ -189,7 +191,7 @@ class ResponseCacheTest {
                 Credentials.BotPassword("Bot", "one", "hunter2"),
                 Credentials.BotPassword("Bot", "two", "hunter2"),
                 Credentials.OAuth2("sekrit-token"),
-                Credentials.OAuth2("sekrit-token", "Bot"),
+                Credentials.OAuth2("sekrit-too", "Bot"),
             )
 
         accounts.forEach { cache.scopedTo(it).put(read, answer) }
@@ -201,33 +203,98 @@ class ResponseCacheTest {
                 SystemFileSystem.source(file).buffered().use { it.readString() }
             }
         written shouldNotContain "hunter2"
-        written shouldNotContain "sekrit-token"
+        written shouldNotContain "sekrit"
     }
 
     @Test
-    fun `a write sweeps out what has expired and only once per time to live`() = runTest {
+    fun `two logins sharing a username keep entries apart`() = runTest {
+        val cache = DiskCache(tempRoot())
+
+        cache.scopedTo(Credentials.OAuth2("token-one", "Bot")).put(read, body("""{"n":1}"""))
+
+        cache.scopedTo(Credentials.OAuth2("token-two", "Bot")).get(read).shouldBeNull()
+    }
+
+    @Test
+    fun `writes sweep out what has expired a shard at a time and only once per time to live`() = runTest {
         val root = tempRoot()
         val clock = FixedClock()
         val cache = DiskCache(root, ttl = 1.hours, clock = clock)
         val answer = body("""{"n":1}""")
-        val garbage = Path(root, "ab", "garbage.json")
+        val old = ApiRequest.of("query", "titles" to "old")
+        val unreadable = entryIn(root, "ab", "not json")
 
-        cache.put(ApiRequest.of("query", "titles" to "old"), answer)
-        entries(root) shouldBe 1
+        cache.put(old, answer)
 
-        clock.advance(30.minutes)
-        SystemFileSystem.createDirectories(Path(root, "ab"))
-        SystemFileSystem.sink(garbage).buffered().use { it.writeString("not json") }
-        cache.put(ApiRequest.of("query", "titles" to "middle"), answer)
-        entries(root) shouldBe 3
+        clock.advance(2.hours)
+        repeat(SHARDS) { cache.put(ApiRequest.of("query", "titles" to "new $it"), answer) }
 
-        clock.advance(40.minutes)
-        cache.put(ApiRequest.of("query", "titles" to "new"), answer)
+        SystemFileSystem.exists(unreadable) shouldBe false
+        cache.get(old).shouldBeNull()
+        entries(root) shouldBe SHARDS
 
-        entries(root) shouldBe 2
-        cache.get(ApiRequest.of("query", "titles" to "old")).shouldBeNull()
-        cache.get(ApiRequest.of("query", "titles" to "middle")) shouldBe answer
-        cache.get(ApiRequest.of("query", "titles" to "new")) shouldBe answer
+        val later = entryIn(root, "cd", """{"storedAt":0,"response":{}}""")
+        cache.put(ApiRequest.of("query", "titles" to "one more"), answer)
+        SystemFileSystem.exists(later) shouldBe true
+
+        clock.advance(1.hours)
+        repeat(SHARDS) { cache.put(ApiRequest.of("query", "titles" to "again $it"), answer) }
+        SystemFileSystem.exists(later) shouldBe false
+    }
+
+    @Test
+    fun `a sweep touches nothing outside the cache's own layout whatever it holds`() = runTest {
+        val root = tempRoot()
+        val clock = FixedClock()
+        val cache = DiskCache(root, ttl = 1.hours, clock = clock)
+        val hash = "ab".padEnd(32, '0')
+        val expired = """{"storedAt":0,"response":{}}"""
+        val foreign =
+            listOf(
+                Path(root, "kwikibot.toml"),
+                Path(root, "$hash.json"),
+                Path(root, "ab", "notes.txt"),
+                Path(root, "ab", "$hash.txt"),
+                Path(root, "ab", "garbage.json"),
+                Path(root, "ab", "cd".padEnd(32, '0') + ".json"),
+                Path(root, "ab", "deep", "$hash.json"),
+                Path(root, "abc", "$hash.json"),
+                Path(root, "state", "ab", "$hash.json"),
+            )
+        foreign.forEach {
+            SystemFileSystem.createDirectories(it.parent!!)
+            it.write(expired)
+        }
+
+        clock.advance(2.hours)
+        repeat(SHARDS + 1) { cache.put(ApiRequest.of("query", "titles" to "t$it"), body("{}")) }
+
+        foreign.forEach { SystemFileSystem.exists(it) shouldBe true }
+    }
+
+    @Test
+    fun `one write sweeps at most one shard`() = runTest {
+        val root = tempRoot()
+        val shards = (0 until SHARDS).map { it.toByte().toHexString() }
+        val expired = shards.map { entryIn(root, it, """{"storedAt":0,"response":{}}""") }
+        val cache = DiskCache(root, ttl = 1.hours, clock = FixedClock())
+
+        cache.put(read, body("{}"))
+
+        expired.count { SystemFileSystem.exists(it) } shouldBeGreaterThanOrEqual SHARDS - 1
+    }
+
+    @Test
+    fun `no time to live walks nothing`() = runTest {
+        val root = tempRoot()
+        val expired =
+            (0 until SHARDS).map {
+                entryIn(root, it.toByte().toHexString(), """{"storedAt":0,"response":{}}""")
+            }
+
+        DiskCache(root, ttl = Duration.ZERO, clock = FixedClock()).put(read, body("{}"))
+
+        expired.count { SystemFileSystem.exists(it) } shouldBe SHARDS
     }
 
     @Test
@@ -316,6 +383,12 @@ class ResponseCacheTest {
     }
 
     private fun tempRoot(): Path = temporaryDirectory("kwikibot-cache-test")
+
+    /** A file named as an entry of [shard] is, holding [text]. */
+    private fun entryIn(root: Path, shard: String, text: String): Path {
+        SystemFileSystem.createDirectories(Path(root, shard))
+        return Path(root, shard, shard.padEnd(32, '0') + ".json").also { it.write(text) }
+    }
 
     private fun entries(root: Path): Int = filesUnder(root).count { it.name.endsWith(".json") }
 

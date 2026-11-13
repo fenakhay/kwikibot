@@ -73,27 +73,7 @@ en.wiktionary, four Wikipedias and Commons, 764,000 characters in all, and eight
 of a megabyte each, 1.95 million characters. kwikibot, mwparserfromhell and wikiparser-node each
 wrote all 238 pages back exactly.
 
-### Reading a dump
-
-A synthetic dump of 60,489 pages and 400 MB of XML, 172 MB as bzip2 and 234 MB as gzip, read on an
-11-core Apple Silicon machine. The old reader is the JDK's StAX with commons-compress, kept for its
-deprecated `java.nio` overloads.
-
-| | Plain | gzip | bzip2 |
-|---|---|---|---|
-| Old reader, one thread | 0.6 s | 2.1 s | 17.8 s |
-| JVM, one thread | 0.8 s | 2.2 s | 10.6 s |
-| JVM, 4 workers | 0.5 s | 2.1 s | 5.3 s |
-| JVM, 8 workers | 0.5 s | 2.0 s | 3.2 s |
-| Kotlin/Native debug build, one thread | 10 s | 42 s | 58 s |
-| Kotlin/Native debug build, 8 workers | 3.3 s | 35 s | 10 s |
-| Node, one thread | 17 s | 39 s | 37 s |
-| Node, 8 worker threads | – | – | 17 s |
-
-gzip has no boundaries to split on, so more workers only help its parsing. On Node, worker threads
-decompress and the main thread parses and runs your code, so they help bzip2 alone.
-
-## Parsing
+### Parsing
 
 Milliseconds for one pass over a corpus, lower is better. Relative is against the fastest.
 
@@ -166,6 +146,28 @@ The runtime itself takes time to start: an empty program took 99 ms on Node here
 58 ms on the JVM and 8 ms natively. A JVM process that parsed the page took 40 ms longer than an
 empty one, and a native one took no measurable extra time.
 
+### Reading a dump
+
+One read each of a synthetic dump of 60,489 pages and 400 MB of XML, 172 MB as bzip2 and 234 MB as gzip,
+on the same machine and the same day as the rest, with nothing done per page. The version in the table above
+does not apply here: these were taken while the new reader was being written, and it has been corrected since
+without them being taken again, so its rows are older than its code. The old reader is the JDK's StAX with
+commons-compress, kept for its deprecated `java.nio` overloads.
+
+| | Plain | gzip | bzip2 |
+|---|---|---|---|
+| Old reader, one thread | 0.6 s | 2.1 s | 17.8 s |
+| JVM, one thread | 0.8 s | 2.2 s | 10.6 s |
+| JVM, 4 workers | 0.5 s | 2.1 s | 5.3 s |
+| JVM, 8 workers | 0.5 s | 2.0 s | 3.2 s |
+| Kotlin/Native debug build, one thread | 10 s | 42 s | 58 s |
+| Kotlin/Native debug build, 8 workers | 3.3 s | 35 s | 10 s |
+| Node, one thread | 17 s | 39 s | 37 s |
+| Node, 8 worker threads | – | – | 17 s |
+
+gzip has no boundaries to split on, so more workers only help its parsing. On Node, worker threads
+decompress and the main thread parses and runs your code, so they help bzip2 alone.
+
 ## How the numbers were measured
 
 kwikibot on the JVM and natively is timed by its own suite, `kwikibot-benchmarks`: the mean of five
@@ -189,3 +191,18 @@ Start-up figures are the median of 21 fresh processes. Load is what `require` or
 the runtime has started. On the JVM the parser needs `kwikibot-wikitext`, `kotlin-stdlib` and
 JetBrains' `annotations`, and the native executable holds the parser, Kotlin's runtime and the file
 reading this test needed. How much code the JVM and Python load was not measured.
+
+A dump is timed by `DumpSpeedTest`, and the old reader by `DumpAgreementTest`, each on the file `KWIKI_DUMP`
+names:
+
+```bash
+KWIKI_DUMP=big.xml.bz2 ./gradlew :kwikibot-client:jvmTest --tests '*DumpSpeedTest*' --tests '*DumpAgreementTest*'
+KWIKI_DUMP=big.xml.bz2 ./gradlew :kwikibot-client:macosArm64Test --tests '*DumpSpeedTest*'
+KWIKI_DUMP=big.xml.bz2 KWIKI_DUMP_WORKERS=8 ./gradlew :kwikibot-client:jsNodeTest --tests '*DumpSpeedTest*'
+```
+
+The JVM ran on the build's JDK 25 toolchain, native as the debug test binary, and Node was 26.13.0, the version
+the build downloads. One-thread rows time `XmlDump.pages`. Rows with workers time `scan` and `flow`, which took
+about the same, at the worker counts the rows name; `KWIKI_DUMP_WORKERS` picks those and leaves `pages` out.
+Each figure is a single run, not a median. A pass on Node can outlast the test runner's 60-second timeout, which
+fails the test, so its figures are the lines printed before that.

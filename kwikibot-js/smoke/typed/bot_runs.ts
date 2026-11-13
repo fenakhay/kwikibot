@@ -11,6 +11,7 @@ import {
   type PageEdit,
   PageSource,
   skipPage,
+  type Thrown,
   type Wiki,
 } from "kwikibot";
 import {
@@ -78,6 +79,7 @@ import {
   WikiSelection,
 } from "kwikibot/bot";
 import { createClient, UserAgent } from "kwikibot/client";
+import { ThrownValue } from "kwikibot/errors";
 import {
   pagePileSource,
   petScanSavedSource,
@@ -88,6 +90,7 @@ import {
   type SparqlSourceOptions,
   withPetScanTitles,
 } from "kwikibot/sparql";
+import { createFakeWiki, FakePageService } from "kwikibot/testing";
 import { FakeSite, QUICK, assertArray, assertNone, collect, json, withWiki } from "./support.js";
 
 const LOGIN = new BotPassword("TestBot", "task", "secret");
@@ -1320,6 +1323,34 @@ function typosDoNotCompile(report: BotReport, outcome: PageOutcome, problem: Pro
 }
 void typosDoNotCompile;
 
+async function whatIsNotAnErrorRejectsWithItself(): Promise<void> {
+  const wiki = createFakeWiki({ pages: new FakePageService({ pages: { Volcano: "ash" } }) });
+  const plain = { code: 7 };
+  for (const value of ["boom", undefined, null, plain]) {
+    const thrown = await wiki
+      .botRun({
+        source: titles("Volcano"),
+        transform: () => {
+          throw value;
+        },
+      })
+      .then(
+        () => assert.fail("the run should have rejected"),
+        (failure: unknown) => failure,
+      );
+    assert.ok(thrown instanceof ThrownValue);
+    assert.ok(thrown instanceof Error);
+    const kept: Thrown = thrown.value;
+    assert.equal(kept, value);
+  }
+  const rejected = await wiki
+    .botRun({ source: titles("Volcano"), transform: () => Promise.reject() })
+    .catch((failure: unknown) => failure);
+  assert.ok(rejected instanceof ThrownValue);
+  assert.equal(rejected.value, undefined);
+}
+
+await whatIsNotAnErrorRejectsWithItself();
 await aDryRunComputesAndSavesNothing();
 await aSavingRunSendsTheEditAsItWasSaid();
 await anEditOfNoTextAndASectionAreToldApart();

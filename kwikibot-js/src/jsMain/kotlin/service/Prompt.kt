@@ -82,10 +82,10 @@ public class TerminalPrompt(
 ) : Prompt(terminalPrompt(output, input))
 
 private fun terminalPrompt(output: ((String) -> Unit)?, input: (() -> Awaitable<String?>)?): ClientPrompt {
-    val read: (suspend () -> String?)? = input?.let { { settledResult(it()).unsafeCast<String?>() } }
+    val read: (suspend () -> String?)? = input?.let { { settledCall(it).unsafeCast<String?>() } }
     return when {
-        output != null && read != null -> ClientTerminalPrompt(output, read)
-        output != null -> ClientTerminalPrompt(output)
+        output != null && read != null -> ClientTerminalPrompt({ text -> fromJs { output(text) } }, read)
+        output != null -> ClientTerminalPrompt({ text -> fromJs { output(text) } })
         read != null -> ClientTerminalPrompt(input = read)
         else -> ClientTerminalPrompt()
     }
@@ -124,14 +124,17 @@ private class HandledPrompt(private val handlers: PromptHandlers) : ClientPrompt
         get() = handlers.isInteractive ?: true
 
     override suspend fun confirm(question: String, default: Boolean): Boolean =
-        settledResult(handlers.confirm(question, default)) == true
+        settledCall { handlers.confirm(question, default) } == true
 
-    override suspend fun choose(question: String, choices: List<ClientChoice<String>>): String =
-        settledResult(handlers.choose(question, choices.map(::plainChoice).toTypedArray()))
-            .unsafeCast<String>()
+    override suspend fun choose(question: String, choices: List<ClientChoice<String>>): String = settledCall {
+        handlers.choose(question, choices.map(::plainChoice).toTypedArray())
+    }
+        .unsafeCast<String>()
 
-    override suspend fun text(question: String, default: String): String =
-        settledResult(handlers.text(question, default)).unsafeCast<String>()
+    override suspend fun text(question: String, default: String): String = settledCall {
+        handlers.text(question, default)
+    }
+        .unsafeCast<String>()
 }
 
 private fun choiceOf(choice: Choice): ClientChoice<String> {

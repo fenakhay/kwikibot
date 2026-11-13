@@ -4,8 +4,10 @@ import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.long
 import com.fenakhay.kwikibot.net.obj
 import com.fenakhay.kwikibot.net.transport.ApiRequest
+import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -90,15 +92,19 @@ public fun ResponseCache.scopedTo(scope: String): ResponseCache {
     }
 }
 
-/** This cache, keeping what it holds for the account [credentials] log in as apart. */
+/**
+ * This cache, keeping what it holds for the account [credentials] log in as apart.
+ *
+ * An OAuth 2.0 login is told apart by a digest of its token, since the username beside it is only a label,
+ * which two accounts can share.
+ */
 public fun ResponseCache.scopedTo(credentials: Credentials): ResponseCache =
     scopedTo(
         when (credentials) {
             is Credentials.Anonymous -> "anonymous"
             is Credentials.BotPassword -> credentials.loginName
             is Credentials.OAuth2 ->
-                credentials.username
-                    ?: SHA256().digest(credentials.accessToken.encodeToByteArray()).toHexString()
+                SHA256().digest(credentials.accessToken.encodeToByteArray()).toHexString()
         }
     )
 
@@ -116,6 +122,9 @@ private const val SCOPE_PARAMETER = "kwikibot-scope"
  *
  * A cache that cannot be read or written is not an error: the request simply goes to the wiki. A corrupt or
  * unreadable entry must never be the reason a bot run fails.
+ *
+ * Expired entries are swept a shard at a time as entries are written, and only files in the cache's own
+ * layout are ever swept, `xx/<hash>.json`, so [root] may be a directory that also holds other things.
  */
 public class DiskCache(
     private val root: Path,
@@ -131,7 +140,12 @@ public class DiskCache(
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    @OptIn(ExperimentalAtomicApi::class) private val lastSweep = AtomicLong(Long.MIN_VALUE)
+    @OptIn(ExperimentalAtomicApi::class)
+    private val sweepStarted = AtomicLong(clock.now().toEpochMilliseconds())
+
+    @OptIn(ExperimentalAtomicApi::class) private val shardsToSweep = AtomicInt(SHARDS)
+
+    @OptIn(ExperimentalAtomicApi::class) private val nextShard = AtomicInt(Random.nextInt(SHARDS))
 
     override suspend fun get(request: ApiRequest): JsonObject? {
         if (!ResponseCache.isCacheable(request)) return null
@@ -184,31 +198,44 @@ public class DiskCache(
     }
 
     /**
-     * Sweeps on the first write of this cache, then at most once per [ttl].
-     *
-     * An entry is otherwise deleted only when its request comes round again, and most never do, so the
-     * directory would grow for as long as it is used.
+     * Sweeps one shard for this write, so a large cache costs each write a small part of the walk rather than
+     * one write all of it. A pass over all of them starts at a random shard, so that short runs reach them
+     * all between them, and the next pass comes at most once per [ttl]. With no time to live there is nothing
+     * to wait for an entry to outlast, so nothing is walked.
      */
     @OptIn(ExperimentalAtomicApi::class)
     private fun sweepIfDue() {
-        val now = clock.now().toEpochMilliseconds()
-        val last = lastSweep.load()
-        if (last != Long.MIN_VALUE && now - last < ttl.inWholeMilliseconds) return
-        if (!lastSweep.compareAndSet(last, now)) return
+        if (!ttl.isPositive()) return
+        if (shardsToSweep.load() <= 0 && !startSweep()) return
+        if (shardsToSweep.fetchAndAdd(-1) <= 0) return
 
-        val _ = runCatching { sweep(root) }
+        val shard = nextShard.fetchAndAdd(1).mod(SHARDS).toByte().toHexString()
+        val _ = runCatching { sweep(Path(root, shard), shard) }
+    }
+
+    /** Starts the next pass if one is due. */
+    @OptIn(ExperimentalAtomicApi::class)
+    private fun startSweep(): Boolean {
+        val now = clock.now().toEpochMilliseconds()
+        val started = sweepStarted.load()
+        if (now - started < ttl.inWholeMilliseconds) return false
+        if (sweepStarted.compareAndSet(started, now)) shardsToSweep.store(SHARDS)
+        return true
     }
 
     /**
-     * Deletes every entry below [directory] that is expired or unreadable.
+     * Deletes the entries of [shard] that are expired or unreadable, and nothing else that is in [directory].
      *
      * Reads only the start of each file, since `storedAt` is written first and a response can be large.
      */
-    private fun sweep(directory: Path) {
+    private fun sweep(directory: Path, shard: String) {
+        if (SystemFileSystem.metadataOrNull(directory)?.isDirectory != true) return
         for (child in SystemFileSystem.list(directory)) {
-            if (SystemFileSystem.metadataOrNull(child)?.isDirectory == true) {
-                sweep(child)
-            } else {
+            val isEntry =
+                child.name.startsWith(shard) &&
+                    ENTRY_NAME.matches(child.name) &&
+                    SystemFileSystem.metadataOrNull(child)?.isRegularFile == true
+            if (isEntry) {
                 val storedAt = STORED_AT.find(child.readStart())?.groupValues?.get(1)?.toLongOrNull()
                 if (storedAt == null || !isFresh(storedAt)) child.deleteQuietly()
             }
@@ -277,5 +304,7 @@ public class DiskCache(
         private const val ENTRY_START_BYTES = 64L
         private val STORED_AT = Regex("""^\{"storedAt":(\d+)""")
         private const val KEY_LENGTH = 32
+        private const val SHARDS = 256
+        private val ENTRY_NAME = Regex("""[0-9a-f]{32}\.json""")
     }
 }

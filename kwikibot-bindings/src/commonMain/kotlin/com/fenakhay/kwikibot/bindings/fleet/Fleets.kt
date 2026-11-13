@@ -14,6 +14,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.io.files.Path
 
@@ -85,17 +86,17 @@ public fun recordingContextWithDefaults(
 
 /**
  * One stop for many bots, from what [read] answers: read at most once a minute, a good answer lasting five
- * minutes after a failed read, on the system's clock, unless told.
+ * minutes after a failed read, on the monotonic clock, unless told.
  */
 public fun sharedStopWithDefaults(
     read: suspend () -> String?,
     every: Duration? = null,
     staleAfter: Duration? = null,
-    clock: Clock? = null,
+    timeSource: TimeSource? = null,
 ): SharedStop =
     SharedStop(
         read,
         every ?: DEFAULT_EVERY,
         staleAfter ?: DEFAULT_STALE_AFTER,
-        clock ?: Clock.System,
+        timeSource ?: TimeSource.Monotonic,
     )

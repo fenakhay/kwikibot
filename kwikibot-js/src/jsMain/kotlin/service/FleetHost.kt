@@ -108,16 +108,18 @@ internal fun createAccounts(
             credentials = { account ->
                 val login = if (account == null) options?.login else null
                 login?.credentials
-                    ?: if (credentials != null) credentials(account)?.credentials ?: Credentials.Anonymous
-                    else Credentials.fromEnvironment(accountPrefix(account), ::environmentVariable)
+                    ?: if (credentials != null) {
+                        fromJs { credentials(account) }?.credentials ?: Credentials.Anonymous
+                    } else if (account == null) {
+                        hideFields(Credentials.fromEnvironment("KWIKIBOT", ::environmentVariable))
+                    } else {
+                        hideFields(ClientAccounts.namedCredentials(account, ::environmentVariable))
+                    }
             },
             clients = { config, login -> ClientWikiClient(config, login, engine = engine) },
         )
     )
 }
-
-private fun accountPrefix(account: String?): String =
-    if (account == null) "KWIKIBOT" else "KWIKIBOT_${account.uppercase()}"
 
 /** What a fleet is opened with by `createFleetWith`, which is everything a fleet can be told. */
 @JsExport
@@ -167,9 +169,9 @@ public fun createFleetWith(options: FleetHostOptions, bots: Array<BotSpec>): Fle
             scope,
             questions = { bot, question ->
                 val ask = options.onQuestion
-                ask != null && settledResult(ask(bot, questionOf(question))) == true
+                ask != null && settledCall { ask(bot, questionOf(question)) } == true
             },
-            out = { line -> options.onLine?.invoke(line) },
+            out = lineObserver(options.onLine),
             stop = options.stop?.policy,
             directory = options.directory?.let(::Path),
             clock = options.now?.let(::clockOf),
@@ -206,7 +208,7 @@ public class RecordingContext(wiki: Wiki, options: RecordingOptions? = null) {
     private val recording =
         recordingContextWithDefaults(
             wiki.wiki,
-            { question -> options?.answer?.invoke(questionOf(question)) == true },
+            { question -> fromJs { options?.answer?.invoke(questionOf(question)) } == true },
             options?.stopPolicy?.policy,
             options?.options?.options,
             options?.arguments?.asList(),

@@ -1,3 +1,5 @@
+@file:Suppress("TooGenericExceptionCaught")
+
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.js.Promise
 import kotlinx.coroutines.CoroutineScope
@@ -5,11 +7,11 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
 
@@ -19,12 +21,15 @@ public external interface AsyncIterable<out T>
 /**
  * This flow as an async iterable, each walk of which collects the flow afresh, one item ahead of the walk.
  * Ending a walk early, with `break` or `return`, stops the collection, so no page is fetched that is not
- * read.
+ * read. A failure of the flow, however it comes, rejects the walk.
  */
 internal fun <T, R> Flow<T>.toAsyncIterable(scope: CoroutineScope, convert: (T) -> R): AsyncIterable<R> =
     asyncIterable(this, scope, false, convert)
 
-/** This flow as [toAsyncIterable] makes it, a walk of which cancelling [scope] ends rather than rejects. */
+/**
+ * This flow as [toAsyncIterable] makes it, a walk of which cancelling [scope] ends rather than rejects: for
+ * what never ends of itself, so that closing it is how a walk is meant to finish.
+ */
 internal fun <T, R> Flow<T>.toAsyncIterableEndingWith(
     scope: CoroutineScope,
     convert: (T) -> R,
@@ -63,13 +68,23 @@ private class FlowIterator<T, R>(
 
     private val collector =
         scope.launch(start = CoroutineStart.LAZY) {
-            flow
-                .onCompletion { cause -> if (cause == null) items.close() }
-                .catch { failure -> items.close(failure) }
-                .collect { items.send(it) }
+            try {
+                flow.collect { items.send(it) }
+                items.close()
+            } catch (failure: Throwable) {
+                val _ = items.close(failure)
+                if (failure is CancellationException && !isActive) throw failure
+            }
         }
 
-    fun next(): Promise<dynamic> = if (endsWithScope) nextOrEnd() else scope.promise { receive() }
+    private var stopped = false
+
+    fun next(): Promise<dynamic> =
+        when {
+            stopped -> Promise.resolve(iteratorResult(null, done = true))
+            endsWithScope -> nextOrEnd()
+            else -> scope.promise { receive() }
+        }
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun nextOrEnd(): Promise<dynamic> = GlobalScope.promise {
@@ -88,10 +103,18 @@ private class FlowIterator<T, R>(
         else iteratorResult(convert(received.getOrThrow()), done = false)
     }
 
-    fun stop(): Promise<dynamic> = scope.promise {
-        collector.cancel()
-        items.cancel()
-        iteratorResult(null, done = true)
+    /**
+     * Ends this walk, having stopped the collection, whatever has become of [scope], since a loop leaving
+     * after a close is not at fault.
+     */
+    @OptIn(DelicateCoroutinesApi::class)
+    fun stop(): Promise<dynamic> {
+        stopped = true
+        return GlobalScope.promise {
+            collector.cancelAndJoin()
+            items.cancel()
+            iteratorResult(null, done = true)
+        }
     }
 
     fun toJs(): dynamic {

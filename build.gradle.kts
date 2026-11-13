@@ -16,9 +16,13 @@ plugins {
 group = "com.fenakhay.kwikibot"
 version = providers.gradleProperty("releaseVersion").orNull ?: "0.0.0-SNAPSHOT"
 
+val publishedModules = sortedSetOf<String>()
+
 subprojects {
     group = rootProject.group
     version = rootProject.version
+
+    pluginManager.withPlugin("kwikibot.published") { publishedModules += path }
 }
 
 nmcpAggregation {
@@ -117,20 +121,38 @@ val coverageByModule = tasks.register("coverageByModule") {
     }
 }
 
+val aggregatedModules = listOf(
+    ":kwikibot",
+    ":kwikibot-model",
+    ":kwikibot-wikitext",
+    ":kwikibot-net",
+    ":kwikibot-protocol",
+    ":kwikibot-client",
+    ":kwikibot-wikibase",
+    ":kwikibot-bot",
+    ":kwikibot-fleet",
+    ":kwikibot-testkit",
+)
+
+val checkPublishedModules = tasks.register("checkPublishedModules") {
+    group = "verification"
+    description = "Fails when a module that applies kwikibot.published would not reach the Central Portal."
+
+    val published = publishedModules
+    val aggregated = aggregatedModules.toSet()
+
+    doLast {
+        val missing = published - aggregated
+        check(missing.isEmpty()) { "published, but not in the nmcp aggregation: $missing" }
+    }
+}
+
 tasks.named("check") {
-    dependsOn(tasks.named("koverVerify"), coverageByModule)
+    dependsOn(tasks.named("koverVerify"), coverageByModule, checkPublishedModules)
 }
 
 dependencies {
     covered.forEach { kover(project(it)) }
 
-    nmcpAggregation(project(":kwikibot"))
-    nmcpAggregation(project(":kwikibot-model"))
-    nmcpAggregation(project(":kwikibot-wikitext"))
-    nmcpAggregation(project(":kwikibot-net"))
-    nmcpAggregation(project(":kwikibot-protocol"))
-    nmcpAggregation(project(":kwikibot-client"))
-    nmcpAggregation(project(":kwikibot-wikibase"))
-    nmcpAggregation(project(":kwikibot-bot"))
-    nmcpAggregation(project(":kwikibot-testkit"))
+    aggregatedModules.forEach { nmcpAggregation(project(it)) }
 }

@@ -1,6 +1,15 @@
+import com.fenakhay.kwikibot.client.model.dump.DumpFormatException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import kotlin.js.Promise
 import kotlin.test.Test
 import kotlin.test.assertFails
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.await
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.khronos.webgl.Uint8Array
 
 class DumpTest {
@@ -35,5 +44,60 @@ class DumpTest {
         assertFails { dumpPagesOf(bytes, literal("zip")) }
         assertFails { dumpPagesOf(bytes, literal("bzip2")) }
         assertFails { dumpPagesOf(bytes, literal("gzip")) }
+    }
+
+    private fun written(name: String, bytes: Uint8Array): String {
+        val os: dynamic = js("process.getBuiltinModule('os')")
+        val fs: dynamic = js("process.getBuiltinModule('fs')")
+        val path = "${fs.mkdtempSync(os.tmpdir() + "/kwikibot-dump-")}/$name"
+        fs.writeFileSync(path, bytes)
+        return path
+    }
+
+    @Test
+    fun `a dump cut short rejects the walk after the pages before the cut`() = runTest {
+        if (!hasFileSystem()) return@runTest
+        val whole = js("new TextEncoder()").encode(xml).unsafeCast<Uint8Array>()
+        val path = written("cut.xml", whole.subarray(0, whole.length - 5))
+        val iterator = dumpPages(path, workers = 2).asDynamic()[js("Symbol.asyncIterator")]()
+
+        val titles = mutableListOf<String>()
+        val failure =
+            shouldThrow<DumpFormatException> {
+                withContext(Dispatchers.Default) {
+                    withTimeout(20_000) {
+                        while (true) {
+                            val step = iterator.next().unsafeCast<Promise<dynamic>>().await()
+                            if (step.done == true) break
+                            delay(20)
+                            titles += step.value.unsafeCast<DumpPage>().title
+                        }
+                    }
+                }
+            }
+
+        failure.code shouldBe DumpFormatException.Code.UNEXPECTED_EOF
+        titles shouldBe listOf("Volcano", "Talk:Volcano")
+    }
+
+    @Test
+    fun `a scan of a dump cut short rejects`() = runTest {
+        if (!hasFileSystem()) return@runTest
+        val whole = js("new TextEncoder()").encode(xml).unsafeCast<Uint8Array>()
+        val path = written("cut-scan.xml", whole.subarray(0, whole.length - 5))
+        val titles = mutableListOf<String>()
+
+        shouldThrow<DumpFormatException> {
+            scanDump(
+                    path,
+                    { page ->
+                        titles += page.title
+                        untyped(null)
+                    },
+                    workers = 2,
+                )
+                .await()
+        }
+        titles.sorted() shouldBe listOf("Talk:Volcano", "Volcano")
     }
 }

@@ -93,9 +93,12 @@ public data class WikiEvent(
  *
  * The flow does not end on its own. Cancel the collecting coroutine to stop it. The server closes every
  * connection after about fifteen minutes, so a close is routine: the flow reconnects from the last event it
- * read, waiting as [RetryPolicy] says, and an event around a reconnect can arrive twice. A connection that
- * keeps failing with no event in between surfaces as a [WikiError.Transport] once the retries are spent, so a
- * caller cannot mistake a network failure for a quiet wiki, and a refusal surfaces at once.
+ * read, waiting as [RetryPolicy] says, and an event around a reconnect can arrive twice. A stream with
+ * nothing to say costs no retries: a connection that answered and then went silent, or that was closed after
+ * saying anything at all, is reconnected to for as long as it takes. A connection that delivered an event
+ * starts the count again. One that keeps failing otherwise surfaces as a [WikiError.Transport] once the
+ * retries are spent, so a caller cannot mistake a network failure for a quiet wiki, and a refusal surfaces at
+ * once.
  *
  * A stream holds no request permit, since it would keep one of the client's few for as long as it runs.
  */
@@ -145,13 +148,13 @@ public class EventStreams(
     public fun events(stream: String, since: String? = null): Flow<WikiEvent> = channelFlow {
         val url = "$baseUrl/v2/stream/$stream"
         var position = since
-        var attempt = 0
+        var failures = 0
 
         while (true) {
-            var received = false
+            val connection = Connection()
             val failure = runCatching {
-                connect(url, position) { event, offset ->
-                    received = true
+                connect(url, position, connection) { event, offset ->
+                    connection.received = true
                     offset?.let { position = it }
                     event?.let { send(it) }
                 }
@@ -162,19 +165,35 @@ public class EventStreams(
                 )
 
             if (failure != null && !failure.isTransient) throw failure
-            attempt = if (received) 1 else attempt + 1
-            if (!received && attempt > retry.maxRetries) {
-                throw failure ?: WikiError.Transport.Unreachable(url)
-            }
-            delay(retry.delayFor(attempt, (failure as? WikiError.Transport.RateLimited)?.retryAfter))
+            if (connection.received) failures = 0 else if (!connection.isQuiet(failure)) failures++
+            if (failures > retry.maxRetries) throw failure ?: WikiError.Transport.Unreachable(url)
+            val retryAfter = (failure as? WikiError.Transport.RateLimited)?.retryAfter
+            delay(retry.delayFor(failures.coerceAtLeast(1), retryAfter))
         }
     }
         .buffer(Channel.RENDEZVOUS)
+
+    /** What one connection has shown of the server. */
+    private class Connection {
+        /** The server answered with success. */
+        var answered = false
+
+        /** It sent something, if only a keep-alive. */
+        var spoke = false
+
+        /** It delivered an event. */
+        var received = false
+
+        /** Whether it ended the way a healthy stream with nothing to report does. */
+        fun isQuiet(failure: WikiError.Transport?): Boolean =
+            if (failure == null) spoke else answered && failure is WikiError.Transport.Timeout
+    }
 
     /** One connection, resuming from [position], until the server closes it. */
     private suspend fun connect(
         url: String,
         position: String?,
+        connection: Connection,
         emit: suspend (WikiEvent?, String?) -> Unit,
     ) {
         client
@@ -198,7 +217,8 @@ public class EventStreams(
                 if (!response.status.isSuccess()) {
                     statusFailure(url, response, response.bodyAsText())?.let { throw it }
                 }
-                readEvents(response.bodyAsChannel(), emit)
+                connection.answered = true
+                readEvents(response.bodyAsChannel(), connection, emit)
             }
     }
 
@@ -215,12 +235,17 @@ public class EventStreams(
      * [emit] takes each complete event, as `null` if it could not be read, and its offset, so that an
      * unreadable event still moves the position on.
      */
-    private suspend fun readEvents(channel: ByteReadChannel, emit: suspend (WikiEvent?, String?) -> Unit) {
+    private suspend fun readEvents(
+        channel: ByteReadChannel,
+        connection: Connection,
+        emit: suspend (WikiEvent?, String?) -> Unit,
+    ) {
         val data = StringBuilder()
         var id: String? = null
 
         while (true) {
             val line = channel.readLine() ?: return
+            connection.spoke = true
 
             when {
                 line.isEmpty() -> {

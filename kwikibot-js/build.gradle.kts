@@ -82,14 +82,15 @@ tasks
             export type ApiValue = string | number | boolean | Date | null | undefined | Array<string | number | Date>;
             export type MessageValue = string | number;
             export type Ignored = unknown;
+            export type Thrown = unknown;
             export type ExitStatus = number | void;
             export type Negatable<T extends string> = T | `!${'$'}{T}`;
             export type RunStatus = "queued" | "running" | "waiting" | "done" | "failed" | "cancelled" | "declined";
             export type RunLevel = "info" | "saved" | "skipped" | "error";
             export type FleetEventKind = "said" | "changed";
-            export type SparqlValueType = "uri" | "literal" | "bnode";
+            export type SparqlValueType = "uri" | "literal" | "bnode" | (string & {});
             export type TitleKind = "local" | "interwiki" | "invalid";
-            export type TitleProblem = "empty" | "illegal-character" | "relative-path" | "signature" | "percent-escape" | "too-long";
+            export type TitleProblem = "empty" | "illegal-character" | "relative-path" | "signature" | "percent-escape" | "too-long" | "talk-of-non-main" | "unknown-namespace";
             export type EditRefusal = "conflict" | "protected" | "permission-denied" | "rate-limited" | "filtered" | "captcha" | "page-changed" | "rejected";
             export type EditStatus = "saved" | "unchanged" | EditRefusal;
             export type TextScopeName = "prose" | "everywhere";
@@ -132,7 +133,7 @@ tasks
             export type ParserName = "legacy" | "parsoid";
             export type RevisionPart = "content" | "comment" | "user";
             export type NodeKind = "text" | "comment" | "template" | "argument" | "wiki-link" | "external-link" | "heading" | "html-entity" | "tag";
-            export type ModuleGroup = "list" | "prop" | "meta";
+            export type ModuleGroup = "action" | "format" | "list" | "prop" | "meta" | (string & {});
             export type EntitySearchKind = Exclude<NewEntityKind, "mediainfo">;
             export type EventType = ChangeType | (string & {});
             export type HexMarker = "x" | "X";
@@ -149,14 +150,22 @@ tasks
                 """export declare namespace io\.ktor\.client\.engine\.js \{.*?\n\}\n""",
                 RegexOption.DOT_MATCHES_ALL,
             )
+        val ownClass =
+            Regex(
+                """^(export declare (?:abstract )?class \w+(?:<[^>]*>)?(?: extends Error)? \{)$""",
+                RegexOption.MULTILINE,
+            )
         doLast {
             val declarations = directory.resolve("core.d.ts")
+            val written = declarations.readText()
             val definitions =
-                declarations
-                    .readText()
+                written
                     .replace(ktorLeftover, "")
                     .replace("describeError(error: Nullable<any>)", "describeError(error: unknown)")
-            if (aliases !in definitions) declarations.writeText("${definitions.trimEnd()}\n$aliases\n")
+            if (aliases !in written) {
+                val nominal = ownClass.replace(definitions) { "${it.value}\n    private readonly __nominal;" }
+                declarations.writeText("${nominal.trimEnd()}\n$aliases\n")
+            }
             val complete = declarations.readText()
             val values =
                 Regex(

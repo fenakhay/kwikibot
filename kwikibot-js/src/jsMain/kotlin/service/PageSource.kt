@@ -153,7 +153,7 @@ public fun pageSourceOf(titles: AsyncIterable<String>): PageSource = sourceOf { 
 public fun pageSourceFrom(pages: (wiki: Wiki) -> AsyncIterable<String>): PageSource = sourceOf { wiki ->
     flow {
         val scope = CoroutineScope(currentCoroutineContext())
-        emitAll(pages(Wiki(wiki, scope) {}).asFlow().map { wiki.ref(it) })
+        emitAll(pages(Wiki(wiki, scope, null)).asFlow().map { wiki.ref(it) })
     }
 }
 
@@ -189,7 +189,7 @@ internal fun <T> AsyncIterable<T>.asFlow(): Flow<T> {
         var finished = false
         try {
             while (true) {
-                val step: dynamic = settledResult(iterator.next())
+                val step: dynamic = settledCall { iterator.next() }
                 if (step.done == true) {
                     finished = true
                     break

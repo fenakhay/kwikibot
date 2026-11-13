@@ -1,2 +1,2 @@
-export { describeError, ErrorInfo } from "./core";
+export { describeError, ErrorInfo, ThrownValue } from "./core";
 export type { ErrorKind } from "./core";

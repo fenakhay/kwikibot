@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.bindings.connect
 
 import com.fenakhay.kwikibot.bindings.common.Setting
+import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.client.WikiConfig
 import com.fenakhay.kwikibot.net.Kwikibot
 import com.fenakhay.kwikibot.net.RetryPolicy
@@ -73,8 +74,28 @@ class ConnectTest {
     }
 
     @Test
-    fun `a wiki is under w over HTTPS unless told`() {
+    fun `a wiki is under w over HTTPS unless told and a family's wiki where the family says`() {
         endpointOf("example.org") shouldBe ApiEndpoint("example.org", "/w", true)
         endpointOf("example.org", "", false) shouldBe ApiEndpoint("example.org", "", false)
+        val wiktionary = Family.Wikimedia("wiktionary", "wiktionary.org")
+        endpointOf("fr", wiktionary) shouldBe ApiEndpoint("fr.wiktionary.org", "/w", true)
+        endpointOf("fr", wiktionary, "/x", false) shouldBe ApiEndpoint("fr.wiktionary.org", "/x", false)
+    }
+
+    @Test
+    fun `secrets are told by their names and redacted`() {
+        listOf(
+                "lgtoken",
+                "lgpassword",
+                "Authorization",
+                "cookie",
+                "set-cookie",
+                "retype",
+            )
+            .all(::namesSecret) shouldBe true
+        listOf("title", "action", "tokens").any(::namesSecret) shouldBe false
+        withoutSecrets(mapOf("action" to "login", "lgpassword" to "hunter2")) shouldBe
+            mapOf("action" to "login", "lgpassword" to REDACTED)
+        REDACTED shouldBe "[redacted]"
     }
 }

@@ -42,6 +42,7 @@ public sealed interface Credentials {
             require('@' !in account) {
                 "pass the account and bot name separately, not as '$account'"
             }
+            concealFields(this)
         }
 
         override val username: String
@@ -69,6 +70,7 @@ public sealed interface Credentials {
     ) : Credentials {
         init {
             require(accessToken.isNotBlank()) { "access token must not be blank" }
+            concealFields(this)
         }
 
         override fun toString(): String = "OAuth2(username=$username, token=***)"

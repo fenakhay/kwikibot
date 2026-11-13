@@ -333,7 +333,10 @@ public class ModuleDescription internal constructor(private val module: ClientMo
     public val sourceName: String?
         get() = module.sourceName
 
-    /** For a submodule of `query`, which of `list`, `prop` or `meta` it belongs to. */
+    /**
+     * Which of its parent's groups it is in, as the wiki says it: `"action"`, `"format"`, for a submodule of
+     * `query` `"list"`, `"prop"` or `"meta"`, or what an extension calls its own, such as `"submodule"`.
+     */
     public val group: ModuleGroup?
         get() = module.group.unsafeCast<ModuleGroup?>()
 
@@ -468,7 +471,7 @@ internal constructor(private val tokens: ClientTokenStore, private val scope: Co
         val kind = type ?: ClientTokenStore.CSRF
         return scope.promise {
             tokens.withFreshToken(kind) { token ->
-                val answer = settled(block(token))
+                val answer = settled { block(token) }
                 if (saysBadToken(answer)) throw WikiError.Auth.BadToken(kind)
                 answer
             }

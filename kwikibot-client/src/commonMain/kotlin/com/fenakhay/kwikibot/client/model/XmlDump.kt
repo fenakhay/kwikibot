@@ -69,13 +69,18 @@ public enum class Compression {
  * server stays live.
  *
  * **A truncated or corrupt file throws** a [com.fenakhay.kwikibot.client.model.dump.DumpFormatException],
- * after yielding the pages before the damage. An interrupted download is common, and failing silently is
- * unsafe: a bot that treats a partial dump as the whole wiki concludes that every missing page has been
- * deleted.
+ * after yielding every whole page before the damage, however many threads read it. An interrupted download is
+ * common, and failing silently is unsafe: a bot that treats a partial dump as the whole wiki concludes that
+ * every missing page has been deleted. A read on many threads checks the same things as one on a single
+ * thread, every block and stream checksum and marker among them, and gives the same pages or throws.
+ *
+ * **History dumps.** Only a page's first revision is held and read, so a page with thousands of them takes no
+ * more memory than a page with one.
  *
  * **Untrusted input.** A DTD is refused and nothing but XML's own five entities and character references is
- * expanded, so a dump can neither read other files nor blow up in size. MediaWiki writes no CDATA sections; a
- * dump from elsewhere with `</page>` inside one is not read correctly.
+ * expanded, so a dump can neither read other files nor blow up in size. A dump that says it is in anything
+ * but UTF-8 is refused, and so is a page past 256 MiB before the end of its first revision. MediaWiki writes
+ * no CDATA sections; a dump from elsewhere with `</page>` inside one is not read correctly.
  */
 public expect object XmlDump {
 
@@ -106,7 +111,8 @@ public expect object XmlDump {
      *
      * @param path the dump.
      * @param namespaces the namespaces wanted, or every one when it is empty.
-     * @param workers how many coroutines to run; one per processor by default.
+     * @param workers how many coroutines to run; one per processor by default. Decompression takes no more
+     *   threads than there are processors, however many this asks for.
      * @param block what to do with each page.
      */
     public suspend fun scan(
@@ -122,7 +128,8 @@ public expect object XmlDump {
      *
      * @param path the dump.
      * @param namespaces the namespaces wanted, or every one when it is empty.
-     * @param workers how many coroutines to run; one per processor by default.
+     * @param workers how many coroutines to run; one per processor by default. Decompression takes no more
+     *   threads than there are processors, however many this asks for.
      */
     public fun flow(
         path: Path,

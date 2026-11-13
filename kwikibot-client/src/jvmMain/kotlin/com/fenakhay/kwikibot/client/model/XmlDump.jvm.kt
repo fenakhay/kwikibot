@@ -35,27 +35,22 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 /**
  * Reads a MediaWiki XML dump without holding it in memory.
  *
- * A current-pages dump of a large wiki is tens of gigabytes uncompressed. Parsing it as a document is not an
- * option, so this pulls one page at a time off a streaming parser and hands back a [Sequence] that reads as
- * it is consumed, or through [scan] hands the pages to several workers at once.
+ * On `kotlinx.io.files.Path` and [Source] this is the reader every platform shares, as the common declaration
+ * says: [scan] and [flow] decode on as many threads as they are given, a dump that says it is in anything but
+ * UTF-8 is refused, and a truncated or corrupt one throws a
+ * [com.fenakhay.kwikibot.client.model.dump.DumpFormatException] after every whole page before the damage.
  *
  * ```
- * XmlDump.pages(Path.of("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = setOf(0))
+ * XmlDump.pages(Path("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = setOf(0))
  *     .forEach { … }
  * ```
  *
- * **Compression** is read from the file name: plain XML, `.gz`, and `.bz2`, which is what Wikimedia
- * publishes, including the multistream dumps that are many bzip2 streams end to end.
- *
- * **Namespaces** asked for are filtered as the dump is read: a page in any other namespace is passed over
- * before its text is, which on a dump of every namespace is most of the work.
- *
- * **Entity limits** the JDK puts on XML are lifted for this reader alone. They exist to stop a small document
- * expanding into a large one, and a large dump passes the default of fifty million entities on its own.
- *
- * **A truncated file throws**, after yielding the pages it did contain. An interrupted download is common,
- * and failing silently is unsafe: a bot that treats a partial dump as the whole wiki concludes that every
- * missing page has been deleted.
+ * **The deprecated members on `java.nio.file.Path` and `InputStream`** keep the older reader, the JDK's StAX
+ * parser with commons-compress, and work as they did. A path's compression is read from its name, a stream is
+ * read as plain XML, and [scan] on a path decompresses on one thread unless a multistream dump has its
+ * `-index.txt.bz2` beside it. A DTD is refused here too, and the limits the JDK puts on entities are lifted,
+ * since a large dump passes them on its own. Damage throws whatever StAX or commons-compress throws, not a
+ * `DumpFormatException`.
  */
 @Suppress("DEPRECATION")
 public actual object XmlDump {
@@ -116,7 +111,11 @@ public actual object XmlDump {
     @Deprecated(
         "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
             "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
-        ReplaceWith("pages(input.asSource().buffered(), emptySet())"),
+        ReplaceWith(
+            "pages(input.asSource().buffered(), emptySet())",
+            "kotlinx.io.asSource",
+            "kotlinx.io.buffered",
+        ),
     )
     public fun pages(input: InputStream): Sequence<DumpPage> = pages(input, emptySet())
 
@@ -124,7 +123,11 @@ public actual object XmlDump {
     @Deprecated(
         "Paths are kotlinx-io's now, and this reader runs on the JVM alone. " +
             "Deprecated since kwikibot 1.5.0, to be removed in 2.0.0.",
-        ReplaceWith("pages(input.asSource().buffered(), namespaces)"),
+        ReplaceWith(
+            "pages(input.asSource().buffered(), namespaces)",
+            "kotlinx.io.asSource",
+            "kotlinx.io.buffered",
+        ),
     )
     public fun pages(input: InputStream, namespaces: Set<Int>): Sequence<DumpPage> = sequence {
         input.use { yieldAll(read(it, namespaces)) }

@@ -16,13 +16,13 @@ public external interface RunLevel
 /** `"said"` or `"changed"`. */
 public external interface FleetEventKind
 
-/** `"uri"`, `"literal"` or `"bnode"`. */
+/** `"uri"`, `"literal"`, `"bnode"`, or what else a query service calls it. */
 public external interface SparqlValueType
 
 /** `"local"`, `"interwiki"` or `"invalid"`. */
 public external interface TitleKind
 
-/** Why a title names no page. */
+/** Why a title names no page, as `Title.invalidReason` says it. */
 public external interface TitleProblem
 
 /** How the wiki answered an edit, `"saved"`, `"unchanged"` or an [EditRefusal]. */
@@ -151,6 +151,9 @@ public external interface RevisionPart
 /** Which kind of node a wikitext node is. */
 public external interface NodeKind
 
+/** Whatever a callback threw, which could be anything. */
+public external interface Thrown
+
 /** `"none"`, `"gzip"` or `"bzip2"`. */
 public external interface DumpCompression
 
@@ -166,7 +169,7 @@ public external interface RecentChangeFilter
 /** A flag the watchlist can be narrowed by, or with a leading `!` left out by. */
 public external interface WatchlistFilter
 
-/** `"list"`, `"prop"` or `"meta"`. */
+/** `"action"`, `"format"`, `"list"`, `"prop"`, `"meta"`, or what else a module's parent calls its group. */
 public external interface ModuleGroup
 
 /** What kind of entity can be searched for: all but `"mediainfo"`. */

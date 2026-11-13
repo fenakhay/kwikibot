@@ -41,7 +41,11 @@ public interface RunContext {
     /** Says how much more work there is, so progress can be shown. Called per pass as totals become known. */
     public fun expect(items: Int)
 
-    /** Says the run stopped before doing all it set out to. The first reason given is the one kept. */
+    /**
+     * Says the run stopped before doing all it set out to. The first reason given is the one kept, and it
+     * makes `fleetMain` exit with 1. A fleet also says it for a run told to stop by [stopPolicy] or
+     * [mayContinue], or handing [outcomes] a page it did not attempt.
+     */
     public fun stopped(reason: String)
 
     /** Runs [work] as a named phase of this run, whose context says things under that name. */

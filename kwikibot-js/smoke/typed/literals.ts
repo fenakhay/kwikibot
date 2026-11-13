@@ -210,7 +210,7 @@ function everyResultIsSpelledInItsUnion(): void {
   const events: Record<FleetEventKind, true> = { said: true, changed: true };
   const sparql: Record<SparqlValueType, true> = { uri: true, literal: true, bnode: true };
   const titles: Record<TitleKind, true> = { local: true, interwiki: true, invalid: true };
-  const problems: Record<TitleProblem, true> = { empty: true, "illegal-character": true, "relative-path": true, signature: true, "percent-escape": true, "too-long": true };
+  const problems: Record<TitleProblem, true> = { empty: true, "illegal-character": true, "relative-path": true, signature: true, "percent-escape": true, "too-long": true, "talk-of-non-main": true, "unknown-namespace": true };
   const refusals: Record<EditRefusal, true> = { conflict: true, protected: true, "permission-denied": true, "rate-limited": true, filtered: true, captcha: true, "page-changed": true, rejected: true };
   const edits: Record<EditStatus, true> = { ...refusals, saved: true, unchanged: true };
   const stops: Record<StopReason, true> = { policy: true, "policy-unreachable": true, auth: true, "read-only": true, configuration: true, refused: true };
@@ -231,7 +231,7 @@ function everyResultIsSpelledInItsUnion(): void {
   const logs: Record<LogDetailsKind, true> = { none: true, move: true, block: true, upload: true, protect: true, rights: true, patrol: true, unknown: true };
   const directions: Record<TextDirection, true> = { "left-to-right": true, "right-to-left": true };
   const nodes: Record<NodeKind, true> = { text: true, comment: true, template: true, argument: true, "wiki-link": true, "external-link": true, heading: true, "html-entity": true, tag: true };
-  const groups: Record<ModuleGroup, true> = { list: true, prop: true, meta: true };
+  const groups: Record<ModuleGroup, true> = { action: true, format: true, list: true, prop: true, meta: true, submodule: true };
   const hexes: Record<HexMarker, true> = { x: true, X: true };
   const quotes: Record<QuoteMark, true> = { '"': true, "'": true };
   const errors: Record<ErrorKind, true> = {

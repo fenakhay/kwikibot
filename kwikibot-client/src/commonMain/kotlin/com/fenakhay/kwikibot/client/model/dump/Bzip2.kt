@@ -5,8 +5,8 @@ package com.fenakhay.kwikibot.client.model.dump
 import kotlinx.io.Buffer
 import kotlinx.io.RawSource
 
-private const val BLOCK_MAGIC = 0x314159265359L
-private const val END_MAGIC = 0x177245385090L
+internal const val BLOCK_MAGIC = 0x314159265359L
+internal const val END_MAGIC = 0x177245385090L
 private const val MAGIC_MASK = 0xFFFFFFFFFFFFL
 private const val MAGIC_BITS = 48
 private const val MAX_BLOCK = 900_000
@@ -21,6 +21,16 @@ private const val RUN_A = 0
 private const val RUN_B = 1
 private const val INPUT_CHUNK = 1 shl 20
 private const val MAX_BLOCK_INPUT = 5 * INPUT_CHUNK / 2
+
+/** The most input one block is given: more than any block bzip2 can write. */
+internal const val MAX_SEGMENT = INPUT_CHUNK * 3
+
+/**
+ * The most output a block may have when decoded ahead of the reader. A block can expand to 46 MB, and with
+ * many decoded at once a crafted file could fill the heap; the reader decodes a larger one itself, one at a
+ * time.
+ */
+internal const val MAX_AHEAD_OUTPUT = 8 shl 20
 
 /** The CRC bzip2 stores: most significant bit first, unlike the one gzip stores. */
 private val CRC_TABLE =
@@ -133,17 +143,19 @@ internal class Bzip2BlockDecoder {
     /**
      * Decodes the block [bits] stands at, just past its magic number, into [output].
      *
-     * @throws DumpFormatException if the block is cut short, malformed, or fails its CRC.
+     * @param bits the block's bits.
+     * @param limit the most output the block may have.
+     * @throws DumpFormatException if the block is cut short, malformed, fails its CRC, or passes [limit].
      */
-    fun decode(bits: MsbBits) {
+    fun decode(bits: MsbBits, limit: Int = Int.MAX_VALUE) {
         try {
-            decodeBlock(bits)
+            decodeBlock(bits, limit)
         } catch (_: IndexOutOfBoundsException) {
             corrupt("a bzip2 block refers to something it does not hold")
         }
     }
 
-    private fun decodeBlock(bits: MsbBits) {
+    private fun decodeBlock(bits: MsbBits, limit: Int) {
         blockCrc = bits.bits(32)
         if (bits.bit() != 0) corrupt("this bzip2 file uses randomised blocks, which no current tool writes")
         val origin = bits.bits(24)
@@ -155,7 +167,7 @@ internal class Bzip2BlockDecoder {
         if (origin >= count && count > 0) corrupt("a bzip2 block's origin is past its end")
 
         invert(count)
-        writeOutput(count, origin)
+        writeOutput(count, origin, limit)
     }
 
     private fun readSymbols(bits: MsbBits): Int {
@@ -352,7 +364,7 @@ internal class Bzip2BlockDecoder {
     }
 
     /** Follows the inverted transform, undoes the run-length coding, and checks the CRC on the way. */
-    private fun writeOutput(count: Int, origin: Int) {
+    private fun writeOutput(count: Int, origin: Int, limit: Int) {
         var out = output
         var written = 0
         var crc = -1
@@ -366,7 +378,7 @@ internal class Bzip2BlockDecoder {
                 position = entry ushr 8
 
                 if (runLength == 4) {
-                    if (written + byte > out.size) out = out.copyOf(maxOf(out.size * 2, written + byte))
+                    if (written + byte > out.size) out = grown(out, written + byte, limit)
                     if (byte > 0) {
                         out.fill(previous.toByte(), written, written + byte)
                         repeat(byte) {
@@ -381,7 +393,7 @@ internal class Bzip2BlockDecoder {
 
                 runLength = if (byte == previous) runLength + 1 else 1
                 previous = byte
-                if (written == out.size) out = out.copyOf(out.size * 2)
+                if (written == out.size) out = grown(out, written + 1, limit)
                 out[written++] = byte.toByte()
                 crc = (crc shl 8) xor CRC_TABLE[((crc ushr 24) xor byte) and 0xFF]
             }
@@ -390,12 +402,17 @@ internal class Bzip2BlockDecoder {
         outputLength = written
         if (crc.inv() != blockCrc) badChecksum("a bzip2 block does not match its checksum")
     }
+
+    private fun grown(bytes: ByteArray, needed: Int, limit: Int): ByteArray {
+        if (needed > limit) corrupt("a bzip2 block decodes to more than $limit bytes")
+        return bytes.copyOf(minOf(limit, maxOf(bytes.size * 2, needed)))
+    }
 }
 
 /** The bzip2 data of [input], decoded on the calling thread: every stream of it, one after another. */
 internal class Bzip2Source(private val input: RawSource) : RawSource {
     private val decoder = Bzip2BlockDecoder()
-    private var buffer = ByteArray(INPUT_CHUNK * 3)
+    private var buffer = ByteArray(MAX_SEGMENT)
     private var start = 0
     private var end = 0
     private var sourceEnded = false
@@ -446,7 +463,10 @@ internal class Bzip2Source(private val input: RawSource) : RawSource {
                 try {
                     decoder.decode(bits)
                 } catch (e: DumpFormatException) {
-                    if (sourceEnded && bits.overran) truncated("a bzip2 block")
+                    if (bits.overran) {
+                        if (sourceEnded) truncated("a bzip2 block")
+                        corrupt("a bzip2 block is longer than any block bzip2 can write")
+                    }
                     throw e
                 }
                 streamCrc = ((streamCrc shl 1) or (streamCrc ushr 31)) xor decoder.blockCrc
@@ -491,33 +511,55 @@ internal class Bzip2Source(private val input: RawSource) : RawSource {
     }
 }
 
-/** Where blocks may start, in bits from the start of [bytes]: every place the block magic appears. */
+/** What a marker the scanner found would mean, if it is real. */
+internal enum class MarkerKind {
+    /** No marker: the start of the file, which should be a stream's header. */
+    FILE_START,
+
+    /** A block's magic number. */
+    BLOCK,
+
+    /** The magic number that ends a stream. */
+    STREAM_END,
+}
+
+/**
+ * The stretches of a file between one marker and the next, in bits from the start of [bytes].
+ *
+ * @param bytes the array holding them.
+ * @param base where [bytes] starts in the file, in bits.
+ * @param starts where each stretch starts.
+ * @param ends where each stretch ends, which is where the next starts.
+ * @param kinds what the marker at the start of each stretch would be.
+ * @param gaveUp whether the last stretch has passed [MAX_SEGMENT] with no marker, so that no valid file goes
+ *   on.
+ */
 internal class BlockRanges(
     val bytes: ByteArray,
+    val base: Long,
     val starts: LongArray,
     val ends: LongArray,
-    val endOfStream: Boolean,
+    val kinds: List<MarkerKind>,
+    val gaveUp: Boolean,
 )
 
 /**
- * Finds the blocks in a run of bzip2 data, wherever their bits happen to fall.
+ * Finds what might be the markers in a run of bzip2 data, wherever their bits happen to fall.
  *
  * bzip2 aligns nothing to bytes, so a marker can start at any bit. Feed it the file a piece at a time. A
- * match can be a coincidence in the middle of a block, about once per 2^48 bits, in which case decoding finds
- * out.
+ * match can be a coincidence in the middle of a block, about once per 2^48 bits, which is why this only says
+ * where they might be, and [BlockChain] decides. Every bit of the file falls in a stretch, so nothing can go
+ * missing between two of them, and at most [MAX_SEGMENT] bytes and a piece are held.
  */
 internal class BlockScanner {
     private var carry = ByteArray(0)
     private var carryBitsSeen = 0L
-    private var open = -1L
-    private var sawEnd = false
-
-    /** Whether the last marker this has seen was the end of a stream, so nothing is left unfinished. */
-    val endedCleanly: Boolean
-        get() = sawEnd && open < 0
+    private var carryBase = 0L
+    private var open = 0L
+    private var openKind = MarkerKind.FILE_START
 
     /**
-     * The next blocks whole within what has arrived.
+     * The next stretches whole within what has arrived.
      *
      * @param piece the next bytes of the file, which are copied.
      * @param length how many of [piece] are meant.
@@ -530,50 +572,57 @@ internal class BlockScanner {
 
         val starts = ArrayList<Long>()
         val ends = ArrayList<Long>()
+        val kinds = ArrayList<MarkerKind>()
         val total = bytes.size * 8L
+        val close = { end: Long ->
+            if (end > open) {
+                starts += open
+                ends += end
+                kinds += openKind
+            }
+        }
 
         var index = maxOf(1, (carryBitsSeen ushr 3).toInt() + 1)
-        val lastIndex = bytes.size - MAGIC_BYTES_NEEDED
+        val lastIndex = if (last) bytes.size - MAGIC_BYTES_NEEDED + 2 else bytes.size - MAGIC_BYTES_NEEDED
         while (index <= lastIndex) {
             val shifts = SHIFTS[bytes[index].toInt() and 0xFF].toInt()
             if (shifts != 0) {
                 for (shift in 0 until 8) {
                     if (shifts and (1 shl shift) == 0) continue
                     val at = (index - 1) * 8L + shift
-                    if (at < carryBitsSeen) continue
+                    if (at < carryBitsSeen || at + MAGIC_BITS > total) continue
                     val magic = magicAt(bytes, index - 1, shift)
                     if (magic == BLOCK_MAGIC || magic == END_MAGIC) {
-                        if (open >= 0) {
-                            starts += open
-                            ends += at
-                        }
-                        open = if (magic == BLOCK_MAGIC) at else -1
-                        sawEnd = magic == END_MAGIC
+                        close(at)
+                        open = at
+                        openKind = if (magic == BLOCK_MAGIC) MarkerKind.BLOCK else MarkerKind.STREAM_END
                     }
                 }
             }
             index++
         }
 
-        if (last && open >= 0) {
-            starts += open
-            ends += total
-            open = -1
-            sawEnd = false
+        val gaveUp = !last && total - open > MAX_SEGMENT * 8L
+        if (last || gaveUp) {
+            close(total)
+            open = total
         }
 
-        val keepFrom = if (open >= 0) (open ushr 3).toInt() else maxOf(0, bytes.size - MAGIC_BYTES_NEEDED)
+        val keepFrom = (open ushr 3).toInt()
         val shift = keepFrom * 8L
+        val base = carryBase
         carry = bytes.copyOfRange(keepFrom, bytes.size)
-        carryBitsSeen = maxOf(0L, (lastIndex + 1 - 1) * 8L - shift)
-        if (open >= 0) open -= shift
-        return BlockRanges(bytes, starts.toLongArray(), ends.toLongArray(), sawEnd)
+        carryBase += shift
+        carryBitsSeen = maxOf(0L, lastIndex * 8L - shift)
+        open -= shift
+        return BlockRanges(bytes, base, starts.toLongArray(), ends.toLongArray(), kinds, gaveUp)
     }
 
     private fun magicAt(bytes: ByteArray, index: Int, shift: Int): Long {
         var window = 0L
         for (offset in 0 until MAGIC_BYTES_NEEDED) {
-            window = (window shl 8) or (bytes[index + offset].toLong() and 0xFF)
+            val at = index + offset
+            window = (window shl 8) or (if (at < bytes.size) bytes[at].toLong() and 0xFF else 0L)
         }
         return (window ushr (MAGIC_WINDOW_BITS - MAGIC_BITS - shift)) and MAGIC_MASK
     }
@@ -599,17 +648,35 @@ internal class BlockScanner {
 }
 
 /**
- * Decodes one block's bit range.
+ * A block decoded from a range of bits.
  *
- * @return the decoded bytes, or `null` if the range does not hold a whole valid block, which either means the
- *   range ended early at a false match or is one, or the data is corrupt.
+ * @param output the decoded bytes.
+ * @param endBit where in the array the block ended.
+ * @param crc the CRC the block stored, which was checked against [output].
  */
-internal fun Bzip2BlockDecoder.decodeRange(bytes: ByteArray, start: Long, end: Long): ByteArray? =
+internal class DecodedRange(val output: ByteArray, val endBit: Long, val crc: Int)
+
+/**
+ * Decodes the block a range starts with.
+ *
+ * @param bytes the array holding the range.
+ * @param start where the range starts, in bits, at the block's magic number.
+ * @param end where the range ends, in bits.
+ * @param limit the most output the block may have.
+ * @return the block, or `null` if the range does not hold a whole valid one, whether because a false marker
+ *   cut it short, it starts at a false marker, or the data is corrupt. [BlockChain] tells them apart.
+ */
+internal fun Bzip2BlockDecoder.decodeRange(
+    bytes: ByteArray,
+    start: Long,
+    end: Long,
+    limit: Int = Int.MAX_VALUE,
+): DecodedRange? =
     try {
         val bits = MsbBits(bytes, start, ((end + 7) ushr 3).toInt())
         val _ = bits.long48()
-        decode(bits)
-        output.copyOf(outputLength)
+        decode(bits, limit)
+        DecodedRange(output.copyOf(outputLength), bits.bitPosition, blockCrc)
     } catch (_: DumpFormatException) {
         null
     }

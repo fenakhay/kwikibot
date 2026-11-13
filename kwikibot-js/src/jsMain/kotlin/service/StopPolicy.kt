@@ -4,7 +4,10 @@ import com.fenakhay.kwikibot.fleet.SharedStop as ClientSharedStop
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
@@ -36,7 +39,7 @@ public class StopPolicy internal constructor(internal val policy: ClientStopPoli
  */
 @JsExport
 public fun stopPolicyOf(check: () -> Awaitable<Boolean>): StopPolicy =
-    StopPolicy(ClientStopPolicy { settledResult(check()) == true })
+    StopPolicy(ClientStopPolicy { settledCall(check) == true })
 
 /**
  * A policy letting a bot go on only while every one of [policies] does. The first to say stop, or to fail,
@@ -77,10 +80,10 @@ public external interface SharedStopOptions {
 public fun sharedStop(read: () -> Awaitable<String?>, options: SharedStopOptions? = null): StopPolicy =
     StopPolicy(
         sharedStopWithDefaults(
-            { settledResult(read()).unsafeCast<String?>() },
+            { settledCall(read).unsafeCast<String?>() },
             options?.every?.milliseconds,
             options?.staleAfter?.milliseconds,
-            options?.now?.let(::clockOf),
+            options?.now?.let(::timeSourceOf),
         )
     )
 
@@ -89,8 +92,19 @@ public fun sharedStop(read: () -> Awaitable<String?>, options: SharedStopOptions
 public fun sharedStopOnPage(wiki: Wiki, title: String): StopPolicy =
     StopPolicy(ClientSharedStop.onPage(wiki.wiki, title))
 
+/** A source of time reading [now]. */
+private fun timeSourceOf(now: () -> Date): TimeSource =
+    object : TimeSource {
+        override fun markNow(): TimeMark {
+            val start = instantOf(fromJs { now() })
+            return object : TimeMark {
+                override fun elapsedNow(): Duration = instantOf(fromJs { now() }) - start
+            }
+        }
+    }
+
 /** A clock reading [now]. */
 internal fun clockOf(now: () -> Date): Clock =
     object : Clock {
-        override fun now() = instantOf(now())
+        override fun now() = instantOf(fromJs { now() })
     }

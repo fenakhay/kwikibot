@@ -21,7 +21,13 @@ public class OAuth2(
     /** The account the token belongs to, which keeps the answers it is given apart in a cache. */
     public val username: String? = null,
 ) : BotPassword(username.orEmpty(), "", "") {
-    override val credentials: Credentials = Credentials.OAuth2(accessToken, username)
+    init {
+        val _ = Credentials.OAuth2(accessToken, username)
+        keepSecret(this, accessToken)
+    }
+
+    override val credentials: Credentials
+        get() = hideFields(Credentials.OAuth2(secretOf(this), username))
 }
 
 /**
@@ -36,7 +42,12 @@ public class OAuth2(
 public fun credentialsFromEnvironment(
     prefix: String = "KWIKIBOT",
     environment: ((name: String) -> String?)? = null,
-): BotPassword? = loginOf(Credentials.fromEnvironment(prefix, environment ?: ::environmentVariable))
+): BotPassword? =
+    loginOf(
+        Credentials.fromEnvironment(prefix) { name ->
+            fromJs { (environment ?: ::environmentVariable)(name) }
+        }
+    )
 
 /** [found] as what this package logs in with, or `null` for an anonymous session. */
 internal fun loginOf(found: Credentials): BotPassword? =

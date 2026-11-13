@@ -7,12 +7,15 @@ import com.fenakhay.kwikibot.client.Family
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
@@ -38,7 +41,7 @@ public enum class RunStatus {
     /** Stopped until somebody answers a question. */
     WAITING,
 
-    /** Finished, having done what it was asked. */
+    /** Its work returned. Check [RunView.stoppedBecause], since it may have stopped before doing it all. */
     DONE,
 
     /** Stopped by something going wrong. */
@@ -118,17 +121,21 @@ public sealed interface FleetEvent {
  * A host: it knows nothing of terminals, databases or web pages. [runs] and [events] are what one is built
  * on. Nothing is kept once the process ends.
  *
+ * Its methods may be called from any thread, and [scope] may be on any dispatcher.
+ *
  * @param bots the bots.
  * @param accounts where their wikis come from.
  * @param endpoint which wiki they edit.
  * @param stop what every run answers to.
- * @param scope where the lanes run; closing the fleet means cancelling it.
+ * @param scope where the lanes run; closing the fleet means cancelling it, which ends every run still to end
+ *   as [RunStatus.CANCELLED].
  * @param directory where runs may write files, or `null` where there is no filesystem.
  * @param questions who answers a run's question. No one, by default, so the answer is no.
  * @param clock what the time is, for schedules.
  * @param out where each line goes. Lines start with the bot's id, since lanes share the output.
  * @param heartbeat how often a run that hands pages to [RunContext.outcomes] says how far it has got.
  */
+@OptIn(ExperimentalAtomicApi::class)
 public class Fleet(
     bots: List<Bot>,
     private val accounts: Accounts,
@@ -147,13 +154,13 @@ public class Fleet(
 
     private val state = MutableStateFlow<List<RunView>>(emptyList())
     private val happening = MutableSharedFlow<FleetEvent>(extraBufferCapacity = EVENT_BUFFER)
-    private val jobs = mutableMapOf<Long, Job>()
-    private var nextId = 1L
+    private val jobs = MutableStateFlow<Map<Long, Job>>(emptyMap())
+    private val nextId = AtomicLong(1L)
 
-    private val lanes = bots.associate { it.id to Channel<QueuedRun>(Channel.UNLIMITED) }
+    private val lanes = bots.associate { it.id to Channel<Job>(Channel.UNLIMITED) }
 
     init {
-        bots.forEach { bot -> scope.launch { work(bot, lanes.getValue(bot.id)) } }
+        bots.forEach { bot -> scope.launch { work(lanes.getValue(bot.id)) } }
     }
 
     /** Every run this fleet has been asked for, oldest first. */
@@ -176,9 +183,13 @@ public class Fleet(
         arguments: List<String> = emptyList(),
     ): Long {
         val bot = registry.get(id)
-        val runId = nextId++
+        val runId = nextId.fetchAndAdd(1L)
+        val run = QueuedRun(runId, options, arguments)
+        val job = scope.launch(start = CoroutineStart.LAZY) { execute(bot, run) }
+        jobs.update { it + (runId to job) }
         state.update { it + RunView(runId, bot.id, RunStatus.QUEUED) }
-        val _ = lanes.getValue(bot.id).trySend(QueuedRun(runId, options, arguments))
+        job.invokeOnCompletion { cause -> ended(runId, bot.id, cause) }
+        val _ = lanes.getValue(bot.id).trySend(job)
         return runId
     }
 
@@ -190,13 +201,7 @@ public class Fleet(
     public fun cancel(runId: Long): Boolean {
         val run = state.value.firstOrNull { it.id == runId } ?: return false
         if (run.status.isFinished) return false
-        val job = jobs[runId]
-        if (job == null) {
-            update(runId) { it.copy(status = RunStatus.CANCELLED) }
-            announce(runId, run.botId, RunStatus.CANCELLED)
-        } else {
-            job.cancel()
-        }
+        jobs.value[runId]?.cancel()
         return true
     }
 
@@ -225,24 +230,29 @@ public class Fleet(
         awaitCancellation()
     }
 
-    private suspend fun work(bot: Bot, lane: Channel<QueuedRun>) {
-        for (run in lane) {
-            val view = state.value.first { it.id == run.id }
-            if (view.status == RunStatus.CANCELLED) continue
+    /** Starts each run in turn. One cancelled before now ended when it was cancelled, and takes no time. */
+    private suspend fun work(lane: Channel<Job>) {
+        for (job in lane) job.join()
+    }
 
-            val job = scope.launch { execute(bot, run) }
-            jobs[run.id] = job
-            job.join()
-            jobs.remove(run.id)
-            if (state.value.first { it.id == run.id }.status == RunStatus.RUNNING)
-                finish(run.id, bot.id, RunStatus.CANCELLED)
+    /**
+     * Settles a run however its job came to end. Most have said how by now. One cancelled before its body
+     * began has not, nor has one that met something other than an `Exception`.
+     */
+    private fun ended(runId: Long, botId: String, cause: Throwable?) {
+        jobs.update { it - runId }
+        if (cause == null || cause is CancellationException) {
+            finish(runId, botId, RunStatus.CANCELLED)
+        } else {
+            update(runId) { if (it.status.isFinished) it else it.copy(failure = cause.toString()) }
+            finish(runId, botId, RunStatus.FAILED)
         }
     }
 
     private suspend fun execute(bot: Bot, run: QueuedRun) {
         finish(run.id, bot.id, RunStatus.RUNNING)
         try {
-            val wiki = accounts.wiki(endpoint, bot.account)
+            val wiki = accounts.wiki(endpoint, bot.account).also { requireMaySave(it, run.options) }
             val context = HostedContext(bot, run, wiki)
             bot.run(context)
             finish(run.id, bot.id, RunStatus.DONE)
@@ -259,9 +269,34 @@ public class Fleet(
         }
     }
 
+    /**
+     * Refuses an account a run told to save may not save as, as `botMain` does for the account it logs in
+     * with, since each bot here may have its own.
+     */
+    private fun requireMaySave(wiki: Wiki, options: CommonOptions) {
+        if (!options.save) return
+        val identity = wiki.identity
+        check(!identity.isAnonymous) { "not logged in: the wiki sees an anonymous user" }
+        check(identity.isBot || options.trial) {
+            "${identity.name} is not in the bot group; not saving without --trial"
+        }
+    }
+
+    /** Moves a run on to [status], unless it has already ended, since an ending is final. */
     private fun finish(runId: Long, botId: String, status: RunStatus) {
-        update(runId) { it.copy(status = status) }
-        announce(runId, botId, status)
+        var changed = false
+        state.update { views ->
+            changed = false
+            views.map { view ->
+                if (view.id != runId || view.status.isFinished) {
+                    view
+                } else {
+                    changed = true
+                    view.copy(status = status)
+                }
+            }
+        }
+        if (changed) announce(runId, botId, status)
     }
 
     private fun announce(runId: Long, botId: String, status: RunStatus) {
@@ -287,8 +322,17 @@ public class Fleet(
         private val started = TimeSource.Monotonic.markNow()
         private var lastBeat = started.elapsedNow()
 
-        override val stopPolicy: StopPolicy
-            get() = stop
+        override val stopPolicy: StopPolicy = StopPolicy {
+            val allowed = runCatching {
+                stop.mayContinue()
+            }
+                .getOrElse { failure ->
+                    if (failure !is CancellationException) stopped("the stop policy could not be read")
+                    throw failure
+                }
+            if (!allowed) stopped("the stop policy says to stop")
+            allowed
+        }
 
         override val options: CommonOptions
             get() = run.options
@@ -300,7 +344,7 @@ public class Fleet(
             get() = this@Fleet.directory?.let { Path(it, bot.id, run.id.toString()) }
 
         override suspend fun open(language: LangCode, family: Family): Wiki =
-            accounts.wiki(family.endpoint(language), bot.account)
+            accounts.wiki(family.endpoint(language), bot.account).also { requireMaySave(it, run.options) }
 
         override fun say(message: String, level: RunContext.Level) {
             line(bot.id, steps, message)
@@ -325,9 +369,18 @@ public class Fleet(
             return answer
         }
 
-        override suspend fun mayContinue(): Boolean = stop.mayContinue()
+        override suspend fun mayContinue(): Boolean = runCatching {
+            stopPolicy.mayContinue()
+        }
+            .getOrElse { failure ->
+                if (failure is CancellationException) throw failure
+                false
+            }
 
         override val outcomes: (PageOutcome) -> Unit = { outcome ->
+            if (outcome is PageOutcome.NotAttempted) {
+                stopped("the run stopped early: ${outcome.reason.name.lowercase()}")
+            }
             update(run.id) {
                 it.copy(
                     seen = it.seen + if (outcome is PageOutcome.NotAttempted) 0 else 1,

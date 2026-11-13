@@ -26,7 +26,7 @@ internal suspend fun runBot(
             titles.asList(),
             summary,
             { text, title ->
-                when (val changed = settledResult(transform(text, title))) {
+                when (val changed = settledCall { transform(text, title) }) {
                     null -> null
                     is String -> changed
                     else ->
@@ -45,9 +45,17 @@ internal suspend fun runBot(
     return RunReport(report, wiki.namespaces)
 }
 
-/** [onChange], as the run calls it with each change. */
-private fun changes(onChange: (change: Change) -> Unit): (RunChange) -> Unit = { changed ->
-    onChange(Change(changed.title, changed.diff, changed.revision?.value?.toDouble()))
+/** [onChange], as the run calls it with each change, its rejections reported. */
+private fun changes(onChange: (change: Change) -> Unit): (RunChange) -> Unit {
+    val rejections = ObserverReport("onChange")
+    return { changed ->
+        fromJs {
+            rejections.reportRejection(
+                onChange(Change(changed.title, changed.diff, changed.revision?.value?.toDouble()))
+                    .unsafeCast<Any?>()
+            )
+        }
+    }
 }
 
 /** What a run did, in counts, with its refusals and failures. */

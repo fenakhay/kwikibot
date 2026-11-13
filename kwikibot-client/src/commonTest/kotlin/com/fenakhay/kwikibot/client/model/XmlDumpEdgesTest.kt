@@ -1,12 +1,12 @@
 package com.fenakhay.kwikibot.client.model
 
-import com.fenakhay.kwikibot.client.model.dump.BlockRange
+import com.fenakhay.kwikibot.client.model.dump.BlockRanges
 import com.fenakhay.kwikibot.client.model.dump.BlockScanner
 import com.fenakhay.kwikibot.client.model.dump.Bzip2BlockDecoder
 import com.fenakhay.kwikibot.client.model.dump.DumpFormatException
 import com.fenakhay.kwikibot.client.model.dump.GzipSource
+import com.fenakhay.kwikibot.client.model.dump.MarkerKind
 import com.fenakhay.kwikibot.client.model.dump.decodeRange
-import com.fenakhay.kwikibot.client.model.dump.joinRanges
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
@@ -41,6 +41,11 @@ class XmlDumpEdgesTest {
         refused("<title>&#xZZ;</title>") shouldBe DumpFormatException.Code.BAD_DATA
         refused("<title>&#99999999;</title>") shouldBe DumpFormatException.Code.BAD_DATA
         refused("<title>&amp</title>") shouldBe DumpFormatException.Code.BAD_DATA
+        refused("<title>&#0;</title>") shouldBe DumpFormatException.Code.BAD_DATA
+        refused("<title>&#xD800;</title>") shouldBe DumpFormatException.Code.BAD_DATA
+        refused("<title>&#xFFFF;</title>") shouldBe DumpFormatException.Code.BAD_DATA
+        refused("<title>&#x+41;</title>") shouldBe DumpFormatException.Code.BAD_DATA
+        refused("<title>&#+65;</title>") shouldBe DumpFormatException.Code.BAD_DATA
     }
 
     @Test
@@ -129,59 +134,57 @@ class XmlDumpEdgesTest {
             DumpFormatException.Code.BAD_DATA
     }
 
+    private fun blocksOf(ranges: BlockRanges) = ranges.kinds.count { it == MarkerKind.BLOCK }
+
     @Test
-    fun `the scanner finds each block and says when a stream was finished`() {
+    fun `the scanner finds each block and each stream's end`() {
         val bytes = DumpFixtures.bzip2Streams
-        val scanner = BlockScanner()
-        val whole = scanner.feed(bytes, bytes.size, last = true)
+        val whole = BlockScanner().feed(bytes, bytes.size, last = true)
 
-        whole.starts.size shouldBe 2
-        scanner.endedCleanly shouldBe true
+        blocksOf(whole) shouldBe 2
+        whole.kinds.count { it == MarkerKind.STREAM_END } shouldBe 2
+        whole.kinds.first() shouldBe MarkerKind.FILE_START
+        whole.ends.last() shouldBe bytes.size * 8L
 
-        val cut = BlockScanner()
-        cut.feed(bytes, bytes.size - 12, last = true).starts.size shouldBe 2
-        cut.endedCleanly shouldBe false
+        val cut = BlockScanner().feed(bytes, bytes.size - 12, last = true)
+        blocksOf(cut) shouldBe 2
+        cut.kinds.count { it == MarkerKind.STREAM_END } shouldBe 1
     }
 
     @Test
     fun `the scanner finds the same blocks however the file is cut into pieces`() {
         val bytes = DumpFixtures.bzip2Streams
+        val whole = BlockScanner().feed(bytes, bytes.size, last = true)
         for (size in listOf(1, 7, 64, 1000)) {
             val scanner = BlockScanner()
-            var blocks = 0
+            val found = mutableListOf<Pair<Long, MarkerKind>>()
             var position = 0
             while (position < bytes.size) {
                 val length = minOf(size, bytes.size - position)
                 val piece = bytes.copyOfRange(position, position + length)
                 position += length
-                blocks += scanner.feed(piece, length, last = position == bytes.size).starts.size
+                val ranges = scanner.feed(piece, length, last = position == bytes.size)
+                ranges.starts.indices.forEach {
+                    found += (ranges.base + ranges.starts[it]) to ranges.kinds[it]
+                }
             }
-            blocks shouldBe 2
-            scanner.endedCleanly shouldBe true
+            found shouldBe whole.starts.toList().zip(whole.kinds)
         }
     }
 
     @Test
-    fun `a range cut at a false marker fails alone and decodes once joined to the next`() {
+    fun `a range cut short does not decode and one left whole says where its block ended`() {
         val bytes = DumpFixtures.bzip2
         val ranges = BlockScanner().feed(bytes, bytes.size, last = true)
-        val start = ranges.starts.single()
-        val end = ranges.ends.single()
-        val middle = (start + end) / 2
+        val block = ranges.kinds.indexOf(MarkerKind.BLOCK)
+        val start = ranges.starts[block]
+        val end = ranges.ends[block]
         val decoder = Bzip2BlockDecoder()
 
-        decoder.decodeRange(ranges.bytes, start, middle).shouldBeNull()
+        decoder.decodeRange(ranges.bytes, start, (start + end) / 2).shouldBeNull()
 
-        val first = BlockRange(ranges.bytes, start, middle)
-        val joined = joinRanges(first, BlockRange(ranges.bytes, middle, end))
-        decoder.decodeRange(joined.bytes, joined.start, joined.end)?.decodeToString() shouldBe
-            DumpFixtures.xml
-
-        val apart =
-            joinRanges(
-                BlockRange(ranges.bytes.copyOf(), start, middle),
-                BlockRange(ranges.bytes, middle, end),
-            )
-        decoder.decodeRange(apart.bytes, apart.start, apart.end)?.decodeToString() shouldBe DumpFixtures.xml
+        val decoded = decoder.decodeRange(ranges.bytes, start, end)
+        decoded?.output?.decodeToString() shouldBe DumpFixtures.xml
+        decoded?.endBit shouldBe end
     }
 }

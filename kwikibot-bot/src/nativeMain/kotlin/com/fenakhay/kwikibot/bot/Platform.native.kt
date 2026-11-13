@@ -5,6 +5,9 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.Sink
@@ -19,7 +22,8 @@ internal actual fun homeDirectory(): String? =
 
 internal actual fun standardError(): Sink = StandardError.buffered()
 
-internal actual suspend fun readInputLine(): String? = readlnOrNull()
+/** Read on a thread kept for blocking, so that coroutines sharing the caller's thread go on meanwhile. */
+internal actual suspend fun readInputLine(): String? = withContext(Dispatchers.IO) { readlnOrNull() }
 
 /** The C library's standard error stream, which the process owns and which is never closed here. */
 @OptIn(ExperimentalForeignApi::class)

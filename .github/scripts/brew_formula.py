@@ -1,10 +1,13 @@
-"""Write the Homebrew formula for a release.
+"""Write the Homebrew formula for a release, unless the tap already has a newer one.
 
 Usage: brew_formula.py <repo> <version> <out> <arm64-sha> <linux-sha>
 """
 
 import pathlib
+import re
 import sys
+
+from release_version import is_older
 
 TEMPLATE = '''class Kwikibot < Formula
   desc "Command-line tool for talking to a MediaWiki wiki"
@@ -34,6 +37,14 @@ end
 '''
 
 
+def holds_newer(path: pathlib.Path, version: str) -> bool:
+    """Whether the formula at [path] is for a release after [version]."""
+    if not path.exists():
+        return False
+    found = re.search(r'^\s*version "([\d.]+)"', path.read_text(encoding="utf-8"), re.MULTILINE)
+    return found is not None and is_older(version, found.group(1))
+
+
 def main() -> None:
     if len(sys.argv) != 6:
         raise SystemExit(__doc__.strip())
@@ -52,6 +63,10 @@ def main() -> None:
     )
 
     path = pathlib.Path(out)
+    if holds_newer(path, version):
+        print(f"{out} is already for a release after {version}")
+        return
+
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(formula, encoding="utf-8")
     print(formula)

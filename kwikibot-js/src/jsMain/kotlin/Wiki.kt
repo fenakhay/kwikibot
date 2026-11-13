@@ -54,10 +54,14 @@ public open class BotPassword(
     public val account: String,
     /** The bot password's name. */
     public val botName: String,
-    private val password: String,
+    password: String,
 ) {
+    init {
+        keepSecret(this, password)
+    }
+
     internal open val credentials: Credentials
-        get() = Credentials.BotPassword(account, botName, password)
+        get() = hideFields(Credentials.BotPassword(account, botName, secretOf(this)))
 }
 
 /**
@@ -146,13 +150,20 @@ public class Endpoint internal constructor(internal val endpoint: ApiEndpoint) {
     public fun articleUrl(title: String): String = endpoint.articleUrl(title)
 }
 
-/** An open wiki. Close it when done, which ends what it is still fetching. */
+/**
+ * An open wiki. Close it when done, which ends what it is still fetching: a call or a walk of a listing still
+ * going rejects, since a list cut short is not the list, while a loop that closes the wiki and then leaves
+ * leaves cleanly. One a fleet gave a run is the fleet's to close, so closing it does nothing.
+ */
 @JsExport
 public class Wiki
 internal constructor(
     internal val wiki: ClientWiki,
     internal val scope: CoroutineScope,
-    private val onClose: () -> Unit,
+    /**
+     * What closing it also does, or `null` for a wiki on a session others share, whose `close` does nothing.
+     */
+    private val onClose: (() -> Unit)?,
 ) {
 
     /** The wiki's database name, such as `"enwiktionary"`. */
@@ -499,10 +510,19 @@ internal constructor(
     public fun stopPage(title: String? = null): StopPolicy =
         StopPolicy(if (title == null) wiki.stopPage() else wiki.stopPage(title))
 
-    /** Ends what this wiki is still fetching and releases its connections. */
+    /**
+     * Ends what this wiki is still fetching and releases its connections. On a wiki a fleet gave a run, or
+     * `botMain` gave a bot, it does nothing, since that session is theirs to close and others share it.
+     */
     public fun close() {
+        val alsoClose = onClose ?: return
         scope.cancel()
-        onClose()
+        alsoClose()
+    }
+
+    init {
+        hideFields(this)
+        inspectedAs(this, "Wiki")
     }
 }
 

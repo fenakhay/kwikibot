@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TestTimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -80,6 +81,7 @@ class FleetsTest {
     @Test
     fun `a shared stop reads its text and lets bots run while it says false`() = runTest {
         sharedStopWithDefaults({ "false" }).mayContinue() shouldBe true
-        sharedStopWithDefaults({ "true" }, 1.seconds, 2.seconds, Clock.System).mayContinue() shouldBe false
+        sharedStopWithDefaults({ "true" }, 1.seconds, 2.seconds, TestTimeSource()).mayContinue() shouldBe
+            false
     }
 }

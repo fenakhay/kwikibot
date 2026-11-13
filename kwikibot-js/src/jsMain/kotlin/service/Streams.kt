@@ -28,7 +28,14 @@ import kotlinx.coroutines.promise
 
 /** How a query service is told who is asking. */
 @JsExport
-public class SparqlAuth internal constructor(internal val auth: ClientSparqlAuth) {
+public class SparqlAuth internal constructor(auth: ClientSparqlAuth) {
+
+    init {
+        keepSecret(this, hideFields(auth))
+    }
+
+    internal val auth: ClientSparqlAuth
+        get() = secretOf(this)
 
     /** `"none"`, what a public endpoint wants, or `"cookie"`. */
     public val kind: SparqlAuthKind
@@ -110,6 +117,11 @@ internal constructor(private val client: ClientSparqlClient, private val http: H
 
     private val scope = CoroutineScope(SupervisorJob())
 
+    init {
+        hideFields(this)
+        inspectedAs(this, "SparqlClient")
+    }
+
     /** The rows a `SELECT` [query] gives. Rejects with what the service said when it refuses the query. */
     public fun select(query: String): Promise<Array<SparqlRow>> = scope.promise {
         client.select(query).map(::SparqlRow).toTypedArray()
@@ -129,7 +141,10 @@ internal constructor(private val client: ClientSparqlClient, private val http: H
     }
         .toAsyncIterable(scope, ::SparqlRow)
 
-    /** Ends what is still being fetched and releases the connections. */
+    /**
+     * Ends what is still being fetched and releases the connections. A walk of `selectStreamed` still going
+     * rejects, as does a query, since a table cut short is not the answer.
+     */
     public fun close() {
         scope.cancel()
         http.close()
@@ -208,14 +223,14 @@ internal constructor(private val streams: ClientEventStreams, private val http: 
     public fun events(stream: String, since: String? = null): AsyncIterable<WikiEvent> =
         walk(streams.events(stream, since))
 
-    /** Ends every walk and releases the connections. */
+    /** Ends every walk, which finishes as a loop does rather than rejecting, and releases the connections. */
     public fun close() {
         scope.cancel()
         http.close()
     }
 
     private fun walk(events: Flow<ClientWikiEvent>): AsyncIterable<WikiEvent> =
-        events.toAsyncIterable(scope, ::WikiEvent)
+        events.toAsyncIterableEndingWith(scope, ::WikiEvent)
 }
 
 /** One change, as an event stream reports it. Every wiki is on a stream at once, so filter on [wiki]. */

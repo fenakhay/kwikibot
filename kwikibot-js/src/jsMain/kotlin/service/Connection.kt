@@ -1,7 +1,6 @@
 import com.fenakhay.kwikibot.bindings.connect.endpointOf
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
 import com.fenakhay.kwikibot.client.WikiClient as ClientWikiClient
-import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.ktor.client.engine.HttpClientEngine
@@ -30,7 +29,8 @@ internal fun connectWith(
 
 /**
  * Opens the wiki of [family] in [language], such as `"en"` and `FAMILY_WIKTIONARY`, with every setting
- * [options] gives. [language] is ignored by a family with one wiki.
+ * [options] gives, `scriptPath` and `secure` over the family's own. [language] is ignored by a family with
+ * one wiki.
  */
 @JsExport
 public fun connectFamily(
@@ -47,7 +47,7 @@ internal fun connectFamily(
     contact: String,
     options: ConnectOptions?,
     engine: HttpClientEngine?,
-): Promise<Wiki> = open(contact, options, engine) { it.wiki(LangCode(language), family.family) }
+): Promise<Wiki> = open(contact, options, engine) { it.wiki(endpointFor(language, family, options)) }
 
 @OptIn(DelicateCoroutinesApi::class)
 private fun open(
@@ -88,10 +88,13 @@ internal constructor(internal val client: ClientWikiClient, private val options:
         Wiki(client.wiki(endpointFor(server, options)), CoroutineScope(SupervisorJob())) {}
     }
 
-    /** Opens the wiki of [family] in [language]. Closing it leaves the client and its other wikis open. */
+    /**
+     * Opens the wiki of [family] in [language], with the client's `scriptPath` and `secure` over the family's
+     * own. Closing it leaves the client and its other wikis open.
+     */
     @OptIn(DelicateCoroutinesApi::class)
     public fun wikiOf(language: String, family: Family): Promise<Wiki> = GlobalScope.promise {
-        Wiki(client.wiki(LangCode(language), family.family), CoroutineScope(SupervisorJob())) {}
+        Wiki(client.wiki(endpointFor(language, family, options)), CoroutineScope(SupervisorJob())) {}
     }
 
     /** Releases the connections of every wiki opened here. */
@@ -102,6 +105,9 @@ internal constructor(internal val client: ClientWikiClient, private val options:
 
 private fun endpointFor(server: String, options: ConnectOptions?): ApiEndpoint =
     endpointOf(server, options?.scriptPath, options?.secure)
+
+private fun endpointFor(language: String, family: Family, options: ConnectOptions?): ApiEndpoint =
+    endpointOf(language, family.family, options?.scriptPath, options?.secure)
 
 private fun clientOf(contact: String, options: ConnectOptions?, engine: HttpClientEngine?): ClientWikiClient =
     ClientWikiClient(

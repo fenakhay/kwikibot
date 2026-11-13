@@ -197,8 +197,11 @@ public fun parseCommonOptions(args: Array<String>): ParsedCommandLine {
 @JsExport
 public class BotStart internal constructor(start: ClientBotStart) {
 
-    /** The wiki `kwikibot.toml` names, opened as its account. */
-    public val wiki: Wiki = Wiki(start.wiki, CoroutineScope(SupervisorJob())) {}
+    /**
+     * The wiki `kwikibot.toml` names, opened as its account. `botMain` closes it, so its `close` does
+     * nothing.
+     */
+    public val wiki: Wiki = Wiki(start.wiki, CoroutineScope(SupervisorJob()), null)
 
     /** The common flags. */
     public val options: CommonOptions = CommonOptions(start.options)
@@ -232,7 +235,7 @@ public fun botMain(
     anonymous: Boolean = false,
 ) {
     withoutLoggingBanner()
-    clientBotMain(args, anonymous) { statusOf(settledResult(block(BotStart(this)))) }
+    clientBotMain(args, anonymous) { statusOf(settledCall { block(BotStart(this)) }) }
 }
 
 private fun statusOf(answer: Any?): Int {

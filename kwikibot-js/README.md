@@ -14,6 +14,9 @@ Kotlin library, compiled to JavaScript.
 npm install kwikibot
 ```
 
+Up to 1.4.0 this package was called `@fenakhay/kwikibot`. To move, run `npm uninstall @fenakhay/kwikibot`, then
+`npm install kwikibot`, and import from `"kwikibot"`.
+
 The package is CommonJS with TypeScript definitions, and needs Node 22.3 or newer. Its everyday names, such
 as `connect`, `Wiki`, `parse` and `botMain`, come from `"kwikibot"`; the rest come from the area they belong
 to: `kwikibot/client`, `kwikibot/errors`, `kwikibot/wikitext`, `kwikibot/titles`, `kwikibot/bot`,
@@ -72,11 +75,14 @@ The run above only computes its edits; `true` as the fourth argument saves them.
 refuses is a problem in the report. A transform that throws, or returns anything but text or
 `null`, stops the run, and its promise rejects with that error.
 
-Pass a `stopPage` as `run`'s last argument, a page that has to say `false` for the run to save, so it
-can be stopped from the wiki. A saving run without one logs a warning.
+Pass a `stopPage` as `run`'s sixth argument, a page that has to say `false` for the run to save, so it
+can be stopped from the wiki. A saving run without one logs a warning. `maxEdits`, the seventh, caps what it
+saves.
 
 XML dumps read as async iterables, with bzip2 decoded on worker threads so the event loop stays free.
-A browser has no files, so `dumpPagesOf` reads a small dump from bytes, on one thread:
+A browser has no files, so `dumpPagesOf` reads a small dump from bytes, on one thread. A bundled bot reads
+the same pages on the main thread instead, since a worker can only be started from the package's own file:
+leave `kwikibot` out of the bundle, such as with esbuild's `--external:kwikibot`, to keep the worker threads.
 
 ```js
 import { dumpPages } from "kwikibot/dumps";
@@ -97,14 +103,14 @@ const fleet = await createFleet(
   { server: "en.wiktionary.org", contact, login, stopPage: "User:MyBot/Stop", onLine: console.log },
   [
     {
-      id: "refresher",
-      description: "refreshes pages",
+      id: "tidier",
+      description: "takes {{old}} off a page",
       schedule: cron("0 3 * * *", "Europe/Berlin"),
-      run: (context) => context.run(["Volcano"], "null edit", (text) => text, 500),
+      run: (context) => context.run(["Volcano"], "removing {{old}}", (text) => text.replace("{{old}}", ""), 500),
     },
   ],
 );
-fleet.start("refresher", [], true);
+fleet.start("tidier", [], true);
 await fleet.idle();
 fleet.close();
 ```
@@ -161,7 +167,7 @@ and fleets. Revision ids are numbers and lists are arrays.
 It runs in browsers too, through a bundler. From a page on a site other than the wiki's, requests
 carry `origin=*`, which MediaWiki answers as it would a logged-out reader, so logging in works on
 Node and from a page on the wiki's own site. It logs to the console from `INFO` up, the login
-included, and the level cannot be set from JavaScript.
+included, and `setLogLevel` changes that.
 
 Licensed under the Mozilla Public License 2.0. Release notes are in the
 [CHANGELOG](https://github.com/fenakhay/kwikibot/blob/main/CHANGELOG.md).

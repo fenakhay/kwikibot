@@ -59,6 +59,8 @@ public external interface HttpOptions {
 
 /**
  * Hears what a client does on a bot's behalf. Every function is optional. One that throws fails the request.
+ * What it is given never holds a password, a token or an auth header: the value of any parameter or field
+ * named so is `"[redacted]"` instead, whatever was sent.
  */
 @JsExport
 public external interface ListenerOptions {
@@ -253,41 +255,45 @@ private class JsResponseCache(private val cache: ResponseCache) : ClientResponse
 
     override suspend fun get(request: ApiRequest): JsonObject? {
         if (!ClientResponseCache.isCacheable(request)) return null
-        val found = settledResult(cache.get(request.params.toRecord { it }))
+        val found = settledCall { cache.get(request.params.toRecord { it }) }
         return found?.let(::jsonObjectOf)
     }
 
     override suspend fun put(request: ApiRequest, response: JsonObject) {
         if (!ClientResponseCache.isCacheable(request)) return
-        val _ = settledResult(cache.put(request.params.toRecord { it }, plainOf(response)))
+        val _ = settledCall { cache.put(request.params.toRecord { it }, plainOf(response)) }
     }
 }
 
 private fun warningListenerOf(listener: (ApiWarning) -> Unit): ApiWarningListener =
     ApiWarningListener { _, warning ->
-        listener(ApiWarning(warning))
+        fromJs { listener(ApiWarning(warning)) }
     }
 
 private fun listenerOf(options: ListenerOptions): TransportListener =
     object : TransportListener {
         override fun onResponse(request: ApiRequest, response: JsonObject) {
-            options.onResponse?.invoke(request.params.toRecord { it }, plainOf(response))
+            fromJs {
+                options.onResponse?.invoke(paramsWithoutSecrets(request), withoutSecrets(plainOf(response)))
+            }
         }
 
         override fun onRetry(request: ApiRequest, attempt: Int, wait: Duration, reason: String) {
-            options.onRetry?.invoke(
-                request.params.toRecord { it },
-                attempt,
-                wait.inWholeMilliseconds.toDouble(),
-                reason,
-            )
+            fromJs {
+                options.onRetry?.invoke(
+                    paramsWithoutSecrets(request),
+                    attempt,
+                    wait.inWholeMilliseconds.toDouble(),
+                    reason,
+                )
+            }
         }
 
         override fun onPenalty(wait: Duration) {
-            options.onPenalty?.invoke(wait.inWholeMilliseconds.toDouble())
+            fromJs { options.onPenalty?.invoke(wait.inWholeMilliseconds.toDouble()) }
         }
 
         override fun onRelogin(identity: ClientIdentity) {
-            options.onRelogin?.invoke(Identity(identity))
+            fromJs { options.onRelogin?.invoke(Identity(identity)) }
         }
     }

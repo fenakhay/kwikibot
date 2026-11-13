@@ -82,9 +82,9 @@ public class NonInteractive(
 /**
  * A prompt that reads the terminal.
  *
- * On the JVM and natively reading blocks, which is what a terminal is; nothing here is called often enough
- * for that to matter, and pretending otherwise would mean a thread pool for the sake of one `readLine`. On
- * Node it waits on `readline` instead, which keeps whatever it has read ahead for the next question.
+ * On the JVM and natively the read blocks a thread kept for that, not the caller's, so other coroutines on
+ * the caller's thread go on while a person thinks. On Node it waits on `readline` instead, which keeps
+ * whatever it has read ahead for the next question. A read that has begun ends only when a line comes.
  *
  * If standard input reaches its end — a closed pipe, a job sent to the background — the default is taken
  * rather than looping on an empty read, which is how a script that lost its terminal spins forever.

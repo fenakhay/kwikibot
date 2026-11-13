@@ -291,7 +291,6 @@ async function liveFeeds(): Promise<void> {
 }
 
 function rejectedStreamShapes(row: SparqlRow, event: WikiEvent): void {
-  // @ts-expect-error a value's type is one of the three SPARQL has
   const typo = row.get("x")?.type === "url";
   // @ts-expect-error an auth's kind is one of the known ones
   const kind = sparqlAuthNone().kind === "bearer";

@@ -28,6 +28,7 @@ import kotlin.js.Date
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -35,7 +36,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** When `serve` runs a bot. */
 @JsExport
@@ -119,12 +124,20 @@ public class RunContext
 internal constructor(
     private val context: ClientRunContext,
     private val scope: CoroutineScope,
-    /** Aborted when the run is cancelled, for handing to `fetch` and the like. */
+    /**
+     * Aborted the moment the run is cancelled or its fleet closed, for handing to `fetch` and the like, with
+     * an `AbortError` as its `reason`. The run does not wait for a bot that ignores it: it ends `"cancelled"`
+     * at once and its lane takes the next run, since a promise may never settle, while what the bot is still
+     * doing goes on beside that, and every call it makes on this context rejects.
+     */
     public val signal: AbortSignal,
 ) {
 
-    /** The wiki this bot's account edits, shared with every bot on the account. */
-    public val wiki: Wiki = Wiki(context.wiki, scope) {}
+    /**
+     * The wiki this bot's account edits, shared with every bot on the account. It is the fleet's to close, so
+     * its `close` does nothing.
+     */
+    public val wiki: Wiki = Wiki(context.wiki, scope, null)
 
     /** What the run was started with, after the flags. */
     public val arguments: Array<String>
@@ -138,10 +151,13 @@ internal constructor(
     public val directory: String?
         get() = context.directory?.toString()
 
-    /** Another wiki, as the same account, by language and family name, such as `"en"`, `"wiktionary"`. */
+    /**
+     * Another wiki, as the same account, by language and family name, such as `"en"`, `"wiktionary"`. Its
+     * session is shared and the fleet's to close, so its `close` does nothing, and the run goes on.
+     */
     public fun open(language: String, family: String): Promise<Wiki> = scope.promise {
         val named = requireNotNull(ClientFamily.named(family)) { "there is no family called '$family'" }
-        Wiki(context.open(LangCode(language), named), scope) {}
+        Wiki(context.open(LangCode(language), named), scope, null)
     }
 
     /** Says one line about what the run is doing. */
@@ -162,7 +178,7 @@ internal constructor(
     /** Runs [work] as a named phase of this run. */
     public fun <T> step(name: String, work: (context: RunContext) -> Awaitable<T>): Promise<T> =
         scope.promise {
-            context.step(name) { inner -> settled(work(RunContext(inner, scope, signal))) }
+            context.step(name) { inner -> settled { work(RunContext(inner, scope, signal)) } }
         }
 
     /** Parks this lane and asks a person, while other bots keep going. */
@@ -195,9 +211,12 @@ internal constructor(
     public val outcomes: (outcome: PageOutcome) -> Unit
         get() = { context.outcomes(it.outcome) }
 
-    /** Another wiki, as the same account, in [language] of [family], which may be one of your own. */
+    /**
+     * Another wiki, as the same account, in [language] of [family], which may be one of your own. As with
+     * `open`, its `close` does nothing, since the session is the fleet's.
+     */
     public fun openFamily(language: String, family: Family): Promise<Wiki> = scope.promise {
-        Wiki(context.open(LangCode(language), family.family), scope) {}
+        Wiki(context.open(LangCode(language), family.family), scope, null)
     }
 
     /** Whether the run may go on. A stop page that cannot be read answers `false`. */
@@ -332,9 +351,10 @@ internal constructor(
      * @param arguments what to hand it.
      * @param save whether it may save. A dry run unless told.
      * @return what to call the run.
+     * @throws IllegalStateException if the fleet is closed, since nothing would ever run it.
      */
     public fun start(id: String, arguments: Array<String> = emptyArray(), save: Boolean = false): Double =
-        fleet.start(id, ClientCommonOptions(save = save), arguments.toList()).toDouble()
+        startRun(id, ClientCommonOptions(save = save), arguments)
 
     /** Stops a run, and says whether there was such a run still to stop. */
     public fun cancel(run: Double): Boolean = fleet.cancel(run.toLong())
@@ -342,12 +362,15 @@ internal constructor(
     /** Every run asked for, oldest first. */
     public fun runs(): Array<FleetRun> = fleet.runs.value.map(::FleetRun).toTypedArray()
 
-    /** What is happening, as it happens. A walk sees only what follows its start. */
+    /**
+     * What is happening, as it happens. A walk sees only what follows its start, and closing the fleet ends
+     * it: it finishes as a loop does, rather than rejecting.
+     */
     public fun events(): AsyncIterable<FleetEvent> =
         fleet.events.toAsyncIterableEndingWith(scope, ::FleetEvent)
 
-    /** Resolves once every run asked for so far has ended. */
-    public fun idle(): Promise<Unit> = scope.promiseVoid { fleet.awaitIdle() }
+    /** Resolves once every run asked for so far has ended, or the fleet is closed, which ends them all. */
+    public fun idle(): Promise<Unit> = untilClosed { fleet.awaitIdle() }
 
     /** Runs each bot that has a schedule when it comes round, until the fleet is closed. */
     public fun serve(): Promise<Unit> = untilClosed { fleet.serve() }
@@ -367,14 +390,23 @@ internal constructor(
      * line.
      *
      * @return what to call the run.
+     * @throws IllegalStateException if the fleet is closed, since nothing would ever run it.
      */
     public fun startWith(
         id: String,
         options: CommonOptions? = null,
         arguments: Array<String> = emptyArray(),
-    ): Double = fleet.start(id, runOptionsOf(options?.options), arguments.toList()).toDouble()
+    ): Double = startRun(id, runOptionsOf(options?.options), arguments)
 
-    /** Every run, each time one changes, starting with how they are now. */
+    private fun startRun(id: String, options: ClientCommonOptions, arguments: Array<String>): Double {
+        check(scope.isActive) { "the fleet is closed, so it cannot run '$id'" }
+        return fleet.start(id, options, arguments.toList()).toDouble()
+    }
+
+    /**
+     * Every run, each time one changes, starting with how they are now. Closing the fleet ends a walk, as it
+     * does one of `events`.
+     */
     public fun watchRuns(): AsyncIterable<Array<FleetRun>> =
         fleet.runs.toAsyncIterableEndingWith(scope) { views -> views.map(::FleetRun).toTypedArray() }
 
@@ -430,9 +462,9 @@ internal fun createFleet(
                 scope,
                 questions = { bot, question ->
                     val ask = options.onAsk
-                    ask != null && settledResult(ask(bot, question.title, question.summary)) == true
+                    ask != null && settledCall { ask(bot, question.title, question.summary) } == true
                 },
-                out = { line -> options.onLine?.invoke(line) },
+                out = lineObserver(options.onLine),
                 stop = stop,
             )
         Fleet(fleet, accounts, scope)
@@ -441,7 +473,8 @@ internal fun createFleet(
 
 /**
  * Starts a program of many bots from its command line, in Node: `list`, `run <bot>`, `run --all` or `serve`,
- * with `kwikibot.toml` and the common flags. Exits with the status: 0 only if every run finished.
+ * with `kwikibot.toml` and the common flags. Exits with the status: 0 only if every run ended clean, 1 if one
+ * failed, was cancelled or declined, or stopped early, and 2 for a bad command line.
  *
  * @param args the command line, without Node's own two entries.
  * @param bots the bots.
@@ -461,12 +494,12 @@ public fun fleetMainWith(args: Array<String>, bots: Array<BotSpec>, prompt: Prom
 
 private fun credentialsOf(options: FleetOptions, account: String?): Credentials {
     if (account == null) {
-        return options.login?.credentials ?: Credentials.fromEnvironment("KWIKIBOT", ::environmentVariable)
+        return options.login?.credentials
+            ?: hideFields(Credentials.fromEnvironment("KWIKIBOT", ::environmentVariable))
     }
     val table: dynamic = options.accounts
     val named: BotPassword? = if (table == null) null else table[account].unsafeCast<BotPassword?>()
-    return named?.credentials
-        ?: Credentials.fromEnvironment("KWIKIBOT_${account.uppercase()}", ::environmentVariable)
+    return named?.credentials ?: hideFields(ClientAccounts.namedCredentials(account, ::environmentVariable))
 }
 
 /** A bot written in JavaScript, as a fleet runs it. */
@@ -485,13 +518,14 @@ internal class SpecBot(val spec: BotSpec) : FleetBot {
 
     @Suppress("ThrowsCount", "SwallowedException")
     override suspend fun run(context: ClientRunContext) {
-        val controller = js("new AbortController()")
         val job = currentCoroutineContext()[Job]
-        val listening = job?.invokeOnCompletion { cause -> if (cause != null) controller.abort() }
+        job?.ensureActive()
         val calls = SupervisorJob(job)
         val scope = CoroutineScope(currentCoroutineContext() + calls)
+        val abort = RunAbort(scope)
         try {
-            settledResult(spec.run(RunContext(context, scope, controller.signal)))
+            settledCall { spec.run(RunContext(context, scope, abort.signal)) }
+            job?.ensureActive()
         } catch (e: DeclinedError) {
             throw Declined(e.message ?: "declined")
         } catch (e: CancellationException) {
@@ -499,10 +533,45 @@ internal class SpecBot(val spec: BotSpec) : FleetBot {
         } catch (@Suppress("TooGenericExceptionCaught") failure: Throwable) {
             throw BotFailure(failure.message ?: failure.toString())
         } finally {
+            abort.dispose()
             calls.complete()
-            listening?.dispose()
         }
     }
+}
+
+/**
+ * The signal of one run, aborted as soon as [scope] is cancelled. It waits as a child of the scope because a
+ * cancellation handler runs at the moment of cancelling, where a job's completion would come only after the
+ * run had already given up on its bot, which is too late to say anything to it.
+ */
+private class RunAbort(scope: CoroutineScope) {
+    private val controller: dynamic = js("new AbortController()")
+    private var over = false
+
+    val signal: AbortSignal = controller.signal.unsafeCast<AbortSignal>()
+
+    private val waiting =
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            suspendCancellableCoroutine<Unit> { cancelled ->
+                cancelled.invokeOnCancellation { if (!over) abort() }
+            }
+        }
+
+    private fun abort() {
+        controller.abort(js("new DOMException('the run was cancelled', 'AbortError')"))
+    }
+
+    /** The run is over, and whatever cancels its scope from here on says nothing to anyone. */
+    fun dispose() {
+        over = true
+        waiting.cancel()
+    }
+}
+
+/** [onLine] as a fleet's output, which takes each line whatever the callback does with it. */
+internal fun lineObserver(onLine: ((line: String) -> Unit)?): (String) -> Unit {
+    val report = ObserverReport("onLine")
+    return { line -> report.observing { onLine?.invoke(line).unsafeCast<Any?>() } }
 }
 
 /**

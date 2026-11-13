@@ -2,9 +2,12 @@
 
 package com.fenakhay.kwikibot.client.model
 
+import com.fenakhay.kwikibot.client.model.dump.DumpFormatException
+import com.sun.management.UnixOperatingSystemMXBean
 import io.kotest.matchers.shouldBe
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Collections
@@ -12,9 +15,13 @@ import java.util.zip.GZIPOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 import kotlin.io.path.writeBytes
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.buffered
+import kotlinx.io.files.Path as KotlinxPath
+import kotlinx.io.files.SystemFileSystem
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 
 /**
@@ -66,6 +73,40 @@ class XmlDumpFileTest {
         }
 
         XmlDump.pages(file).single().text shouldBe "page 1"
+    }
+
+    private fun gzip(text: String): ByteArray =
+        ByteArrayOutputStream()
+            .also { out -> GZIPOutputStream(out).use { it.write(text.toByteArray()) } }
+            .toByteArray()
+
+    @Test
+    fun `every member of a gzip made of thousands is read wherever they fall against the reads`() {
+        val file = KotlinxPath(directory.resolve("members.xml.gz").toString())
+        val pages = 5000
+        SystemFileSystem.sink(file).buffered().use { sink ->
+            sink.write(gzip(header))
+            for (id in 1..pages) sink.write(
+                gzip(page(id, text = "page $id ${Random(id).nextInt().toString().repeat(id % 90)}"))
+            )
+            sink.write(gzip("</mediawiki>"))
+        }
+
+        XmlDump.pages(file).count() shouldBe pages
+    }
+
+    @Test
+    fun `a gzip file that is no gzip is closed once refused`() {
+        val path = directory.resolve("not.xml.gz")
+        path.writeBytes("an error page, not a dump".toByteArray())
+        val system = ManagementFactory.getOperatingSystemMXBean() as UnixOperatingSystemMXBean
+        val before = system.openFileDescriptorCount
+
+        repeat(100) {
+            assertFailsWith<DumpFormatException> { XmlDump.pages(KotlinxPath(path.toString())).toList() }
+        }
+
+        (system.openFileDescriptorCount - before < 50) shouldBe true
     }
 
     @Test

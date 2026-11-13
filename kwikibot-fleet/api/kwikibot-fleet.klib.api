@@ -138,6 +138,10 @@ final class com.fenakhay.kwikibot.fleet/Accounts : kotlin/AutoCloseable { // com
 
     final fun close() // com.fenakhay.kwikibot.fleet/Accounts.close|close(){}[0]
     final suspend fun wiki(com.fenakhay.kwikibot.net.transport/ApiEndpoint, kotlin/String? = ...): com.fenakhay.kwikibot.client/Wiki // com.fenakhay.kwikibot.fleet/Accounts.wiki|wiki(com.fenakhay.kwikibot.net.transport.ApiEndpoint;kotlin.String?){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.fleet/Accounts.Companion|null[0]
+        final fun namedCredentials(kotlin/String, kotlin/Function1<kotlin/String, kotlin/String?> = ...): com.fenakhay.kwikibot.net.auth/Credentials // com.fenakhay.kwikibot.fleet/Accounts.Companion.namedCredentials|namedCredentials(kotlin.String;kotlin.Function1<kotlin.String,kotlin.String?>){}[0]
+    }
 }
 
 final class com.fenakhay.kwikibot.fleet/BotRegistry { // com.fenakhay.kwikibot.fleet/BotRegistry|null[0]
@@ -260,7 +264,7 @@ final class com.fenakhay.kwikibot.fleet/RunView { // com.fenakhay.kwikibot.fleet
 }
 
 final class com.fenakhay.kwikibot.fleet/SharedStop : com.fenakhay.kwikibot.bot.run/StopPolicy { // com.fenakhay.kwikibot.fleet/SharedStop|null[0]
-    constructor <init>(kotlin.coroutines/SuspendFunction0<kotlin/String?>, kotlin.time/Duration = ..., kotlin.time/Duration = ..., kotlin.time/Clock = ...) // com.fenakhay.kwikibot.fleet/SharedStop.<init>|<init>(kotlin.coroutines.SuspendFunction0<kotlin.String?>;kotlin.time.Duration;kotlin.time.Duration;kotlin.time.Clock){}[0]
+    constructor <init>(kotlin.coroutines/SuspendFunction0<kotlin/String?>, kotlin.time/Duration = ..., kotlin.time/Duration = ..., kotlin.time/TimeSource = ...) // com.fenakhay.kwikibot.fleet/SharedStop.<init>|<init>(kotlin.coroutines.SuspendFunction0<kotlin.String?>;kotlin.time.Duration;kotlin.time.Duration;kotlin.time.TimeSource){}[0]
 
     final suspend fun mayContinue(): kotlin/Boolean // com.fenakhay.kwikibot.fleet/SharedStop.mayContinue|mayContinue(){}[0]
 
