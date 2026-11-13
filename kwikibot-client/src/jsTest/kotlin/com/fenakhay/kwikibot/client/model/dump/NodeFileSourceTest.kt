@@ -21,34 +21,41 @@ class NodeFileSourceTest {
     private fun encoded(text: String): Uint8Array =
         js("new TextEncoder()").encode(text).unsafeCast<Uint8Array>()
 
+    /**
+     * On Windows, a write far past a file's end first fills the gap with zeros, 3 GiB of them here, which
+     * outlasts the test's timeout. A file lengthened with `ftruncate` reads as zeros without any being
+     * written, on every system.
+     */
     @Test
     fun `a file past 2 GiB is read to its end a chunk at a time`() = runTest {
         val folder = directory()
         val path = "$folder/sparse.xml"
         val size = 3.0 * (1L shl 30).toDouble()
-        val tail = encoded("the end")
+        val head = encoded("the start")
         val descriptor = fs.openSync(path, "w")
-        fs.writeSync(descriptor, tail, 0, tail.length, size)
+        fs.writeSync(descriptor, head)
+        fs.ftruncateSync(descriptor, size)
         fs.closeSync(descriptor)
 
         val source = openDumpFile(Path(path))
         val sink = Buffer()
         var total = 0.0
         var largest = 0L
-        var last = ""
+        var first = ""
         while (true) {
             val read = source.readAtMostTo(sink, 1L shl 20)
             if (read < 0) break
-            total += read.toDouble()
             largest = maxOf(largest, sink.size)
-            if (read < 1L shl 20) last = sink.readByteArray().decodeToString() else sink.clear()
+            if (total == 0.0) first = sink.readByteArray(head.length).decodeToString()
+            total += read.toDouble()
+            sink.clear()
         }
         source.close()
         fs.rmSync(folder, js("({ recursive: true })"))
 
-        total shouldBe size + tail.length
+        total shouldBe size
         (largest <= 1L shl 20) shouldBe true
-        last.endsWith("the end") shouldBe true
+        first shouldBe "the start"
     }
 
     @Test

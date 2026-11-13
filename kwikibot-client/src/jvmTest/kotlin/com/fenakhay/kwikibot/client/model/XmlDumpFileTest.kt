@@ -95,18 +95,23 @@ class XmlDumpFileTest {
         XmlDump.pages(file).count() shouldBe pages
     }
 
+    /**
+     * Unix counts the descriptors left open. Windows does not, but it refuses to delete a file that is still
+     * open, so the file is deleted after each refusal.
+     */
     @Test
     fun `a gzip file that is no gzip is closed once refused`() {
         val path = directory.resolve("not.xml.gz")
-        path.writeBytes("an error page, not a dump".toByteArray())
-        val system = ManagementFactory.getOperatingSystemMXBean() as UnixOperatingSystemMXBean
-        val before = system.openFileDescriptorCount
+        val unix = ManagementFactory.getOperatingSystemMXBean() as? UnixOperatingSystemMXBean
+        val before = unix?.openFileDescriptorCount ?: 0L
 
         repeat(100) {
+            path.writeBytes("an error page, not a dump".toByteArray())
             assertFailsWith<DumpFormatException> { XmlDump.pages(KotlinxPath(path.toString())).toList() }
+            Files.delete(path)
         }
 
-        (system.openFileDescriptorCount - before < 50) shouldBe true
+        if (unix != null) (unix.openFileDescriptorCount - before < 50) shouldBe true
     }
 
     @Test
