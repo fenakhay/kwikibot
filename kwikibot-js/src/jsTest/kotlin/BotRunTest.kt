@@ -251,6 +251,36 @@ class BotRunTest {
     }
 
     @Test
+    fun `a conflicted save is tried again on the page as it is now unless told not to`() = runTest {
+        for ((retries, saved) in listOf(null to "theirs tephra", 0 to null)) {
+            val mock = MockWiki(mapOf("A" to "ash"))
+            val wiki = mock.open(login)
+            var tries = 0
+            val transform: (Page) -> Any? = { page ->
+                if (++tries == 1) mock.saveAsSomebodyElse("A", "theirs ash")
+                tephra(page)
+            }
+
+            val report =
+                wiki
+                    .botRun(
+                        run(
+                            "source" to source("A"),
+                            "dryRun" to false,
+                            "transform" to transform,
+                            "conflictRetries" to retries,
+                        )
+                    )
+                    .await()
+
+            tries shouldBe if (retries == 0) 1 else 2
+            mock.saved["A"] shouldBe saved
+            report.refused shouldBe if (retries == 0) 1 else 0
+            wiki.close()
+        }
+    }
+
+    @Test
     fun `maxEdits stops the run with the pages in hand not attempted`() = runTest {
         val mock = MockWiki(mapOf("A" to "ash", "B" to "ash", "C" to "ash"))
         val wiki = mock.open(login)

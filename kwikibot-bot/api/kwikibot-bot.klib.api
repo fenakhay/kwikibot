@@ -364,6 +364,9 @@ final class com.fenakhay.kwikibot.bot.run/BotReport { // com.fenakhay.kwikibot.b
 }
 
 final class com.fenakhay.kwikibot.bot.run/BotRunBuilder { // com.fenakhay.kwikibot.bot.run/BotRunBuilder|null[0]
+    final var conflictRetries // com.fenakhay.kwikibot.bot.run/BotRunBuilder.conflictRetries|{}conflictRetries[0]
+        final fun <get-conflictRetries>(): kotlin/Int // com.fenakhay.kwikibot.bot.run/BotRunBuilder.conflictRetries.<get-conflictRetries>|<get-conflictRetries>(){}[0]
+        final fun <set-conflictRetries>(kotlin/Int) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.conflictRetries.<set-conflictRetries>|<set-conflictRetries>(kotlin.Int){}[0]
     final var dryRun // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun|{}dryRun[0]
         final fun <get-dryRun>(): kotlin/Boolean // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun.<get-dryRun>|<get-dryRun>(){}[0]
         final fun <set-dryRun>(kotlin/Boolean) // com.fenakhay.kwikibot.bot.run/BotRunBuilder.dryRun.<set-dryRun>|<set-dryRun>(kotlin.Boolean){}[0]

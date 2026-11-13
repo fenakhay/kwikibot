@@ -2140,6 +2140,12 @@ export declare interface BotRunOptions {
      */
     readonly maxEdits?: Nullable<number>;
     /**
+     * How many times to try a page again when its save meets an edit conflict, reading it again and running
+     * the exclusion check and the transform on what it says now, so the transform can run more than once for
+     * a page. Two unless given; `0` reports the conflict as a refusal.
+     */
+    readonly conflictRetries?: Nullable<number>;
+    /**
      * Checked before every save and before a saving run starts. Unless given, the wiki cannot stop the run,
      * and one that saves logs a warning saying so.
      */

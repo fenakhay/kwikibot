@@ -48,6 +48,7 @@ public suspend fun Wiki.botRunWithDefaults(
     writeConcurrency: Int? = null,
     limit: Int? = null,
     maxEdits: Int? = null,
+    conflictRetries: Int? = null,
     stopPolicy: StopPolicy? = null,
     exclusionPolicy: Setting<BotPolicy> = Setting.Default,
     onOutcome: ((PageOutcome) -> Unit)? = null,
@@ -71,6 +72,7 @@ public suspend fun Wiki.botRunWithDefaults(
         writeConcurrency?.let { builder.writeConcurrency = it }
         limit?.let { builder.limit = it }
         maxEdits?.let { builder.maxEdits = it }
+        conflictRetries?.let { builder.conflictRetries = it }
         stopPolicy?.let { builder.stopPolicy = it }
         when (exclusionPolicy) {
             Setting.Default -> Unit

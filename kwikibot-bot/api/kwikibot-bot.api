@@ -631,6 +631,7 @@ public final class com/fenakhay/kwikibot/bot/run/BotReport$Companion {
 
 public final class com/fenakhay/kwikibot/bot/run/BotRunBuilder {
 	public final fun createMissing (Lkotlin/jvm/functions/Function2;)V
+	public final fun getConflictRetries ()I
 	public final fun getDryRun ()Z
 	public final fun getExclusionPolicy ()Lcom/fenakhay/kwikibot/bot/BotPolicy;
 	public final fun getLimit ()Ljava/lang/Integer;
@@ -642,6 +643,7 @@ public final class com/fenakhay/kwikibot/bot/run/BotRunBuilder {
 	public final fun getState ()Lcom/fenakhay/kwikibot/bot/run/RunState;
 	public final fun getStopPolicy ()Lcom/fenakhay/kwikibot/bot/run/StopPolicy;
 	public final fun getWriteConcurrency ()I
+	public final fun setConflictRetries (I)V
 	public final fun setDryRun (Z)V
 	public final fun setExclusionPolicy (Lcom/fenakhay/kwikibot/bot/BotPolicy;)V
 	public final fun setLimit (Ljava/lang/Integer;)V

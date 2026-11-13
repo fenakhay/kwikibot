@@ -81,6 +81,7 @@ class RunsTest {
                 writeConcurrency = 1,
                 limit = 4,
                 maxEdits = 10,
+                conflictRetries = 0,
                 stopPolicy = StopPolicy.NONE,
                 exclusionPolicy = Setting.Off,
                 onOutcome = { outcomes += it },

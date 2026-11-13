@@ -389,6 +389,7 @@ async function limitsCapARun(): Promise<void> {
         readConcurrency: 1,
         transform: tephra,
         maxEdits: 1,
+        conflictRetries: 1,
       });
       assert.equal(report.saved, 1);
       assert.equal(report.stopped, true);

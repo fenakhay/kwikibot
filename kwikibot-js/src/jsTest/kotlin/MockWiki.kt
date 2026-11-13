@@ -119,6 +119,12 @@ class MockWiki(
         return """{"query":{"userinfo":{"id":7,"name":"$name",$groups}}}"""
     }
 
+    /** Saves [text] to [title] as somebody else would, which leaves any earlier read of it behind. */
+    fun saveAsSomebodyElse(title: String, text: String) {
+        revision += 1
+        texts[title] = text
+    }
+
     private fun edit(parameters: Map<String, String>): String {
         val title = parameters.getValue("title")
         val base = parameters["baserevid"]?.toLong()

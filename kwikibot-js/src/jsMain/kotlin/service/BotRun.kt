@@ -88,6 +88,13 @@ public external interface BotRunOptions {
     public val maxEdits: Int?
 
     /**
+     * How many times to try a page again when its save meets an edit conflict, reading it again and running
+     * the exclusion check and the transform on what it says now, so the transform can run more than once for
+     * a page. Two unless given; `0` reports the conflict as a refusal.
+     */
+    public val conflictRetries: Int?
+
+    /**
      * Checked before every save and before a saving run starts. Unless given, the wiki cannot stop the run,
      * and one that saves logs a warning saying so.
      */
@@ -276,6 +283,7 @@ internal suspend fun botRunWith(wiki: ClientWiki, options: BotRunOptions): BotRe
             writeConcurrency = options.writeConcurrency,
             limit = options.limit,
             maxEdits = options.maxEdits,
+            conflictRetries = options.conflictRetries,
             stopPolicy = options.stopPolicy?.policy,
             exclusionPolicy = exclusionOf(options),
             onOutcome =

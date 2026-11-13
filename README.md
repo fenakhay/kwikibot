@@ -712,6 +712,7 @@ What kwikibot does without being asked, and where to change it:
 | Concurrency of a run | 4 pages read and 1 written at a time | `readConcurrency`, `writeConcurrency` |
 | `{{nobots}}` | Not checked | `exclusionPolicy` |
 | Stop page | None | `stopPolicy`, `--stop-page` |
+| Edit conflicts | Read again and transformed again, up to 2 times | `conflictRetries` |
 
 Wikimedia asks for no more than three requests at a time, and a client sends no more than that
 however many pages a run works on: a request with no room waits for one in flight to be answered.

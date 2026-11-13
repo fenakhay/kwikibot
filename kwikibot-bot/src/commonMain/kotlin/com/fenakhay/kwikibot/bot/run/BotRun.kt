@@ -353,6 +353,18 @@ public class BotRunBuilder internal constructor() {
      */
     public var maxEdits: Int? = null
 
+    /**
+     * How many times to try a page again when its save meets an edit conflict, or `0` to report the conflict
+     * as [PageOutcome.Refused].
+     *
+     * A conflict is somebody saving the page between this run reading it and saving it, in a way the wiki
+     * could not merge. Each try reads the page again and runs the exclusion check and the transform on what
+     * it says now, so the transform can run more than once for one page, and a page given `{{nobots}}`
+     * meanwhile is left alone. A try belongs to the same page: it counts once toward [maxEdits], and it asks
+     * the stop policy and waits for the write permit as any save does.
+     */
+    public var conflictRetries: Int = DEFAULT_CONFLICT_RETRIES
+
     /** Checked before every save; see [StopPolicy]. */
     public var stopPolicy: StopPolicy = StopPolicy.NONE
         set(value) {
@@ -423,6 +435,7 @@ public class BotRunBuilder internal constructor() {
 
     internal companion object {
         const val DEFAULT_READ_CONCURRENCY = 4
+        const val DEFAULT_CONFLICT_RETRIES = 2
     }
 }
 
@@ -560,6 +573,12 @@ private class Runner(
     private val config: BotRunBuilder,
     private val transform: suspend (PageContent) -> Edit?,
 ) {
+    init {
+        require(config.conflictRetries >= 0) {
+            "conflictRetries must not be negative: ${config.conflictRetries}"
+        }
+    }
+
     private val batches = Semaphore(config.readConcurrency)
     private val writes = Semaphore(config.writeConcurrency)
     private val lock = Mutex()
@@ -701,8 +720,16 @@ private class Runner(
     /** Why a policy refused a page, carried back out of the dispatched block. */
     private class Refusal(val reason: String)
 
-    /** What to do with a page whose content has been read. */
-    private suspend fun decide(ref: PageRef, content: PageContent): PageOutcome {
+    /**
+     * What to do with a page whose content has been read, with [retries] tries left after an edit conflict
+     * and the edit already [claimed] from the cap by an earlier try.
+     */
+    private suspend fun decide(
+        ref: PageRef,
+        content: PageContent,
+        retries: Int = config.conflictRetries,
+        claimed: Boolean = false,
+    ): PageOutcome {
         // Already decided at this revision, and the transform would decide the same again.
         if (config.resume && config.state?.pin(ref) == content.revisionId) return PageOutcome.Unchanged(ref)
 
@@ -728,9 +755,21 @@ private class Runner(
         return when {
             edit.section == null && edit.text == content.text -> PageOutcome.Unchanged(ref)
             config.dryRun -> PageOutcome.Pending(ref, edit, content.text, content.revisionId)
-            !claimEdit() -> notAttempted(ref)
-            else -> save(ref, content, edit)
+            !claimed && !claimEdit() -> notAttempted(ref)
+            else -> retried(ref, save(ref, content, edit), retries)
         }
+    }
+
+    /**
+     * [outcome], or what trying the page again gives when it was refused for an edit conflict and [retries]
+     * tries are left. The page is read again for that, and a page deleted meanwhile keeps the conflict.
+     */
+    private suspend fun retried(ref: PageRef, outcome: PageOutcome, retries: Int): PageOutcome {
+        if (retries == 0 || outcome !is PageOutcome.Refused || outcome.outcome !is EditOutcome.Conflict) {
+            return outcome
+        }
+        val fresh = pages.content(ref) ?: return outcome
+        return decide(ref, fresh, retries - 1, claimed = true)
     }
 
     /** A page the source named that does not exist, offered to [BotRunBuilder.createMissing]. */
