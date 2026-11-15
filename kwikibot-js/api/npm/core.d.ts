@@ -2143,6 +2143,44 @@ export declare namespace OAuthSettings {
     }
 }
 /**
+ * An OAuth 1.0a login: an owner-only consumer's key and secret and its access token and secret, each read
+ * from an environment variable named here, so that none is in the file. Every request is signed.
+ */
+export declare class OAuth1Settings {
+    private readonly __nominal;
+    constructor(consumerKeyEnv?: string, consumerSecretEnv?: string, accessTokenEnv?: string, accessSecretEnv?: string, username?: Nullable<string>, optional?: boolean);
+    /**
+     * The variable holding the consumer key; `"KWIKIBOT_OAUTH_CONSUMER_KEY"` unless given.
+     */
+    get consumerKeyEnv(): string;
+    /**
+     * The variable holding the consumer secret; `"KWIKIBOT_OAUTH_CONSUMER_SECRET"` unless given.
+     */
+    get consumerSecretEnv(): string;
+    /**
+     * The variable holding the access token; `"KWIKIBOT_OAUTH_ACCESS_TOKEN"` unless given.
+     */
+    get accessTokenEnv(): string;
+    /**
+     * The variable holding the access secret; `"KWIKIBOT_OAUTH_ACCESS_SECRET"` unless given.
+     */
+    get accessSecretEnv(): string;
+    /**
+     * The account the consumer belongs to, for the logs.
+     */
+    get username(): Nullable<string>;
+    /**
+     * Whether a run may go on without it when none of the four is set; not unless given.
+     */
+    get optional(): boolean;
+}
+export declare namespace OAuth1Settings {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => OAuth1Settings;
+    }
+}
+/**
  * How a run reads and writes. Anything left out keeps the run's own default.
  */
 export declare class RunSettings {
@@ -2260,6 +2298,8 @@ export declare class BotConfig {
      * The login this configuration describes, or `null` for none: an `OAuth2` when its token is set, else a
      * `BotPassword`.
      * 
+     * With [oauth1] configured, an `OAuth1` when its four variables are set.
+     * 
      * @param environment - reads a variable, the process environment unless given.
      * @throws IllegalStateException when a login is configured and its variable is not set, and the login is
      * not marked `optional`.
@@ -2311,6 +2351,11 @@ export declare class BotConfig {
      */
     get oauth(): Nullable<OAuthSettings>;
     /**
+     * An OAuth 1.0a login, or `null`. Used in place of [login] when both are given and its variables are set;
+     * refused beside an [oauth] whose token is set.
+     */
+    get oauth1(): Nullable<OAuth1Settings>;
+    /**
      * How a bot run reads and writes.
      */
     get run(): RunSettings;
@@ -2361,6 +2406,10 @@ export declare interface BotConfigInit {
      * An OAuth 2.0 login.
      */
     readonly oauth?: Nullable<OAuthSettings>;
+    /**
+     * An OAuth 1.0a login.
+     */
+    readonly oauth1?: Nullable<OAuth1Settings>;
     /**
      * How a bot run reads and writes.
      */
@@ -4132,6 +4181,11 @@ export declare const LIBRARY_URL: string;
  * 
  * [environment] reads a variable, the process environment unless given. Throws when a bot password is set
  * only in part, which is a mistake rather than a choice to run anonymously.
+ * 
+ * An `OAuth1` is read from `<prefix>_OAUTH_CONSUMER_KEY`, `<prefix>_OAUTH_CONSUMER_SECRET`,
+ * `<prefix>_OAUTH_ACCESS_TOKEN` and `<prefix>_OAUTH_ACCESS_SECRET`, with `<prefix>_ACCOUNT` as its username,
+ * and wins over a bot password as an `OAuth2` does. Those four set only in part throw, as does any of them
+ * set beside `<prefix>_OAUTH_TOKEN`; the message names the variables, never what they hold.
  */
 export declare function credentialsFromEnvironment(prefix?: string, environment?: Nullable<(name: string) => Nullable<string>>): Nullable<BotPassword>;
 /**
@@ -4177,6 +4231,28 @@ export declare namespace OAuth2 {
     /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
     namespace $metadata$ {
         const constructor: abstract new () => OAuth2;
+    }
+}
+/**
+ * An OAuth 1.0a owner-only consumer, to log in with: its key and secret, and the access token and secret the
+ * wiki issued with it. It is a kind of `BotPassword`, so it goes wherever one does: `connect`, `connectWith`,
+ * a fleet's `login` and `accounts`, and what `createAccounts` is given.
+ * 
+ * Every request is signed with HMAC-SHA1, with no login round trip, and the signature goes in an
+ * `Authorization: OAuth` header. All four values are kept where nothing that looks at this object finds them.
+ * Its [account] is its [username], or `""` when none was given, and its [botName] is `""`.
+ */
+export declare class OAuth1 extends BotPassword.$metadata$.constructor {
+    constructor(consumerKey: string, consumerSecret: string, accessToken: string, accessSecret: string, username?: Nullable<string>);
+    /**
+     * The account the consumer belongs to, for the logs.
+     */
+    get username(): Nullable<string>;
+}
+export declare namespace OAuth1 {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => OAuth1;
     }
 }
 /**

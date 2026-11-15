@@ -1,4 +1,8 @@
 import com.fenakhay.kwikibot.net.auth.Credentials
+import io.github.oshai.kotlinlogging.Appender
+import io.github.oshai.kotlinlogging.KLoggingEvent
+import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
+import io.github.oshai.kotlinlogging.Level
 import io.kotest.matchers.collections.shouldContain as shouldContainItem
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -126,6 +130,97 @@ class SecretsTest {
         login.username shouldBe "Acc"
     }
 
+    private val consumerKey = "ck-very-private"
+    private val consumerSecret = "cs-very-private"
+    private val accessToken = "at-very-private"
+    private val accessSecret = "as-very-private"
+
+    private fun consumer() = OAuth1(consumerKey, consumerSecret, accessToken, accessSecret, "Acc")
+
+    @Test
+    fun `an OAuth1 consumer is seen by nothing that looks at it`() {
+        val login = consumer()
+
+        listOf(consumerKey, consumerSecret, accessToken, accessSecret).forEach { assertHides(login, it) }
+        login.account shouldBe "Acc"
+        login.username shouldBe "Acc"
+        (login.credentials as Credentials.OAuth1).accessSecret shouldBe accessSecret
+    }
+
+    @Test
+    fun `an OAuth1 consumer read from the environment is seen by nothing that looks at it`() {
+        val environment =
+            mapOf(
+                "SIG_OAUTH_CONSUMER_KEY" to consumerKey,
+                "SIG_OAUTH_CONSUMER_SECRET" to consumerSecret,
+                "SIG_OAUTH_ACCESS_TOKEN" to accessToken,
+                "SIG_OAUTH_ACCESS_SECRET" to accessSecret,
+            )
+
+        val read = Credentials.fromEnvironment("SIG", environment::get)
+        val login = credentialsFromEnvironment("SIG") { environment[it] }
+
+        listOf(consumerSecret, accessSecret).forEach { assertHides(read, it, hidden = false) }
+        listOf(consumerKey, consumerSecret, accessToken, accessSecret).forEach { assertHides(login!!, it) }
+        (read as Credentials.OAuth1).consumerSecret shouldBe consumerSecret
+    }
+
+    @Test
+    fun `a wiki signed in with an OAuth1 consumer shows nothing of it, and nothing is heard or logged`() =
+        runTest {
+            val seenHeaders = mutableListOf<String?>()
+            var failed = false
+            val engine = MockEngine { request ->
+                seenHeaders += request.headers[HttpHeaders.Authorization]
+                if (!failed) {
+                    failed = true
+                    respond("busy", HttpStatusCode.ServiceUnavailable)
+                } else {
+                    respond(
+                        oauthAnswer,
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            }
+            val heard = Heard()
+            val logged = mutableListOf<String>()
+            val logging = KotlinLoggingConfiguration.direct
+            val appender = logging.appender
+            val level = logging.logLevel
+            logging.appender =
+                object : Appender {
+                    override fun log(loggingEvent: KLoggingEvent) {
+                        logged += "${loggingEvent.message} ${loggingEvent.cause}"
+                    }
+                }
+            logging.logLevel = Level.TRACE
+
+            val wiki =
+                try {
+                    connectWith("test.example.org", contact, options(heard, "login" to consumer()), engine)
+                        .await()
+                } finally {
+                    logging.appender = appender
+                    logging.logLevel = level
+                }
+
+            seenHeaders.all { it.orEmpty().startsWith("OAuth ") } shouldBe true
+            seenHeaders.joinToString() shouldContain accessToken
+            (heard.retries.size > 0) shouldBe true
+            logged.any { it.contains("retry 1") } shouldBe true
+            val everything =
+                JSON.stringify(heard.params.toTypedArray()) +
+                    JSON.stringify(heard.responses.toTypedArray()) +
+                    JSON.stringify(heard.retries.toTypedArray()) +
+                    logged.joinToString()
+            listOf(consumerKey, consumerSecret, accessToken, accessSecret, "oauth_", "OAuth ").forEach {
+                everything shouldNotContain it
+            }
+            listOf(consumerKey, consumerSecret, accessToken, accessSecret).forEach { assertHides(wiki, it) }
+            wiki.close()
+        }
+
     @Test
     fun `a cookie's value is seen by nothing that looks at it and its properties still work`() {
         val auth = sparqlAuthCookie("wcqsSession", token)
@@ -231,6 +326,10 @@ class SecretsTest {
             "CentralAuthToken",
             "authorization",
             "Cookie",
+            "oauth_signature",
+            "oauth_consumer_key",
+            "oauth_nonce",
+            "OAuth_Timestamp",
         )
 
     private fun secretParams(): Record<String, ApiValue> {

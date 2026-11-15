@@ -68,6 +68,26 @@ public class OAuthSettings(
     public val optional: Boolean = false,
 )
 
+/**
+ * An OAuth 1.0a login: an owner-only consumer's key and secret and its access token and secret, each read
+ * from an environment variable named here, so that none is in the file. Every request is signed.
+ */
+@JsExport
+public class OAuth1Settings(
+    /** The variable holding the consumer key; `"KWIKIBOT_OAUTH_CONSUMER_KEY"` unless given. */
+    public val consumerKeyEnv: String = ClientBotConfig.OAuth1Settings().consumerKeyEnv,
+    /** The variable holding the consumer secret; `"KWIKIBOT_OAUTH_CONSUMER_SECRET"` unless given. */
+    public val consumerSecretEnv: String = ClientBotConfig.OAuth1Settings().consumerSecretEnv,
+    /** The variable holding the access token; `"KWIKIBOT_OAUTH_ACCESS_TOKEN"` unless given. */
+    public val accessTokenEnv: String = ClientBotConfig.OAuth1Settings().accessTokenEnv,
+    /** The variable holding the access secret; `"KWIKIBOT_OAUTH_ACCESS_SECRET"` unless given. */
+    public val accessSecretEnv: String = ClientBotConfig.OAuth1Settings().accessSecretEnv,
+    /** The account the consumer belongs to, for the logs. */
+    public val username: String? = null,
+    /** Whether a run may go on without it when none of the four is set; not unless given. */
+    public val optional: Boolean = false,
+)
+
 /** How a run reads and writes. Anything left out keeps the run's own default. */
 @JsExport
 public class RunSettings(
@@ -149,6 +169,23 @@ public class BotConfig internal constructor(internal val config: ClientBotConfig
     public val oauth: OAuthSettings?
         get() = config.oauth?.let { OAuthSettings(it.tokenEnv, it.username, it.optional) }
 
+    /**
+     * An OAuth 1.0a login, or `null`. Used in place of [login] when both are given and its variables are set;
+     * refused beside an [oauth] whose token is set.
+     */
+    public val oauth1: OAuth1Settings?
+        get() =
+            config.oauth1?.let {
+                OAuth1Settings(
+                    it.consumerKeyEnv,
+                    it.consumerSecretEnv,
+                    it.accessTokenEnv,
+                    it.accessSecretEnv,
+                    it.username,
+                    it.optional,
+                )
+            }
+
     /** How a bot run reads and writes. */
     public val run: RunSettings
         get() = config.run.let { RunSettings(it.readConcurrency, it.writeConcurrency, it.readBatch) }
@@ -203,6 +240,8 @@ public class BotConfig internal constructor(internal val config: ClientBotConfig
      * The login this configuration describes, or `null` for none: an `OAuth2` when its token is set, else a
      * `BotPassword`.
      *
+     * With [oauth1] configured, an `OAuth1` when its four variables are set.
+     *
      * @param environment reads a variable, the process environment unless given.
      * @throws IllegalStateException when a login is configured and its variable is not set, and the login is
      *   not marked `optional`.
@@ -254,6 +293,9 @@ public external interface BotConfigInit {
     /** An OAuth 2.0 login. */
     public val oauth: OAuthSettings?
 
+    /** An OAuth 1.0a login. */
+    public val oauth1: OAuth1Settings?
+
     /** How a bot run reads and writes. */
     public val run: RunSettings?
 
@@ -298,6 +340,17 @@ public fun createBotConfig(init: BotConfigInit): BotConfig {
                 init.retry?.let {
                     ClientBotConfig.RetrySettings(it.maxRetries, it.initialDelay, it.maxDelay, it.relogins)
                 } ?: defaults.retry,
+            oauth1 =
+                init.oauth1?.let {
+                    ClientBotConfig.OAuth1Settings(
+                        it.consumerKeyEnv,
+                        it.consumerSecretEnv,
+                        it.accessTokenEnv,
+                        it.accessSecretEnv,
+                        it.username,
+                        it.optional,
+                    )
+                },
         )
     )
 }

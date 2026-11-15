@@ -31,12 +31,50 @@ public class OAuth2(
 }
 
 /**
+ * An OAuth 1.0a owner-only consumer, to log in with: its key and secret, and the access token and secret the
+ * wiki issued with it. It is a kind of `BotPassword`, so it goes wherever one does: `connect`, `connectWith`,
+ * a fleet's `login` and `accounts`, and what `createAccounts` is given.
+ *
+ * Every request is signed with HMAC-SHA1, with no login round trip, and the signature goes in an
+ * `Authorization: OAuth` header. All four values are kept where nothing that looks at this object finds them.
+ * Its [account] is its [username], or `""` when none was given, and its [botName] is `""`.
+ */
+@JsExport
+public class OAuth1(
+    /** The consumer's key, sent with every request. */
+    consumerKey: String,
+    /** The consumer's secret, which only keys the signature and is never sent. */
+    consumerSecret: String,
+    /** The access token, sent with every request. */
+    accessToken: String,
+    /** The access token's secret, which only keys the signature and is never sent. */
+    accessSecret: String,
+    /** The account the consumer belongs to, for the logs. */
+    public val username: String? = null,
+) : BotPassword(username.orEmpty(), "", "") {
+    init {
+        keepSecret(
+            this,
+            hideFields(Credentials.OAuth1(consumerKey, consumerSecret, accessToken, accessSecret, username)),
+        )
+    }
+
+    override val credentials: Credentials
+        get() = secretOf(this)
+}
+
+/**
  * The login the environment holds under [prefix]: an `OAuth2` from `<prefix>_OAUTH_TOKEN`, or a `BotPassword`
  * from `<prefix>_ACCOUNT`, `<prefix>_BOT_NAME` and `<prefix>_PASSWORD`. `null` when neither is set, which a
  * bot that must log in can check for, and always in a browser, which has no environment.
  *
  * [environment] reads a variable, the process environment unless given. Throws when a bot password is set
  * only in part, which is a mistake rather than a choice to run anonymously.
+ *
+ * An `OAuth1` is read from `<prefix>_OAUTH_CONSUMER_KEY`, `<prefix>_OAUTH_CONSUMER_SECRET`,
+ * `<prefix>_OAUTH_ACCESS_TOKEN` and `<prefix>_OAUTH_ACCESS_SECRET`, with `<prefix>_ACCOUNT` as its username,
+ * and wins over a bot password as an `OAuth2` does. Those four set only in part throw, as does any of them
+ * set beside `<prefix>_OAUTH_TOKEN`; the message names the variables, never what they hold.
  */
 @JsExport
 public fun credentialsFromEnvironment(
@@ -55,6 +93,14 @@ internal fun loginOf(found: Credentials): BotPassword? =
         is Credentials.Anonymous -> null
         is Credentials.BotPassword -> BotPassword(found.account, found.botName, found.password)
         is Credentials.OAuth2 -> OAuth2(found.accessToken, found.username)
+        is Credentials.OAuth1 ->
+            OAuth1(
+                found.consumerKey,
+                found.consumerSecret,
+                found.accessToken,
+                found.accessSecret,
+                found.username,
+            )
     }
 
 /** The `User-Agent` a bot sends: Wikimedia's policy asks for a name and a way to reach its operator. */

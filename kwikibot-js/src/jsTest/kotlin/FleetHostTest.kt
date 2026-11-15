@@ -245,6 +245,35 @@ class FleetHostTest {
     }
 
     @Test
+    fun `accounts sign the requests of an OAuth1 consumer`() = runTest {
+        mock.canned["userinfo"] =
+            """{"query":{"userinfo":{"id":7,"name":"Signed","groups":["*","user"],"rights":["edit"]}}}"""
+        val headers = mutableListOf<String?>()
+        val engine =
+            io.ktor.client.engine.mock.MockEngine { request ->
+                headers += request.headers[io.ktor.http.HttpHeaders.Authorization]
+                mock.engine.config.requestHandlers.single()(this, request)
+            }
+        val signed = OAuth1("ck", "cs", "at", "as", "Signed")
+        val accounts =
+            createAccounts(
+                "c",
+                optionsOf("login" to signed),
+                { account -> if (account == "other") signed else null },
+                engine,
+            )
+        val endpoint = endpointOf("test.example.org")
+
+        accounts.wiki(endpoint).await().user.name shouldBe "Signed"
+        accounts.wiki(endpoint, "other").await().user.name shouldBe "Signed"
+        accounts.close()
+
+        headers.isNotEmpty() shouldBe true
+        headers.all { it.orEmpty().startsWith("OAuth ") } shouldBe true
+        mock.requests.none { it["action"] == "login" } shouldBe true
+    }
+
+    @Test
     fun `a shared stop reads once for many, and fails closed`() = runTest {
         var reads = 0
         var now = 0.0

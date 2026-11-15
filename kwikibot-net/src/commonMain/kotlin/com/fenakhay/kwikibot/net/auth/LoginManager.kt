@@ -54,9 +54,9 @@ private const val HIGH_BATCH = 500
 /**
  * Establishes and verifies a session.
  *
- * Bot passwords need a two-step login: fetch a login token, then post the credentials with it. OAuth 2.0
- * needs no login at all — the bearer header is attached by the HTTP client — so for those this only confirms
- * who the wiki thinks we are.
+ * Bot passwords need a two-step login: fetch a login token, then post the credentials with it. OAuth needs no
+ * login at all — the HTTP client attaches an OAuth 2.0 bearer header, or signs each request for OAuth 1.0a —
+ * so for those this only confirms who the wiki thinks we are, and never sends `action=login`.
  *
  * Logging in twice concurrently is prevented, so a pool of coroutines starting at once produces one login,
  * not one each.
@@ -96,7 +96,8 @@ public class LoginManager(
      * made anonymously, or refused if it asserts a user. Unlike [logout] this tells the wiki nothing, since
      * there is no session left to end: it forgets the old session and its tokens and starts another. For
      * OAuth 2.0 the token is what logs in, and an owner-only token never expires, though it can be revoked,
-     * so this only checks that the token is still accepted.
+     * so this only checks that the token is still accepted. The same goes for an OAuth 1.0a consumer, whose
+     * signature on every request is what logs in.
      *
      * @throws WikiError.Auth if the wiki refuses the credentials this time.
      */
@@ -152,6 +153,8 @@ public class LoginManager(
 
             // The bearer header is attached by the HTTP client, so a session already exists.
             is Credentials.OAuth2 -> whoAmI().also { verifyNotAnonymous(it) }
+
+            is Credentials.OAuth1 -> whoAmI().also { verifyNotAnonymous(it) }
 
             is Credentials.BotPassword -> {
                 submitBotPassword(credentials)

@@ -426,6 +426,34 @@ class AuthTest {
     }
 
     @Test
+    fun `an OAuth 1 consumer needs no login only the wiki's word and relogging asks the same`() = runTest {
+        val sent = mutableListOf<String>()
+        val transport = transport { request ->
+            sent += request.url.encodedQuery
+            respondJson("""{"query":{"userinfo":{"id":42,"name":"FenaBot","groups":["bot"]}}}""")
+        }
+        val manager = LoginManager(transport, Credentials.OAuth1("key", "secret", "token", "token-secret"))
+
+        manager.login().name shouldBe "FenaBot"
+        manager.relogin().name shouldBe "FenaBot"
+
+        sent.size shouldBe 2
+        sent.forEach {
+            it shouldContain "meta=userinfo"
+            it shouldNotContain "action=login"
+        }
+    }
+
+    @Test
+    fun `an OAuth 1 consumer the wiki treats as anonymous is a failed login`() = runTest {
+        val transport = transport { respondJson("""{"query":{"userinfo":{"id":0,"name":"1.2.3.4"}}}""") }
+
+        assertFailsWith<WikiError.Auth.LoginFailed> {
+            LoginManager(transport, Credentials.OAuth1("key", "secret", "token", "token-secret")).login()
+        }
+    }
+
+    @Test
     fun `an OAuth token the wiki treats as anonymous is a failed login`() = runTest {
         val transport = transport { respondJson("""{"query":{"userinfo":{"id":0,"name":"1.2.3.4"}}}""") }
 
@@ -550,6 +578,10 @@ class AuthTest {
         assertFailsWith<IllegalArgumentException> { Credentials.BotPassword("FenaBot", "", "p") }
         assertFailsWith<IllegalArgumentException> { Credentials.BotPassword("FenaBot", "task", " ") }
         assertFailsWith<IllegalArgumentException> { Credentials.OAuth2("") }
+        assertFailsWith<IllegalArgumentException> { Credentials.OAuth1(" ", "s", "t", "ts") }
+        assertFailsWith<IllegalArgumentException> { Credentials.OAuth1("k", "", "t", "ts") }
+        assertFailsWith<IllegalArgumentException> { Credentials.OAuth1("k", "s", " ", "ts") }
+        assertFailsWith<IllegalArgumentException> { Credentials.OAuth1("k", "s", "t", "") }
     }
 
     @Test
@@ -560,6 +592,15 @@ class AuthTest {
         "$botPassword" shouldNotContain "hunter2"
         "$oauth" shouldNotContain "ya29.super-secret-token"
         "$oauth" shouldContain "FenaBot"
+
+        val oauth1 =
+            Credentials.OAuth1("consumer-key", "consumer-hush", "access-token", "access-hush", "FenaBot")
+        "$oauth1" shouldNotContain "consumer-hush"
+        "$oauth1" shouldNotContain "access-hush"
+        "$oauth1" shouldNotContain "access-token"
+        "$oauth1" shouldContain "consumer-key"
+        "$oauth1" shouldContain "FenaBot"
+        oauth1.username shouldBe "FenaBot"
     }
 
     private fun TestScope.transport(
@@ -629,6 +670,72 @@ class CredentialsFromEnvironmentTest {
                 }
 
             error.message shouldContain "set only in part"
+        }
+    }
+
+    private val consumer =
+        mapOf(
+            "KWIKIBOT_OAUTH_CONSUMER_KEY" to "ck",
+            "KWIKIBOT_OAUTH_CONSUMER_SECRET" to "cs-hush",
+            "KWIKIBOT_OAUTH_ACCESS_TOKEN" to "at",
+            "KWIKIBOT_OAUTH_ACCESS_SECRET" to "as-hush",
+        )
+
+    @Test
+    fun `an OAuth 1 consumer is read from four variables with the account as its username`() {
+        Credentials.fromEnvironment(environment = consumer::get) shouldBe
+            Credentials.OAuth1("ck", "cs-hush", "at", "as-hush")
+
+        val named = consumer + ("KWIKIBOT_ACCOUNT" to "FenaBot")
+        Credentials.fromEnvironment(environment = named::get) shouldBe
+            Credentials.OAuth1("ck", "cs-hush", "at", "as-hush", "FenaBot")
+
+        val prefixed = consumer.mapKeys { it.key.replace("KWIKIBOT_", "ETY_") }
+        Credentials.fromEnvironment("ETY", prefixed::get) shouldBe
+            Credentials.OAuth1("ck", "cs-hush", "at", "as-hush")
+    }
+
+    @Test
+    fun `an OAuth 1 consumer wins over a bot password set beside it`() {
+        val both =
+            consumer +
+                mapOf(
+                    "KWIKIBOT_ACCOUNT" to "FenaBot",
+                    "KWIKIBOT_BOT_NAME" to "ety",
+                    "KWIKIBOT_PASSWORD" to "p",
+                )
+
+        Credentials.fromEnvironment(environment = both::get) shouldBe
+            Credentials.OAuth1("ck", "cs-hush", "at", "as-hush", "FenaBot")
+    }
+
+    @Test
+    fun `an OAuth 1 consumer missing any of its four variables is a mistake naming no secret`() {
+        for (missing in consumer.keys) {
+            val partial = consumer - missing + (missing to " ")
+            val error =
+                assertFailsWith<IllegalStateException> {
+                    Credentials.fromEnvironment(environment = partial::get)
+                }
+
+            error.message shouldContain "set only in part"
+            consumer.keys.forEach { error.message shouldContain it }
+            error.message shouldNotContain "hush"
+        }
+    }
+
+    @Test
+    fun `an OAuth 2 token and any part of an OAuth 1 consumer set together are refused`() {
+        val both = consumer + ("KWIKIBOT_OAUTH_TOKEN" to "tok-hush")
+        val error =
+            assertFailsWith<IllegalStateException> { Credentials.fromEnvironment(environment = both::get) }
+        error.message shouldContain "KWIKIBOT_OAUTH_TOKEN"
+        error.message shouldContain "KWIKIBOT_OAUTH_ACCESS_SECRET"
+        error.message shouldNotContain "hush"
+
+        for (one in consumer.keys) {
+            val token = mapOf("KWIKIBOT_OAUTH_TOKEN" to "tok-hush", one to consumer.getValue(one))
+            assertFailsWith<IllegalStateException> { Credentials.fromEnvironment(environment = token::get) }
         }
     }
 }

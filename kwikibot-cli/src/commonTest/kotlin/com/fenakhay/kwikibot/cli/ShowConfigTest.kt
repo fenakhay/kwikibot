@@ -86,6 +86,39 @@ class ShowConfigTest {
     }
 
     @Test
+    fun `config shows which of an OAuth 1 consumer's variables are set and none of what they hold`() =
+        runTest {
+            write(
+                """
+            [bot]
+            name = "TestBot"
+            contact = "https://example.org/TestBot"
+
+            [oauth1]
+            consumerSecretEnv = "TEST_CONSUMER_SECRET"
+            """
+            )
+
+            val result =
+                config(
+                    "KWIKIBOT_OAUTH_CONSUMER_KEY" to "ck-shown-nowhere",
+                    "TEST_CONSUMER_SECRET" to "cs-hush",
+                    "KWIKIBOT_OAUTH_ACCESS_TOKEN" to " ",
+                )
+
+            result.statusCode shouldBe 0
+            result.stdout.lines().takeLast(3) shouldBe
+                listOf(
+                    "oauth1:    KWIKIBOT_OAUTH_CONSUMER_KEY is set, TEST_CONSUMER_SECRET is set, " +
+                        "KWIKIBOT_OAUTH_ACCESS_TOKEN is NOT SET, KWIKIBOT_OAUTH_ACCESS_SECRET is NOT SET",
+                    "login:     anonymous",
+                    "",
+                )
+            result.output shouldNotContain "cs-hush"
+            result.output shouldNotContain "ck-shown-nowhere"
+        }
+
+    @Test
     fun `config of a short file shows the defaults it falls back to`() = runTest {
         write(
             """

@@ -96,7 +96,8 @@ public fun ResponseCache.scopedTo(scope: String): ResponseCache {
  * This cache, keeping what it holds for the account [credentials] log in as apart.
  *
  * An OAuth 2.0 login is told apart by a digest of its token, since the username beside it is only a label,
- * which two accounts can share.
+ * which two accounts can share. An OAuth 1.0a login is told apart by a digest of its consumer key and access
+ * token together; neither secret goes into it.
  */
 public fun ResponseCache.scopedTo(credentials: Credentials): ResponseCache =
     scopedTo(
@@ -105,6 +106,13 @@ public fun ResponseCache.scopedTo(credentials: Credentials): ResponseCache =
             is Credentials.BotPassword -> credentials.loginName
             is Credentials.OAuth2 ->
                 SHA256().digest(credentials.accessToken.encodeToByteArray()).toHexString()
+            is Credentials.OAuth1 ->
+                SHA256()
+                    .digest(
+                        "oauth1:${credentials.consumerKey.length}:${credentials.consumerKey}${credentials.accessToken}"
+                            .encodeToByteArray()
+                    )
+                    .toHexString()
         }
     )
 

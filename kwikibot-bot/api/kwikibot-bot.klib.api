@@ -463,6 +463,7 @@ final class com.fenakhay.kwikibot.bot.run/RunState : kotlin/AutoCloseable { // c
 
 final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/BotConfig|null[0]
     constructor <init>(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity, com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ...) // com.fenakhay.kwikibot.bot/BotConfig.<init>|<init>(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings){}[0]
+    constructor <init>(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity, com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings? = ...) // com.fenakhay.kwikibot.bot/BotConfig.<init>|<init>(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings;com.fenakhay.kwikibot.bot.BotConfig.OAuth1Settings?){}[0]
 
     final val bot // com.fenakhay.kwikibot.bot/BotConfig.bot|{}bot[0]
         final fun <get-bot>(): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.bot.<get-bot>|<get-bot>(){}[0]
@@ -476,6 +477,8 @@ final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/B
         final fun <get-maxlag>(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.maxlag.<get-maxlag>|<get-maxlag>(){}[0]
     final val oauth // com.fenakhay.kwikibot.bot/BotConfig.oauth|{}oauth[0]
         final fun <get-oauth>(): com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? // com.fenakhay.kwikibot.bot/BotConfig.oauth.<get-oauth>|<get-oauth>(){}[0]
+    final val oauth1 // com.fenakhay.kwikibot.bot/BotConfig.oauth1|{}oauth1[0]
+        final fun <get-oauth1>(): com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings? // com.fenakhay.kwikibot.bot/BotConfig.oauth1.<get-oauth1>|<get-oauth1>(){}[0]
     final val retry // com.fenakhay.kwikibot.bot/BotConfig.retry|{}retry[0]
         final fun <get-retry>(): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.retry.<get-retry>|<get-retry>(){}[0]
     final val run // com.fenakhay.kwikibot.bot/BotConfig.run|{}run[0]
@@ -488,6 +491,7 @@ final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/B
     final fun applyTo(com.fenakhay.kwikibot.bot.run/BotRunBuilder) // com.fenakhay.kwikibot.bot/BotConfig.applyTo|applyTo(com.fenakhay.kwikibot.bot.run.BotRunBuilder){}[0]
     final fun component1(): com.fenakhay.kwikibot.bot/BotConfig.BotIdentity // com.fenakhay.kwikibot.bot/BotConfig.component1|component1(){}[0]
     final fun component10(): com.fenakhay.kwikibot.bot/BotConfig.RetrySettings // com.fenakhay.kwikibot.bot/BotConfig.component10|component10(){}[0]
+    final fun component11(): com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings? // com.fenakhay.kwikibot.bot/BotConfig.component11|component11(){}[0]
     final fun component2(): com.fenakhay.kwikibot.bot/BotConfig.WikiSelection // com.fenakhay.kwikibot.bot/BotConfig.component2|component2(){}[0]
     final fun component3(): com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings // com.fenakhay.kwikibot.bot/BotConfig.component3|component3(){}[0]
     final fun component4(): com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? // com.fenakhay.kwikibot.bot/BotConfig.component4|component4(){}[0]
@@ -497,6 +501,7 @@ final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/B
     final fun component8(): com.fenakhay.kwikibot.bot/BotConfig.RunSettings // com.fenakhay.kwikibot.bot/BotConfig.component8|component8(){}[0]
     final fun component9(): com.fenakhay.kwikibot.bot/BotConfig.HttpSection // com.fenakhay.kwikibot.bot/BotConfig.component9|component9(){}[0]
     final fun copy(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity = ..., com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ...): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.copy|copy(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings){}[0]
+    final fun copy(com.fenakhay.kwikibot.bot/BotConfig.BotIdentity = ..., com.fenakhay.kwikibot.bot/BotConfig.WikiSelection = ..., com.fenakhay.kwikibot.bot/BotConfig.ThrottleSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.LoginSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.CacheSettings? = ..., kotlin/Int = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuthSettings? = ..., com.fenakhay.kwikibot.bot/BotConfig.RunSettings = ..., com.fenakhay.kwikibot.bot/BotConfig.HttpSection = ..., com.fenakhay.kwikibot.bot/BotConfig.RetrySettings = ..., com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings? = ...): com.fenakhay.kwikibot.bot/BotConfig // com.fenakhay.kwikibot.bot/BotConfig.copy|copy(com.fenakhay.kwikibot.bot.BotConfig.BotIdentity;com.fenakhay.kwikibot.bot.BotConfig.WikiSelection;com.fenakhay.kwikibot.bot.BotConfig.ThrottleSettings;com.fenakhay.kwikibot.bot.BotConfig.LoginSettings?;com.fenakhay.kwikibot.bot.BotConfig.CacheSettings?;kotlin.Int;com.fenakhay.kwikibot.bot.BotConfig.OAuthSettings?;com.fenakhay.kwikibot.bot.BotConfig.RunSettings;com.fenakhay.kwikibot.bot.BotConfig.HttpSection;com.fenakhay.kwikibot.bot.BotConfig.RetrySettings;com.fenakhay.kwikibot.bot.BotConfig.OAuth1Settings?){}[0]
     final fun credentials(kotlin/Function1<kotlin/String, kotlin/String?> = ...): com.fenakhay.kwikibot.net.auth/Credentials // com.fenakhay.kwikibot.bot/BotConfig.credentials|credentials(kotlin.Function1<kotlin.String,kotlin.String?>){}[0]
     final fun endpoint(): com.fenakhay.kwikibot.net.transport/ApiEndpoint // com.fenakhay.kwikibot.bot/BotConfig.endpoint|endpoint(){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.equals|equals(kotlin.Any?){}[0]
@@ -632,6 +637,49 @@ final class com.fenakhay.kwikibot.bot/BotConfig { // com.fenakhay.kwikibot.bot/B
 
         final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.Companion|null[0]
             final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.LoginSettings> // com.fenakhay.kwikibot.bot/BotConfig.LoginSettings.Companion.serializer|serializer(){}[0]
+        }
+    }
+
+    final class OAuth1Settings { // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings|null[0]
+        constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...) // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+
+        final val accessSecretEnv // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.accessSecretEnv|{}accessSecretEnv[0]
+            final fun <get-accessSecretEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.accessSecretEnv.<get-accessSecretEnv>|<get-accessSecretEnv>(){}[0]
+        final val accessTokenEnv // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.accessTokenEnv|{}accessTokenEnv[0]
+            final fun <get-accessTokenEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.accessTokenEnv.<get-accessTokenEnv>|<get-accessTokenEnv>(){}[0]
+        final val consumerKeyEnv // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.consumerKeyEnv|{}consumerKeyEnv[0]
+            final fun <get-consumerKeyEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.consumerKeyEnv.<get-consumerKeyEnv>|<get-consumerKeyEnv>(){}[0]
+        final val consumerSecretEnv // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.consumerSecretEnv|{}consumerSecretEnv[0]
+            final fun <get-consumerSecretEnv>(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.consumerSecretEnv.<get-consumerSecretEnv>|<get-consumerSecretEnv>(){}[0]
+        final val optional // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.optional|{}optional[0]
+            final fun <get-optional>(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.optional.<get-optional>|<get-optional>(){}[0]
+        final val username // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.username|{}username[0]
+            final fun <get-username>(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.username.<get-username>|<get-username>(){}[0]
+        final val variables // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.variables|{}variables[0]
+            final fun <get-variables>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.variables.<get-variables>|<get-variables>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component4|component4(){}[0]
+        final fun component5(): kotlin/String? // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component5|component5(){}[0]
+        final fun component6(): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.component6|component6(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.toString|toString(){}[0]
+
+        final object $serializer : kotlinx.serialization.internal/GeneratedSerializer<com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings> { // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer|null[0]
+            final val descriptor // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer.descriptor|{}descriptor[0]
+                final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+            final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer.childSerializers|childSerializers(){}[0]
+            final fun deserialize(kotlinx.serialization.encoding/Decoder): com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+            final fun serialize(kotlinx.serialization.encoding/Encoder, com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings) // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.$serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;com.fenakhay.kwikibot.bot.BotConfig.OAuth1Settings){}[0]
+        }
+
+        final object Companion { // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.Companion|null[0]
+            final fun serializer(): kotlinx.serialization/KSerializer<com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings> // com.fenakhay.kwikibot.bot/BotConfig.OAuth1Settings.Companion.serializer|serializer(){}[0]
         }
     }
 

@@ -35,6 +35,43 @@ class FleetTest {
     ): Fleet = createFleet(options(onAsk, lines), arrayOf(*bots), mock.engine).await()
 
     @Test
+    fun `a fleet's named account can be an OAuth1 consumer`() = runTest {
+        mock.canned["userinfo"] =
+            """{"query":{"userinfo":{"id":7,"name":"Signed","groups":["*","user"],"rights":["edit"]}}}"""
+        val headers = mutableListOf<String?>()
+        val engine =
+            io.ktor.client.engine.mock.MockEngine { request ->
+                headers += request.headers[io.ktor.http.HttpHeaders.Authorization]
+                mock.engine.config.requestHandlers.single()(this, request)
+            }
+        val options: dynamic = options()
+        options.login = OAuth1("ck", "cs", "at", "as", "Signed")
+        val accounts: dynamic = js("({})")
+        accounts.signer = OAuth1("ck2", "cs2", "at2", "as2", "Signed")
+        options.accounts = accounts
+        val seen = mutableListOf<String>()
+        val spec: dynamic = js("({})")
+        spec.id = "signed"
+        spec.description = "signs"
+        spec.account = "signer"
+        spec.run = { context: RunContext ->
+            seen += context.wiki.user.name
+            null
+        }
+        val fleet =
+            createFleet(options.unsafeCast<FleetOptions>(), arrayOf(spec.unsafeCast<BotSpec>()), engine)
+                .await()
+
+        fleet.start("signed")
+        fleet.idle().await()
+
+        seen shouldBe listOf("Signed")
+        headers.filterNotNull().any { it.contains("oauth_consumer_key=\"ck2\"") } shouldBe true
+        headers.all { it.orEmpty().startsWith("OAuth ") } shouldBe true
+        fleet.close()
+    }
+
+    @Test
     fun `bots run and what comes of them can be read`() = runTest {
         val lines = mutableListOf<String>()
         val fleet =

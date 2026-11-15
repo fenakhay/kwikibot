@@ -87,6 +87,7 @@ class ConnectTest {
         listOf(
                 "lgtoken",
                 "lgpassword",
+                "oauth_signature",
                 "Authorization",
                 "cookie",
                 "set-cookie",

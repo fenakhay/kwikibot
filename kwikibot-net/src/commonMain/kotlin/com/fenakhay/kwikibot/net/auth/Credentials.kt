@@ -76,17 +76,62 @@ public sealed interface Credentials {
         override fun toString(): String = "OAuth2(username=$username, token=***)"
     }
 
+    /**
+     * An OAuth 1.0a owner-only consumer: its key and secret, and the access token and secret the wiki issued
+     * with it.
+     *
+     * Every request is signed with HMAC-SHA1, as RFC 5849 says, and the signature is sent in an
+     * `Authorization: OAuth` header, with no login round trip. Each attempt at a request is signed afresh,
+     * with a nonce and timestamp of its own, so a retry is never sent with a signature the wiki has seen. The
+     * cookies the wiki sets are kept and sent back, as for [OAuth2].
+     *
+     * The consumer key and the access token are sent with every request; the two secrets never are, since
+     * they only key the signature.
+     *
+     * @param consumerKey the consumer's key, sent as `oauth_consumer_key`.
+     * @param consumerSecret the consumer's secret, which never leaves the client.
+     * @param accessToken the access token, sent as `oauth_token`.
+     * @param accessSecret the access token's secret, which never leaves the client.
+     * @param username the account the token belongs to, for the logs; the wiki is asked who it is anyway.
+     */
+    public data class OAuth1(
+        val consumerKey: String,
+        val consumerSecret: String,
+        val accessToken: String,
+        val accessSecret: String,
+        override val username: String? = null,
+    ) : Credentials {
+        init {
+            require(consumerKey.isNotBlank()) { "consumer key must not be blank" }
+            require(consumerSecret.isNotBlank()) { "consumer secret must not be blank" }
+            require(accessToken.isNotBlank()) { "access token must not be blank" }
+            require(accessSecret.isNotBlank()) { "access secret must not be blank" }
+            concealFields(this)
+        }
+
+        /** Names the consumer, and hides the access token and both secrets. */
+        override fun toString(): String =
+            "OAuth1(username=$username, consumerKey=$consumerKey, accessToken=***, secrets=***)"
+    }
+
     /** Reading credentials from somewhere other than code. */
     public companion object {
         /**
-         * The credentials the environment holds under [prefix]: an OAuth 2.0 token in `KWIKIBOT_OAUTH_TOKEN`,
-         * or a bot password in `KWIKIBOT_ACCOUNT`, `KWIKIBOT_BOT_NAME` and `KWIKIBOT_PASSWORD`. [Anonymous]
-         * when neither is set, which a bot that must log in can check for.
+         * The credentials the environment holds under [prefix]: an OAuth 2.0 token in `KWIKIBOT_OAUTH_TOKEN`;
+         * an OAuth 1.0a consumer in `KWIKIBOT_OAUTH_CONSUMER_KEY`, `KWIKIBOT_OAUTH_CONSUMER_SECRET`,
+         * `KWIKIBOT_OAUTH_ACCESS_TOKEN` and `KWIKIBOT_OAUTH_ACCESS_SECRET`; or a bot password in
+         * `KWIKIBOT_ACCOUNT`, `KWIKIBOT_BOT_NAME` and `KWIKIBOT_PASSWORD`. For either kind of OAuth,
+         * `KWIKIBOT_ACCOUNT` is the username, if set. [Anonymous] when none is set, which a bot that must log
+         * in can check for.
+         *
+         * An OAuth login is used in place of a bot password set beside it. An OAuth 2.0 token and an OAuth
+         * 1.0a consumer set together are refused rather than one chosen, since nothing says which was meant.
          *
          * @param prefix what the variable names start with, for running two bots from one environment.
          * @param environment where to read them; the process environment by default.
-         * @throws IllegalStateException if a bot password is only partly set, which is a mistake rather than
-         *   a choice to run anonymously.
+         * @throws IllegalStateException if a bot password or an OAuth 1.0a consumer is only partly set, which
+         *   is a mistake rather than a choice to run anonymously, or if both kinds of OAuth are set. The
+         *   message names the variables, never what they hold.
          */
         public fun fromEnvironment(
             prefix: String = "KWIKIBOT",
@@ -95,7 +140,21 @@ public sealed interface Credentials {
             fun read(name: String) = environment("${prefix}_$name")?.takeIf { it.isNotBlank() }
 
             val token = read("OAUTH_TOKEN")
+            val consumer = OAUTH1_VARIABLES.map { read(it) }
+            val consumerNames = OAUTH1_VARIABLES.joinToString(", ") { "${prefix}_$it" }
+            check(token == null || consumer.all { it == null }) {
+                "${prefix}_OAUTH_TOKEN and the OAuth 1.0a variables ($consumerNames) are both set; set one"
+            }
             if (token != null) return OAuth2(token, read("ACCOUNT"))
+
+            if (consumer.any { it != null }) {
+                val (key, secret) = consumer.take(2)
+                val (access, accessSecret) = consumer.drop(2)
+                check(key != null && secret != null && access != null && accessSecret != null) {
+                    "$consumerNames are set only in part"
+                }
+                return OAuth1(key, secret, access, accessSecret, read("ACCOUNT"))
+            }
 
             val account = read("ACCOUNT")
             val botName = read("BOT_NAME")
@@ -107,5 +166,8 @@ public sealed interface Credentials {
             }
             return BotPassword(account, botName, password)
         }
+
+        private val OAUTH1_VARIABLES =
+            listOf("OAUTH_CONSUMER_KEY", "OAUTH_CONSUMER_SECRET", "OAUTH_ACCESS_TOKEN", "OAUTH_ACCESS_SECRET")
     }
 }

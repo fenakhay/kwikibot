@@ -255,6 +255,9 @@ internal class ShowConfig(private val environment: CliEnvironment) : SuspendingC
         echo("relogins:  ${config.retry.relogins} in ten minutes")
         run(config.run)?.let { echo("run:       $it") }
         config.oauth?.let { echo("oauth:     ${secret(it.tokenEnv, it.optional)}") }
+        config.oauth1?.let { settings ->
+            echo("oauth1:    ${settings.variables.joinToString(", ") { secret(it, settings.optional) }}")
+        }
 
         val login = config.login
         if (login == null) {

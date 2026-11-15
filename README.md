@@ -235,6 +235,7 @@ Any other wiki is an `ApiEndpoint`. When all you have is a URL, `ApiDetector.dis
 |---|---|---|
 | `Credentials.BotPassword(account, botName, password)` | Most bots | [Special:BotPasswords](https://www.mediawiki.org/wiki/Manual:Bot_passwords) on the wiki. `account` is the account name alone; kwikibot adds `@botName` itself |
 | `Credentials.OAuth2(accessToken)` | A bot that runs as its owner and never asks anyone else to log in | An [owner-only OAuth 2 consumer](https://www.mediawiki.org/wiki/OAuth/Owner-only_consumers), proposed at [Special:OAuthConsumerRegistration](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2) on Meta. The token is shown once |
+| `Credentials.OAuth1(consumerKey, consumerSecret, accessToken, accessSecret)` | The same, for a tool or consumer that only has OAuth 1.0a | An [owner-only OAuth 1.0a consumer](https://www.mediawiki.org/wiki/OAuth/Owner-only_consumers), proposed at [Special:OAuthConsumerRegistration](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth1) on Meta. The four values are shown once |
 | `Credentials.Anonymous` | Reading | The default |
 
 Give a bot password the grants "High-volume (bot) access" and "Edit existing pages", and whatever
@@ -247,9 +248,32 @@ cookies the wiki sets and sends them back with it, which Wikimedia asks of owner
 the account's own rate limit applies. Cookies are kept per client, so each account needs a
 `WikiClient` of its own.
 
+An OAuth 1.0a consumer needs no login round trip either. Every request is signed with HMAC-SHA1, as
+[RFC 5849](https://www.rfc-editor.org/rfc/rfc5849) says, and the signature goes in an
+`Authorization: OAuth` header. The signature covers the method, the URL and every query and form
+parameter, but not a multipart body, so an upload is signed too. Each attempt at a request gets a
+nonce and a timestamp of its own, so a retry is signed afresh. The two secrets only key the signature
+and are never sent; a response cache keeps the account apart by a digest of the consumer key and the
+access token. The wiki checks the signature against its own `$wgServer` and the path it was asked for,
+so a proxy in front of it that rewrites either breaks it.
+
+```kotlin
+val credentials = Credentials.OAuth1(
+    consumerKey = System.getenv("KWIKIBOT_OAUTH_CONSUMER_KEY"),
+    consumerSecret = System.getenv("KWIKIBOT_OAUTH_CONSUMER_SECRET"),
+    accessToken = System.getenv("KWIKIBOT_OAUTH_ACCESS_TOKEN"),
+    accessSecret = System.getenv("KWIKIBOT_OAUTH_ACCESS_SECRET"),
+)
+WikiClient(config, credentials).use { client -> client.wiki(endpoint) }
+```
+
 Keep secrets out of source and out of shell history. `Credentials.fromEnvironment()` reads
-`KWIKIBOT_OAUTH_TOKEN`, or else `KWIKIBOT_ACCOUNT`, `KWIKIBOT_BOT_NAME` and `KWIKIBOT_PASSWORD`. With
-none of them set it gives `Anonymous`, and with some but not all it fails rather than guess. That is
+`KWIKIBOT_OAUTH_TOKEN`, or else `KWIKIBOT_OAUTH_CONSUMER_KEY`, `KWIKIBOT_OAUTH_CONSUMER_SECRET`,
+`KWIKIBOT_OAUTH_ACCESS_TOKEN` and `KWIKIBOT_OAUTH_ACCESS_SECRET`, or else `KWIKIBOT_ACCOUNT`,
+`KWIKIBOT_BOT_NAME` and `KWIKIBOT_PASSWORD`; `KWIKIBOT_ACCOUNT` is the username of either kind of
+OAuth. With none of them set it gives `Anonymous`, and with some but not all of a group it fails
+rather than guess. An OAuth 2 token and any of the OAuth 1.0a variables set together fail too, since
+nothing says which was meant. The message names the variables, never what they hold. That is
 for a program that builds its own `WikiClient`; `botMain` and the `kwikibot` tool take the account
 from `kwikibot.toml`, which names the variable to read a secret from instead of holding it.
 
@@ -562,7 +586,8 @@ schedule, along with the common flags and `kwikibot.toml`. `--all` means every b
 `run`; after a bot's name it is that bot's own argument. Bots on one account share one login and one
 budget: a second login over a bot password session is an error, and requests are paced per account, so
 different accounts do not hold each other back. A bot naming an `account` logs in only with the
-credentials under `KWIKIBOT_<ACCOUNT>_`, `OAUTH_TOKEN` or `ACCOUNT`, `BOT_NAME` and `PASSWORD`, and its
+credentials under `KWIKIBOT_<ACCOUNT>_`, `OAUTH_TOKEN`, the four `OAUTH_CONSUMER_KEY`, `OAUTH_CONSUMER_SECRET`,
+`OAUTH_ACCESS_TOKEN` and `OAUTH_ACCESS_SECRET`, or `ACCOUNT`, `BOT_NAME` and `PASSWORD`, and its
 run fails if they are not there, or if it is told to save as an account outside the bot group without
 `--trial`. They all answer to one stop page, read once a minute however many there are, and a run can
 `ask` a person a question while the other lanes go on, with one question on screen at a time.
@@ -670,6 +695,7 @@ directory, then the home directory, then at `$KWIKIBOT_CONFIG`, then in
 | `[throttle]` | `read`, `write` |
 | `[login]` | `account`, `botName`, `passwordEnv`, `optional` |
 | `[oauth]` | `tokenEnv`, `username`, `optional`; used in place of `[login]` when its token is set |
+| `[oauth1]` | `consumerKeyEnv`, `consumerSecretEnv`, `accessTokenEnv`, `accessSecretEnv`, `username`, `optional`; used in place of `[login]` when its variables are set, and refused beside an `[oauth]` whose token is set |
 | `[run]` | `readConcurrency`, `writeConcurrency`, `readBatch` |
 | `[http]` | `maxConcurrentRequests`, `maxIdleConnections`, `timeout` |
 | `[retry]` | `maxRetries`, `initialDelay`, `maxDelay`, `relogins` |
@@ -680,7 +706,8 @@ Durations are written `"100ms"` or `"10s"`. An unknown key is a warning, not an 
 `[wiki]` section the wiki is en.wiktionary, and `[oauth]` is used in place of `[login]` only when
 its token is set. The file holds no secrets: `passwordEnv` and `tokenEnv` name the environment
 variables to read them from, `KWIKIBOT_PASSWORD` and `KWIKIBOT_OAUTH_TOKEN` unless they say
-otherwise. Since the working and home directories are searched first, `$KWIKIBOT_CONFIG` does not
+otherwise, and `[oauth1]` names four, `KWIKIBOT_OAUTH_CONSUMER_KEY`, `KWIKIBOT_OAUTH_CONSUMER_SECRET`,
+`KWIKIBOT_OAUTH_ACCESS_TOKEN` and `KWIKIBOT_OAUTH_ACCESS_SECRET` unless it says otherwise. Since the working and home directories are searched first, `$KWIKIBOT_CONFIG` does not
 override a file in either.
 
 ### Logging
@@ -956,6 +983,17 @@ tag of the official image works, such as `lts`, `latest` or `1.39`:
 ```bash
 bash .github/mediawiki/start.sh lts
 KWIKI_MEDIAWIKI=http://localhost:8080 ./gradlew :kwikibot-client:liveTest --tests '*LocalWikiTest'
+docker rm -f kwikibot-mediawiki
+```
+
+`LocalOAuth1Test` logs in to that wiki with OAuth 1.0a, edits and uploads, and checks that a wrong secret
+is refused. The image does not bundle the OAuth extension, so `oauth.sh` clones the branch matching the
+release into the container, installs it and prints an owner-only consumer for `Admin` as variables:
+
+```bash
+bash .github/mediawiki/start.sh lts
+eval "$(bash .github/mediawiki/oauth.sh 8080)"
+KWIKI_MEDIAWIKI=http://localhost:8080 ./gradlew :kwikibot-client:liveTest --tests '*LocalOAuth1Test'
 docker rm -f kwikibot-mediawiki
 ```
 

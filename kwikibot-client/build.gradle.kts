@@ -42,6 +42,10 @@ tasks.named<Test>("liveTest") {
             "KWIKI_MEDIAWIKI_ACCOUNT",
             "KWIKI_MEDIAWIKI_BOT",
             "KWIKI_MEDIAWIKI_BOT_PASSWORD",
+            "KWIKI_MEDIAWIKI_OAUTH_CONSUMER_KEY",
+            "KWIKI_MEDIAWIKI_OAUTH_CONSUMER_SECRET",
+            "KWIKI_MEDIAWIKI_OAUTH_ACCESS_TOKEN",
+            "KWIKI_MEDIAWIKI_OAUTH_ACCESS_SECRET",
         )
         .forEach { name -> environment(name, providers.environmentVariable(name).getOrElse("")) }
 }

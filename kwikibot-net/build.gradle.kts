@@ -44,6 +44,7 @@ kotlin {
 
                 implementation(libs.kotlin.logging)
                 implementation(libs.kotlincrypto.sha2)
+                implementation(libs.kotlincrypto.hmac.sha1)
             }
         }
 

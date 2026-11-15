@@ -74,6 +74,9 @@ private val log = KotlinLogging.logger("com.fenakhay.kwikibot.bot.BotConfig")
  * @param run how a bot run reads and writes, for [applyTo].
  * @param http how many connections the client keeps to the wiki, and how long a request may take.
  * @param retry how failed requests and lost sessions are retried.
+ * @param oauth1 an OAuth 1.0a login, or `null`. Used in place of [login] when both are given and its
+ *   variables are set. Set beside [oauth] with both logins' variables set, it is refused, since nothing says
+ *   which was meant.
  */
 @Serializable
 public data class BotConfig(
@@ -87,6 +90,7 @@ public data class BotConfig(
     val run: RunSettings = RunSettings(),
     val http: HttpSection = HttpSection(),
     val retry: RetrySettings = RetrySettings(),
+    @IntroducedAt("1.5.0") val oauth1: OAuth1Settings? = null,
 ) {
 
     /** The client configuration this file describes. */
@@ -104,20 +108,17 @@ public data class BotConfig(
     /**
      * The credentials this file describes.
      *
-     * An OAuth 2.0 token wins over a bot password when both are configured and the token is set.
+     * An OAuth 2.0 token or an OAuth 1.0a consumer wins over a bot password when both are configured and its
+     * variables are set. An OAuth 2.0 token and an OAuth 1.0a consumer both set are refused.
      *
      * @throws IllegalStateException if a login is configured but the environment variable holding its secret
      *   is not set, and the login is not marked `optional`. A bot that silently falls back to editing
-     *   anonymously is worse than one that stops.
+     *   anonymously is worse than one that stops. Also if an OAuth 1.0a consumer is set only in part, or
+     *   beside an OAuth 2.0 token. The message names the variables, never what they hold.
      */
     public fun credentials(environment: (String) -> String? = ::environmentVariable): Credentials {
-        oauth?.let { settings ->
-            val token = environment(settings.tokenEnv)
-            if (!token.isNullOrBlank()) return Credentials.OAuth2(token, settings.username)
-            check(settings.optional || login != null) {
-                "the environment variable ${settings.tokenEnv} is not set, and the configuration says the " +
-                    "OAuth token is in it"
-            }
+        oauthCredentials(environment)?.let {
+            return it
         }
 
         val settings = login ?: return Credentials.Anonymous
@@ -132,6 +133,32 @@ public data class BotConfig(
         }
 
         return Credentials.BotPassword(settings.account, settings.botName, password)
+    }
+
+    /** The OAuth login [oauth] or [oauth1] describes, or `null` to go on to [login]. */
+    private fun oauthCredentials(environment: (String) -> String?): Credentials? {
+        val consumer = oauth1?.consumer(environment)
+        oauth?.let { settings ->
+            val token = environment(settings.tokenEnv)
+            if (!token.isNullOrBlank()) {
+                check(consumer == null) {
+                    val variables = oauth1?.variables?.joinToString()
+                    "${settings.tokenEnv} and the OAuth 1.0a variables ($variables) are both set; set one"
+                }
+                return Credentials.OAuth2(token, settings.username)
+            }
+            check(settings.optional || login != null || consumer != null) {
+                "the environment variable ${settings.tokenEnv} is not set, and the configuration says the " +
+                    "OAuth token is in it"
+            }
+        }
+        oauth1?.let { settings ->
+            check(consumer != null || settings.optional || login != null || oauth != null) {
+                "the environment variables ${settings.variables.joinToString()} are not set, and the " +
+                    "configuration says the OAuth 1.0a consumer is in them"
+            }
+        }
+        return consumer
     }
 
     /** The family named in the file. */
@@ -239,6 +266,45 @@ public data class BotConfig(
         val username: String? = null,
         val optional: Boolean = false,
     )
+
+    /**
+     * An OAuth 1.0a login: an owner-only consumer's key and secret, and the access token and secret issued
+     * with it, each read from an environment variable and none from the file. Every request is signed, with
+     * no login round trip.
+     *
+     * @param consumerKeyEnv the name of an environment variable holding the consumer key.
+     * @param consumerSecretEnv the name of one holding the consumer secret.
+     * @param accessTokenEnv the name of one holding the access token.
+     * @param accessSecretEnv the name of one holding the access secret.
+     * @param username the account the consumer belongs to, for the logs.
+     * @param optional whether a run may go on without it when none of the four is set. One set in part is
+     *   always a mistake.
+     */
+    @Serializable
+    public data class OAuth1Settings(
+        val consumerKeyEnv: String = "KWIKIBOT_OAUTH_CONSUMER_KEY",
+        val consumerSecretEnv: String = "KWIKIBOT_OAUTH_CONSUMER_SECRET",
+        val accessTokenEnv: String = "KWIKIBOT_OAUTH_ACCESS_TOKEN",
+        val accessSecretEnv: String = "KWIKIBOT_OAUTH_ACCESS_SECRET",
+        val username: String? = null,
+        val optional: Boolean = false,
+    ) {
+        /** The four variables, in the order the consumer takes them. */
+        val variables: List<String>
+            get() = listOf(consumerKeyEnv, consumerSecretEnv, accessTokenEnv, accessSecretEnv)
+
+        /** The consumer [environment] holds, or `null` when none of [variables] is set. */
+        internal fun consumer(environment: (String) -> String?): Credentials.OAuth1? {
+            val values = variables.map { name -> environment(name)?.takeIf { it.isNotBlank() } }
+            if (values.all { it == null }) return null
+            val (key, secret) = values.take(2)
+            val (token, tokenSecret) = values.drop(2)
+            check(key != null && secret != null && token != null && tokenSecret != null) {
+                "${variables.joinToString()} are set only in part"
+            }
+            return Credentials.OAuth1(key, secret, token, tokenSecret, username)
+        }
+    }
 
     /**
      * How a run reads and writes. Anything left out keeps the run's own default.
@@ -425,6 +491,10 @@ public data class BotConfig(
             # Or an owner-only OAuth 2.0 consumer, which needs no login round trip:
             # [oauth]
             # tokenEnv = "KWIKIBOT_OAUTH_TOKEN"
+
+            # Or an owner-only OAuth 1.0a consumer, which signs every request. Its four values are
+            # read from KWIKIBOT_OAUTH_CONSUMER_KEY, _CONSUMER_SECRET, _ACCESS_TOKEN and _ACCESS_SECRET:
+            # [oauth1]
 
             # How a run reads and writes.
             # [run]

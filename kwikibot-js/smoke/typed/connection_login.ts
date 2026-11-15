@@ -11,6 +11,7 @@ import {
   describeError,
   detect,
   type JsonValue,
+  OAuth1,
   OAuth2,
   type Wiki,
 } from "kwikibot";
@@ -135,6 +136,23 @@ function credentials(): void {
   assertNone(new OAuth2("t").username);
   assert.equal(new OAuth2("t", null).account, "");
   assert.throws(() => new OAuth2(" "));
+
+  const signed = new OAuth1("ck", "cs", "at", "as", "Bot");
+  assert.ok(signed instanceof BotPassword);
+  assert.equal(signed.username, "Bot");
+  assert.equal(signed.account, "Bot");
+  assert.equal(signed.botName, "");
+  assertNone(new OAuth1("k", "s", "t", "ts").username);
+  assert.throws(() => new OAuth1("k", " ", "t", "ts"));
+
+  const consumer: Record<string, string> = {
+    W_OAUTH_CONSUMER_KEY: "ck",
+    W_OAUTH_CONSUMER_SECRET: "cs",
+    W_OAUTH_ACCESS_TOKEN: "at",
+    W_OAUTH_ACCESS_SECRET: "as",
+  };
+  assert.ok(credentialsFromEnvironment("W", (name) => consumer[name]) instanceof OAuth1);
+  assert.throws(() => credentialsFromEnvironment("W", (name) => (name === "W_OAUTH_TOKEN" ? "t" : consumer[name])));
 }
 
 function userAgents(): void {
@@ -230,6 +248,14 @@ async function opening(): Promise<void> {
     const bearer = await connectWith("test.example.org", CONTACT, { ...QUICK, login: new OAuth2("token-1", "Bot") });
     assert.equal(headers.seen[before]?.headers.get("Authorization"), "Bearer token-1");
     bearer.close();
+
+    const unsigned = headers.seen.length;
+    const signed = await connectWith("test.example.org", CONTACT, { ...QUICK, login: new OAuth1("ck", "cs-hush", "at", "as-hush") });
+    const authorization = headers.seen[unsigned]?.headers.get("Authorization") ?? "";
+    assert.ok(authorization.startsWith("OAuth "));
+    assert.ok(authorization.includes('oauth_consumer_key="ck"'));
+    assert.equal(authorization.includes("-hush"), false);
+    signed.close();
   } finally {
     headers.stop();
     restore();
@@ -746,6 +772,11 @@ async function nothingLooksAtASecret(): Promise<void> {
   assert.equal(inspect(token, { depth: null }).includes("tok-very-private"), false);
   assert.deepEqual(Object.keys(token).includes("password"), false);
   assert.equal(token.username, "Bot");
+  const consumer = new OAuth1("ck-very-private", "cs-very-private", "at-very-private", "as-very-private", "Bot");
+  for (const view of [JSON.stringify(consumer), inspect(consumer, { depth: null }), JSON.stringify({ ...consumer })]) {
+    assert.equal(view.includes("very-private"), false);
+  }
+  assert.equal(consumer.username, "Bot");
   const cookie = sparqlAuthWcqs("tok-very-private");
   assert.equal(JSON.stringify(cookie).includes("tok-very-private"), false);
   assert.equal(inspect(cookie, { depth: null }).includes("tok-very-private"), false);

@@ -409,6 +409,15 @@ class FleetSafetyTest {
                 "KWIKIBOT_NEWS_PASSWORD" to "news-secret",
                 "KWIKIBOT_HALF_PASSWORD" to "half-secret",
                 "KWIKIBOT_TOKEN_OAUTH_TOKEN" to "the-token",
+                "KWIKIBOT_SIGNED_OAUTH_CONSUMER_KEY" to "ck",
+                "KWIKIBOT_SIGNED_OAUTH_CONSUMER_SECRET" to "cs-secret",
+                "KWIKIBOT_SIGNED_OAUTH_ACCESS_TOKEN" to "at",
+                "KWIKIBOT_SIGNED_OAUTH_ACCESS_SECRET" to "as-secret",
+                "KWIKIBOT_SIGNED_ACCOUNT" to "SignedBot",
+                "KWIKIBOT_TORN_OAUTH_CONSUMER_KEY" to "ck",
+                "KWIKIBOT_TORN_OAUTH_ACCESS_SECRET" to "torn-secret",
+                "KWIKIBOT_TWICE_OAUTH_TOKEN" to "twice-secret",
+                "KWIKIBOT_TWICE_OAUTH_CONSUMER_KEY" to "ck",
             )
 
         credentialsFor(config, null, secrets::get) shouldBe
@@ -416,10 +425,21 @@ class FleetSafetyTest {
         credentialsFor(config, "news", secrets::get) shouldBe
             Credentials.BotPassword("NewsBot", "news", "news-secret")
         credentialsFor(config, "token", secrets::get) shouldBe Credentials.OAuth2("the-token")
+        credentialsFor(config, "signed", secrets::get) shouldBe
+            Credentials.OAuth1("ck", "cs-secret", "at", "as-secret", "SignedBot")
+
+        val torn = assertFailsWith<IllegalStateException> { credentialsFor(config, "torn", secrets::get) }
+        torn.message!! shouldContain "KWIKIBOT_TORN_OAUTH_CONSUMER_SECRET"
+        torn.message!! shouldNotContain "torn-secret"
+
+        val twice = assertFailsWith<IllegalStateException> { credentialsFor(config, "twice", secrets::get) }
+        twice.message!! shouldContain "KWIKIBOT_TWICE_OAUTH_TOKEN"
+        twice.message!! shouldNotContain "twice-secret"
 
         val missing = assertFailsWith<IllegalStateException> { credentialsFor(config, "gone", secrets::get) }
         missing.message!! shouldContain "KWIKIBOT_GONE_PASSWORD"
         missing.message!! shouldContain "KWIKIBOT_GONE_OAUTH_TOKEN"
+        missing.message!! shouldContain "KWIKIBOT_GONE_OAUTH_ACCESS_SECRET"
         missing.message!! shouldNotContain "secret"
 
         val half = assertFailsWith<IllegalStateException> { credentialsFor(config, "half", secrets::get) }

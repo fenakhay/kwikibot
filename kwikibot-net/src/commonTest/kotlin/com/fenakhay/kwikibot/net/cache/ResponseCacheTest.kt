@@ -192,6 +192,9 @@ class ResponseCacheTest {
                 Credentials.BotPassword("Bot", "two", "hunter2"),
                 Credentials.OAuth2("sekrit-token"),
                 Credentials.OAuth2("sekrit-too", "Bot"),
+                Credentials.OAuth1("ck-one", "sekrit-consumer", "at-one", "sekrit-access", "Bot"),
+                Credentials.OAuth1("ck-two", "sekrit-consumer", "at-one", "sekrit-access", "Bot"),
+                Credentials.OAuth1("ck-one", "sekrit-consumer", "at-two", "sekrit-access", "Bot"),
             )
 
         accounts.forEach { cache.scopedTo(it).put(read, answer) }
@@ -204,7 +207,23 @@ class ResponseCacheTest {
             }
         written shouldNotContain "hunter2"
         written shouldNotContain "sekrit"
+        written shouldNotContain "ck-one"
+        written shouldNotContain "at-one"
     }
+
+    @Test
+    fun `an OAuth 1 login is kept apart by its consumer and token not by its username or its secrets`() =
+        runTest {
+            val cache = DiskCache(tempRoot())
+
+            cache.scopedTo(Credentials.OAuth1("ck", "cs", "at", "as", "Bot")).put(read, body("""{"n":1}"""))
+
+            cache.scopedTo(Credentials.OAuth1("ck", "other", "at", "other")).get(read) shouldBe
+                body("""{"n":1}""")
+            cache.scopedTo(Credentials.OAuth1("ck", "cs", "at-other", "as", "Bot")).get(read).shouldBeNull()
+            cache.scopedTo(Credentials.OAuth1("cka", "cs", "t", "as", "Bot")).get(read).shouldBeNull()
+            cache.scopedTo(Credentials.OAuth2("at", "Bot")).get(read).shouldBeNull()
+        }
 
     @Test
     fun `two logins sharing a username keep entries apart`() = runTest {

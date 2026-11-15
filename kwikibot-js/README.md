@@ -71,6 +71,28 @@ console.log(`${report.pending} pages would change`);
 bot.close();
 ```
 
+A login can also be an owner-only OAuth consumer, `new OAuth2(token)` or, for one that only has
+OAuth 1.0a, `new OAuth1(consumerKey, consumerSecret, accessToken, accessSecret)`, which signs every
+request and needs no login round trip. Either goes wherever a `BotPassword` does, and none of its secrets
+shows in `JSON.stringify`, `util.inspect`, a spread or what a listener hears.
+`credentialsFromEnvironment()` reads one from `KWIKIBOT_OAUTH_CONSUMER_KEY`,
+`KWIKIBOT_OAUTH_CONSUMER_SECRET`, `KWIKIBOT_OAUTH_ACCESS_TOKEN` and `KWIKIBOT_OAUTH_ACCESS_SECRET`:
+
+```js
+import { connect, OAuth1 } from "kwikibot";
+
+const signed = new OAuth1(
+  process.env.MYBOT_CONSUMER_KEY,
+  process.env.MYBOT_CONSUMER_SECRET,
+  process.env.MYBOT_ACCESS_TOKEN,
+  process.env.MYBOT_ACCESS_SECRET,
+  "MyBot",
+);
+const wiki = await connect("en.wikipedia.org", contact, signed);
+console.log(wiki.user.name);
+wiki.close();
+```
+
 The run above only computes its edits; `true` as the fourth argument saves them. A page the wiki
 refuses is a problem in the report. A transform that throws, or returns anything but text or
 `null`, stops the run, and its promise rejects with that error.

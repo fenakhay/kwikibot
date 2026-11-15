@@ -29,6 +29,7 @@ findBotConfig	bot
 HttpSection	bot
 LoginSettings	bot
 NonInteractive	bot
+OAuth1Settings	bot
 OAuthSettings	bot
 PageContents	bot
 PageEdit	root,bot
@@ -186,6 +187,7 @@ NewPagesOrder	client
 NewPagesReviewed	client
 NewPageStatsOptions	client
 Notification	client
+OAuth1	root,client
 OAuth2	root,client
 Page	root,client
 PageActions	client

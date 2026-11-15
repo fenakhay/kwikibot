@@ -127,6 +127,50 @@ class BotSupportTest {
     }
 
     @Test
+    fun `a configuration reads an OAuth1 consumer from the variables it names`() {
+        val config =
+            parseBotConfig(
+                "[bot]\nname = \"B\"\ncontact = \"c\"\n\n" +
+                    "[oauth1]\naccessSecretEnv = \"MY_SECRET\"\nusername = \"B\"\n"
+            )
+        val env =
+            mapOf(
+                "KWIKIBOT_OAUTH_CONSUMER_KEY" to "ck",
+                "KWIKIBOT_OAUTH_CONSUMER_SECRET" to "cs",
+                "KWIKIBOT_OAUTH_ACCESS_TOKEN" to "at",
+                "MY_SECRET" to "as",
+            )
+
+        val settings = config.oauth1!!
+        listOf(
+            settings.consumerKeyEnv,
+            settings.consumerSecretEnv,
+            settings.accessTokenEnv,
+            settings.accessSecretEnv,
+        ) shouldBe
+            listOf(
+                "KWIKIBOT_OAUTH_CONSUMER_KEY",
+                "KWIKIBOT_OAUTH_CONSUMER_SECRET",
+                "KWIKIBOT_OAUTH_ACCESS_TOKEN",
+                "MY_SECRET",
+            )
+        listOf(settings.username, settings.optional) shouldBe listOf("B", false)
+        val login = config.credentials { env[it] }
+        (login is OAuth1) shouldBe true
+        login?.account shouldBe "B"
+        shouldThrow<IllegalStateException> { config.credentials { null } }.message.orEmpty() shouldContain
+            "MY_SECRET"
+
+        val made =
+            createBotConfig(
+                optionsOf("bot" to BotIdentity("Made", "c"), "oauth1" to OAuth1Settings(optional = true))
+            )
+        made.oauth1?.accessTokenEnv shouldBe "KWIKIBOT_OAUTH_ACCESS_TOKEN"
+        made.credentials { null } shouldBe null
+        parseBotConfig("[bot]\nname = \"B\"\ncontact = \"c\"\n").oauth1 shouldBe null
+    }
+
+    @Test
     fun `a configuration can be made, and has a template and a search path`() {
         val config =
             createBotConfig(

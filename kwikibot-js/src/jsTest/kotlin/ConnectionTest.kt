@@ -108,6 +108,65 @@ class ConnectionTest {
     }
 
     @Test
+    fun `an OAuth1 consumer signs every request, with no login round trip`() = runTest {
+        val wiki = MockWiki()
+        wiki.canned["userinfo"] =
+            """{"query":{"userinfo":{"id":7,"name":"Bot","groups":["*","user"],"rights":["edit"]}}}"""
+        val seen = mutableListOf<HttpRequestData>()
+        val engine = MockEngine { request ->
+            seen += request
+            wiki.engine.config.requestHandlers.single()(this, request)
+        }
+        val login = OAuth1("ck", "cs", "at", "as", "Bot")
+
+        val opened = connectWith("w.example.org", contact, settings("login" to login), engine).await()
+
+        seen.forEach { request ->
+            val header = request.headers[HttpHeaders.Authorization].orEmpty()
+            header shouldStartWith "OAuth "
+            header shouldContain "oauth_consumer_key=\"ck\""
+            header shouldContain "oauth_token=\"at\""
+            header shouldContain "oauth_signature_method=\"HMAC-SHA1\""
+        }
+        seen.map { it.headers[HttpHeaders.Authorization] }.toSet().size shouldBe seen.size
+        wiki.requests.none { it["action"] == "login" } shouldBe true
+        opened.user.name shouldBe "Bot"
+        opened.close()
+        listOf(login.account, login.botName, login.username) shouldBe listOf("Bot", "", "Bot")
+        OAuth1("k", "s", "t", "ts").account shouldBe ""
+        shouldThrow<IllegalArgumentException> { OAuth1("k", " ", "t", "ts") }
+    }
+
+    @Test
+    fun `an OAuth1 consumer is a login wherever a bot password is taken`() = runTest {
+        val login: BotPassword = OAuth1("ck", "cs", "at", "as")
+
+        (login is OAuth1) shouldBe true
+        login.credentials shouldBe com.fenakhay.kwikibot.net.auth.Credentials.OAuth1("ck", "cs", "at", "as")
+    }
+
+    @Test
+    fun `the environment holds an OAuth1 consumer, which is refused beside a token`() {
+        val env =
+            mapOf(
+                "X_OAUTH_CONSUMER_KEY" to "ck",
+                "X_OAUTH_CONSUMER_SECRET" to "cs",
+                "X_OAUTH_ACCESS_TOKEN" to "at",
+                "X_OAUTH_ACCESS_SECRET" to "as",
+                "X_ACCOUNT" to "Bot",
+            )
+        val consumer = credentialsFromEnvironment("X") { env[it] }
+        (consumer is OAuth1) shouldBe true
+        consumer?.account shouldBe "Bot"
+
+        val both = env + ("X_OAUTH_TOKEN" to "t")
+        shouldThrow<IllegalStateException> { credentialsFromEnvironment("X") { both[it] } }
+        shouldThrow<IllegalStateException> {
+            credentialsFromEnvironment("X") { (env - "X_OAUTH_ACCESS_SECRET")[it] }
+        }
+    }
+
+    @Test
     fun `an OAuth2 token is a login wherever a bot password is taken`() = runTest {
         val login: BotPassword = OAuth2("token-1")
 

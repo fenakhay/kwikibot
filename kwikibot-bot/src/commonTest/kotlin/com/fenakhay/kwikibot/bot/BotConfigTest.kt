@@ -7,6 +7,7 @@ import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -190,6 +191,118 @@ class BotConfigTest {
         config
             .credentials { if (it == "KWIKIBOT_PASSWORD") "password" else null }
             .shouldBeInstanceOf<Credentials.BotPassword>()
+    }
+
+    private val consumer =
+        mapOf(
+            "KWIKIBOT_OAUTH_CONSUMER_KEY" to "ck",
+            "KWIKIBOT_OAUTH_CONSUMER_SECRET" to "cs-hush",
+            "KWIKIBOT_OAUTH_ACCESS_TOKEN" to "at",
+            "KWIKIBOT_OAUTH_ACCESS_SECRET" to "as-hush",
+        )
+
+    @Test
+    fun `an OAuth 1 consumer is read from the variables the file names and wins over a bot password`() {
+        val config =
+            BotConfig.parse(
+                """
+                $minimal
+
+                [oauth1]
+                consumerKeyEnv = "MY_KEY"
+                username = "FenaBot"
+
+                [login]
+                account = "FenaBot"
+                botName = "compounds"
+                """
+                    .trimIndent()
+            )
+        val environment =
+            consumer - "KWIKIBOT_OAUTH_CONSUMER_KEY" + ("MY_KEY" to "my-ck") + ("KWIKIBOT_PASSWORD" to "pw")
+
+        config.oauth1?.variables shouldBe
+            listOf(
+                "MY_KEY",
+                "KWIKIBOT_OAUTH_CONSUMER_SECRET",
+                "KWIKIBOT_OAUTH_ACCESS_TOKEN",
+                "KWIKIBOT_OAUTH_ACCESS_SECRET",
+            )
+        config.credentials(environment::get) shouldBe
+            Credentials.OAuth1("my-ck", "cs-hush", "at", "as-hush", "FenaBot")
+        config.credentials(mapOf("KWIKIBOT_PASSWORD" to "pw")::get) shouldBe
+            Credentials.BotPassword("FenaBot", "compounds", "pw")
+    }
+
+    @Test
+    fun `an OAuth 1 consumer set in part or beside an OAuth 2 token is refused naming no secret`() {
+        val config = BotConfig.parse("$minimal\n\n[oauth1]\n\n[oauth]\ntokenEnv = \"TOKEN\"\n")
+
+        val partial = consumer - "KWIKIBOT_OAUTH_ACCESS_SECRET"
+        val half = assertFailsWith<IllegalStateException> { config.credentials(partial::get) }
+        half.message!! shouldContain "KWIKIBOT_OAUTH_ACCESS_SECRET"
+        half.message!! shouldNotContain "hush"
+
+        val both = consumer + ("TOKEN" to "tok-hush")
+        val twice = assertFailsWith<IllegalStateException> { config.credentials(both::get) }
+        twice.message!! shouldContain "TOKEN"
+        twice.message!! shouldContain "KWIKIBOT_OAUTH_CONSUMER_KEY"
+        twice.message!! shouldNotContain "hush"
+
+        config.credentials(mapOf("TOKEN" to "tok")::get).shouldBeInstanceOf<Credentials.OAuth2>()
+        config.credentials(consumer::get).shouldBeInstanceOf<Credentials.OAuth1>()
+    }
+
+    @Test
+    fun `an OAuth 1 consumer not set stops the run unless optional or another login is there`() {
+        val required = BotConfig.parse("$minimal\n\n[oauth1]\n")
+        val missing = assertFailsWith<IllegalStateException> { required.credentials { null } }
+        missing.message!! shouldContain "KWIKIBOT_OAUTH_CONSUMER_SECRET"
+
+        BotConfig.parse("$minimal\n\n[oauth1]\noptional = true\n").credentials { null } shouldBe
+            Credentials.Anonymous
+
+        val withLogin =
+            BotConfig.parse("$minimal\n\n[oauth1]\n\n[login]\naccount = \"FenaBot\"\nbotName = \"x\"\n")
+        withLogin.credentials { if (it == "KWIKIBOT_PASSWORD") "pw" else null } shouldBe
+            Credentials.BotPassword("FenaBot", "x", "pw")
+
+        val withOAuth = BotConfig.parse("$minimal\n\n[oauth1]\n\n[oauth]\noptional = true\n")
+        withOAuth.credentials { null } shouldBe Credentials.Anonymous
+        withOAuth.credentials { if (it == "KWIKIBOT_OAUTH_TOKEN") "tok" else null } shouldBe
+            Credentials.OAuth2("tok")
+
+        val oauthNeeded = BotConfig.parse("$minimal\n\n[oauth1]\n\n[oauth]\n")
+        oauthNeeded.credentials(consumer::get) shouldBe Credentials.OAuth1("ck", "cs-hush", "at", "as-hush")
+    }
+
+    @Test
+    fun `a file written before OAuth 1 reads exactly as it did and a copy keeps an OAuth 1 login`() {
+        val text =
+            """
+            $minimal
+
+            [oauth]
+            tokenEnv = "TOKEN"
+
+            [login]
+            account = "FenaBot"
+            botName = "compounds"
+            """
+                .trimIndent()
+        val config = BotConfig.parse(text)
+
+        config.oauth1 shouldBe null
+        config shouldBe
+            BotConfig(
+                bot = config.bot,
+                login = BotConfig.LoginSettings("FenaBot", "compounds"),
+                oauth = BotConfig.OAuthSettings("TOKEN"),
+            )
+        config.credentials { if (it == "TOKEN") "tok" else null } shouldBe Credentials.OAuth2("tok")
+
+        val signed = BotConfig.parse("$minimal\n\n[oauth1]\nusername = \"FenaBot\"\n")
+        signed.copy(maxlag = 0).oauth1 shouldBe BotConfig.OAuth1Settings(username = "FenaBot")
     }
 
     @Test

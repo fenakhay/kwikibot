@@ -2,6 +2,7 @@ package com.fenakhay.kwikibot.net.transport
 
 import com.fenakhay.kwikibot.net.auth.Credentials
 import com.fenakhay.kwikibot.net.auth.LoginManager
+import com.fenakhay.kwikibot.net.auth.OAuth1Signer
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
@@ -22,7 +23,8 @@ import kotlinx.coroutines.sync.withPermit
  * Two settings here are not optional in practice. Cookies must be stored, or a bot-password session is lost
  * after the login response; an OAuth 2.0 token keeps them too, since Wikimedia needs the session cookies
  * alongside the token to apply the account's rate limit. And an OAuth 2.0 bearer header has to be attached to
- * every request, since no login establishes the account.
+ * every request, since no login establishes the account, as does an OAuth 1.0a signature, made afresh for
+ * each request as it is sent.
  *
  * A client made here lets at most [HttpSettings.maxConcurrentRequests] requests be in flight at once, three
  * unless told otherwise, which is what Wikimedia asks; [withRequestPermit] is where a request waits for room.
@@ -37,8 +39,8 @@ public object WikiHttpClient {
     /**
      * Builds a client configured the way a wiki expects.
      *
-     * @param credentials decide whether a bearer header is set; a bot password logs in later, through
-     *   [LoginManager], and needs the cookie jar this installs.
+     * @param credentials decide whether a bearer header is set or each request is signed; a bot password logs
+     *   in later, through [LoginManager], and needs the cookie jar this installs.
      * @param engine the Ktor engine to use, or `null` for this platform's own.
      * @param timeout applies to the connection, the request and the socket alike; on JavaScript to the
      *   request only, as [HttpSettings.timeout] says.
@@ -56,8 +58,8 @@ public object WikiHttpClient {
      *   timeout. The limit on requests in flight holds whatever the engine. The connection settings apply to
      *   this platform's own engine as far as it lets them be set, which [HttpSettings] lists; one passed as
      *   [engine] keeps its own.
-     * @param credentials decide whether a bearer header is set; a bot password logs in later, through
-     *   [LoginManager], and needs the cookie jar this installs.
+     * @param credentials decide whether a bearer header is set or each request is signed; a bot password logs
+     *   in later, through [LoginManager], and needs the cookie jar this installs.
      * @param engine the Ktor engine to use, or `null` for this platform's own.
      */
     public fun create(
@@ -80,6 +82,8 @@ public object WikiHttpClient {
                     header(HttpHeaders.Authorization, "Bearer ${credentials.accessToken}")
                 }
             }
+
+            if (credentials is Credentials.OAuth1) install(oauth1Signing(OAuth1Signer(credentials)))
 
             // Redirects are followed by default; MediaWiki uses them for canonical hosts.
             expectSuccess = false

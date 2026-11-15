@@ -77,6 +77,31 @@ sealed interface com.fenakhay.kwikibot.net.auth/Credentials { // com.fenakhay.kw
         final fun toString(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.BotPassword.toString|toString(){}[0]
     }
 
+    final class OAuth1 : com.fenakhay.kwikibot.net.auth/Credentials { // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1|null[0]
+        constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/String? = ...) // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+
+        final val accessSecret // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.accessSecret|{}accessSecret[0]
+            final fun <get-accessSecret>(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.accessSecret.<get-accessSecret>|<get-accessSecret>(){}[0]
+        final val accessToken // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.accessToken|{}accessToken[0]
+            final fun <get-accessToken>(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.accessToken.<get-accessToken>|<get-accessToken>(){}[0]
+        final val consumerKey // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.consumerKey|{}consumerKey[0]
+            final fun <get-consumerKey>(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.consumerKey.<get-consumerKey>|<get-consumerKey>(){}[0]
+        final val consumerSecret // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.consumerSecret|{}consumerSecret[0]
+            final fun <get-consumerSecret>(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.consumerSecret.<get-consumerSecret>|<get-consumerSecret>(){}[0]
+        final val username // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.username|{}username[0]
+            final fun <get-username>(): kotlin/String? // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.username.<get-username>|<get-username>(){}[0]
+
+        final fun component1(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.component4|component4(){}[0]
+        final fun component5(): kotlin/String? // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.component5|component5(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ...): com.fenakhay.kwikibot.net.auth/Credentials.OAuth1 // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.net.auth/Credentials.OAuth1.toString|toString(){}[0]
+    }
+
     final class OAuth2 : com.fenakhay.kwikibot.net.auth/Credentials { // com.fenakhay.kwikibot.net.auth/Credentials.OAuth2|null[0]
         constructor <init>(kotlin/String, kotlin/String? = ...) // com.fenakhay.kwikibot.net.auth/Credentials.OAuth2.<init>|<init>(kotlin.String;kotlin.String?){}[0]
 

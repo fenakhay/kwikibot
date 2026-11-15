@@ -88,12 +88,15 @@ public class Accounts(
     public companion object {
         /**
          * The credentials of the account called [account], from [environment] under `KWIKIBOT_<ACCOUNT>_`: an
-         * OAuth 2.0 token in `OAUTH_TOKEN`, or a bot password in `ACCOUNT`, `BOT_NAME` and `PASSWORD`.
+         * OAuth 2.0 token in `OAUTH_TOKEN`; an OAuth 1.0a consumer in `OAUTH_CONSUMER_KEY`,
+         * `OAUTH_CONSUMER_SECRET`, `OAUTH_ACCESS_TOKEN` and `OAUTH_ACCESS_SECRET`; or a bot password in
+         * `ACCOUNT`, `BOT_NAME` and `PASSWORD`, as [Credentials.fromEnvironment] reads them.
          *
          * An account that is named has to be there. Going on as somebody else or as nobody would put its
          * edits under the wrong name.
          *
-         * @throws IllegalStateException naming the variables, if they are not set or are set only in part.
+         * @throws IllegalStateException naming the variables, if they are not set or are set only in part, or
+         *   if both kinds of OAuth are set.
          */
         public fun namedCredentials(
             account: String,
@@ -103,6 +106,8 @@ public class Accounts(
             val credentials = Credentials.fromEnvironment(prefix, environment)
             check(credentials != Credentials.Anonymous) {
                 "the account '$account' has no credentials: set ${prefix}_OAUTH_TOKEN, or " +
+                    "${prefix}_OAUTH_CONSUMER_KEY, ${prefix}_OAUTH_CONSUMER_SECRET, " +
+                    "${prefix}_OAUTH_ACCESS_TOKEN and ${prefix}_OAUTH_ACCESS_SECRET, or " +
                     "${prefix}_ACCOUNT, ${prefix}_BOT_NAME and ${prefix}_PASSWORD"
             }
             return credentials

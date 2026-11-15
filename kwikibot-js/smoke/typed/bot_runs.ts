@@ -6,6 +6,7 @@ import {
   BotPassword,
   describeError,
   type JsonValue,
+  OAuth1,
   OAuth2,
   type Page,
   type PageEdit,
@@ -41,6 +42,7 @@ import {
   findBotConfig,
   HttpSection,
   LoginSettings,
+  OAuth1Settings,
   OAuthSettings,
   PageContents,
   type PageOutcome,
@@ -822,6 +824,7 @@ function aConfigurationCanBeMade(): void {
     cache: new CacheSettings("here", "1h"),
     maxlag: 0,
     oauth: new OAuthSettings(),
+    oauth1: new OAuth1Settings(undefined, undefined, undefined, "MY_ACCESS_SECRET", "Made", true),
     run: new RunSettings(undefined, undefined, 3),
     http: new HttpSection(undefined, undefined, "9s"),
     retry: new RetrySettings(9),
@@ -840,6 +843,20 @@ function aConfigurationCanBeMade(): void {
   assert.equal(config.oauth?.tokenEnv, "KWIKIBOT_OAUTH_TOKEN");
   assertNone(config.oauth?.username);
   assert.equal(config.oauth?.optional, false);
+  assert.ok(config.oauth1 instanceof OAuth1Settings);
+  assert.deepEqual(
+    [config.oauth1.consumerKeyEnv, config.oauth1.consumerSecretEnv, config.oauth1.accessTokenEnv, config.oauth1.accessSecretEnv],
+    ["KWIKIBOT_OAUTH_CONSUMER_KEY", "KWIKIBOT_OAUTH_CONSUMER_SECRET", "KWIKIBOT_OAUTH_ACCESS_TOKEN", "MY_ACCESS_SECRET"],
+  );
+  assert.deepEqual([config.oauth1.username, config.oauth1.optional], ["Made", true]);
+  const consumer: Record<string, string> = {
+    KWIKIBOT_OAUTH_CONSUMER_KEY: "ck",
+    KWIKIBOT_OAUTH_CONSUMER_SECRET: "cs",
+    KWIKIBOT_OAUTH_ACCESS_TOKEN: "at",
+    MY_ACCESS_SECRET: "as",
+  };
+  assert.ok(config.credentials((name) => consumer[name] ?? null) instanceof OAuth1);
+  assertNone(createBotConfig({ bot: new BotIdentity("Plain", "c") }).oauth1);
   assert.equal(config.run.readBatch, 3);
   assertNone(config.run.readConcurrency);
   assertNone(config.run.writeConcurrency);
