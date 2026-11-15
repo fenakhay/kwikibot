@@ -8,6 +8,7 @@ const PROGRAMS = [
   "extensions",
   "wikibase",
   "wikitext",
+  "tables",
   "titles_model",
   "bot_runs",
   "fixes_messages",

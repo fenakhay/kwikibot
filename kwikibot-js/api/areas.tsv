@@ -509,6 +509,9 @@ createMessages	wikitext
 createParameter	wikitext
 createParseOptions	wikitext
 createSection	wikitext
+createTableBuilder	wikitext
+createTableCell	wikitext
+createTableCellOf	wikitext
 createTag	wikitext
 createTemplate	wikitext
 createText	wikitext
@@ -536,6 +539,7 @@ messageFallbacks	wikitext
 Messages	wikitext
 MESSAGES_DEFAULT_LANGUAGE	wikitext
 messagesFromJson	wikitext
+NewTableCell	wikitext
 Node	wikitext
 NodeKind	wikitext
 Parameter	wikitext
@@ -551,6 +555,10 @@ roundTrips	wikitext
 Section	wikitext
 SourceRange	wikitext
 SourceRanges	wikitext
+Table	wikitext
+TableBuilder	wikitext
+TableCell	wikitext
+TableRow	wikitext
 Tag	wikitext
 TagOptions	wikitext
 Template	root,wikitext

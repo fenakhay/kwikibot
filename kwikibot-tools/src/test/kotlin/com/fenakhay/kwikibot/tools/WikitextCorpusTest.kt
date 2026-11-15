@@ -194,6 +194,45 @@ class WikitextCorpusTest {
     }
 
     @Test
+    fun `a wiki named with --wiki records the cases not yet recorded, and each names it`() = runTest {
+        target.writeText(corpus(cases.drop(1).map { it.name to it.input }))
+        val wikis = wiki()
+
+        recordCorpus(arrayOf("--wiki=http://localhost:8080", target.toString()), wikis.environment)
+
+        wikis.sent.map { it.host } shouldBe listOf("localhost")
+        val recorded =
+            Json.parseToJsonElement(target.readText()).jsonObject.getValue("cases").jsonArray.map {
+                it.jsonObject
+            }
+        recorded[0].text("wiki") shouldBe "http://localhost:8080"
+        recorded.drop(1).none { "wiki" in it } shouldBe true
+        Json.parseToJsonElement(target.readText()).jsonObject.text("wiki") shouldBe "en.wiktionary.org"
+    }
+
+    @Test
+    fun `a wiki named with a path and https is asked there`() = runTest {
+        val wikis = wiki()
+
+        recordCorpus(
+            arrayOf(target.toString(), "--wiki=https://test.example.org/w/", "--all"),
+            wikis.environment,
+        )
+
+        wikis.sent.map { it.host }.toSet() shouldBe setOf("test.example.org")
+    }
+
+    @Test
+    fun `a wiki named without a scheme is refused`() = runTest {
+        val wikis = wiki()
+
+        assertFailsWith<IllegalArgumentException> {
+            recordCorpus(arrayOf(target.toString(), "--wiki=localhost:8080"), wikis.environment)
+        }
+        target.exists() shouldBe false
+    }
+
+    @Test
     fun `a wiki that refuses stops the recording before anything is written`() = runTest {
         val wikis =
             FakeWikis(this) {

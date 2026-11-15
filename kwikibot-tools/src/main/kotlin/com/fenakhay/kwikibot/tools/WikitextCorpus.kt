@@ -61,8 +61,14 @@ private const val PROPERTIES = "text|templates|links|tocdata|externallinks|parse
 /**
  * Records the corpus and writes it as JSON.
  *
- * The first argument other than `--all` is the file to write. A case already in that file with the same input
- * is kept as it was recorded, so adding cases does not re-record the rest; `--all` records every case again.
+ * The first argument that is not an option is the file to write. A case already in that file with the same
+ * input is kept as it was recorded, so adding cases does not re-record the rest; `--all` records every case
+ * again.
+ *
+ * `--wiki=` and a URL, such as `--wiki=http://localhost:8080` for the MediaWiki that
+ * `.github/mediawiki/start.sh` starts, records the cases from that wiki instead of from [WIKI], and each case
+ * recorded there names it. A case that needs a page to exist, as `{{!!}}` does, is recorded from a wiki made
+ * for it, rather than from somebody else's.
  */
 public fun main(args: Array<String>) {
     runBlocking { recordCorpus(args, ToolEnvironment.SYSTEM) }
@@ -71,9 +77,11 @@ public fun main(args: Array<String>) {
 /** What [main] does with [args], asking the wiki and printing through [environment]. */
 internal suspend fun recordCorpus(args: Array<String>, environment: ToolEnvironment) {
     val target =
-        environment.workingDirectory.resolve(args.firstOrNull { it != "--all" } ?: "wikitext-cases.json")
+        environment.workingDirectory.resolve(
+            args.firstOrNull { !it.startsWith("--") } ?: "wikitext-cases.json"
+        )
     val known = if ("--all" in args || !target.exists()) emptyMap() else recorded(target)
-    val document = record(known, environment)
+    val document = record(known, wikiFrom(args), environment)
 
     target.writeText(document)
     val added = WikitextCases.ALL.count { (it.name to it.input) !in known }
@@ -86,8 +94,30 @@ private fun recorded(target: Path): Map<Pair<String?, String?>, JsonObject> =
         it.string("name") to it.string("input")
     }
 
+/** A wiki to record from: the name each case recorded there carries, `null` for [WIKI], and its API. */
+private class CorpusWiki(val name: String?, val endpoint: ApiEndpoint)
+
+/** The wiki `--wiki=` names among [args], or [WIKI]. */
+private fun wikiFrom(args: Array<String>): CorpusWiki {
+    val url = args.firstOrNull { it.startsWith(WIKI_OPTION) }?.removePrefix(WIKI_OPTION)
+    if (url == null) return CorpusWiki(null, ApiEndpoint(server = WIKI))
+    val secure = url.startsWith("https://")
+    require(secure || url.startsWith("http://")) {
+        "$WIKI_OPTION takes a URL starting http:// or https://: $url"
+    }
+    val rest = url.substringAfter("://")
+    val path = rest.substringAfter('/', "").trimEnd('/')
+    return CorpusWiki(
+        url,
+        ApiEndpoint(rest.substringBefore('/'), if (path.isEmpty()) "" else "/$path", secure),
+    )
+}
+
+private const val WIKI_OPTION = "--wiki="
+
 private suspend fun record(
     known: Map<Pair<String?, String?>, JsonObject>,
+    source: CorpusWiki,
     environment: ToolEnvironment,
 ): String {
     val userAgent =
@@ -101,7 +131,7 @@ private suspend fun record(
         val transport =
             KtorTransport(
                 client = client,
-                endpoint = ApiEndpoint(server = WIKI),
+                endpoint = source.endpoint,
                 userAgent = userAgent,
                 // Politely slow: this is somebody else's production wiki, and the corpus is recorded
                 // once rather than on every build.
@@ -113,7 +143,7 @@ private suspend fun record(
 
         val cases = buildJsonArray {
             WikitextCases.ALL.forEachIndexed { index, case ->
-                add(known[case.name to case.input] ?: record(transport, case))
+                add(known[case.name to case.input] ?: record(transport, case, source.name))
                 if ((index + 1) % PROGRESS_EVERY == 0) {
                     environment.log.appendLine("  ${index + 1}/${WikitextCases.ALL.size}")
                 }
@@ -134,7 +164,11 @@ private suspend fun record(
     }
 }
 
-private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Case): JsonObject {
+private suspend fun record(
+    transport: MediaWikiTransport,
+    case: WikitextCases.Case,
+    wiki: String?,
+): JsonObject {
     val response =
         transport
             .call(
@@ -158,6 +192,7 @@ private suspend fun record(transport: MediaWikiTransport, case: WikitextCases.Ca
     return buildJsonObject {
         put("name", case.name)
         put("input", case.input)
+        wiki?.let { put("wiki", it) }
         putJsonObject("mediawiki") {
             put("html", parsed.html())
             putJsonArray("templates") { parsed.titles("templates").forEach { add(it) } }

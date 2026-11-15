@@ -10,6 +10,10 @@ package com.fenakhay.kwikibot.tools
  * carrying links to `Module:parameters` and half a dozen other pages that are nowhere in the input. A title
  * nobody has created reports exactly what was written.
  *
+ * `{{!!}}` is the one title that has to exist, since it stands for `||` only where the wiki has
+ * `Template:!!`. So the `table/` cases are recorded from the throwaway wiki `.github/mediawiki/start.sh`
+ * starts, with `Template:!!` made `||` and Cite loaded for `<ref>`, and each names the wiki it came from.
+ *
  * And every family includes what happens when the construct is left open. `{{`, `[[` and `<ref>` with no
  * terminator are where implementations disagree, where MediaWiki's behaviour is surprising — it re-emits the
  * opening as literal text — and where a parser that guesses instead of checking silently eats the rest of a
@@ -347,5 +351,56 @@ internal object WikitextCases {
             Case("pairing/bold-out-of-div", "<div><b>alpha</div>beta</b> gamma"),
             Case("pairing/self-closing-span", "<span/>alpha</span> beta"),
             Case("pairing/heading-in-span-line", "alpha <span>beta\n== Zqx one ==\ngamma</span> delta"),
+            Case("table/simple", "{|\n|a\n|b\n|}"),
+            Case("table/inline-cells", "{|\n| a || b || c\n|}"),
+            Case("table/header-row", "{|\n! A !! B\n|-\n| 1 || 2\n|}"),
+            Case("table/header-double-pipe", "{|\n! A || B\n|}"),
+            Case("table/bangs-in-data", "{|\n| a !! b\n|}"),
+            Case("table/caption", "{|\n|+ Zqx caption\n|-\n|a\n|}"),
+            Case(
+                "table/attributes",
+                "{| class=\"wikitable\" style=\"width:50%\"\n|- class=\"r\"\n| style=\"color:red\" | a\n|}",
+            ),
+            Case("table/first-row-unmarked", "{|\n|a\n|-\n|b\n|}"),
+            Case("table/multiline-cell", "{|\n|a\nmore a\n\nstill a\n|b\n|}"),
+            Case("table/link-before-pipe", "{|\n| [[Zqx page|shown]] | x\n|}"),
+            Case("table/link-after-attributes", "{|\n| title=\"t\" | [[Zqx page|shown]]\n|}"),
+            Case("table/open-link-before-pipe", "{|\n| [[Zqx | x\n|}"),
+            Case("table/conversion-before-pipe", "{|\n| -{a}- | x\n|}"),
+            Case("table/template-in-cell", "{|\n| {{Zqx template|a|b}} || c\n|}"),
+            Case("table/pipe-template", "{|\n{{!}} a {{!}}{{!}} b\n{{!}}-\n{{!}} c\n|}"),
+            Case("table/double-pipe-template", "{|\n| a {{!!}} b\n|}"),
+            Case("table/nested", "{|\n|a\n{|\n|b\n|}\n|c\n|}"),
+            Case("table/nested-in-header", "{|\n! x\n{|\n|y || z\n|}\n|}"),
+            Case("table/unclosed", "{|\n|a\n|b"),
+            Case("table/stray-close", "a\n|}\nb"),
+            Case("table/empty", "{|\n|}"),
+            Case("table/empty-after-text", "a\n{|\n|}"),
+            Case("table/empty-with-row", "a\n{|\n|-\n|}"),
+            Case("table/caption-only", "a\n{|\n|+ c\n|}"),
+            Case("table/indented", ":{|\n|a\n|}"),
+            Case("table/leading-spaces", "  {|\n  | a\n  |}"),
+            Case("table/spans", "{|\n| rowspan=\"2\" | a || b\n|-\n| c\n|-\n| colspan=\"2\" | d\n|}"),
+            Case("table/rowspan-zero", "{|\n| rowspan=\"0\" | a || b\n|-\n| c\n|}"),
+            Case(
+                "table/span-values",
+                "{|\n| colspan=\"x\" | a\n| colspan=\" 2px\" | b\n|-\n| colspan=0 | c\n|}",
+            ),
+            Case("table/empty-cells", "{|\n|| a ||\n|}"),
+            Case("table/row-markers-in-a-row", "{|\n|- class=\"a\"\n|- class=\"b\"\n|x\n|-\n|}"),
+            Case("table/caption-after-row", "{|\n|a\n|+ late\n|b\n|}"),
+            Case("table/text-after-close", "{|\n|a\n|} after"),
+            Case("table/text-before-cell", "{|\nloose\n|a\n|}"),
+            Case("table/inside-div", "<div>\n{|\n|a\n|}\n</div>"),
+            Case("table/comment-before-marker", "{|\n<!-- c -->| a\n|}"),
+            Case("table/three-pipes", "{|\n|a|||b\n|}"),
+            Case("table/three-bangs", "{|\n!a!!!b\n|}"),
+            Case("table/bangs-in-angle-brackets", "{|\n! a < x !! y > z\n|}"),
+            Case("table/row-dashes", "{|\n|a\n|----\n|b\n|}"),
+            Case("table/spaced-markers", "{|\n  !  a\n  |  b\n|}"),
+            Case("table/bold-across-cells", "{|\n| '''a || b'''\n|}"),
+            Case("table/pipe-in-extlink", "{|\n| [https://example.org/x a|b]\n|}"),
+            Case("table/template-opens", "{{Zqx table start}}\n|a\n|}"),
+            Case("table/in-ref", "x<ref>\n{|\n|a\n|}\n</ref>\n<references />"),
         )
 }

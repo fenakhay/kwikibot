@@ -52,13 +52,16 @@ val corpusFile =
 
 tasks.register<JavaExec>("wikitextCorpusDump") {
     group = "verification"
-    description = "Records what MediaWiki makes of each wikitext case, for the parser to be checked against."
+    description =
+        "Records what MediaWiki makes of each wikitext case, for the parser to be checked against: " +
+            "from en.wiktionary, or from the wiki -PcorpusWiki names."
 
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.fenakhay.kwikibot.tools.WikitextCorpusKt")
     args(corpusFile.asFile.absolutePath)
     // Only new cases are recorded unless asked for everything with -PcorpusAll.
     if (providers.gradleProperty("corpusAll").isPresent) args("--all")
+    providers.gradleProperty("corpusWiki").orNull?.let { args("--wiki=$it") }
 }
 
 val roundTripFile =

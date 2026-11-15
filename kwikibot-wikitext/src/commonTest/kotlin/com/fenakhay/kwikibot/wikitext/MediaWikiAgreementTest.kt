@@ -27,6 +27,8 @@ import nl.adaptivity.xmlutil.xmlStreaming
  * rules, so the two must agree on every template, argument, part, heading and extension tag. The others
  * compare what the rendered page linked to, which is evidence for what MediaWiki read after the preprocessor.
  *
+ * The table view is checked against the rendered HTML too, by [TableProjection].
+ *
  * A known disagreement is listed in [PENDING] with its reason, and tolerated. A listed case that starts
  * agreeing fails the test until it is taken off, so a fix is noticed and the entry cannot later hide a
  * regression.
@@ -115,6 +117,23 @@ class MediaWikiAgreementTest {
             val expected = case.recorded("sections").map { it.substringBefore(':').toInt() }
             val actual = Wikitext.parse(case.input).headings().map { it.level }
             if (expected == actual) null else "found levels $actual, MediaWiki had $expected"
+        }
+    }
+
+    @Test
+    fun `the table view reads each table as MediaWiki rendered it`() {
+        check("tables") { case ->
+            val (view, page) =
+                TableProjection.outlines(case.input, case.mediawiki["html"]!!.jsonPrimitive.content)
+            if (view == page) null else "found  $view\n      MediaWiki had $page"
+        }
+    }
+
+    @Test
+    fun `the table cases hold tables cells and nested tables to compare`() {
+        val counts = cases.filter { it.name.startsWith("table/") }.map { TableProjection.count(it.input) }
+        check(counts.size >= TABLE_CASES && counts.sumOf { it.first } >= counts.size) {
+            "the table cases hold ${counts.sumOf { it.first }} tables in ${counts.size} cases"
         }
     }
 
@@ -398,6 +417,9 @@ class MediaWikiAgreementTest {
     private companion object {
         const val TEMPLATE_PREFIX = "Template:"
 
+        /** How many `table/` cases the corpus has at least. */
+        const val TABLE_CASES = 40
+
         val FILE_NAMESPACES = setOf("File", "Image")
 
         val TRANSCLUSION_TAGS = setOf("noinclude", "includeonly", "onlyinclude")
@@ -410,6 +432,10 @@ class MediaWikiAgreementTest {
          * Several come from the recording itself rather than from the parser: every template in the corpus is
          * one no wiki has, and MediaWiki expands one of those into a red link, `[[:Template:Zqx …]]`, which
          * is then a link where a real template would have been text.
+         *
+         * Two come from the table view, and are the limit its documentation states: a `||` inside bold text,
+         * and a `|` inside an external link's label, are inside one node of the parser's, where MediaWiki,
+         * reading tables before bold or links, splits the cell. Split there, the external link is not one.
          */
         val PENDING: Map<String, Set<String>> =
             mapOf(
@@ -438,7 +464,8 @@ class MediaWikiAgreementTest {
                 "externallinks" to
                     setOf(
                         // MediaWiki leaves an external link in a link's text unlinked; the parser reads it.
-                        "bracket/extlink-in-link-text"
+                        "bracket/extlink-in-link-text",
+                        "table/pipe-in-extlink",
                     ),
                 "pairing" to
                     setOf(
@@ -450,6 +477,7 @@ class MediaWikiAgreementTest {
                         // here has no body to pair.
                         "pairing/self-closing-span",
                     ),
+                "tables" to setOf("table/bold-across-cells", "table/pipe-in-extlink"),
                 "sections" to
                     setOf(
                         // tocdata leaves out a heading's text when it is empty, and the recording then skips

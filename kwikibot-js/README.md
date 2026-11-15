@@ -160,6 +160,22 @@ await wiki.botRun({
 console.assert(pages.text("Volcano") === "ash!");
 ```
 
+Wikitext tables read as MediaWiki reads them, and each change gives back the whole page, nothing outside the
+change touched:
+
+```js
+import { parse } from "kwikibot";
+import { createTableBuilder } from "kwikibot/wikitext";
+
+const code = parse(text);
+const table = code.tables()[0];
+const heights = table.column("Height").map((cell) => cell?.text);
+const renamed = table.rows[1].cells[0].withContent("[[Mount Etna]]");
+const longer = renamed.tables()[0].withRow(["Fuji", "3,776 m"]);
+
+const written = createTableBuilder().sortable().header(["Name", "Height"]).row(["Etna", "3,357 m"]).build();
+```
+
 The package covers the parser (`parse`), titles and signature times, reading and editing pages,
 category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps, bot runs
 and fleets. Revision ids are numbers and lists are arrays.

@@ -341,7 +341,7 @@ are immutable values, every edit returns a new `Markup`, and every node that was
 the exact text it was parsed from.
 
 The parser finds templates, parameters and headings where MediaWiki does, and ends HTML tags where
-MediaWiki's paragraphs and lists end them. It is checked against MediaWiki's own parse of 243
+MediaWiki's paragraphs and lists end them. It is checked against MediaWiki's own parse of 288
 fragments, and against 230 real pages from six wikis that must write back byte for byte. Parsing
 stays linear in the length of the page, also on the pathological shapes the tests throw at it.
 
@@ -375,6 +375,45 @@ nothing on by default, and `wiki.signatures()` reads signature timestamps.
 What the parser does not do is expand templates. It reads the page as written, so markup that a
 template produces, such as a table row or a category, is not in the tree. `wiki.pages.expandText`
 and `wiki.renderer` ask the wiki for the expanded or rendered result.
+
+### Tables
+
+```kotlin
+val page = Wikitext.parse(text)
+val table = page.tables().first()
+
+val heights = table.column("Height").map { it?.text }
+val etna = table.rows[1].cells[0]
+val renamed = etna.withContent("[[Mount Etna]]")
+val longer = renamed.tables().first().withRow("Fuji", "3,776 m")
+
+val written =
+    TableBuilder()
+        .sortable()
+        .caption("Volcanoes")
+        .header("Name", "Height")
+        .row("Etna", "3,357 m")
+        .build()
+```
+
+`tables()` reads the `{| … |}` tables of a page as MediaWiki's own table pass does: markup at the
+start of a line, `||` and `!!` for further cells, attributes before a cell's first `|`, `{{!}}` as a
+pipe, cells over several lines, rows with no `|-`, and tables left open or never opened. A table
+nested in a cell is reached from that cell's `tables()`. Each `Cell` has its `content` as `Markup`
+and its `text`, and a table its `grid` with `rowspan` and `colspan` laid out, its `headers` and
+`column(name)`. The view is worked out over the parsed nodes when asked for, so parsing costs the
+same as before. It is checked against MediaWiki's rendering of the corpus's tables, the limits below
+aside, and against every table on its real pages.
+
+Every edit, `withContent`, `withAttributes`, `withRow`, `withRowAt`, `withoutRow` and `withColumn`,
+returns the whole page with only that part of the table rewritten, every other node the instance it
+was, and new rows in the table's own style. Text that would read as table markup, such as `a || b`,
+is escaped; what cannot be, and markup that would change the table some other way, is refused with
+an `IllegalArgumentException`. `TableBuilder` writes new tables with the same escaping.
+
+A table, row or cell that a template writes, such as `{{table start}}`, is not in the page as
+written, and so not among its tables. HTML `<table>` markup is read as tags, not as a table. A
+`||` inside bold text or a link is read as part of it, where MediaWiki would split the cell there.
 
 ## Writing a bot
 

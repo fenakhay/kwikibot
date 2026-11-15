@@ -545,6 +545,323 @@ export declare namespace SparqlValue {
     }
 }
 /**
+ * A cell holding the wikitext [content], escaped where the table would read it as markup: every `|` on its
+ * first line, every `!` there in a header cell, and a `|` or `!` starting a later line. Throws for attributes
+ * that cannot be a cell's.
+ */
+export declare function createTableCell(content: string, attributes?: string, isHeader?: boolean): NewTableCell;
+/**
+ * A cell holding [content], written as it is, and refused when it would be read as more than the cell.
+ */
+export declare function createTableCellOf(content: Wikitext, attributes?: string, isHeader?: boolean): NewTableCell;
+/**
+ * A builder for a new table, empty.
+ */
+export declare function createTableBuilder(): TableBuilder;
+/**
+ * A wikitext table, `{| … |}`, as MediaWiki reads it. Each change returns the whole page it was found in,
+ * with nothing outside the change touched, and is refused when it would change the table some other way.
+ */
+export declare class Table {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The value of the attribute [name] on the `{|` line, or `null`.
+     */
+    attribute(name: string): Nullable<string>;
+    /**
+     * The cell covering [row] and [column] of the grid, or `null`.
+     */
+    cell(row: number, column: number): Nullable<TableCell>;
+    /**
+     * The cells under the header [header] in each row after the header row.
+     */
+    column(header: string): Array<Nullable<TableCell>>;
+    /**
+     * The page with the attributes on the `{|` line replaced by [attributes].
+     */
+    withAttributes(attributes: string): Wikitext;
+    /**
+     * The page with a row of data cells holding [cells] added last, written as the table writes rows.
+     */
+    withRow(cells: Array<string>): Wikitext;
+    /**
+     * The page with a row of [cells] added last.
+     */
+    withRowOf(cells: Array<NewTableCell>): Wikitext;
+    /**
+     * The page with a row of data cells holding [cells] put at [index] among the rows.
+     */
+    withRowAt(index: number, cells: Array<string>): Wikitext;
+    /**
+     * The page with a row of [cells] put at [index] among the rows.
+     */
+    withRowOfAt(index: number, cells: Array<NewTableCell>): Wikitext;
+    /**
+     * The page without the row at [index].
+     */
+    withoutRow(index: number): Wikitext;
+    /**
+     * The page with a column added at the right, one of [cells] for each row, each of its row's last kind.
+     */
+    withColumn(cells: Array<string>): Wikitext;
+    /**
+     * The page with a column of [cells] added at the right, one for each row.
+     */
+    withColumnOf(cells: Array<NewTableCell>): Wikitext;
+    /**
+     * The table as wikitext.
+     */
+    toString(): string;
+    /**
+     * The attributes on the `{|` line, comments left out and trimmed.
+     */
+    get attributes(): string;
+    /**
+     * How many `:` the table is indented by.
+     */
+    get indent(): number;
+    /**
+     * Whether a `|}` closes the table.
+     */
+    get isClosed(): boolean;
+    /**
+     * The caption, `|+ …`, or `null`.
+     */
+    get caption(): Nullable<TableCell>;
+    /**
+     * The rows, in order.
+     */
+    get rows(): Array<TableRow>;
+    /**
+     * The first row when every cell in it is a header cell, or `null`.
+     */
+    get headerRow(): Nullable<TableRow>;
+    /**
+     * The text of the header row's cell over each column, or none without a header row.
+     */
+    get headers(): Array<string>;
+    /**
+     * The cells by row and column, spans taken into account; `null` where no cell covers a place.
+     */
+    get grid(): Array<Array<Nullable<TableCell>>>;
+    /**
+     * How many columns the grid has.
+     */
+    get columnCount(): number;
+    /**
+     * The table as wikitext, from its `{|` to its `|}`.
+     */
+    get markup(): Wikitext;
+}
+export declare namespace Table {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => Table;
+    }
+}
+/**
+ * One row of a table: its `|-` line, when it has one, and its cells.
+ */
+export declare class TableRow {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The value of the attribute [name] on the row's `|-` line, or `null`.
+     */
+    attribute(name: string): Nullable<string>;
+    /**
+     * The page with the attributes on this row's `|-` line replaced by [attributes].
+     */
+    withAttributes(attributes: string): Wikitext;
+    /**
+     * The row as wikitext.
+     */
+    toString(): string;
+    /**
+     * Where the row is among the table's rows.
+     */
+    get index(): number;
+    /**
+     * The attributes on the row's `|-` line, or `""`.
+     */
+    get attributes(): string;
+    /**
+     * The row's cells, in order.
+     */
+    get cells(): Array<TableCell>;
+    /**
+     * Whether every cell in the row is a header cell.
+     */
+    get isHeader(): boolean;
+    /**
+     * The row as wikitext.
+     */
+    get markup(): Wikitext;
+}
+export declare namespace TableRow {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => TableRow;
+    }
+}
+/**
+ * One cell of a table, `| …` or `! …`, or its caption, `|+ …`.
+ */
+export declare class TableCell {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The value of the attribute [name], or `null`.
+     */
+    attribute(name: string): Nullable<string>;
+    /**
+     * The tables nested in the cell, in order.
+     */
+    tables(): Array<Table>;
+    /**
+     * The page with this cell's content replaced by the wikitext [content], escaped where the table would
+     * read it; its marker, attributes and whitespace kept.
+     */
+    withContent(content: string): Wikitext;
+    /**
+     * The page with this cell's content replaced by [content], written as it is.
+     */
+    withContentOf(content: Wikitext): Wikitext;
+    /**
+     * The page with this cell's attributes replaced by [attributes]; blank ones take them off.
+     */
+    withAttributes(attributes: string): Wikitext;
+    /**
+     * The cell as wikitext.
+     */
+    toString(): string;
+    /**
+     * Whether it is a header cell, `!`.
+     */
+    get isHeader(): boolean;
+    /**
+     * Whether it is the caption, `|+`.
+     */
+    get isCaption(): boolean;
+    /**
+     * The attributes before the cell's first `|`, or `""`.
+     */
+    get attributes(): string;
+    /**
+     * What the cell holds as written, its whitespace included.
+     */
+    get content(): Wikitext;
+    /**
+     * The cell's visible text, trimmed.
+     */
+    get text(): string;
+    /**
+     * How many rows it spans; 0 for one reaching the last row.
+     */
+    get rowspan(): number;
+    /**
+     * How many columns it spans.
+     */
+    get colspan(): number;
+    /**
+     * The cell as wikitext, its marker included.
+     */
+    get markup(): Wikitext;
+}
+export declare namespace TableCell {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => TableCell;
+    }
+}
+/**
+ * A cell for a new row or table: its content, its attributes, and whether it is a header cell.
+ */
+export declare class NewTableCell {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The content as wikitext.
+     */
+    toString(): string;
+    /**
+     * The cell's attributes.
+     */
+    get attributes(): string;
+    /**
+     * Whether it is a header cell.
+     */
+    get isHeader(): boolean;
+    /**
+     * What the cell holds, before any escaping.
+     */
+    get content(): Wikitext;
+}
+export declare namespace NewTableCell {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => NewTableCell;
+    }
+}
+/**
+ * Writes a new table: `class="wikitable"` unless made plain, one cell to a line unless made inline.
+ */
+export declare class TableBuilder {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * Leaves out `class="wikitable"`.
+     */
+    plain(): TableBuilder;
+    /**
+     * Makes the table sortable, or not.
+     */
+    sortable(sortable?: boolean): TableBuilder;
+    /**
+     * Writes [attributes] on the `{|` line after the class.
+     */
+    attributes(attributes: string): TableBuilder;
+    /**
+     * Writes each row's cells on one line, or each on its own.
+     */
+    inline(inline?: boolean): TableBuilder;
+    /**
+     * Gives the table the caption [caption], escaped as a cell's text is.
+     */
+    caption(caption: string): TableBuilder;
+    /**
+     * Gives the table the caption [caption], written as it is.
+     */
+    captionOf(caption: Wikitext): TableBuilder;
+    /**
+     * Adds a row of header cells holding [cells].
+     */
+    header(cells: Array<string>): TableBuilder;
+    /**
+     * Adds a row of data cells holding [cells].
+     */
+    row(cells: Array<string>): TableBuilder;
+    /**
+     * Adds a row of [cells].
+     */
+    rowOf(cells: Array<NewTableCell>): TableBuilder;
+    /**
+     * The table as wikitext. Throws when a cell cannot be written.
+     */
+    build(): string;
+    /**
+     * The table as parsed wikitext.
+     */
+    toWikitext(): Wikitext;
+}
+export declare namespace TableBuilder {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => TableBuilder;
+    }
+}
+/**
  * Reads [text] as a page title the way MediaWiki does, with the namespaces every MediaWiki has, under their
  * English names. `Wiki.parseTitle` reads one with a wiki's own namespaces.
  */
@@ -1250,6 +1567,11 @@ export declare class Wikitext {
      * The names of the categories the page is in, without the namespace prefix.
      */
     categories(): Array<string>;
+    /**
+     * The wikitext tables, `{| … |}`, in page order: those at the top and those inside a tag's body. A table
+     * nested in a cell is reached from the cell. A table a template writes is not among them.
+     */
+    tables(): Array<Table>;
     /**
      * This text in category [name] as well, sorted under [sortKey] when one is given.
      */

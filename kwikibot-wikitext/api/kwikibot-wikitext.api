@@ -490,6 +490,92 @@ public final class com/fenakhay/kwikibot/wikitext/ops/SectionKt {
 	public static final fun replaceSection (Lcom/fenakhay/kwikibot/wikitext/Markup;Lcom/fenakhay/kwikibot/wikitext/ops/Section;Lcom/fenakhay/kwikibot/wikitext/ops/Section;Lcom/fenakhay/kwikibot/wikitext/ParseOptions;)Lcom/fenakhay/kwikibot/wikitext/Markup;
 }
 
+public final class com/fenakhay/kwikibot/wikitext/ops/Table {
+	public final fun attribute (Ljava/lang/String;)Ljava/lang/String;
+	public final fun cell (II)Lcom/fenakhay/kwikibot/wikitext/ops/Table$Cell;
+	public final fun column (Ljava/lang/String;)Ljava/util/List;
+	public final fun getAttributes ()Ljava/lang/String;
+	public final fun getCaption ()Lcom/fenakhay/kwikibot/wikitext/ops/Table$Cell;
+	public final fun getColumnCount ()I
+	public final fun getGrid ()Ljava/util/List;
+	public final fun getHeaderRow ()Lcom/fenakhay/kwikibot/wikitext/ops/Table$Row;
+	public final fun getHeaders ()Ljava/util/List;
+	public final fun getIndent ()I
+	public final fun getMarkup ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun getRows ()Ljava/util/List;
+	public final fun isClosed ()Z
+	public final fun serialize ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun withAttributes (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withColumn (Ljava/util/List;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withColumn ([Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withRow (Ljava/util/List;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withRow ([Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withRowAt (ILjava/util/List;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withRowAt (I[Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withoutRow (I)Lcom/fenakhay/kwikibot/wikitext/Markup;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ops/Table$Cell {
+	public final fun attribute (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getAttributes ()Ljava/lang/String;
+	public final fun getColspan ()I
+	public final fun getContent ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun getMarkup ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun getRowspan ()I
+	public final fun getText ()Ljava/lang/String;
+	public final fun isCaption ()Z
+	public final fun isHeader ()Z
+	public final fun tables ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+	public final fun withAttributes (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withContent (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun withContent (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ops/Table$Row {
+	public final fun attribute (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getAttributes ()Ljava/lang/String;
+	public final fun getCells ()Ljava/util/List;
+	public final fun getIndex ()I
+	public final fun getMarkup ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun isHeader ()Z
+	public fun toString ()Ljava/lang/String;
+	public final fun withAttributes (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/Markup;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ops/TableBuilder {
+	public fun <init> ()V
+	public final fun attributes (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun build ()Ljava/lang/String;
+	public final fun caption (Lcom/fenakhay/kwikibot/wikitext/Markup;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun caption (Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun header ([Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun inline (Z)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public static synthetic fun inline$default (Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun plain ()Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun row (Ljava/util/List;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun row ([Ljava/lang/String;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun sortable (Z)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public static synthetic fun sortable$default (Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;ZILjava/lang/Object;)Lcom/fenakhay/kwikibot/wikitext/ops/TableBuilder;
+	public final fun toMarkup ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ops/TableBuilder$Cell {
+	public fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Lcom/fenakhay/kwikibot/wikitext/Markup;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAttributes ()Ljava/lang/String;
+	public final fun getContent ()Lcom/fenakhay/kwikibot/wikitext/Markup;
+	public final fun isHeader ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/wikitext/ops/TablesKt {
+	public static final fun tables (Lcom/fenakhay/kwikibot/wikitext/Markup;)Ljava/util/List;
+}
+
 public final class com/fenakhay/kwikibot/wikitext/ops/TextOpsKt {
 	public static final fun containsText (Lcom/fenakhay/kwikibot/wikitext/Markup;Lkotlin/text/Regex;Lcom/fenakhay/kwikibot/wikitext/TextScope;)Z
 	public static synthetic fun containsText$default (Lcom/fenakhay/kwikibot/wikitext/Markup;Lkotlin/text/Regex;Lcom/fenakhay/kwikibot/wikitext/TextScope;ILjava/lang/Object;)Z

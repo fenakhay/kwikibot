@@ -21,6 +21,7 @@ import com.fenakhay.kwikibot.wikitext.ops.removeCategory
 import com.fenakhay.kwikibot.wikitext.ops.replaceSection
 import com.fenakhay.kwikibot.wikitext.ops.replaceText
 import com.fenakhay.kwikibot.wikitext.ops.sortLanguageLinks
+import com.fenakhay.kwikibot.wikitext.ops.tables
 import com.fenakhay.kwikibot.wikitext.ops.textIn
 import kotlin.js.RegExp
 
@@ -54,6 +55,12 @@ public class Wikitext internal constructor(internal val markup: Markup) {
 
     /** The names of the categories the page is in, without the namespace prefix. */
     public fun categories(): Array<String> = markup.categoryNames().toTypedArray()
+
+    /**
+     * The wikitext tables, `{| … |}`, in page order: those at the top and those inside a tag's body. A table
+     * nested in a cell is reached from the cell. A table a template writes is not among them.
+     */
+    public fun tables(): Array<Table> = markup.tables().map(::Table).toTypedArray()
 
     /** This text in category [name] as well, sorted under [sortKey] when one is given. */
     public fun addCategory(name: String, sortKey: String? = null): Wikitext =
