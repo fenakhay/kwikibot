@@ -47,6 +47,9 @@ maintenance install --dbtype=sqlite --dbpath=/var/www/data --dbname=kwikibot --s
     --scriptpath="" --lang=en --pass="$admin_password" "kwikibot test wiki" "$admin" >/dev/null
 
 echo '$wgEnableUploads = true;' >> LocalSettings.php
+echo '$wgAllowCopyUploads = true;' >> LocalSettings.php
+echo '$wgCopyUploadsDomains = [ "localhost" ];' >> LocalSettings.php
+echo "\$wgGroupPermissions['sysop']['upload_by_url'] = true;" >> LocalSettings.php
 chown -R www-data:www-data images
 
 if [ -d extensions/AbuseFilter ]; then

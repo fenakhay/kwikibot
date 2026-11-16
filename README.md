@@ -25,8 +25,8 @@ macOS, Linux, Windows and JavaScript, with an npm package and a command-line too
   back exactly as it was read.
 - **Bots that save nothing until told to.** Conflict-checked saves and, once set, a stop page and
   `{{nobots}}`; resumable state, diffs and skip logs.
-- **More than `api.php`.** Wikibase entities, SPARQL, EventStreams, PetScan, PagePile and XML dumps,
-  read on every core.
+- **More than `api.php`.** Wikibase entities, SPARQL, EventStreams, Wikimedia page views, PetScan,
+  PagePile and XML dumps, read on every core.
 - **Tests without a network.** `kwikibot-testkit` gives your bot a fake wiki.
 
 [docs/comparison.md](docs/comparison.md) sets kwikibot beside pywikibot, mwclient, mwn, m3api and
@@ -174,7 +174,7 @@ program that wants less: a tool that only parses wikitext has no reason to pull 
 | `kwikibot-wikitext` | The wikitext parser and editor, with no dependencies of its own |
 | `kwikibot-net` | The HTTP transport: user agent, credentials and login, tokens, throttle, maxlag, retries, response cache |
 | `kwikibot-protocol` | Reading `api.php` responses: errors and warnings, site info, `paraminfo`, continuation, page decoding |
-| `kwikibot-client` | `WikiClient`, the `Wiki` handle and its services, EventStreams, SPARQL, and XML dumps |
+| `kwikibot-client` | `WikiClient`, the `Wiki` handle and its services, EventStreams, SPARQL, page views, and XML dumps |
 | `kwikibot-wikibase` | Entities, statements and data values |
 | `kwikibot-bot` | `botRun`, `botMain`, page sources and filters, `{{nobots}}`, stop pages, run state, diffs, logs, plural forms, prompts |
 | `kwikibot-fleet` | Many bots in one process: `Bot`, `Fleet`, `fleetMain`, shared sessions and a shared stop page, schedules. Not in the umbrella: depend on it to use it |
@@ -331,6 +331,30 @@ They fetch the next batch only when collection asks for it, so `take(10)` costs 
 them, filtering what arrives, so a narrow filter can page through a whole category before it finds
 ten. A listing's own parameters, such as `namespaces` and `startSortKey`, filter on the wiki
 instead. `intersect` and `excluding` read their second flow in full before the first.
+
+### Files
+
+```kotlin
+val target = wiki.ref("File:Volcano.jpg")
+val uploaded = wiki.files.upload(Path("volcano.jpg"), target, comment = "a volcano", text = "== Summary ==")
+val fetched = wiki.files.uploadFromUrl("https://photos.example.org/volcano.jpg", target, comment = "a volcano")
+
+for (outcome in listOf(uploaded, fetched)) {
+    when (outcome) {
+        is UploadOutcome.Uploaded -> println("uploaded as ${outcome.title}")
+        is UploadOutcome.Warned ->
+            if (!outcome.isDuplicateOnly) outcome.fileKey?.let { wiki.files.publishStashed(it, target) }
+        is UploadOutcome.Refused -> println("refused: ${outcome.detail}")
+    }
+}
+```
+
+`upload` sends a large file in chunks, and one whose answer is lost carries on where it stopped.
+`uploadFromUrl` has the wiki fetch the file itself, which it does only with `$wgAllowCopyUploads` on,
+from a host in `$wgCopyUploadsDomains`, for an account with the `upload_by_url` right; each of those
+missing is an error rather than an outcome, since no file would fare differently. Either way a
+warning is an outcome: the file waits under its `fileKey`, and `publishStashed` publishes it without
+sending it again. `info`, `usage`, `globalUsage`, `duplicatesOf` and `download` read what is there.
 
 ### Knowing what a wiki supports
 
@@ -650,6 +674,40 @@ XmlDump.scan(Path("enwiktionary-latest-pages-articles.xml.bz2"), namespaces = se
 bzip2 is decoded block by block on every thread, with or without a multistream index. gzip has no
 boundaries to split on, so its decompression takes one thread and only the parsing shares out. A
 truncated or corrupt dump throws `DumpFormatException` after yielding every whole page before the damage.
+
+### Page views
+
+```kotlin
+WikiHttpClient.create().use { http ->
+    val pageviews = Pageviews(http, config.userAgent)
+    val january = Instant.parse("2024-01-01T00:00:00Z")
+    val end = Instant.parse("2024-01-31T00:00:00Z")
+
+    val einstein = pageviews.perArticle("en.wikipedia", "Albert Einstein", january, end)
+    println(einstein.sumOf { it.views })
+
+    val wikipedia = client.wiki(ApiEndpoint("en.wikipedia.org"))
+    val volcanoes = wikipedia.lists.categoryMembers(wikipedia.ref("Category:Stratovolcanoes")).take(50).toList()
+    wikipedia.pageviews(pageviews, volcanoes, january, end, PageviewGranularity.MONTHLY)
+        .entries
+        .sortedByDescending { (_, counts) -> counts.sumOf { it.views } }
+        .take(10)
+        .forEach { (page, counts) -> println("${page.title}: ${counts.sumOf { it.views }}") }
+
+    pageviews.top("en.wikipedia", january).take(5).forEach { println("${it.rank}. ${it.title}") }
+}
+```
+
+`Pageviews` reads the Wikimedia REST API's pageviews: a page's views by day or month with
+`perArticle`, a whole project's by hour, day or month with `aggregate`, and a project's most read
+pages of a day or a month with `top`, for people unless `agent` says otherwise. The counts start in
+July 2015, `Pageviews.FIRST_DAY`, and cover Wikimedia's wikis only. A page or a period with no data
+is an empty list. `wiki.pageviews` counts a wiki's own pages under the project its server names,
+`en.wikipedia` for `en.wikipedia.org`, and refuses any other wiki before sending anything, since the
+API would answer that it has no data. A page is one request, so ranking a category of five thousand
+pages is five thousand requests: `wiki.pageviews` asks four at a time, within the client's own limit
+on requests in flight, three by default, and waits out a `429` or a `5xx` as its `RetryPolicy` says,
+`Retry-After` included. For many pages, a client of its own with a lower limit paces it further.
 
 ## Testing a bot
 
@@ -985,6 +1043,9 @@ bash .github/mediawiki/start.sh lts
 KWIKI_MEDIAWIKI=http://localhost:8080 ./gradlew :kwikibot-client:liveTest --tests '*LocalWikiTest'
 docker rm -f kwikibot-mediawiki
 ```
+
+`start.sh` also lets the wiki upload from URLs on `localhost`, the container itself, and gives a sysop
+the `upload_by_url` right, so `LocalWikiTest` has the wiki fetch a file it serves.
 
 `LocalOAuth1Test` logs in to that wiki with OAuth 1.0a, edits and uploads, and checks that a wrong secret
 is refused. The image does not bundle the OAuth extension, so `oauth.sh` clones the branch matching the

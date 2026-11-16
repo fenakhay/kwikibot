@@ -119,6 +119,9 @@ tasks
             export type NewPagesOrder = "newest-first" | "oldest-first" | "newest-review-first" | "oldest-review-first";
             export type TriageStatus = "unreviewed" | "reviewed" | "patrolled" | "autopatrolled";
             export type UploadKind = "uploaded" | "warned" | "refused";
+            export type PageviewAccess = "all-access" | "desktop" | "mobile-app" | "mobile-web";
+            export type PageviewAgent = "all-agents" | "user" | "spider" | "automated";
+            export type PageviewGranularity = "hourly" | "daily" | "monthly";
             export type CategoryMemberType = "page" | "subcategory" | "file";
             export type CategorySort = "sortkey" | "timestamp";
             export type RedirectFilter = "all" | "only-redirects" | "no-redirects";

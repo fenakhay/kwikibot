@@ -247,6 +247,7 @@ UndoOptions	client
 UploadKind	client
 UploadOptions	client
 UploadResult	client
+UrlUploadOptions	client
 User	root,client
 UserAgent	client
 UserInfo	client
@@ -313,6 +314,18 @@ JsonValue	root
 MessageValue	root
 Negatable	root
 Thrown	root
+PagePageviews	services
+PageviewAccess	services
+PageviewAgent	services
+PageviewCount	services
+PageviewGranularity	services
+Pageviews	services
+pageviews	services
+PageviewsOptions	services
+PageviewsQuery	services
+TopPage	services
+TopPagesOptions	services
+WIKIMEDIA_PAGEVIEWS	services
 COMMONS_QUERY_SERVICE	sparql
 LINGUA_LIBRE_QUERY_SERVICE	sparql
 pagePileSource	sparql

@@ -20,8 +20,8 @@ Up to 1.4.0 this package was called `@fenakhay/kwikibot`. To move, run `npm unin
 The package is CommonJS with TypeScript definitions, and needs Node 22.3 or newer. Its everyday names, such
 as `connect`, `Wiki`, `parse` and `botMain`, come from `"kwikibot"`; the rest come from the area they belong
 to: `kwikibot/client`, `kwikibot/errors`, `kwikibot/wikitext`, `kwikibot/titles`, `kwikibot/bot`,
-`kwikibot/dumps`, `kwikibot/wikibase`, `kwikibot/sparql`, `kwikibot/events`, `kwikibot/fleet`,
-`kwikibot/proofread` and `kwikibot/testing`:
+`kwikibot/dumps`, `kwikibot/wikibase`, `kwikibot/sparql`, `kwikibot/events`, `kwikibot/services`,
+`kwikibot/fleet`, `kwikibot/proofread` and `kwikibot/testing`:
 
 ```js
 import { connect } from "kwikibot";
@@ -198,9 +198,44 @@ const longer = renamed.tables()[0].withRow(["Fuji", "3,776 m"]);
 const written = createTableBuilder().sortable().header(["Name", "Height"]).row(["Etna", "3,357 m"]).build();
 ```
 
-The package covers the parser (`parse`), titles and signature times, reading and editing pages,
-category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), XML dumps, bot runs
-and fleets. Revision ids are numbers and lists are arrays.
+A file can be uploaded from a URL the wiki fetches itself, which needs `$wgAllowCopyUploads`, a host in
+`$wgCopyUploadsDomains` and the `upload_by_url` right, and so works in a browser too. A warning is a result
+with a `fileKey` to publish; a wiki that takes no uploads from that URL rejects:
+
+```js
+const result = await wiki.files.uploadFromUrl("https://photos.example.org/volcano.jpg", "Volcano.jpg", {
+  comment: "a volcano",
+  text: "== Summary ==",
+});
+if (result.kind === "warned" && !result.isDuplicateOnly) await wiki.files.publishStashed(result.fileKey, "Volcano.jpg");
+```
+
+Page views come from Wikimedia's pageviews API, for Wikimedia's wikis from July 2015. A page or a period with
+no data is an empty array, and `ofPages` counts a wiki's own pages, a few at a time, one request each:
+
+```js
+import { connect } from "kwikibot";
+import { pageviews } from "kwikibot/services";
+
+const views = pageviews(contact);
+const january = new Date("2024-01-01T00:00:00Z");
+const end = new Date("2024-01-31T00:00:00Z");
+
+const einstein = await views.perArticle("en.wikipedia", "Albert Einstein", january, end, { agent: "user" });
+console.log(einstein.reduce((sum, day) => sum + day.views, 0));
+
+const wikipedia = await connect("en.wikipedia.org", contact);
+for (const page of await views.ofPages(wikipedia, ["Mount Etna", "Mount Fuji"], january, end, { granularity: "monthly" })) {
+  console.log(page.title, page.counts[0]?.views);
+}
+for (const top of await views.top("en.wikipedia", january)) console.log(top.rank, top.title);
+views.close();
+wikipedia.close();
+```
+
+The package covers the parser (`parse`), titles and signature times, reading and editing pages, files,
+category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), page views, XML
+dumps, bot runs and fleets. Revision ids are numbers and lists are arrays.
 
 It runs in browsers too, through a bundler. From a page on a site other than the wiki's, requests
 carry `origin=*`, which MediaWiki answers as it would a logged-out reader, so logging in works on

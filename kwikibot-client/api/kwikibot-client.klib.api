@@ -22,6 +22,44 @@ final enum class com.fenakhay.kwikibot.client.model/Compression : kotlin/Enum<co
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/Compression> // com.fenakhay.kwikibot.client.model/Compression.values|values#static(){}[0]
 }
 
+final enum class com.fenakhay.kwikibot.client.model/PageviewAccess : kotlin/Enum<com.fenakhay.kwikibot.client.model/PageviewAccess> { // com.fenakhay.kwikibot.client.model/PageviewAccess|null[0]
+    enum entry ALL_ACCESS // com.fenakhay.kwikibot.client.model/PageviewAccess.ALL_ACCESS|null[0]
+    enum entry DESKTOP // com.fenakhay.kwikibot.client.model/PageviewAccess.DESKTOP|null[0]
+    enum entry MOBILE_APP // com.fenakhay.kwikibot.client.model/PageviewAccess.MOBILE_APP|null[0]
+    enum entry MOBILE_WEB // com.fenakhay.kwikibot.client.model/PageviewAccess.MOBILE_WEB|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/PageviewAccess.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/PageviewAccess> // com.fenakhay.kwikibot.client.model/PageviewAccess.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/PageviewAccess // com.fenakhay.kwikibot.client.model/PageviewAccess.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/PageviewAccess> // com.fenakhay.kwikibot.client.model/PageviewAccess.values|values#static(){}[0]
+}
+
+final enum class com.fenakhay.kwikibot.client.model/PageviewAgent : kotlin/Enum<com.fenakhay.kwikibot.client.model/PageviewAgent> { // com.fenakhay.kwikibot.client.model/PageviewAgent|null[0]
+    enum entry ALL_AGENTS // com.fenakhay.kwikibot.client.model/PageviewAgent.ALL_AGENTS|null[0]
+    enum entry AUTOMATED // com.fenakhay.kwikibot.client.model/PageviewAgent.AUTOMATED|null[0]
+    enum entry SPIDER // com.fenakhay.kwikibot.client.model/PageviewAgent.SPIDER|null[0]
+    enum entry USER // com.fenakhay.kwikibot.client.model/PageviewAgent.USER|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/PageviewAgent.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/PageviewAgent> // com.fenakhay.kwikibot.client.model/PageviewAgent.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/PageviewAgent // com.fenakhay.kwikibot.client.model/PageviewAgent.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/PageviewAgent> // com.fenakhay.kwikibot.client.model/PageviewAgent.values|values#static(){}[0]
+}
+
+final enum class com.fenakhay.kwikibot.client.model/PageviewGranularity : kotlin/Enum<com.fenakhay.kwikibot.client.model/PageviewGranularity> { // com.fenakhay.kwikibot.client.model/PageviewGranularity|null[0]
+    enum entry DAILY // com.fenakhay.kwikibot.client.model/PageviewGranularity.DAILY|null[0]
+    enum entry HOURLY // com.fenakhay.kwikibot.client.model/PageviewGranularity.HOURLY|null[0]
+    enum entry MONTHLY // com.fenakhay.kwikibot.client.model/PageviewGranularity.MONTHLY|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/PageviewGranularity.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/PageviewGranularity> // com.fenakhay.kwikibot.client.model/PageviewGranularity.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/PageviewGranularity // com.fenakhay.kwikibot.client.model/PageviewGranularity.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/PageviewGranularity> // com.fenakhay.kwikibot.client.model/PageviewGranularity.values|values#static(){}[0]
+}
+
 final enum class com.fenakhay.kwikibot.client.model/TriageStatus : kotlin/Enum<com.fenakhay.kwikibot.client.model/TriageStatus> { // com.fenakhay.kwikibot.client.model/TriageStatus|null[0]
     enum entry AUTOPATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.AUTOPATROLLED|null[0]
     enum entry PATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.PATROLLED|null[0]
@@ -325,6 +363,7 @@ abstract interface com.fenakhay.kwikibot.client.service/FileService { // com.fen
     abstract suspend fun publishStashed(kotlin/String, com.fenakhay.kwikibot.model.page/PageRef, kotlin/String = ..., kotlin/String? = ...): com.fenakhay.kwikibot.model.file/UploadOutcome // com.fenakhay.kwikibot.client.service/FileService.publishStashed|publishStashed(kotlin.String;com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.String?){}[0]
     abstract suspend fun repositories(): kotlin.collections/List<com.fenakhay.kwikibot.model.file/FileRepository> // com.fenakhay.kwikibot.client.service/FileService.repositories|repositories(){}[0]
     abstract suspend fun upload(kotlinx.io.files/Path, com.fenakhay.kwikibot.model.page/PageRef, kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ..., kotlin/Int = ...): com.fenakhay.kwikibot.model.file/UploadOutcome // com.fenakhay.kwikibot.client.service/FileService.upload|upload(kotlinx.io.files.Path;com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.String?;kotlin.Boolean;kotlin.Int){}[0]
+    open suspend fun uploadFromUrl(kotlin/String, com.fenakhay.kwikibot.model.page/PageRef, kotlin/String = ..., kotlin/String? = ..., kotlin/Boolean = ...): com.fenakhay.kwikibot.model.file/UploadOutcome // com.fenakhay.kwikibot.client.service/FileService.uploadFromUrl|uploadFromUrl(kotlin.String;com.fenakhay.kwikibot.model.page.PageRef;kotlin.String;kotlin.String?;kotlin.Boolean){}[0]
 
     final object Companion { // com.fenakhay.kwikibot.client.service/FileService.Companion|null[0]
         final const val DEFAULT_CHUNK // com.fenakhay.kwikibot.client.service/FileService.Companion.DEFAULT_CHUNK|{}DEFAULT_CHUNK[0]
@@ -869,6 +908,55 @@ final class com.fenakhay.kwikibot.client.model/Notification { // com.fenakhay.kw
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/Notification.toString|toString(){}[0]
 }
 
+final class com.fenakhay.kwikibot.client.model/PageviewCount { // com.fenakhay.kwikibot.client.model/PageviewCount|null[0]
+    constructor <init>(kotlin.time/Instant, kotlin/Long, kotlin/String, com.fenakhay.kwikibot.client.model/PageviewAccess, com.fenakhay.kwikibot.client.model/PageviewAgent, com.fenakhay.kwikibot.client.model/PageviewGranularity, kotlin/String? = ...) // com.fenakhay.kwikibot.client.model/PageviewCount.<init>|<init>(kotlin.time.Instant;kotlin.Long;kotlin.String;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent;com.fenakhay.kwikibot.client.model.PageviewGranularity;kotlin.String?){}[0]
+
+    final val access // com.fenakhay.kwikibot.client.model/PageviewCount.access|{}access[0]
+        final fun <get-access>(): com.fenakhay.kwikibot.client.model/PageviewAccess // com.fenakhay.kwikibot.client.model/PageviewCount.access.<get-access>|<get-access>(){}[0]
+    final val agent // com.fenakhay.kwikibot.client.model/PageviewCount.agent|{}agent[0]
+        final fun <get-agent>(): com.fenakhay.kwikibot.client.model/PageviewAgent // com.fenakhay.kwikibot.client.model/PageviewCount.agent.<get-agent>|<get-agent>(){}[0]
+    final val granularity // com.fenakhay.kwikibot.client.model/PageviewCount.granularity|{}granularity[0]
+        final fun <get-granularity>(): com.fenakhay.kwikibot.client.model/PageviewGranularity // com.fenakhay.kwikibot.client.model/PageviewCount.granularity.<get-granularity>|<get-granularity>(){}[0]
+    final val project // com.fenakhay.kwikibot.client.model/PageviewCount.project|{}project[0]
+        final fun <get-project>(): kotlin/String // com.fenakhay.kwikibot.client.model/PageviewCount.project.<get-project>|<get-project>(){}[0]
+    final val timestamp // com.fenakhay.kwikibot.client.model/PageviewCount.timestamp|{}timestamp[0]
+        final fun <get-timestamp>(): kotlin.time/Instant // com.fenakhay.kwikibot.client.model/PageviewCount.timestamp.<get-timestamp>|<get-timestamp>(){}[0]
+    final val title // com.fenakhay.kwikibot.client.model/PageviewCount.title|{}title[0]
+        final fun <get-title>(): kotlin/String? // com.fenakhay.kwikibot.client.model/PageviewCount.title.<get-title>|<get-title>(){}[0]
+    final val views // com.fenakhay.kwikibot.client.model/PageviewCount.views|{}views[0]
+        final fun <get-views>(): kotlin/Long // com.fenakhay.kwikibot.client.model/PageviewCount.views.<get-views>|<get-views>(){}[0]
+
+    final fun component1(): kotlin.time/Instant // com.fenakhay.kwikibot.client.model/PageviewCount.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // com.fenakhay.kwikibot.client.model/PageviewCount.component2|component2(){}[0]
+    final fun component3(): kotlin/String // com.fenakhay.kwikibot.client.model/PageviewCount.component3|component3(){}[0]
+    final fun component4(): com.fenakhay.kwikibot.client.model/PageviewAccess // com.fenakhay.kwikibot.client.model/PageviewCount.component4|component4(){}[0]
+    final fun component5(): com.fenakhay.kwikibot.client.model/PageviewAgent // com.fenakhay.kwikibot.client.model/PageviewCount.component5|component5(){}[0]
+    final fun component6(): com.fenakhay.kwikibot.client.model/PageviewGranularity // com.fenakhay.kwikibot.client.model/PageviewCount.component6|component6(){}[0]
+    final fun component7(): kotlin/String? // com.fenakhay.kwikibot.client.model/PageviewCount.component7|component7(){}[0]
+    final fun copy(kotlin.time/Instant = ..., kotlin/Long = ..., kotlin/String = ..., com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewAgent = ..., com.fenakhay.kwikibot.client.model/PageviewGranularity = ..., kotlin/String? = ...): com.fenakhay.kwikibot.client.model/PageviewCount // com.fenakhay.kwikibot.client.model/PageviewCount.copy|copy(kotlin.time.Instant;kotlin.Long;kotlin.String;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent;com.fenakhay.kwikibot.client.model.PageviewGranularity;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/PageviewCount.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/PageviewCount.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/PageviewCount.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/Pageviews { // com.fenakhay.kwikibot.client.model/Pageviews|null[0]
+    constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, com.fenakhay.kwikibot.net/RetryPolicy = ..., kotlin/String = ...) // com.fenakhay.kwikibot.client.model/Pageviews.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;com.fenakhay.kwikibot.net.RetryPolicy;kotlin.String){}[0]
+
+    final suspend fun aggregate(kotlin/String, kotlin.time/Instant, kotlin.time/Instant, com.fenakhay.kwikibot.client.model/PageviewGranularity = ..., com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewAgent = ...): kotlin.collections/List<com.fenakhay.kwikibot.client.model/PageviewCount> // com.fenakhay.kwikibot.client.model/Pageviews.aggregate|aggregate(kotlin.String;kotlin.time.Instant;kotlin.time.Instant;com.fenakhay.kwikibot.client.model.PageviewGranularity;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent){}[0]
+    final suspend fun perArticle(kotlin/String, kotlin/String, kotlin.time/Instant, kotlin.time/Instant, com.fenakhay.kwikibot.client.model/PageviewGranularity = ..., com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewAgent = ...): kotlin.collections/List<com.fenakhay.kwikibot.client.model/PageviewCount> // com.fenakhay.kwikibot.client.model/Pageviews.perArticle|perArticle(kotlin.String;kotlin.String;kotlin.time.Instant;kotlin.time.Instant;com.fenakhay.kwikibot.client.model.PageviewGranularity;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent){}[0]
+    final suspend fun top(kotlin/String, kotlin.time/Instant, com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewGranularity = ...): kotlin.collections/List<com.fenakhay.kwikibot.client.model/TopPage> // com.fenakhay.kwikibot.client.model/Pageviews.top|top(kotlin.String;kotlin.time.Instant;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewGranularity){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.client.model/Pageviews.Companion|null[0]
+        final const val WIKIMEDIA // com.fenakhay.kwikibot.client.model/Pageviews.Companion.WIKIMEDIA|{}WIKIMEDIA[0]
+            final fun <get-WIKIMEDIA>(): kotlin/String // com.fenakhay.kwikibot.client.model/Pageviews.Companion.WIKIMEDIA.<get-WIKIMEDIA>|<get-WIKIMEDIA>(){}[0]
+
+        final val FIRST_DAY // com.fenakhay.kwikibot.client.model/Pageviews.Companion.FIRST_DAY|{}FIRST_DAY[0]
+            final fun <get-FIRST_DAY>(): kotlin.time/Instant // com.fenakhay.kwikibot.client.model/Pageviews.Companion.FIRST_DAY.<get-FIRST_DAY>|<get-FIRST_DAY>(){}[0]
+
+        final fun projectOf(kotlin/String): kotlin/String // com.fenakhay.kwikibot.client.model/Pageviews.Companion.projectOf|projectOf(kotlin.String){}[0]
+    }
+}
+
 final class com.fenakhay.kwikibot.client.model/SiteMatrix { // com.fenakhay.kwikibot.client.model/SiteMatrix|null[0]
     constructor <init>(kotlin.collections/List<com.fenakhay.kwikibot.client.model/MatrixWiki>) // com.fenakhay.kwikibot.client.model/SiteMatrix.<init>|<init>(kotlin.collections.List<com.fenakhay.kwikibot.client.model.MatrixWiki>){}[0]
 
@@ -926,6 +1014,25 @@ final class com.fenakhay.kwikibot.client.model/SparqlValue { // com.fenakhay.kwi
     final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/SparqlValue.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/SparqlValue.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/SparqlValue.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/TopPage { // com.fenakhay.kwikibot.client.model/TopPage|null[0]
+    constructor <init>(kotlin/String, kotlin/Long, kotlin/Int) // com.fenakhay.kwikibot.client.model/TopPage.<init>|<init>(kotlin.String;kotlin.Long;kotlin.Int){}[0]
+
+    final val rank // com.fenakhay.kwikibot.client.model/TopPage.rank|{}rank[0]
+        final fun <get-rank>(): kotlin/Int // com.fenakhay.kwikibot.client.model/TopPage.rank.<get-rank>|<get-rank>(){}[0]
+    final val title // com.fenakhay.kwikibot.client.model/TopPage.title|{}title[0]
+        final fun <get-title>(): kotlin/String // com.fenakhay.kwikibot.client.model/TopPage.title.<get-title>|<get-title>(){}[0]
+    final val views // com.fenakhay.kwikibot.client.model/TopPage.views|{}views[0]
+        final fun <get-views>(): kotlin/Long // com.fenakhay.kwikibot.client.model/TopPage.views.<get-views>|<get-views>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.client.model/TopPage.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // com.fenakhay.kwikibot.client.model/TopPage.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // com.fenakhay.kwikibot.client.model/TopPage.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/Long = ..., kotlin/Int = ...): com.fenakhay.kwikibot.client.model/TopPage // com.fenakhay.kwikibot.client.model/TopPage.copy|copy(kotlin.String;kotlin.Long;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/TopPage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/TopPage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/TopPage.toString|toString(){}[0]
 }
 
 final class com.fenakhay.kwikibot.client.model/TriageBacklog { // com.fenakhay.kwikibot.client.model/TriageBacklog|null[0]
@@ -1284,6 +1391,9 @@ final object com.fenakhay.kwikibot.client/ApiDetector { // com.fenakhay.kwikibot
     final suspend fun discover(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.discover|discover(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
 }
 
+final val com.fenakhay.kwikibot.client.model/pageviewsProject // com.fenakhay.kwikibot.client.model/pageviewsProject|@com.fenakhay.kwikibot.client.Wiki{}pageviewsProject[0]
+    final fun (com.fenakhay.kwikibot.client/Wiki).<get-pageviewsProject>(): kotlin/String // com.fenakhay.kwikibot.client.model/pageviewsProject.<get-pageviewsProject>|<get-pageviewsProject>@com.fenakhay.kwikibot.client.Wiki(){}[0]
+
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasExtension(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.client/hasExtension|hasExtension@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasVersion(com.fenakhay.kwikibot.client/MediaWikiVersion): kotlin/Boolean // com.fenakhay.kwikibot.client/hasVersion|hasVersion@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.MediaWikiVersion){}[0]
 final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requireExtension(kotlin/String) // com.fenakhay.kwikibot.client/requireExtension|requireExtension@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]
@@ -1292,6 +1402,7 @@ final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requi
 final fun (com.fenakhay.kwikibot.protocol/SiteInfo).com.fenakhay.kwikibot.client/hasVersion(com.fenakhay.kwikibot.client/MediaWikiVersion): kotlin/Boolean // com.fenakhay.kwikibot.client/hasVersion|hasVersion@com.fenakhay.kwikibot.protocol.SiteInfo(com.fenakhay.kwikibot.client.MediaWikiVersion){}[0]
 final fun com.fenakhay.kwikibot.client.model/availableWorkers(): kotlin/Int // com.fenakhay.kwikibot.client.model/availableWorkers|availableWorkers(){}[0]
 final fun com.fenakhay.kwikibot.client.model/spool(kotlin/String): com.fenakhay.kwikibot.client.model/Spool // com.fenakhay.kwikibot.client.model/spool|spool(kotlin.String){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/pageviews(com.fenakhay.kwikibot.client.model/Pageviews, kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin.time/Instant, kotlin.time/Instant, com.fenakhay.kwikibot.client.model/PageviewGranularity = ..., com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewAgent = ...): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.client.model/PageviewCount>> // com.fenakhay.kwikibot.client.model/pageviews|pageviews@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.Pageviews;kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.time.Instant;kotlin.time.Instant;com.fenakhay.kwikibot.client.model.PageviewGranularity;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/dayTitleFormat(): com.fenakhay.kwikibot.model.page/DatePages.DayFormat? // com.fenakhay.kwikibot.client/dayTitleFormat|dayTitleFormat@com.fenakhay.kwikibot.client.Wiki(){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasRight(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.client/hasRight|hasRight@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/monthNames(): kotlin.collections/Map<kotlin/String, kotlin/Int> // com.fenakhay.kwikibot.client/monthNames|monthNames@com.fenakhay.kwikibot.client.Wiki(){}[0]

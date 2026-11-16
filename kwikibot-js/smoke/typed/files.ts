@@ -12,6 +12,7 @@ import {
   GlobalUsage,
   type UploadOptions,
   UploadResult,
+  type UrlUploadOptions,
 } from "kwikibot/client";
 import { FakeSite, assertArray, assertDate, assertNone, assertRecord, collect, withWiki } from "./support.js";
 
@@ -291,6 +292,30 @@ async function uploadFiles(site: FakeSite, files: FileService, folder: string): 
   assert.ok(bodies[3].includes("whole"));
 
   await assert.rejects(files.upload(join(folder, "absent.bin"), "Fire.jpg"), Error);
+
+  site.answers[""] = { upload: { result: "Success", imageinfo: { url: "https://example.org/Fire.png", sha1: "abc" } } };
+  bodies.length = 0;
+  const fetched: UrlUploadOptions = { comment: "from the source", text: "about", ignoreWarnings: true };
+  const fromUrl = await files.uploadFromUrl("https://upload.example.org/fire.png", "Fire.png", fetched);
+  assert.ok(fromUrl instanceof UploadResult);
+  assert.equal(fromUrl.kind, "uploaded");
+  assert.equal(fromUrl.title, "File:Fire.png");
+  const asked = bodies.at(-1);
+  assert.ok(asked != null);
+  for (const part of ["https://upload.example.org/fire.png", "from the source", "about", "ignorewarnings"]) {
+    assert.ok(asked.includes(part), `the body lacks ${part}`);
+  }
+
+  site.answers[""] = { upload: { result: "Warning", warnings: { duplicate: "Ash.png" }, filekey: "k3" } };
+  const again = await files.uploadFromUrl("https://upload.example.org/fire.png", "Fire.png");
+  assert.equal(again.kind, "warned");
+  assert.equal(again.fileKey, "k3");
+
+  site.answers[""] = { errors: [{ code: "copyuploadbaddomain", text: "Uploads by URL are not allowed from this domain." }] };
+  await assert.rejects(files.uploadFromUrl("https://elsewhere.example/fire.png", "Fire.png", null), (error) => {
+    assert.equal(describeError(error)?.code, "copyuploadbaddomain");
+    return true;
+  });
 }
 
 const folder = await mkdtemp(join(tmpdir(), "kwikibot-typed-files-"));

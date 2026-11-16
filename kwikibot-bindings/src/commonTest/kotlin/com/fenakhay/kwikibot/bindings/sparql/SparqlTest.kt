@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.bindings.sparql
 
 import com.fenakhay.kwikibot.bindings.events.eventStreamsWithDefaults
+import com.fenakhay.kwikibot.bindings.services.pageviewsWithDefaults
 import com.fenakhay.kwikibot.client.model.SparqlAuth
 import com.fenakhay.kwikibot.client.model.SparqlClient
 import com.fenakhay.kwikibot.net.RetryPolicy
@@ -84,10 +85,12 @@ class SparqlTest {
     }
 
     @Test
-    fun `event streams are reached with nothing given and with everything given`() {
+    fun `the other services are reached with nothing given and with everything given`() {
         val agent = UserAgent("MyBot", "1.0", "me@example.org")
         eventStreamsWithDefaults(http, "bot@example.org")
         eventStreamsWithDefaults(http, "bot@example.org", agent, RetryPolicy.NONE, "https://example.org/")
+        pageviewsWithDefaults(http, "bot@example.org")
+        pageviewsWithDefaults(http, "bot@example.org", agent, RetryPolicy.NONE, "https://example.org/")
         asked shouldBe emptyList()
     }
 }

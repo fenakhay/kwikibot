@@ -109,6 +109,15 @@ public external interface TriageStatus
 /** `"uploaded"`, `"warned"` or `"refused"`. */
 public external interface UploadKind
 
+/** `"all-access"`, `"desktop"`, `"mobile-app"` or `"mobile-web"`. */
+public external interface PageviewAccess
+
+/** `"all-agents"`, `"user"`, `"spider"` or `"automated"`. */
+public external interface PageviewAgent
+
+/** `"hourly"`, `"daily"` or `"monthly"`. */
+public external interface PageviewGranularity
+
 /** `"page"`, `"subcategory"` or `"file"`. */
 public external interface CategoryMemberType
 

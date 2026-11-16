@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.ParseProperty
 import com.fenakhay.kwikibot.client.service.WatchMode
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
 import com.fenakhay.kwikibot.model.file.UploadOutcome
 import com.fenakhay.kwikibot.net.RequestKind
@@ -20,6 +21,7 @@ import com.fenakhay.kwikibot.protocol.ApiWarning
 import com.fenakhay.kwikibot.protocol.ApiWarningListener
 import com.fenakhay.kwikibot.testkit.FailOnDeprecation
 import com.fenakhay.kwikibot.wikitext.Wikitext
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -337,6 +339,45 @@ class LocalWikiTest {
         rules.isParserFunction("PAGENAME") shouldBe true
     }
 
+    /**
+     * The wiki fetches a file of its own, which `.github/mediawiki/start.sh` lets it do from `localhost`, the
+     * container itself, for a sysop. The same file again is a duplicate, stashed until it is published.
+     */
+    @Test
+    fun `a file the wiki fetches from a URL is uploaded and a second copy waits to be published`(): Unit =
+        onLocalWiki { wiki ->
+            val served =
+                URI("${System.getenv("KWIKI_MEDIAWIKI").trimEnd('/')}/resources/assets/mediawiki.png")
+            val size = served.toURL().openStream().use { it.readBytes().size.toLong() }
+            val first = wiki.ref("File:Fetched ${UUID.randomUUID()}.png")
+            val second = wiki.ref("File:Fetched again ${UUID.randomUUID()}.png")
+
+            val uploaded =
+                wiki.files.uploadFromUrl(
+                    COPY_SOURCE,
+                    first,
+                    comment = "fetched by the wiki",
+                    ignoreWarnings = true,
+                )
+
+            uploaded.shouldBeInstanceOf<UploadOutcome.Uploaded>()
+            wiki.files.latest(first)?.size shouldBe size
+
+            val warned = wiki.files.uploadFromUrl(COPY_SOURCE, second, text = "the same file again")
+
+            warned.shouldBeInstanceOf<UploadOutcome.Warned>()
+            warned.isDuplicateOnly shouldBe true
+            val key = warned.fileKey.shouldNotBeNull()
+            wiki.files.publishStashed(key, second).shouldBeInstanceOf<UploadOutcome.Uploaded>()
+            wiki.files.latest(second)?.size shouldBe size
+
+            val refused =
+                shouldThrow<WikiError.Api> {
+                    wiki.files.uploadFromUrl("http://example.org/volcano.png", wiki.ref("File:Elsewhere.png"))
+                }
+            refused.code shouldBe "copyuploadbaddomain"
+        }
+
     @Test
     fun `a chunk whose answer was lost is recognised and the upload carries on`(): Unit =
         uploadLosingAnswerTo(multipartRequest = 2)
@@ -409,4 +450,9 @@ class LocalWikiTest {
 
     /** A setting, where the build passes an unset one as empty. */
     private fun environment(name: String): String? = System.getenv(name)?.ifEmpty { null }
+
+    private companion object {
+        /** A file every MediaWiki serves, at the address the wiki reaches itself by inside its container. */
+        const val COPY_SOURCE = "http://localhost/resources/assets/mediawiki.png"
+    }
 }

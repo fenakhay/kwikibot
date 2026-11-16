@@ -676,6 +676,18 @@ class ServiceDefaultsTest {
             Case("upload, everything given", listOf("upload", path, photo, "c", "t", true, 1024)) {
                 uploadWithDefaults(path, "Photo.jpg", "c", "t", true, 1024)
             },
+            Case(
+                "uploadFromUrl, nothing given",
+                listOf("uploadFromUrl", "https://x", photo, "", null, false),
+            ) {
+                uploadFromUrlWithDefaults("https://x", "Photo.jpg")
+            },
+            Case(
+                "uploadFromUrl, everything given",
+                listOf("uploadFromUrl", "https://x", photo, "c", "t", true),
+            ) {
+                uploadFromUrlWithDefaults("https://x", "Photo.jpg", "c", "t", true)
+            },
             Case("languages, nothing given", listOf("languages", emptyList<LangCode>())) {
                 languagesWithDefaults()
             },

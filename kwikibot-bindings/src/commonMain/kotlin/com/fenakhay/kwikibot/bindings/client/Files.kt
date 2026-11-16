@@ -42,3 +42,12 @@ public suspend fun Wiki.uploadWithDefaults(
         ignoreWarnings ?: false,
         chunkSize ?: FileService.DEFAULT_CHUNK,
     )
+
+/** Uploads as [to] the file the wiki fetches from [url], with no comment and heeding warnings unless told. */
+public suspend fun Wiki.uploadFromUrlWithDefaults(
+    url: String,
+    to: String,
+    comment: String? = null,
+    text: String? = null,
+    ignoreWarnings: Boolean? = null,
+): UploadOutcome = files.uploadFromUrl(url, fileRef(to), comment.orEmpty(), text, ignoreWarnings ?: false)

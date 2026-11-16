@@ -36,10 +36,14 @@ import com.fenakhay.kwikibot.protocol.decode.long
 import com.fenakhay.kwikibot.protocol.decode.obj
 import com.fenakhay.kwikibot.protocol.decode.objects
 import com.fenakhay.kwikibot.protocol.decode.string
+import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.pluginOrNull
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.post
@@ -53,6 +57,7 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.readTo
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -295,6 +300,101 @@ internal class ApiFileService(
         text: String?,
     ): UploadOutcome = publish(fileKey, to.title.text, comment, text, ignoreWarnings = true).toOutcome(to)
 
+    override suspend fun uploadFromUrl(
+        url: String,
+        to: PageRef,
+        comment: String,
+        text: String?,
+        ignoreWarnings: Boolean,
+    ): UploadOutcome {
+        val response =
+            multipart(
+                fields =
+                    buildMap {
+                        put("action", "upload")
+                        put("filename", to.title.text)
+                        put("url", url)
+                        put("comment", comment)
+                        text?.let { put("text", it) }
+                        if (ignoreWarnings) put("ignorewarnings", "1")
+                    },
+                part = null,
+                step = UploadStep.PUBLISH,
+                patience = URL_UPLOAD_PATIENCE,
+            )
+
+        ApiFailure.from(response)?.let { failure -> refusalOfUrl(failure, url)?.let { throw it } }
+        return response.toOutcome(to)
+    }
+
+    /**
+     * What an upload from [url] refused for a reason that is not about the file comes to, or `null` for a
+     * refusal [upload] would report as its outcome.
+     *
+     * These say the wiki or the account cannot upload from a URL at all, or not from this one, so every call
+     * like it would fail the same way. A missing right arrives as a bare `permissiondenied` that does not say
+     * which right, so the account's rights are asked for, as a refused edit's details are: only after the
+     * refusal, and a failure to find out leaves it the refusal it was.
+     */
+    private suspend fun refusalOfUrl(failure: ApiFailure, url: String): WikiError? =
+        when (failure.code) {
+            COPY_UPLOAD_DISABLED ->
+                WikiError.Api(
+                    failure.code,
+                    "this wiki takes no uploads from a URL, as \$wgAllowCopyUploads is off: ${failure.text}",
+                    failure.module,
+                )
+
+            COPY_UPLOAD_BAD_DOMAIN ->
+                WikiError.Api(
+                    failure.code,
+                    "this wiki takes no uploads from ${hostOf(url)}, which its \$wgCopyUploadsDomains does " +
+                        "not list: ${failure.text}",
+                    failure.module,
+                )
+
+            COPY_UPLOAD_BAD_URL ->
+                WikiError.Api(
+                    failure.code,
+                    "this wiki takes no upload from $url: ${failure.text}",
+                    failure.module,
+                )
+
+            PERMISSION_DENIED ->
+                if (lacksRight(UPLOAD_BY_URL)) WikiError.Auth.MissingRight(UPLOAD_BY_URL) else null
+
+            else -> null
+        }
+
+    /** Whether the session is known not to hold [right]. Not knowing is not lacking it. */
+    private suspend fun lacksRight(right: String): Boolean {
+        val rights = runCatching {
+            transport
+                .call(
+                    ApiRequest.of("query", "meta" to "userinfo", "uiprop" to Registry.CURRENT_RIGHTS.joined)
+                        .copy(cacheable = false)
+                )
+                .throwOnError()
+                .obj("query")
+                ?.obj("userinfo")
+                ?.array("rights")
+                ?.strings()
+        }
+            .getOrElse {
+                if (it is CancellationException) throw it
+                null
+            }
+        return rights != null && right !in rights
+    }
+
+    /** The host of [url], without its port, which is what `$wgCopyUploadsDomains` lists. */
+    private fun hostOf(url: String): String =
+        url.substringAfter("://")
+            .substringBefore('/')
+            .substringBefore('?')
+            .substringAfter('@')
+            .replace(PORT, "")
+
     // ------------------------------------------------------------------------- uploading
 
     private suspend fun singleRequestUpload(
@@ -467,21 +567,26 @@ internal class ApiFileService(
      * chunked upload is exactly the case where a session expires or a connection drops mid-way. The body is
      * made again for every attempt, since a multipart body can be read only once.
      */
-    private suspend fun multipart(fields: Map<String, String>, part: Part?, step: UploadStep): JsonObject =
-        tokens.withFreshToken { token ->
-            deliver(fields, part, step, token)
-        }
+    private suspend fun multipart(
+        fields: Map<String, String>,
+        part: Part?,
+        step: UploadStep,
+        patience: Duration? = null,
+    ): JsonObject = tokens.withFreshToken { token ->
+        deliver(fields, part, step, token, patience)
+    }
 
     private suspend fun deliver(
         fields: Map<String, String>,
         part: Part?,
         step: UploadStep,
         token: String,
+        patience: Duration?,
     ): JsonObject {
         var attempt = 0
         while (true) {
             throttle.acquire(step.kind)
-            val answer = attempt(fields, part, token)
+            val answer = attempt(fields, part, token, patience)
             if (answer is UploadAnswer.Answered && !answer.retryable) return answered(fields, answer.body)
 
             val mayRepeat = step.repeatsAfterLoss || answer is UploadAnswer.Answered
@@ -513,7 +618,16 @@ internal class ApiFileService(
             is UploadAnswer.Lost -> throw answer.failure
         }
 
-    private suspend fun attempt(fields: Map<String, String>, part: Part?, token: String): UploadAnswer {
+    /**
+     * One attempt at a request. [patience], when given, is how long it may take to be answered, and how long
+     * the connection may stay silent, in place of the client's own timeout.
+     */
+    private suspend fun attempt(
+        fields: Map<String, String>,
+        part: Part?,
+        token: String,
+        patience: Duration?,
+    ): UploadAnswer {
         val body = multipartBody(fields, part, token)
         val (response, text) =
             runCatching {
@@ -521,6 +635,12 @@ internal class ApiFileService(
                     val response =
                         http.post(endpoint.apiUrl) {
                             identifyAs(userAgent)
+                            if (patience != null && http.pluginOrNull(HttpTimeout) != null) {
+                                timeout {
+                                    requestTimeoutMillis = patience.inWholeMilliseconds
+                                    socketTimeoutMillis = patience.inWholeMilliseconds
+                                }
+                            }
                             setBody(body)
                         }
                     response to response.bodyAsText()
@@ -670,6 +790,18 @@ internal class ApiFileService(
         const val DEFAULT_BATCH = 50
         const val STASH_FAILED = "stashfailed"
         const val STASH_KEY_GONE = "uploadstash-file-not-found"
+        const val COPY_UPLOAD_DISABLED = "copyuploaddisabled"
+        const val COPY_UPLOAD_BAD_DOMAIN = "copyuploadbaddomain"
+        const val COPY_UPLOAD_BAD_URL = "copyuploadbadurl"
+        const val PERMISSION_DENIED = "permissiondenied"
+        const val UPLOAD_BY_URL = "upload_by_url"
+        val PORT = Regex(""":\d+$""")
+
+        /**
+         * How long an upload from a URL may wait for its answer: the wiki downloads the whole file, then
+         * checks and stores it, before it says anything.
+         */
+        val URL_UPLOAD_PATIENCE = 10.minutes
 
         /** Answers saying the moment is wrong, for which MediaWiki has applied nothing. */
         val RETRYABLE_CODES = setOf("maxlag", "ratelimited", "readonly")

@@ -16,6 +16,7 @@ const PROGRAMS = [
   "dumps",
   "connection_login",
   "streams",
+  "pageviews",
   "testing",
   "literals",
   "entry_points",

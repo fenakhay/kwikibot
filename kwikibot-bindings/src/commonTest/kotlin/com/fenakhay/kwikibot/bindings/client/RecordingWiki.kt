@@ -459,6 +459,17 @@ class RecordingWiki(
             calls.record("upload", file, to, comment, text, ignoreWarnings, chunkSize)
             return UPLOADED
         }
+
+        override suspend fun uploadFromUrl(
+            url: String,
+            to: PageRef,
+            comment: String,
+            text: String?,
+            ignoreWarnings: Boolean,
+        ): UploadOutcome {
+            calls.record("uploadFromUrl", url, to, comment, text, ignoreWarnings)
+            return UPLOADED
+        }
     }
 
     private inner class Meta(base: MetaService) : MetaService by base {

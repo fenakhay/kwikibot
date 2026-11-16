@@ -160,6 +160,36 @@ class FileServiceTest {
     }
 
     @Test
+    fun `uploadFromUrl sends the URL and reports each outcome`() = runWiki { files ->
+        mock.canned[""] =
+            """{"upload":{"result":"Success","imageinfo":{"url":"https://example.org/Fire.png"}}}"""
+        val uploaded =
+            files
+                .uploadFromUrl(
+                    "https://upload.example.org/fire.png",
+                    "Fire.png",
+                    optionsOf("comment" to "why", "text" to "about", "ignoreWarnings" to true),
+                )
+                .await()
+        uploaded.kind shouldBe "uploaded"
+        uploaded.title shouldBe "File:Fire.png"
+        listOf("https://upload.example.org/fire.png", "ignorewarnings", "about", "why").forEach {
+            mock.bodies.last() shouldContain it
+        }
+
+        mock.canned[""] =
+            """{"upload":{"result":"Warning","warnings":{"duplicate":"Ash.png"},"filekey":"k2"}}"""
+        val warned = files.uploadFromUrl("https://upload.example.org/fire.png", "Fire.png").await()
+        warned.kind shouldBe "warned"
+        warned.fileKey shouldBe "k2"
+
+        mock.canned[""] = """{"errors":[{"code":"copyuploaddisabled","text":"Upload by URL disabled."}]}"""
+        val disabled =
+            shouldThrow<Throwable> { files.uploadFromUrl("https://x.example/a.png", "A.png").await() }
+        describeError(disabled)?.code shouldBe "copyuploaddisabled"
+    }
+
+    @Test
     fun `upload rejects a file that is not there`() = runWiki { files ->
         shouldThrow<Throwable> { files.upload(temporary("absent").toString(), "Fire.jpg").await() }
     }

@@ -86,6 +86,9 @@ internal object Registry {
     val CURRENT_USER =
         Values("query+userinfo", "uiprop", "groups", "rights", "editcount", "registrationdate", "blockinfo")
 
+    /** What an upload that was refused permission asks of the account: only its rights. */
+    val CURRENT_RIGHTS = Values("query+userinfo", "uiprop", "rights")
+
     val BLOCKS =
         Values("query+blocks", "bkprop", "id", "user", "by", "timestamp", "expiry", "reason", "flags")
 

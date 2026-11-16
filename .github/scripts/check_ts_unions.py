@@ -45,6 +45,9 @@ ENUMS: dict[str, tuple[str, str]] = {
     "ParserName": ("kwikibot-client", "Parser"),
     "RevisionPart": ("kwikibot-client", "RevisionPart"),
     "DumpCompression": ("kwikibot-client", "Compression"),
+    "PageviewAccess": ("kwikibot-client", "PageviewAccess"),
+    "PageviewAgent": ("kwikibot-client", "PageviewAgent"),
+    "PageviewGranularity": ("kwikibot-client", "PageviewGranularity"),
 }
 
 ROOTS = (

@@ -8,6 +8,7 @@ import { dumpPages } from "kwikibot/dumps";
 import { claim } from "kwikibot/wikibase";
 import { sparql } from "kwikibot/sparql";
 import { eventStreams } from "kwikibot/events";
+import { pageviews } from "kwikibot/services";
 import { cron } from "kwikibot/fleet";
 import { type ProofreadService } from "kwikibot/proofread";
 import { createFakeWiki } from "kwikibot/testing";
@@ -23,6 +24,7 @@ export const reached: unknown[] = [
   claim,
   sparql,
   eventStreams,
+  pageviews,
   cron,
   createFakeWiki,
 ];

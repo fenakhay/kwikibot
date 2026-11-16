@@ -2,6 +2,7 @@ import com.fenakhay.kwikibot.bindings.client.duplicatesOfWithDefaults
 import com.fenakhay.kwikibot.bindings.client.fileInfoWithDefaults
 import com.fenakhay.kwikibot.bindings.client.fileRef
 import com.fenakhay.kwikibot.bindings.client.titleOf
+import com.fenakhay.kwikibot.bindings.client.uploadFromUrlWithDefaults
 import com.fenakhay.kwikibot.bindings.client.uploadWithDefaults
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
 import com.fenakhay.kwikibot.client.service.FileService as ClientFileService
@@ -46,6 +47,19 @@ public external interface UploadOptions {
 
     /** How many bytes go in one request, `defaultChunk` unless given. */
     public val chunkSize: Int?
+}
+
+/** The options of `uploadFromUrl`. */
+@JsExport
+public external interface UrlUploadOptions {
+    /** The upload summary. */
+    public val comment: String?
+
+    /** The description page to create. Left to the wiki unless given. */
+    public val text: String?
+
+    /** Whether to acknowledge every warning in advance, `false` unless given. */
+    public val ignoreWarnings: Boolean?
 }
 
 /**
@@ -140,6 +154,23 @@ internal constructor(private val wiki: ClientWiki, private val scope: CoroutineS
                 )
             UploadResult(outcome, wiki)
         }
+
+    /**
+     * Uploads under the title [to] the file the wiki fetches itself from [url], waiting up to ten minutes for
+     * it to, and says how the wiki answered, as `upload` does. Rejects when the wiki takes no uploads from a
+     * URL, `"copyuploaddisabled"`, or not from that host, `"copyuploadbaddomain"`, or not that URL,
+     * `"copyuploadbadurl"`, and when the account lacks the `upload_by_url` right. Works in a browser too,
+     * since no file passes through it.
+     */
+    public fun uploadFromUrl(
+        url: String,
+        to: String,
+        options: UrlUploadOptions? = null,
+    ): Promise<UploadResult> = scope.promise {
+        val outcome =
+            wiki.uploadFromUrlWithDefaults(url, to, options?.comment, options?.text, options?.ignoreWarnings)
+        UploadResult(outcome, wiki)
+    }
 
     /**
      * Publishes a stashed upload under the title [to], acknowledging the warnings it produced, from the

@@ -1,5 +1,6 @@
 package com.fenakhay.kwikibot.client.service
 
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.file.FileInfo
 import com.fenakhay.kwikibot.model.file.FileRepository
 import com.fenakhay.kwikibot.model.file.GlobalUsage
@@ -101,6 +102,35 @@ public interface FileService {
         ignoreWarnings: Boolean = false,
         chunkSize: Int = DEFAULT_CHUNK,
     ): UploadOutcome
+
+    /**
+     * Uploads a file the wiki fetches itself, from [url].
+     *
+     * Nothing passes through this process: the wiki downloads the file, which is why the request waits far
+     * longer for its answer than any other, ten minutes. A wiki allows this only when `$wgAllowCopyUploads`
+     * is on, from the hosts `$wgCopyUploadsDomains` lists, for an account with the `upload_by_url` right. The
+     * answer is what [upload]'s is: a warning stashes the file, and [publishStashed] publishes it with no
+     * second download. An answer that never arrives is not asked for again, since the wiki may have published
+     * the file.
+     *
+     * @param url where the wiki fetches the file from.
+     * @param to the title to upload under, whose namespace prefix is dropped.
+     * @param comment the upload summary.
+     * @param text the description page to create, or `null` to leave it to the wiki.
+     * @param ignoreWarnings acknowledge every warning in advance.
+     * @throws WikiError.Api with the code `copyuploaddisabled` from a wiki that takes no uploads from a URL,
+     *   `copyuploadbaddomain` when the host of [url] is not one it takes them from, or `copyuploadbadurl`
+     *   when it refuses [url] itself.
+     * @throws WikiError.Auth.MissingRight when the account lacks `upload_by_url`.
+     * @throws UnsupportedOperationException from an implementation that cannot upload from a URL.
+     */
+    public suspend fun uploadFromUrl(
+        url: String,
+        to: PageRef,
+        comment: String = "",
+        text: String? = null,
+        ignoreWarnings: Boolean = false,
+    ): UploadOutcome = throw UnsupportedOperationException("this FileService cannot upload from a URL")
 
     /**
      * Publishes a stashed upload, acknowledging the warnings it produced.

@@ -4731,6 +4731,196 @@ export declare namespace PageContents {
     }
 }
 /**
+ * Wikimedia's pageviews API, which needs no credentials.
+ */
+export declare const WIKIMEDIA_PAGEVIEWS: string;
+/**
+ * Makes a client for Wikimedia's pageviews, asking as the tool whose operator [contact] reaches. Close it
+ * when done.
+ */
+export declare function pageviews(contact: string, options?: Nullable<PageviewsOptions>): Pageviews;
+/**
+ * What a pageviews client is made with.
+ */
+export declare interface PageviewsOptions {
+    /**
+     * Where the API is served, Wikimedia's unless given.
+     */
+    readonly baseUrl?: Nullable<string>;
+    /**
+     * How often to ask again, and how long to wait, while the API is busy or failing.
+     */
+    readonly retry?: Nullable<RetryOptions>;
+    /**
+     * Who to say is asking; the library's name with the contact unless given.
+     */
+    readonly userAgent?: Nullable<UserAgent>;
+}
+/**
+ * What is counted: by how long, how readers came, and who they were.
+ */
+export declare interface PageviewsQuery {
+    /**
+     * `"daily"` unless given; `"hourly"` counts a whole project only.
+     */
+    readonly granularity?: Nullable<PageviewGranularity>;
+    /**
+     * `"all-access"` unless given.
+     */
+    readonly access?: Nullable<PageviewAccess>;
+    /**
+     * `"user"`, people, unless given.
+     */
+    readonly agent?: Nullable<PageviewAgent>;
+}
+/**
+ * Which ranking of the most viewed pages.
+ */
+export declare interface TopPagesOptions {
+    /**
+     * `"all-access"` unless given.
+     */
+    readonly access?: Nullable<PageviewAccess>;
+    /**
+     * `"daily"` for the day, unless given; `"monthly"` for the month it falls in.
+     */
+    readonly granularity?: Nullable<PageviewGranularity>;
+}
+/**
+ * How often pages on Wikimedia's wikis are read, from the pageviews API. It covers Wikimedia's wikis only,
+ * from July 2015, and a page or a period it has no data for answers with no counts rather than rejecting. One
+ * request counts one page, and a busy API is waited out as the retry options say.
+ */
+export declare class Pageviews {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The views of the page [title] on [project], such as `"en.wikipedia"`, a count for each day or month
+     * from [start] to [end].
+     */
+    perArticle(project: string, title: string, start: Date, end: Date, query?: Nullable<PageviewsQuery>): Promise<Array<PageviewCount>>;
+    /**
+     * The views of the whole of [project], a count for each hour, day or month from [start] to [end].
+     */
+    aggregate(project: string, start: Date, end: Date, query?: Nullable<PageviewsQuery>): Promise<Array<PageviewCount>>;
+    /**
+     * The most viewed pages of [project] on [day], in UTC, or over its month, most viewed first.
+     */
+    top(project: string, day: Date, options?: Nullable<TopPagesOptions>): Promise<Array<TopPage>>;
+    /**
+     * The views of each of [titles] on [wiki], one of Wikimedia's, a count for each day or month from [start]
+     * to [end], in the order the titles were given. A few pages are asked about at a time. Rejects, sending
+     * nothing, for a wiki that is not Wikimedia's.
+     */
+    ofPages(wiki: Wiki, titles: Array<string>, start: Date, end: Date, query?: Nullable<PageviewsQuery>): Promise<Array<PagePageviews>>;
+    /**
+     * The project the API counts the wiki at [server] under, `"en.wikipedia"` for `"en.wikipedia.org"`.
+     * Throws for a host that is not one of Wikimedia's wikis.
+     */
+    projectOf(server: string): string;
+    /**
+     * Ends what is still being asked and releases the connections.
+     */
+    close(): void;
+    /**
+     * The first day the API has data for.
+     */
+    get firstDay(): Date;
+}
+export declare namespace Pageviews {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => Pageviews;
+    }
+}
+/**
+ * The views of one page, or of a whole project, over one hour, day or month.
+ */
+export declare class PageviewCount {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * When the hour, day or month counted starts.
+     */
+    get timestamp(): Date;
+    /**
+     * How many times it was viewed.
+     */
+    get views(): number;
+    /**
+     * The project, as the API names it, such as `"en.wikipedia"`.
+     */
+    get project(): string;
+    /**
+     * How the readers reached it.
+     */
+    get access(): PageviewAccess;
+    /**
+     * Who the readers were.
+     */
+    get agent(): PageviewAgent;
+    /**
+     * How long the count covers.
+     */
+    get granularity(): PageviewGranularity;
+    /**
+     * The page's full title, or `null` for a count of a whole project.
+     */
+    get title(): Nullable<string>;
+}
+export declare namespace PageviewCount {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => PageviewCount;
+    }
+}
+/**
+ * One of a project's most viewed pages.
+ */
+export declare class TopPage {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The page's full title.
+     */
+    get title(): string;
+    /**
+     * How many times it was viewed.
+     */
+    get views(): number;
+    /**
+     * Its place in the ranking, from 1.
+     */
+    get rank(): number;
+}
+export declare namespace TopPage {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => TopPage;
+    }
+}
+/**
+ * The views of one page of a wiki.
+ */
+export declare class PagePageviews {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The page, prefix included.
+     */
+    get title(): string;
+    /**
+     * Its counts, oldest first; none when the API has no data for it.
+     */
+    get counts(): Array<PageviewCount>;
+}
+export declare namespace PagePageviews {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => PagePageviews;
+    }
+}
+/**
  * What en.wikipedia and en.wiktionary parse with. Its lists are Wikimedia's own.
  */
 export declare function defaultParseOptions(): ParseOptions;
@@ -7591,6 +7781,23 @@ export declare interface UploadOptions {
     readonly chunkSize?: Nullable<number>;
 }
 /**
+ * The options of `uploadFromUrl`.
+ */
+export declare interface UrlUploadOptions {
+    /**
+     * The upload summary.
+     */
+    readonly comment?: Nullable<string>;
+    /**
+     * The description page to create. Left to the wiki unless given.
+     */
+    readonly text?: Nullable<string>;
+    /**
+     * Whether to acknowledge every warning in advance, `false` unless given.
+     */
+    readonly ignoreWarnings?: Nullable<boolean>;
+}
+/**
  * Files, reached as `wiki.files`. A file's title needs no `File:` prefix.
  * 
  * `download` and `upload` read and write the filesystem, so they work in Node only, and in a browser reject
@@ -7638,6 +7845,14 @@ export declare class FileService {
      * answered: warnings and refusals are results. Node only.
      */
     upload(path: string, to: string, options?: Nullable<UploadOptions>): Promise<UploadResult>;
+    /**
+     * Uploads under the title [to] the file the wiki fetches itself from [url], waiting up to ten minutes for
+     * it to, and says how the wiki answered, as `upload` does. Rejects when the wiki takes no uploads from a
+     * URL, `"copyuploaddisabled"`, or not from that host, `"copyuploadbaddomain"`, or not that URL,
+     * `"copyuploadbadurl"`, and when the account lacks the `upload_by_url` right. Works in a browser too,
+     * since no file passes through it.
+     */
+    uploadFromUrl(url: string, to: string, options?: Nullable<UrlUploadOptions>): Promise<UploadResult>;
     /**
      * Publishes a stashed upload under the title [to], acknowledging the warnings it produced, from the
      * `fileKey` of a `"warned"` result. Costs no second transfer.
@@ -11185,6 +11400,9 @@ export type NewPagesReviewed = "unreviewed" | "reviewed" | "all";
 export type NewPagesOrder = "newest-first" | "oldest-first" | "newest-review-first" | "oldest-review-first";
 export type TriageStatus = "unreviewed" | "reviewed" | "patrolled" | "autopatrolled";
 export type UploadKind = "uploaded" | "warned" | "refused";
+export type PageviewAccess = "all-access" | "desktop" | "mobile-app" | "mobile-web";
+export type PageviewAgent = "all-agents" | "user" | "spider" | "automated";
+export type PageviewGranularity = "hourly" | "daily" | "monthly";
 export type CategoryMemberType = "page" | "subcategory" | "file";
 export type CategorySort = "sortkey" | "timestamp";
 export type RedirectFilter = "all" | "only-redirects" | "no-redirects";
