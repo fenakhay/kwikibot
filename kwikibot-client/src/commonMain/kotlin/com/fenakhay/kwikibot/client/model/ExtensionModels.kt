@@ -1,7 +1,10 @@
 package com.fenakhay.kwikibot.client.model
 
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty
 import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.page.WikiId
+import com.fenakhay.kwikibot.model.user.BlockInfo
 import kotlin.time.Instant
 
 /** A point on the globe, as GeoData records it for a page. */
@@ -175,4 +178,64 @@ public data class TriageStats(
     val reviewedRedirects: Long,
     /** Articles, reviewed or not, created by the accounts the stats were asked about. */
     val matching: Long,
+)
+
+/**
+ * One account across a family of wikis, as CentralAuth describes it.
+ *
+ * Only what was asked for is filled in: a list that was not asked for is empty, and the edit count `null`.
+ */
+public data class GlobalUserInfo(
+    /** The account name. */
+    val name: String,
+    /** The global account's own id, which is not its id on any one wiki. */
+    val id: Long,
+    /** The wiki the account was made on or first attached at, or `null` when CentralAuth does not know. */
+    val home: WikiId?,
+    /** When the global account was made, or `null` when CentralAuth does not say. */
+    val registration: Instant?,
+    /** Whether the account is locked, so it can log in nowhere. */
+    val isLocked: Boolean = false,
+    /** Whether the account is hidden, which only a session that may see hidden accounts is told. */
+    val isHidden: Boolean = false,
+    /** The global groups, when [GlobalUserProperty.GROUPS] was asked for. */
+    val groups: List<String> = emptyList(),
+    /** What the global groups allow, when [GlobalUserProperty.RIGHTS] was asked for. */
+    val rights: List<String> = emptyList(),
+    /** The edits made on every wiki together, when [GlobalUserProperty.EDIT_COUNT] was asked for. */
+    val editCount: Long? = null,
+    /** The local accounts attached to this one, when [GlobalUserProperty.MERGED] was asked for. */
+    val merged: List<LocalAccount> = emptyList(),
+    /**
+     * The local accounts of the same name not attached to this one, when [GlobalUserProperty.UNATTACHED] was
+     * asked for.
+     */
+    val unattached: List<LocalAccount> = emptyList(),
+)
+
+/** An account on one wiki, as [GlobalUserInfo] lists them. */
+public data class LocalAccount(
+    /** The wiki, by database name. */
+    val wiki: WikiId,
+    /** How many edits it has made there. */
+    val editCount: Long = 0,
+    /**
+     * When it was made there. For an account older than the wiki's records, CentralAuth gives the time it was
+     * asked instead.
+     */
+    val registration: Instant? = null,
+    /** The groups it is in there. */
+    val groups: List<String> = emptyList(),
+    /** The block on it there, or `null` when there is none or the block is suppressed. */
+    val block: BlockInfo? = null,
+    /** The wiki's address, for an attached account. */
+    val url: String? = null,
+    /** Its id on that wiki, for an attached account. */
+    val id: Long? = null,
+    /** When it was attached to the global account, for an attached account. */
+    val attached: Instant? = null,
+    /**
+     * How it came to be attached, such as `login`, `password`, `new` or `primary`, for an attached account.
+     */
+    val attachMethod: String? = null,
 )

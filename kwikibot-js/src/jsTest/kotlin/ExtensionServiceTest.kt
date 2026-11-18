@@ -24,6 +24,7 @@ class ExtensionServiceTest {
                     "FlaggedRevs",
                     "Abuse Filter",
                     "PageTriage",
+                    "CentralAuth",
                 )
         }
 
@@ -54,6 +55,7 @@ class ExtensionServiceTest {
                 extensions.flaggedRevs,
                 extensions.abuseFilter,
                 extensions.pageTriage,
+                extensions.centralAuth,
             )
             .forEach { extensions.has(it) shouldBe true }
         extensions.has("Nothing") shouldBe false
@@ -68,7 +70,64 @@ class ExtensionServiceTest {
         shouldThrow<Throwable> { wiki.extensions.coordinates(arrayOf("Volcano")).await() }
             .message shouldContain "GeoData"
         shouldThrow<Throwable> { wiki.extensions.lintErrors().take() }.message shouldContain "Linter"
+        shouldThrow<Throwable> { wiki.extensions.globalUser().await() }.message shouldContain "CentralAuth"
         wiki.close()
+    }
+
+    @Test
+    fun `globalUser reads CentralAuth and is null for nobody`() = runWiki { extensions ->
+        mock.canned["globaluserinfo"] =
+            """{"query":{"globaluserinfo":{"home":"enwiki","id":1843,"registration":"2008-04-12T16:22:49Z",
+               "name":"Jimbo Wales","locked":true,"groups":["founder"],"rights":["read"],"editcount":16306,
+               "merged":[{"wiki":"acewiki","url":"https://ace.wikipedia.org","id":2511,
+                 "timestamp":"2010-07-24T23:10:07Z","method":"login","editcount":2,
+                 "registration":"2010-07-24T23:10:06Z","groups":["sysop"],
+                 "blocked":{"expiry":"infinity","reason":"spam"}}],
+               "unattached":[{"wiki":"testwiki","editcount":3}]}}}"""
+
+        val user =
+            extensions
+                .globalUser(
+                    "Jimbo Wales",
+                    optionsOf("properties" to arrayOf("merged", "unattached", "edit-count")),
+                )
+                .await() ?: error("no account")
+
+        listOf(user.name, user.id, user.home, user.isLocked, user.isHidden, user.editCount) shouldBe
+            listOf("Jimbo Wales", 1843.0, "enwiki", true, false, 16306.0)
+        user.registration?.getTime() shouldBe Date("2008-04-12T16:22:49Z").getTime()
+        listOf(user.groups.toList(), user.rights.toList()) shouldBe listOf(listOf("founder"), listOf("read"))
+        val ace = user.merged.single()
+        listOf(ace.wiki, ace.editCount, ace.url, ace.id, ace.attachMethod) shouldBe
+            listOf("acewiki", 2.0, "https://ace.wikipedia.org", 2511.0, "login")
+        ace.groups.toList() shouldBe listOf("sysop")
+        ace.registration?.getTime() shouldBe Date("2010-07-24T23:10:06Z").getTime()
+        ace.attached?.getTime() shouldBe Date("2010-07-24T23:10:07Z").getTime()
+        listOf(ace.block?.reason, ace.block?.isInfinite) shouldBe listOf("spam", true)
+        val test = user.unattached.single()
+        listOf(
+            test.wiki,
+            test.editCount,
+            test.url,
+            test.id,
+            test.attached,
+            test.block,
+            test.registration,
+        ) shouldBe listOf("testwiki", 3.0, null, null, null, null, null)
+        mock.requests.last { it["meta"] == "globaluserinfo" }["guiprop"] shouldBe
+            "merged|unattached|editcount"
+
+        extensions.globalUser().await()
+        mock.requests
+            .last { it["meta"] == "globaluserinfo" }
+            .let { listOf(it["guiuser"], it["guiprop"]) } shouldBe listOf(null, "groups|editcount")
+
+        mock.canned["globaluserinfo"] = """{"query":{"globaluserinfo":{"missing":true}}}"""
+        extensions.globalUser("Nobody").await() shouldBe null
+        shouldThrow<Throwable> {
+                extensions.globalUser("Nobody", optionsOf("properties" to arrayOf("editcount"))).await()
+            }
+            .message shouldContain "properties cannot be 'editcount'"
     }
 
     @Test

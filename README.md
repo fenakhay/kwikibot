@@ -356,6 +356,30 @@ missing is an error rather than an outcome, since no file would fare differently
 warning is an outcome: the file waits under its `fileKey`, and `publishStashed` publishes it without
 sending it again. `info`, `usage`, `globalUsage`, `duplicatesOf` and `download` read what is there.
 
+### Accounts
+
+```kotlin
+val refused = wiki.users.setPreferences(mapOf("userjs-mybot-last-run" to "2026-11-04", "rclimit" to "500"))
+val lastRun = wiki.users.preferences()["userjs-mybot-last-run"]
+val drift = wiki.meta.serverTime() - Clock.System.now()
+
+when (val sent = wiki.users.email("Example", "Your bot request", "It has been approved.")) {
+    is EmailOutcome.Sent -> println("sent")
+    is EmailOutcome.Undeliverable -> println("not sent: ${sent.reason}")
+}
+
+val global = wiki.extensions.globalUser("Example")
+println("${global?.home}: ${global?.editCount} edits")
+```
+
+`setPreferences` answers with the preferences the wiki refused, since MediaWiki saves the rest and only
+warns about those; `null` puts one back to its default, and `resetPreferences` puts back a whole kind.
+`email` sends a real email from the account to a person, so it is paced as a write and wikis rate-limit it.
+An account that cannot be emailed is an outcome, and a sender who may not send is an error. `serverTime`
+is the wiki's clock, asked for every time. `globalUser` reads a CentralAuth account, or `null` when there is
+none, and lists its local accounts only when `MERGED` or `UNATTACHED` is asked for, since an account that has
+been around for years has hundreds.
+
 ### Knowing what a wiki supports
 
 `wiki.paramInfo` reads the wiki's own description of its API: the limits an account gets, the
@@ -363,8 +387,8 @@ values a parameter takes, and which of those are deprecated. That is how a renam
 under the new name to a wiki that knows it and under the old name to one that does not.
 `requireRight`, `requireExtension` and `requireVersion` fail at the start of a run instead of
 halfway through. The extension services (GeoData, PageImages, TextExtracts, Linter, Echo, Thanks,
-FlaggedRevs, AbuseFilter, PageTriage, ProofreadPage and the rest) refuse when their extension is
-absent.
+FlaggedRevs, AbuseFilter, PageTriage, ProofreadPage, CentralAuth and the rest) refuse when their
+extension is absent.
 
 ## Wikitext
 

@@ -106,4 +106,15 @@ class MetaServiceTest {
         shouldThrow<Throwable> { meta.manageTag("t", literal("burn")).await() }.message shouldContain
             "'activate'"
     }
+
+    @Test
+    fun `serverTime asks the wiki every time`() = runWiki { meta ->
+        mock.canned[""] = """{"batchcomplete":true,"curtimestamp":"2026-11-04T10:02:45Z"}"""
+
+        val first = meta.serverTime().await()
+        meta.serverTime().await()
+
+        first.getTime() shouldBe kotlin.js.Date("2026-11-04T10:02:45Z").getTime()
+        mock.requests.count { it["curtimestamp"] == "1" } shouldBe 2
+    }
 }

@@ -86,6 +86,9 @@ internal object Registry {
     val CURRENT_USER =
         Values("query+userinfo", "uiprop", "groups", "rights", "editcount", "registrationdate", "blockinfo")
 
+    /** What reading an account's preferences asks for, and nothing else. */
+    val PREFERENCES = Values("query+userinfo", "uiprop", "options")
+
     /** What an upload that was refused permission asks of the account: only its rights. */
     val CURRENT_RIGHTS = Values("query+userinfo", "uiprop", "rights")
 

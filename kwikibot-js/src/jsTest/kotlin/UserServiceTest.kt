@@ -1,4 +1,6 @@
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import kotlin.js.Date
 import kotlin.test.Test
 import kotlinx.coroutines.await
@@ -236,5 +238,66 @@ class UserServiceTest {
         val sent = sentAction("userrights")
         listOf(sent["user"], sent["add"], sent["remove"], sent["reason"], sent["expiry"]) shouldBe
             listOf("Alice", "bot", "sysop", "approved", "1 month")
+    }
+
+    @Test
+    fun `preferences read as text and changes answer with what was refused`() = runWiki { users ->
+        mock.canned["userinfo"] =
+            """{"query":{"userinfo":{"id":7,"options":{"skin":"vector","rclimit":50}}}}"""
+        mock.canned["options"] =
+            """{"warnings":[{"code":"validationfailed","module":"options",
+               "text":"Validation error for \"gender\": not a valid option."}],"options":"success"}"""
+
+        val read: dynamic = users.preferences().await()
+        val changes: dynamic = js("({})")
+        changes["gender"] = "x"
+        changes["nickname"] = "[[User:A|A]]"
+        changes["rclimit"] = null
+        val refused: dynamic = users.setPreferences(changes.unsafeCast<Record<String, String?>>()).await()
+
+        listOf(read.skin, read.rclimit) shouldBe listOf("vector", "50")
+        (refused.gender as String) shouldBe "Validation error for \"gender\": not a valid option."
+        js("Object.keys")(refused).unsafeCast<Array<String>>().toList() shouldBe listOf("gender")
+        sentAction("options")["change"] shouldBe "\u001fgender=x\u001fnickname=[[User:A|A]]\u001frclimit"
+        mock.requests.last { it["uiprop"] == "options" }["meta"] shouldBe "userinfo"
+    }
+
+    @Test
+    fun `resetPreferences resets the kinds given or every kind`() = runWiki { users ->
+        mock.canned["options"] = """{"options":"success"}"""
+
+        users.resetPreferences().await()
+        val every = sentAction("options")
+        users.resetPreferences(arrayOf("userjs".unsafeCast<PreferenceKind>())).await()
+
+        listOf(every["reset"], every["resetkinds"]) shouldBe listOf("1", null)
+        sentAction("options")["resetkinds"] shouldBe "userjs"
+        shouldThrow<Throwable> { users.resetPreferences(arrayOf("js".unsafeCast<PreferenceKind>())).await() }
+            .message shouldContain "kinds cannot be 'js'"
+    }
+
+    @Test
+    fun `email says it was sent or why it could not be`() = runWiki { users ->
+        mock.canned["emailuser"] = """{"emailuser":{"result":"Success"}}"""
+
+        val sent = users.email("Mailbox", "Hello", "Body", optionsOf("ccMe" to true)).await()
+
+        listOf(sent.kind, sent.code, sent.detail) shouldBe listOf("sent", null, null)
+        val asked = sentAction("emailuser")
+        listOf(asked["target"], asked["subject"], asked["text"], asked["ccme"]) shouldBe
+            listOf("Mailbox", "Hello", "Body", "1")
+
+        mock.canned["emailuser"] =
+            """{"errors":[{"code":"nowikiemailtext","text":"No email from other users.","module":"emailuser"}]}"""
+        val refused = users.email("Mailbox", "Hello", "Body").await()
+
+        listOf(refused.kind, refused.code, refused.detail) shouldBe
+            listOf("not-accepted", "nowikiemailtext", "No email from other users.")
+        sentAction("emailuser")["ccme"] shouldBe null
+
+        mock.canned["emailuser"] =
+            """{"errors":[{"code":"cantsend","text":"No send address","module":"emailuser"}]}"""
+        shouldThrow<Throwable> { users.email("Mailbox", "Hello", "Body").await() }.message shouldContain
+            "cantsend"
     }
 }

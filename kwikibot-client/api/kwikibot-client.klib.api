@@ -134,6 +134,25 @@ final enum class com.fenakhay.kwikibot.client.service/CategorySort : kotlin/Enum
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/CategorySort> // com.fenakhay.kwikibot.client.service/CategorySort.values|values#static(){}[0]
 }
 
+final enum class com.fenakhay.kwikibot.client.service/GlobalUserProperty : kotlin/Enum<com.fenakhay.kwikibot.client.service/GlobalUserProperty> { // com.fenakhay.kwikibot.client.service/GlobalUserProperty|null[0]
+    enum entry EDIT_COUNT // com.fenakhay.kwikibot.client.service/GlobalUserProperty.EDIT_COUNT|null[0]
+    enum entry GROUPS // com.fenakhay.kwikibot.client.service/GlobalUserProperty.GROUPS|null[0]
+    enum entry MERGED // com.fenakhay.kwikibot.client.service/GlobalUserProperty.MERGED|null[0]
+    enum entry RIGHTS // com.fenakhay.kwikibot.client.service/GlobalUserProperty.RIGHTS|null[0]
+    enum entry UNATTACHED // com.fenakhay.kwikibot.client.service/GlobalUserProperty.UNATTACHED|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.service/GlobalUserProperty.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.service/GlobalUserProperty> // com.fenakhay.kwikibot.client.service/GlobalUserProperty.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.service/GlobalUserProperty // com.fenakhay.kwikibot.client.service/GlobalUserProperty.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/GlobalUserProperty> // com.fenakhay.kwikibot.client.service/GlobalUserProperty.values|values#static(){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.client.service/GlobalUserProperty.Companion|null[0]
+        final val DEFAULT // com.fenakhay.kwikibot.client.service/GlobalUserProperty.Companion.DEFAULT|{}DEFAULT[0]
+            final fun <get-DEFAULT>(): kotlin.collections/Set<com.fenakhay.kwikibot.client.service/GlobalUserProperty> // com.fenakhay.kwikibot.client.service/GlobalUserProperty.Companion.DEFAULT.<get-DEFAULT>|<get-DEFAULT>(){}[0]
+    }
+}
+
 final enum class com.fenakhay.kwikibot.client.service/HistoryOrder : kotlin/Enum<com.fenakhay.kwikibot.client.service/HistoryOrder> { // com.fenakhay.kwikibot.client.service/HistoryOrder|null[0]
     enum entry NEWEST_FIRST // com.fenakhay.kwikibot.client.service/HistoryOrder.NEWEST_FIRST|null[0]
     enum entry OLDEST_FIRST // com.fenakhay.kwikibot.client.service/HistoryOrder.OLDEST_FIRST|null[0]
@@ -192,6 +211,21 @@ final enum class com.fenakhay.kwikibot.client.service/Parser : kotlin/Enum<com.f
 
     final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.service/Parser // com.fenakhay.kwikibot.client.service/Parser.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/Parser> // com.fenakhay.kwikibot.client.service/Parser.values|values#static(){}[0]
+}
+
+final enum class com.fenakhay.kwikibot.client.service/PreferenceKind : kotlin/Enum<com.fenakhay.kwikibot.client.service/PreferenceKind> { // com.fenakhay.kwikibot.client.service/PreferenceKind|null[0]
+    enum entry REGISTERED // com.fenakhay.kwikibot.client.service/PreferenceKind.REGISTERED|null[0]
+    enum entry REGISTERED_CHECKMATRIX // com.fenakhay.kwikibot.client.service/PreferenceKind.REGISTERED_CHECKMATRIX|null[0]
+    enum entry REGISTERED_MULTISELECT // com.fenakhay.kwikibot.client.service/PreferenceKind.REGISTERED_MULTISELECT|null[0]
+    enum entry SPECIAL // com.fenakhay.kwikibot.client.service/PreferenceKind.SPECIAL|null[0]
+    enum entry UNUSED // com.fenakhay.kwikibot.client.service/PreferenceKind.UNUSED|null[0]
+    enum entry USERJS // com.fenakhay.kwikibot.client.service/PreferenceKind.USERJS|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.service/PreferenceKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.service/PreferenceKind> // com.fenakhay.kwikibot.client.service/PreferenceKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.service/PreferenceKind // com.fenakhay.kwikibot.client.service/PreferenceKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/PreferenceKind> // com.fenakhay.kwikibot.client.service/PreferenceKind.values|values#static(){}[0]
 }
 
 final enum class com.fenakhay.kwikibot.client.service/ProofreadQuality : kotlin/Enum<com.fenakhay.kwikibot.client.service/ProofreadQuality> { // com.fenakhay.kwikibot.client.service/ProofreadQuality|null[0]
@@ -289,6 +323,18 @@ final enum class com.fenakhay.kwikibot.client.service/TimeOrder : kotlin/Enum<co
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/TimeOrder> // com.fenakhay.kwikibot.client.service/TimeOrder.values|values#static(){}[0]
 }
 
+final enum class com.fenakhay.kwikibot.client.service/UndeliverableReason : kotlin/Enum<com.fenakhay.kwikibot.client.service/UndeliverableReason> { // com.fenakhay.kwikibot.client.service/UndeliverableReason|null[0]
+    enum entry NOT_ACCEPTED // com.fenakhay.kwikibot.client.service/UndeliverableReason.NOT_ACCEPTED|null[0]
+    enum entry NO_ADDRESS // com.fenakhay.kwikibot.client.service/UndeliverableReason.NO_ADDRESS|null[0]
+    enum entry NO_SUCH_USER // com.fenakhay.kwikibot.client.service/UndeliverableReason.NO_SUCH_USER|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.service/UndeliverableReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.service/UndeliverableReason> // com.fenakhay.kwikibot.client.service/UndeliverableReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.service/UndeliverableReason // com.fenakhay.kwikibot.client.service/UndeliverableReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.service/UndeliverableReason> // com.fenakhay.kwikibot.client.service/UndeliverableReason.values|values#static(){}[0]
+}
+
 final enum class com.fenakhay.kwikibot.client.service/WatchMode : kotlin/Enum<com.fenakhay.kwikibot.client.service/WatchMode> { // com.fenakhay.kwikibot.client.service/WatchMode|null[0]
     enum entry NO_CHANGE // com.fenakhay.kwikibot.client.service/WatchMode.NO_CHANGE|null[0]
     enum entry PREFERENCES // com.fenakhay.kwikibot.client.service/WatchMode.PREFERENCES|null[0]
@@ -323,10 +369,13 @@ abstract interface com.fenakhay.kwikibot.client.service/ExtensionService { // co
     abstract suspend fun shortenUrl(kotlin/String): kotlin/String // com.fenakhay.kwikibot.client.service/ExtensionService.shortenUrl|shortenUrl(kotlin.String){}[0]
     abstract suspend fun thank(com.fenakhay.kwikibot.model/RevisionId, kotlin/String = ...) // com.fenakhay.kwikibot.client.service/ExtensionService.thank|thank(com.fenakhay.kwikibot.model.RevisionId;kotlin.String){}[0]
     abstract suspend fun wikibaseItems(kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin/String> // com.fenakhay.kwikibot.client.service/ExtensionService.wikibaseItems|wikibaseItems(kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>){}[0]
+    open suspend fun globalUser(kotlin/String? = ..., kotlin.collections/Set<com.fenakhay.kwikibot.client.service/GlobalUserProperty> = ...): com.fenakhay.kwikibot.client.model/GlobalUserInfo? // com.fenakhay.kwikibot.client.service/ExtensionService.globalUser|globalUser(kotlin.String?;kotlin.collections.Set<com.fenakhay.kwikibot.client.service.GlobalUserProperty>){}[0]
 
     final object Companion { // com.fenakhay.kwikibot.client.service/ExtensionService.Companion|null[0]
         final const val ABUSE_FILTER // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.ABUSE_FILTER|{}ABUSE_FILTER[0]
             final fun <get-ABUSE_FILTER>(): kotlin/String // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.ABUSE_FILTER.<get-ABUSE_FILTER>|<get-ABUSE_FILTER>(){}[0]
+        final const val CENTRAL_AUTH // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.CENTRAL_AUTH|{}CENTRAL_AUTH[0]
+            final fun <get-CENTRAL_AUTH>(): kotlin/String // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.CENTRAL_AUTH.<get-CENTRAL_AUTH>|<get-CENTRAL_AUTH>(){}[0]
         final const val ECHO // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.ECHO|{}ECHO[0]
             final fun <get-ECHO>(): kotlin/String // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.ECHO.<get-ECHO>|<get-ECHO>(){}[0]
         final const val FLAGGED_REVS // com.fenakhay.kwikibot.client.service/ExtensionService.Companion.FLAGGED_REVS|{}FLAGGED_REVS[0]
@@ -416,6 +465,7 @@ abstract interface com.fenakhay.kwikibot.client.service/MetaService { // com.fen
     abstract suspend fun messages(kotlin.collections/Collection<kotlin/String>, kotlin/String? = ...): kotlin.collections/Map<kotlin/String, kotlin/String> // com.fenakhay.kwikibot.client.service/MetaService.messages|messages(kotlin.collections.Collection<kotlin.String>;kotlin.String?){}[0]
     abstract suspend fun property(kotlin/String): kotlinx.serialization.json/JsonElement? // com.fenakhay.kwikibot.client.service/MetaService.property|property(kotlin.String){}[0]
     abstract suspend fun statistics(): kotlin.collections/Map<kotlin/String, kotlin/Long> // com.fenakhay.kwikibot.client.service/MetaService.statistics|statistics(){}[0]
+    open suspend fun serverTime(): kotlin.time/Instant // com.fenakhay.kwikibot.client.service/MetaService.serverTime|serverTime(){}[0]
 }
 
 abstract interface com.fenakhay.kwikibot.client.service/PageService { // com.fenakhay.kwikibot.client.service/PageService|null[0]
@@ -484,6 +534,10 @@ abstract interface com.fenakhay.kwikibot.client.service/UserService { // com.fen
     abstract suspend fun current(): com.fenakhay.kwikibot.model.user/UserInfo // com.fenakhay.kwikibot.client.service/UserService.current|current(){}[0]
     abstract suspend fun info(kotlin.collections/Collection<kotlin/String>): kotlin.collections/Map<kotlin/String, com.fenakhay.kwikibot.model.user/UserInfo> // com.fenakhay.kwikibot.client.service/UserService.info|info(kotlin.collections.Collection<kotlin.String>){}[0]
     abstract suspend fun unblock(kotlin/String, kotlin/String = ...) // com.fenakhay.kwikibot.client.service/UserService.unblock|unblock(kotlin.String;kotlin.String){}[0]
+    open suspend fun email(kotlin/String, kotlin/String, kotlin/String, kotlin/Boolean = ...): com.fenakhay.kwikibot.client.service/EmailOutcome // com.fenakhay.kwikibot.client.service/UserService.email|email(kotlin.String;kotlin.String;kotlin.String;kotlin.Boolean){}[0]
+    open suspend fun preferences(): kotlin.collections/Map<kotlin/String, kotlin/String> // com.fenakhay.kwikibot.client.service/UserService.preferences|preferences(){}[0]
+    open suspend fun resetPreferences(kotlin.collections/Set<com.fenakhay.kwikibot.client.service/PreferenceKind> = ...) // com.fenakhay.kwikibot.client.service/UserService.resetPreferences|resetPreferences(kotlin.collections.Set<com.fenakhay.kwikibot.client.service.PreferenceKind>){}[0]
+    open suspend fun setPreferences(kotlin.collections/Map<kotlin/String, kotlin/String?>): kotlin.collections/Map<kotlin/String, kotlin/String> // com.fenakhay.kwikibot.client.service/UserService.setPreferences|setPreferences(kotlin.collections.Map<kotlin.String,kotlin.String?>){}[0]
 }
 
 abstract interface com.fenakhay.kwikibot.client/Wiki { // com.fenakhay.kwikibot.client/Wiki|null[0]
@@ -556,6 +610,33 @@ sealed interface com.fenakhay.kwikibot.client.model/SparqlAuth { // com.fenakhay
         final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/SparqlAuth.None.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/SparqlAuth.None.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/SparqlAuth.None.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.fenakhay.kwikibot.client.service/EmailOutcome { // com.fenakhay.kwikibot.client.service/EmailOutcome|null[0]
+    final class Undeliverable : com.fenakhay.kwikibot.client.service/EmailOutcome { // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable|null[0]
+        constructor <init>(com.fenakhay.kwikibot.client.service/UndeliverableReason, kotlin/String, kotlin/String) // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.<init>|<init>(com.fenakhay.kwikibot.client.service.UndeliverableReason;kotlin.String;kotlin.String){}[0]
+
+        final val code // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.code|{}code[0]
+            final fun <get-code>(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.code.<get-code>|<get-code>(){}[0]
+        final val detail // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.detail|{}detail[0]
+            final fun <get-detail>(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.detail.<get-detail>|<get-detail>(){}[0]
+        final val reason // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.reason|{}reason[0]
+            final fun <get-reason>(): com.fenakhay.kwikibot.client.service/UndeliverableReason // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.client.service/UndeliverableReason // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.component3|component3(){}[0]
+        final fun copy(com.fenakhay.kwikibot.client.service/UndeliverableReason = ..., kotlin/String = ..., kotlin/String = ...): com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.copy|copy(com.fenakhay.kwikibot.client.service.UndeliverableReason;kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Undeliverable.toString|toString(){}[0]
+    }
+
+    final object Sent : com.fenakhay.kwikibot.client.service/EmailOutcome { // com.fenakhay.kwikibot.client.service/EmailOutcome.Sent|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.service/EmailOutcome.Sent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.service/EmailOutcome.Sent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.service/EmailOutcome.Sent.toString|toString(){}[0]
     }
 }
 
@@ -825,6 +906,49 @@ final class com.fenakhay.kwikibot.client.model/FlaggedInfo { // com.fenakhay.kwi
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/FlaggedInfo.toString|toString(){}[0]
 }
 
+final class com.fenakhay.kwikibot.client.model/GlobalUserInfo { // com.fenakhay.kwikibot.client.model/GlobalUserInfo|null[0]
+    constructor <init>(kotlin/String, kotlin/Long, com.fenakhay.kwikibot.model.page/WikiId?, kotlin.time/Instant?, kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin.collections/List<kotlin/String> = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/Long? = ..., kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> = ..., kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> = ...) // com.fenakhay.kwikibot.client.model/GlobalUserInfo.<init>|<init>(kotlin.String;kotlin.Long;com.fenakhay.kwikibot.model.page.WikiId?;kotlin.time.Instant?;kotlin.Boolean;kotlin.Boolean;kotlin.collections.List<kotlin.String>;kotlin.collections.List<kotlin.String>;kotlin.Long?;kotlin.collections.List<com.fenakhay.kwikibot.client.model.LocalAccount>;kotlin.collections.List<com.fenakhay.kwikibot.client.model.LocalAccount>){}[0]
+
+    final val editCount // com.fenakhay.kwikibot.client.model/GlobalUserInfo.editCount|{}editCount[0]
+        final fun <get-editCount>(): kotlin/Long? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.editCount.<get-editCount>|<get-editCount>(){}[0]
+    final val groups // com.fenakhay.kwikibot.client.model/GlobalUserInfo.groups|{}groups[0]
+        final fun <get-groups>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.groups.<get-groups>|<get-groups>(){}[0]
+    final val home // com.fenakhay.kwikibot.client.model/GlobalUserInfo.home|{}home[0]
+        final fun <get-home>(): com.fenakhay.kwikibot.model.page/WikiId? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.home.<get-home>|<get-home>(){}[0]
+    final val id // com.fenakhay.kwikibot.client.model/GlobalUserInfo.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // com.fenakhay.kwikibot.client.model/GlobalUserInfo.id.<get-id>|<get-id>(){}[0]
+    final val isHidden // com.fenakhay.kwikibot.client.model/GlobalUserInfo.isHidden|{}isHidden[0]
+        final fun <get-isHidden>(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.isHidden.<get-isHidden>|<get-isHidden>(){}[0]
+    final val isLocked // com.fenakhay.kwikibot.client.model/GlobalUserInfo.isLocked|{}isLocked[0]
+        final fun <get-isLocked>(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.isLocked.<get-isLocked>|<get-isLocked>(){}[0]
+    final val merged // com.fenakhay.kwikibot.client.model/GlobalUserInfo.merged|{}merged[0]
+        final fun <get-merged>(): kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.merged.<get-merged>|<get-merged>(){}[0]
+    final val name // com.fenakhay.kwikibot.client.model/GlobalUserInfo.name|{}name[0]
+        final fun <get-name>(): kotlin/String // com.fenakhay.kwikibot.client.model/GlobalUserInfo.name.<get-name>|<get-name>(){}[0]
+    final val registration // com.fenakhay.kwikibot.client.model/GlobalUserInfo.registration|{}registration[0]
+        final fun <get-registration>(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.registration.<get-registration>|<get-registration>(){}[0]
+    final val rights // com.fenakhay.kwikibot.client.model/GlobalUserInfo.rights|{}rights[0]
+        final fun <get-rights>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.rights.<get-rights>|<get-rights>(){}[0]
+    final val unattached // com.fenakhay.kwikibot.client.model/GlobalUserInfo.unattached|{}unattached[0]
+        final fun <get-unattached>(): kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.unattached.<get-unattached>|<get-unattached>(){}[0]
+
+    final fun component1(): kotlin/String // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component1|component1(){}[0]
+    final fun component10(): kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component10|component10(){}[0]
+    final fun component11(): kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component11|component11(){}[0]
+    final fun component2(): kotlin/Long // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component2|component2(){}[0]
+    final fun component3(): com.fenakhay.kwikibot.model.page/WikiId? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component3|component3(){}[0]
+    final fun component4(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component5|component5(){}[0]
+    final fun component6(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component6|component6(){}[0]
+    final fun component7(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component7|component7(){}[0]
+    final fun component8(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component8|component8(){}[0]
+    final fun component9(): kotlin/Long? // com.fenakhay.kwikibot.client.model/GlobalUserInfo.component9|component9(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/Long = ..., com.fenakhay.kwikibot.model.page/WikiId? = ..., kotlin.time/Instant? = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin.collections/List<kotlin/String> = ..., kotlin.collections/List<kotlin/String> = ..., kotlin/Long? = ..., kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> = ..., kotlin.collections/List<com.fenakhay.kwikibot.client.model/LocalAccount> = ...): com.fenakhay.kwikibot.client.model/GlobalUserInfo // com.fenakhay.kwikibot.client.model/GlobalUserInfo.copy|copy(kotlin.String;kotlin.Long;com.fenakhay.kwikibot.model.page.WikiId?;kotlin.time.Instant?;kotlin.Boolean;kotlin.Boolean;kotlin.collections.List<kotlin.String>;kotlin.collections.List<kotlin.String>;kotlin.Long?;kotlin.collections.List<com.fenakhay.kwikibot.client.model.LocalAccount>;kotlin.collections.List<com.fenakhay.kwikibot.client.model.LocalAccount>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/GlobalUserInfo.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/GlobalUserInfo.toString|toString(){}[0]
+}
+
 final class com.fenakhay.kwikibot.client.model/LintError { // com.fenakhay.kwikibot.client.model/LintError|null[0]
     constructor <init>(kotlin/Long, kotlin/String, com.fenakhay.kwikibot.model.page/PageRef?, kotlin.ranges/IntRange? = ..., kotlin.collections/Map<kotlin/String, kotlin/String> = ...) // com.fenakhay.kwikibot.client.model/LintError.<init>|<init>(kotlin.Long;kotlin.String;com.fenakhay.kwikibot.model.page.PageRef?;kotlin.ranges.IntRange?;kotlin.collections.Map<kotlin.String,kotlin.String>){}[0]
 
@@ -848,6 +972,43 @@ final class com.fenakhay.kwikibot.client.model/LintError { // com.fenakhay.kwiki
     final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/LintError.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/LintError.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/LintError.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/LocalAccount { // com.fenakhay.kwikibot.client.model/LocalAccount|null[0]
+    constructor <init>(com.fenakhay.kwikibot.model.page/WikiId, kotlin/Long = ..., kotlin.time/Instant? = ..., kotlin.collections/List<kotlin/String> = ..., com.fenakhay.kwikibot.model.user/BlockInfo? = ..., kotlin/String? = ..., kotlin/Long? = ..., kotlin.time/Instant? = ..., kotlin/String? = ...) // com.fenakhay.kwikibot.client.model/LocalAccount.<init>|<init>(com.fenakhay.kwikibot.model.page.WikiId;kotlin.Long;kotlin.time.Instant?;kotlin.collections.List<kotlin.String>;com.fenakhay.kwikibot.model.user.BlockInfo?;kotlin.String?;kotlin.Long?;kotlin.time.Instant?;kotlin.String?){}[0]
+
+    final val attachMethod // com.fenakhay.kwikibot.client.model/LocalAccount.attachMethod|{}attachMethod[0]
+        final fun <get-attachMethod>(): kotlin/String? // com.fenakhay.kwikibot.client.model/LocalAccount.attachMethod.<get-attachMethod>|<get-attachMethod>(){}[0]
+    final val attached // com.fenakhay.kwikibot.client.model/LocalAccount.attached|{}attached[0]
+        final fun <get-attached>(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/LocalAccount.attached.<get-attached>|<get-attached>(){}[0]
+    final val block // com.fenakhay.kwikibot.client.model/LocalAccount.block|{}block[0]
+        final fun <get-block>(): com.fenakhay.kwikibot.model.user/BlockInfo? // com.fenakhay.kwikibot.client.model/LocalAccount.block.<get-block>|<get-block>(){}[0]
+    final val editCount // com.fenakhay.kwikibot.client.model/LocalAccount.editCount|{}editCount[0]
+        final fun <get-editCount>(): kotlin/Long // com.fenakhay.kwikibot.client.model/LocalAccount.editCount.<get-editCount>|<get-editCount>(){}[0]
+    final val groups // com.fenakhay.kwikibot.client.model/LocalAccount.groups|{}groups[0]
+        final fun <get-groups>(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/LocalAccount.groups.<get-groups>|<get-groups>(){}[0]
+    final val id // com.fenakhay.kwikibot.client.model/LocalAccount.id|{}id[0]
+        final fun <get-id>(): kotlin/Long? // com.fenakhay.kwikibot.client.model/LocalAccount.id.<get-id>|<get-id>(){}[0]
+    final val registration // com.fenakhay.kwikibot.client.model/LocalAccount.registration|{}registration[0]
+        final fun <get-registration>(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/LocalAccount.registration.<get-registration>|<get-registration>(){}[0]
+    final val url // com.fenakhay.kwikibot.client.model/LocalAccount.url|{}url[0]
+        final fun <get-url>(): kotlin/String? // com.fenakhay.kwikibot.client.model/LocalAccount.url.<get-url>|<get-url>(){}[0]
+    final val wiki // com.fenakhay.kwikibot.client.model/LocalAccount.wiki|{}wiki[0]
+        final fun <get-wiki>(): com.fenakhay.kwikibot.model.page/WikiId // com.fenakhay.kwikibot.client.model/LocalAccount.wiki.<get-wiki>|<get-wiki>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.model.page/WikiId // com.fenakhay.kwikibot.client.model/LocalAccount.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // com.fenakhay.kwikibot.client.model/LocalAccount.component2|component2(){}[0]
+    final fun component3(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/LocalAccount.component3|component3(){}[0]
+    final fun component4(): kotlin.collections/List<kotlin/String> // com.fenakhay.kwikibot.client.model/LocalAccount.component4|component4(){}[0]
+    final fun component5(): com.fenakhay.kwikibot.model.user/BlockInfo? // com.fenakhay.kwikibot.client.model/LocalAccount.component5|component5(){}[0]
+    final fun component6(): kotlin/String? // com.fenakhay.kwikibot.client.model/LocalAccount.component6|component6(){}[0]
+    final fun component7(): kotlin/Long? // com.fenakhay.kwikibot.client.model/LocalAccount.component7|component7(){}[0]
+    final fun component8(): kotlin.time/Instant? // com.fenakhay.kwikibot.client.model/LocalAccount.component8|component8(){}[0]
+    final fun component9(): kotlin/String? // com.fenakhay.kwikibot.client.model/LocalAccount.component9|component9(){}[0]
+    final fun copy(com.fenakhay.kwikibot.model.page/WikiId = ..., kotlin/Long = ..., kotlin.time/Instant? = ..., kotlin.collections/List<kotlin/String> = ..., com.fenakhay.kwikibot.model.user/BlockInfo? = ..., kotlin/String? = ..., kotlin/Long? = ..., kotlin.time/Instant? = ..., kotlin/String? = ...): com.fenakhay.kwikibot.client.model/LocalAccount // com.fenakhay.kwikibot.client.model/LocalAccount.copy|copy(com.fenakhay.kwikibot.model.page.WikiId;kotlin.Long;kotlin.time.Instant?;kotlin.collections.List<kotlin.String>;com.fenakhay.kwikibot.model.user.BlockInfo?;kotlin.String?;kotlin.Long?;kotlin.time.Instant?;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/LocalAccount.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/LocalAccount.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/LocalAccount.toString|toString(){}[0]
 }
 
 final class com.fenakhay.kwikibot.client.model/MatrixWiki { // com.fenakhay.kwikibot.client.model/MatrixWiki|null[0]

@@ -132,6 +132,10 @@ tasks
             export type TagOperation = "create" | "delete" | "activate" | "deactivate";
             export type TextDirection = "left-to-right" | "right-to-left";
             export type WatchMode = "no-change" | "preferences" | "watch" | "unwatch";
+            export type PreferenceKind = "registered" | "registered-multiselect" | "registered-checkmatrix" | "userjs" | "special" | "unused";
+            export type UndeliverableReason = "no-such-user" | "no-address" | "not-accepted";
+            export type EmailStatus = "sent" | UndeliverableReason;
+            export type GlobalUserProperty = "groups" | "rights" | "edit-count" | "merged" | "unattached";
             export type ParseProperty = "text" | "links" | "templates" | "categories" | "images" | "external-links" | "limit-report" | "toc-data" | "sections";
             export type ParserName = "legacy" | "parsoid";
             export type RevisionPart = "content" | "comment" | "user";

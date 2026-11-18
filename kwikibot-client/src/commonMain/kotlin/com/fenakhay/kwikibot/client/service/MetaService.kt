@@ -3,6 +3,8 @@ package com.fenakhay.kwikibot.client.service
 import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.LanguageInfo
+import com.fenakhay.kwikibot.model.WikiError
+import kotlin.time.Instant
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -93,6 +95,22 @@ public interface MetaService {
      * decides which tags exist at all.
      */
     public suspend fun manageTag(tag: String, operation: TagOperation, reason: String = "")
+
+    /**
+     * The wiki's own clock, now, to the second.
+     *
+     * Read from `curtimestamp` on a query that asks for nothing else, which is the least work the API can be
+     * asked to do. Siteinfo's `general.time` says the same, but [property] keeps that block for the session,
+     * so it would be the time the block was first read. This asks every time and is never cached.
+     *
+     * What to compare the wiki's own timestamps against, such as a block's expiry or the age of a lock, when
+     * this machine's clock may be off.
+     *
+     * @throws WikiError.Api with the code `nocurtimestamp` from a wiki whose answer carries no time.
+     * @throws UnsupportedOperationException from an implementation that cannot read the wiki's clock.
+     */
+    public suspend fun serverTime(): Instant =
+        throw UnsupportedOperationException("this MetaService cannot read the wiki's clock")
 }
 
 /** What [MetaService.manageTag] should do to a tag definition. */

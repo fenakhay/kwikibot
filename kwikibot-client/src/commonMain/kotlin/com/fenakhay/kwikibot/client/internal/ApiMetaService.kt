@@ -6,6 +6,7 @@ import com.fenakhay.kwikibot.client.service.TagOperation
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.LanguageInfo
 import com.fenakhay.kwikibot.model.TextDirection
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiRequest
@@ -16,7 +17,9 @@ import com.fenakhay.kwikibot.protocol.decode.obj
 import com.fenakhay.kwikibot.protocol.decode.objects
 import com.fenakhay.kwikibot.protocol.decode.string
 import com.fenakhay.kwikibot.protocol.decode.strings
+import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
+import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonArray
@@ -160,6 +163,13 @@ internal class ApiMetaService(
             put("reason", reason)
         }
     }
+
+    override suspend fun serverTime(): Instant =
+        transport
+            .call(ApiRequest(mapOf("action" to "query", "curtimestamp" to "1"), cacheable = false))
+            .throwOnError()
+            .time("curtimestamp")
+            ?: throw WikiError.Api("nocurtimestamp", "the wiki answered with no time", "query")
 
     private suspend fun write(params: MutableMap<String, String>.() -> Unit) {
         tokens.withFreshToken { token ->

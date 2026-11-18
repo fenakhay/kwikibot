@@ -8,7 +8,9 @@ import com.fenakhay.kwikibot.client.model.AbuseFilter
 import com.fenakhay.kwikibot.client.model.AbuseFilterFlags
 import com.fenakhay.kwikibot.client.model.Coordinate
 import com.fenakhay.kwikibot.client.model.FlaggedInfo
+import com.fenakhay.kwikibot.client.model.GlobalUserInfo
 import com.fenakhay.kwikibot.client.model.LintError
+import com.fenakhay.kwikibot.client.model.LocalAccount
 import com.fenakhay.kwikibot.client.model.Notification
 import com.fenakhay.kwikibot.client.model.TriageBacklog
 import com.fenakhay.kwikibot.client.model.TriagePage
@@ -18,12 +20,15 @@ import com.fenakhay.kwikibot.client.requireExtension
 import com.fenakhay.kwikibot.client.service.AbuseFilterOrder
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.ExtensionService
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty
 import com.fenakhay.kwikibot.client.service.NewPagesOrder
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.page.PageRef
+import com.fenakhay.kwikibot.model.page.WikiId
 import com.fenakhay.kwikibot.model.title.Namespace
 import com.fenakhay.kwikibot.model.title.NamespaceMap
+import com.fenakhay.kwikibot.model.user.BlockInfo
 import com.fenakhay.kwikibot.net.RequestKind
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiRequest
@@ -36,6 +41,7 @@ import com.fenakhay.kwikibot.protocol.decode.PageDecoder
 import com.fenakhay.kwikibot.protocol.decode.array
 import com.fenakhay.kwikibot.protocol.decode.boolean
 import com.fenakhay.kwikibot.protocol.decode.double
+import com.fenakhay.kwikibot.protocol.decode.flag
 import com.fenakhay.kwikibot.protocol.decode.int
 import com.fenakhay.kwikibot.protocol.decode.long
 import com.fenakhay.kwikibot.protocol.decode.obj
@@ -409,6 +415,55 @@ internal class ApiExtensionService(
     }
 
     /** What [property] goes out as on this wiki: its own value, or the spelling this wiki takes. */
+    override suspend fun globalUser(name: String?, properties: Set<GlobalUserProperty>): GlobalUserInfo? {
+        requireExtension(ExtensionService.CENTRAL_AUTH)
+
+        val response =
+            transport
+                .call(
+                    ApiRequest.of(
+                        "query",
+                        "meta" to "globaluserinfo",
+                        "guiuser" to name,
+                        "guiprop" to properties.takeIf { it.isNotEmpty() }?.joinToString("|") { it.apiValue },
+                    )
+                )
+                .throwOnError()
+
+        val fields = response.obj("query")?.obj("globaluserinfo") ?: return null
+        if (fields.containsKey("missing")) return null
+
+        return GlobalUserInfo(
+            name = fields.string("name").orEmpty(),
+            id = fields.long("id") ?: 0L,
+            home = fields.string("home")?.takeIf { it.isNotBlank() }?.let(::WikiId),
+            registration = fields.time("registration"),
+            isLocked = fields.flag("locked"),
+            isHidden = fields.flag("hidden"),
+            groups = fields.array("groups").strings(),
+            rights = fields.array("rights").strings(),
+            editCount = fields.long("editcount"),
+            merged = fields.array("merged").objects().mapNotNull { it.localAccount() },
+            unattached = fields.array("unattached").objects().mapNotNull { it.localAccount() },
+        )
+    }
+
+    private fun JsonObject.localAccount(): LocalAccount? {
+        val wiki = string("wiki")?.takeIf { it.isNotBlank() } ?: return null
+        return LocalAccount(
+            wiki = WikiId(wiki),
+            editCount = long("editcount") ?: 0L,
+            registration = time("registration"),
+            groups = array("groups").strings(),
+            block =
+                obj("blocked")?.let { BlockInfo(reason = it.string("reason"), expiry = it.time("expiry")) },
+            url = string("url"),
+            id = long("id"),
+            attached = time("timestamp"),
+            attachMethod = string("method"),
+        )
+    }
+
     private suspend fun wire(property: AbuseFilterProperty): List<String> =
         property.choice?.let { capabilities.resolve(it) } ?: listOf(property.apiValue)
 

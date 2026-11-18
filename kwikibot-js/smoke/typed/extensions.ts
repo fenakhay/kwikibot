@@ -10,7 +10,11 @@ import {
   Coordinate,
   ExtensionService,
   FlaggedInfo,
+  GlobalUserInfo,
+  type GlobalUserOptions,
+  type GlobalUserProperty,
   LintError,
+  LocalAccount,
   type NewPagesOptions,
   type NewPagesOrder,
   type NewPagesReviewed,
@@ -46,6 +50,7 @@ const INSTALLED = [
   "Abuse Filter",
   "PageTriage",
   "ProofreadPage",
+  "CentralAuth",
 ];
 
 const WHEN = new Date("2026-08-31T21:43:26Z").getTime();
@@ -191,6 +196,7 @@ function namesWhatIsInstalled(extensions: ExtensionService): void {
     extensions.flaggedRevs,
     extensions.abuseFilter,
     extensions.pageTriage,
+    extensions.centralAuth,
   ];
   for (const name of names) {
     assert.equal(typeof name, "string");
@@ -527,7 +533,89 @@ function editsAScan(): void {
   assertNone(proofreadQualityOf(9));
 }
 
+async function readsGlobalAccounts(extensions: ExtensionService, site: FakeSite): Promise<void> {
+  site.answers.globaluserinfo = (params): JsonValue =>
+    params.guiuser === "Nobody"
+      ? { query: { globaluserinfo: { missing: true } } }
+      : {
+          query: {
+            globaluserinfo: {
+              home: "enwiki",
+              id: 1843,
+              registration: "2008-04-12T16:22:49Z",
+              name: params.guiuser ?? "Bot",
+              hidden: true,
+              groups: ["founder"],
+              rights: ["read"],
+              editcount: 16306,
+              merged: [
+                {
+                  wiki: "acewiki",
+                  url: "https://ace.wikipedia.org",
+                  id: 2511,
+                  timestamp: "2010-07-24T23:10:07Z",
+                  method: "login",
+                  editcount: 2,
+                  registration: "2010-07-24T23:10:06Z",
+                  groups: ["sysop"],
+                  blocked: { expiry: "infinity", reason: "spam" },
+                },
+              ],
+              unattached: [{ wiki: "testwiki", editcount: 3 }],
+            },
+          },
+        };
+
+  const properties: GlobalUserProperty[] = ["groups", "rights", "edit-count", "merged", "unattached"];
+  const options: GlobalUserOptions = { properties };
+  const jimbo = await extensions.globalUser("Jimbo Wales", options);
+  assert.ok(jimbo instanceof GlobalUserInfo);
+  assert.equal(jimbo.name, "Jimbo Wales");
+  assert.equal(jimbo.id, 1843);
+  assert.equal(jimbo.home, "enwiki");
+  assert.equal(assertDate(jimbo.registration).toISOString(), "2008-04-12T16:22:49.000Z");
+  assert.equal(jimbo.isLocked, false);
+  assert.equal(jimbo.isHidden, true);
+  assert.deepEqual(assertArray(jimbo.groups), ["founder"]);
+  assert.deepEqual(assertArray(jimbo.rights), ["read"]);
+  assert.equal(jimbo.editCount, 16306);
+  assert.equal(last(site, "meta", "globaluserinfo").guiprop, "groups|rights|editcount|merged|unattached");
+
+  const [ace] = assertArray(jimbo.merged);
+  assert.ok(ace instanceof LocalAccount);
+  assert.equal(ace.wiki, "acewiki");
+  assert.equal(ace.editCount, 2);
+  assert.equal(ace.url, "https://ace.wikipedia.org");
+  assert.equal(ace.id, 2511);
+  assert.equal(ace.attachMethod, "login");
+  assert.equal(assertDate(ace.attached).toISOString(), "2010-07-24T23:10:07.000Z");
+  assert.equal(assertDate(ace.registration).toISOString(), "2010-07-24T23:10:06.000Z");
+  assert.deepEqual(assertArray(ace.groups), ["sysop"]);
+  assert.equal(ace.block?.reason, "spam");
+  assert.equal(ace.block?.isInfinite, true);
+
+  const [test] = assertArray(jimbo.unattached);
+  assert.equal(test.wiki, "testwiki");
+  assert.equal(test.editCount, 3);
+  assertNone(test.url);
+  assertNone(test.id);
+  assertNone(test.attached);
+  assertNone(test.attachMethod);
+  assertNone(test.registration);
+  assertNone(test.block);
+
+  const own = await extensions.globalUser();
+  assert.equal(own?.name, "Bot");
+  assert.equal("guiuser" in last(site, "meta", "globaluserinfo"), false);
+  assert.equal(last(site, "meta", "globaluserinfo").guiprop, "groups|editcount");
+  await extensions.globalUser(null, null);
+  assertNone(await extensions.globalUser("Nobody"));
+  await assert.rejects(extensions.globalUser("Nobody", { properties: ["editcount" as string as GlobalUserProperty] }), /editcount/);
+}
+
 function misuses(extensions: ExtensionService): void {
+  // @ts-expect-error the property is spelled edit-count
+  void extensions.globalUser("Jimbo Wales", { properties: ["editcount"] });
   // @ts-expect-error the order is newest-first
   void extensions.newPages({ order: "newest-frist" });
   // @ts-expect-error reviewed is unreviewed, reviewed or all
@@ -565,6 +653,7 @@ await withWiki(
     await listsFilters(extensions, site);
     await patrolsNewPages(extensions, site);
     await measuresTheBacklog(extensions, site);
+    await readsGlobalAccounts(extensions, site);
     await followsABook(wiki.proofread, site);
   },
   new BotPassword("Bot", "task", "secret"),
@@ -589,6 +678,7 @@ await withWiki(new FakeSite(), async (wiki) => {
   await assert.rejects(collect(extensions.abuseFilters()), /Abuse Filter/);
   await assert.rejects(collect(extensions.newPages()), /PageTriage/);
   await assert.rejects(extensions.newPageStats(), /PageTriage/);
+  await assert.rejects(extensions.globalUser(), /CentralAuth/);
   await assert.rejects(wiki.proofread.quality(["Page:Book/1"]), /ProofreadPage/);
   await assert.rejects(wiki.proofread.indexOf("Page:Book/1"), /ProofreadPage/);
   await assert.rejects(wiki.proofread.pagesOf("Index:Book"), /ProofreadPage/);

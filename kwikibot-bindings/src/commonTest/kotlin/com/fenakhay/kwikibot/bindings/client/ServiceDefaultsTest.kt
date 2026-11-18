@@ -10,8 +10,10 @@ import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.CategoryMemberType
 import com.fenakhay.kwikibot.client.service.CategorySort
 import com.fenakhay.kwikibot.client.service.FileService
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty
 import com.fenakhay.kwikibot.client.service.HistoryOrder
 import com.fenakhay.kwikibot.client.service.NewPagesOrder
+import com.fenakhay.kwikibot.client.service.PreferenceKind
 import com.fenakhay.kwikibot.client.service.RedirectFilter
 import com.fenakhay.kwikibot.client.service.RevisionPart
 import com.fenakhay.kwikibot.client.service.SearchScope
@@ -648,6 +650,21 @@ class ServiceDefaultsTest {
             ) {
                 changeRightsWithDefaults("A", listOf("bot"), listOf("sysop"), "r", "1 week")
             },
+            Case("resetPreferences, nothing given", listOf("resetPreferences", emptySet<PreferenceKind>())) {
+                resetPreferencesWithDefaults()
+            },
+            Case(
+                "resetPreferences, everything given",
+                listOf("resetPreferences", setOf(PreferenceKind.USERJS)),
+            ) {
+                resetPreferencesWithDefaults(listOf(PreferenceKind.USERJS))
+            },
+            Case("email, nothing given", listOf("email", "A", "s", "t", false)) {
+                emailWithDefaults("A", "s", "t")
+            },
+            Case("email, everything given", listOf("email", "A", "s", "t", true)) {
+                emailWithDefaults("A", "s", "t", true)
+            },
         )
     }
 
@@ -818,6 +835,15 @@ class ServiceDefaultsTest {
             },
             Case("newPageStats, everything given", listOf("newPageStats", Namespace(2), setOf("A"), true)) {
                 val _ = runCatching { newPageStatsWithDefaults(2, listOf("A"), true) }
+            },
+            Case("globalUser, nothing given", listOf("globalUser", null, GlobalUserProperty.DEFAULT)) {
+                globalUserWithDefaults()
+            },
+            Case(
+                "globalUser, everything given",
+                listOf("globalUser", "A", setOf(GlobalUserProperty.GROUPS)),
+            ) {
+                globalUserWithDefaults("A", listOf(GlobalUserProperty.GROUPS))
             },
         )
     }

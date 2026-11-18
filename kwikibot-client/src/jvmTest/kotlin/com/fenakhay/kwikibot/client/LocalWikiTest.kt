@@ -2,8 +2,11 @@ package com.fenakhay.kwikibot.client
 
 import com.fenakhay.kwikibot.client.internal.wire.MediaWikiBehaviour
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
+import com.fenakhay.kwikibot.client.service.EmailOutcome
 import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.ParseProperty
+import com.fenakhay.kwikibot.client.service.PreferenceKind
+import com.fenakhay.kwikibot.client.service.UndeliverableReason
 import com.fenakhay.kwikibot.client.service.WatchMode
 import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.model.edit.EditOutcome
@@ -22,6 +25,9 @@ import com.fenakhay.kwikibot.protocol.ApiWarningListener
 import com.fenakhay.kwikibot.testkit.FailOnDeprecation
 import com.fenakhay.kwikibot.wikitext.Wikitext
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.longs.shouldBeLessThan
+import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -37,6 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import javax.imageio.ImageIO
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -86,6 +93,10 @@ class LocalWikiTest {
 
     private fun onLocalWiki(
         listener: TransportListener = TransportListener.NONE,
+        warnings: ApiWarningListener = strict,
+        botName: String = environment("KWIKI_MEDIAWIKI_BOT") ?: "kwikibot",
+        botPassword: String =
+            environment("KWIKI_MEDIAWIKI_BOT_PASSWORD") ?: "kwikibotkwikibotkwikibotkwikibot",
         block: suspend (Wiki) -> Unit,
     ): Unit = runBlocking {
         val url = URI(System.getenv("KWIKI_MEDIAWIKI"))
@@ -99,15 +110,15 @@ class LocalWikiTest {
             WikiConfig(
                 userAgent = UserAgent("kwikibot-localtest", "0.1.0", "https://github.com/fenakhay/kwikibot"),
                 throttle = Throttle(Duration.ZERO, Duration.ZERO),
-                onWarning = strict,
+                onWarning = warnings,
                 listener = listener,
             )
         // The defaults are the ones .github/mediawiki/start.sh sets up.
         val credentials =
             Credentials.BotPassword(
                 account = environment("KWIKI_MEDIAWIKI_ACCOUNT") ?: "Admin",
-                botName = environment("KWIKI_MEDIAWIKI_BOT") ?: "kwikibot",
-                password = environment("KWIKI_MEDIAWIKI_BOT_PASSWORD") ?: "kwikibotkwikibotkwikibotkwikibot",
+                botName = botName,
+                password = botPassword,
             )
 
         WikiClient(config, credentials).use { client -> block(client.wiki(endpoint)) }
@@ -377,6 +388,78 @@ class LocalWikiTest {
                 }
             refused.code shouldBe "copyuploadbaddomain"
         }
+
+    @Test
+    fun `the wiki's clock is the time now and is read anew each time`(): Unit = onLocalWiki { wiki ->
+        val first = wiki.meta.serverTime()
+        val second = wiki.meta.serverTime()
+
+        (first - Clock.System.now()).absoluteValue.inWholeSeconds shouldBeLessThan 60
+        (second >= first) shouldBe true
+        sent.count { it.params["curtimestamp"] == "1" } shouldBe 2
+    }
+
+    @Test
+    fun `preferences set are read back and a reset puts them back`(): Unit = onLocalWiki { wiki ->
+        val script = "userjs-kwikibot-${UUID.randomUUID()}"
+
+        val refused = wiki.users.setPreferences(mapOf(script to "a|b=c", "rclimit" to "100"))
+
+        refused shouldBe emptyMap()
+        val read = wiki.users.preferences()
+        read[script] shouldBe "a|b=c"
+        read["rclimit"] shouldBe "100"
+        sent.last { it.action == "options" }.params["change"].orEmpty().startsWith("\u001f") shouldBe true
+
+        wiki.users.setPreferences(mapOf("rclimit" to null))
+        wiki.users.resetPreferences(setOf(PreferenceKind.USERJS))
+
+        val reset = wiki.users.preferences()
+        reset shouldNotContainKey script
+        reset["rclimit"] shouldBe "50"
+    }
+
+    @Test
+    fun `the preferences the wiki will not take are named with its reason`(): Unit =
+        onLocalWiki(warnings = ApiWarningListener.NONE) { wiki ->
+            val refused =
+                wiki.users.setPreferences(
+                    mapOf("kwikibot-no-such-preference" to "1", "gender" to "nonsense", "rclimit" to "50")
+                )
+
+            refused.keys shouldContainExactly setOf("kwikibot-no-such-preference", "gender")
+            wiki.users.preferences()["gender"] shouldBe "unknown"
+        }
+
+    /**
+     * `.github/mediawiki/start.sh` gives the account and `Mailbox` confirmed addresses, and the container a
+     * sendmail that swallows what it is given, so the wiki sends without anything leaving it.
+     */
+    @Test
+    fun `an email is sent to an account with an address and not to one that does not exist`(): Unit =
+        onLocalWiki { wiki ->
+            wiki.users.email("Mailbox", "kwikibot", "A test message.") shouldBe EmailOutcome.Sent
+            wiki.users.email("Mailbox", "kwikibot", "Copied.", ccMe = true) shouldBe EmailOutcome.Sent
+
+            val nobody = wiki.users.email("Kwikibot nobody ${UUID.randomUUID()}", "kwikibot", "Lost.")
+
+            nobody.shouldBeInstanceOf<EmailOutcome.Undeliverable>().reason shouldBe
+                UndeliverableReason.NO_SUCH_USER
+            sent.filter { it.action == "emailuser" }.all { it.kind == RequestKind.WRITE } shouldBe true
+        }
+
+    @Test
+    fun `a bot password without the sendemail grant is told it lacks the sendemail right`(): Unit =
+        onLocalWiki(botName = "nomail", botPassword = "nomailnomailnomailnomailnomailno") { wiki ->
+            shouldThrow<WikiError.Auth.MissingRight> { wiki.users.email("Mailbox", "kwikibot", "Refused.") }
+                .right shouldBe "sendemail"
+        }
+
+    @Test
+    fun `a wiki without CentralAuth says so when asked for a global account`(): Unit = onLocalWiki { wiki ->
+        shouldThrow<WikiError.Configuration.MissingExtension> { wiki.extensions.globalUser() }
+            .extension shouldBe ExtensionService.CENTRAL_AUTH
+    }
 
     @Test
     fun `a chunk whose answer was lost is recognised and the upload carries on`(): Unit =

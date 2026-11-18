@@ -3,7 +3,13 @@ import com.fenakhay.kwikibot.bindings.client.blockWithDefaults
 import com.fenakhay.kwikibot.bindings.client.blocksWithDefaults
 import com.fenakhay.kwikibot.bindings.client.changeRightsWithDefaults
 import com.fenakhay.kwikibot.bindings.client.contributionsWithDefaults
+import com.fenakhay.kwikibot.bindings.client.emailWithDefaults
+import com.fenakhay.kwikibot.bindings.client.resetPreferencesWithDefaults
+import com.fenakhay.kwikibot.bindings.common.argumentName
+import com.fenakhay.kwikibot.bindings.common.enumArgument
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
+import com.fenakhay.kwikibot.client.service.EmailOutcome
+import com.fenakhay.kwikibot.client.service.PreferenceKind as ClientPreferenceKind
 import com.fenakhay.kwikibot.model.title.NamespaceMap
 import com.fenakhay.kwikibot.model.user.BlockInfo as ClientBlockInfo
 import com.fenakhay.kwikibot.model.user.BlockRecord as ClientBlockRecord
@@ -120,6 +126,13 @@ public external interface ChangeRightsOptions {
     public val expiry: String?
 }
 
+/** The options of `email`. */
+@JsExport
+public external interface EmailOptions {
+    /** Whether to send this account a copy as well, `false` unless given. */
+    public val ccMe: Boolean?
+}
+
 /** The people editing a wiki, reached as `wiki.users`. */
 @JsExport
 public class UserService
@@ -215,6 +228,74 @@ internal constructor(private val wiki: ClientWiki, private val scope: CoroutineS
                 options?.expiry,
             )
         }
+
+    /**
+     * This account's preferences, by name, every value as text: a box as `"1"` or `"0"`. Read anew each time,
+     * so a read after `setPreferences` sees what it saved.
+     */
+    public fun preferences(): Promise<Record<String, String>> = scope.promise {
+        wiki.users.preferences().toRecord { it }
+    }
+
+    /**
+     * Changes this account's preferences, each by name, `null` putting one back to the wiki's default. Needs
+     * the `editmyoptions` right. A value may hold `|`. Resolves to the ones the wiki refused, by name, with
+     * what it said about each, and saves the rest; empty when it took them all. Rejects a name that is empty
+     * or holds `=`.
+     */
+    public fun setPreferences(changes: Record<String, String?>): Promise<Record<String, String>> =
+        scope.promise {
+            wiki.users.setPreferences(changes.toMap()).toRecord { it }
+        }
+
+    /**
+     * Puts this account's preferences back to the wiki's defaults: those of [kinds], from `"registered"`,
+     * `"registered-multiselect"`, `"registered-checkmatrix"`, `"userjs"`, `"special"` and `"unused"`, or
+     * every kind unless given.
+     */
+    public fun resetPreferences(kinds: Array<PreferenceKind>? = null): Promise<Unit> = scope.promiseVoid {
+        wiki.resetPreferencesWithDefaults(
+            kinds?.map { enumArgument<ClientPreferenceKind>("kinds", it.unsafeCast<String>()) }
+        )
+    }
+
+    /**
+     * Emails [target] through the wiki, from this account, with [subject] and the plain text [text].
+     *
+     * This sends a real email to a real person, and it cannot be taken back. Wikis rate-limit it, MediaWiki's
+     * default being twenty a day, and it is paced as a write. Resolves to `"sent"`, or to why the account
+     * cannot be emailed: `"no-such-user"`, `"no-address"` or `"not-accepted"`. Rejects when this account may
+     * not send email, has no confirmed address, or has reached the limit.
+     */
+    public fun email(
+        target: String,
+        subject: String,
+        text: String,
+        options: EmailOptions? = null,
+    ): Promise<EmailResult> = scope.promise {
+        EmailResult(wiki.emailWithDefaults(target, subject, text, options?.ccMe))
+    }
+}
+
+/** How the wiki answered `email`. */
+@JsExport
+public class EmailResult internal constructor(private val outcome: EmailOutcome) {
+
+    /** `"sent"`, or why nothing was: `"no-such-user"`, `"no-address"` or `"not-accepted"`. */
+    public val kind: EmailStatus
+        get() =
+            when (outcome) {
+                is EmailOutcome.Sent -> "sent"
+                is EmailOutcome.Undeliverable -> outcome.reason.argumentName()
+            }.unsafeCast<EmailStatus>()
+
+    /** When nothing was sent, the wiki's code for why. */
+    public val code: String?
+        get() = (outcome as? EmailOutcome.Undeliverable)?.code
+
+    /** When nothing was sent, its text for a person. */
+    public val detail: String?
+        get() = (outcome as? EmailOutcome.Undeliverable)?.detail
 }
 
 /** What a wiki knows about one account, at the moment it was asked. */

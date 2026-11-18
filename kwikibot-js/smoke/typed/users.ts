@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { BotPassword, describeError, Revision } from "kwikibot";
+import { BotPassword, describeError, type JsonValue, Revision } from "kwikibot";
 import {
   type AllUsersOptions,
   BlockInfo,
@@ -9,6 +9,11 @@ import {
   type ChangeRightsOptions,
   Contribution,
   type ContributionsOptions,
+  type EmailOptions,
+  EmailResult,
+  type EmailStatus,
+  type PreferenceKind,
+  type UndeliverableReason,
   UserInfo,
   UserService,
 } from "kwikibot/client";
@@ -26,6 +31,10 @@ function lastSent(site: FakeSite, key: string, value: string): Record<string, st
 }
 
 function typosDoNotCompile(users: UserService): void {
+  // @ts-expect-error the kind is spelled userjs
+  users.resetPreferences(["user-js"]);
+  // @ts-expect-error a preference is text or null
+  users.setPreferences({ rclimit: 50 });
   // @ts-expect-error a filter that does not exist
   users.contributions("Alice", { show: ["nwe"] });
   // @ts-expect-error a filter cannot be negated twice
@@ -286,6 +295,70 @@ async function manageAccounts(site: FakeSite, users: UserService): Promise<void>
   await assert.rejects(users.changeRights("Alice", { add: ["bot"], remove: ["bot"] }), Error);
 }
 
+async function keepsPreferences(site: FakeSite, users: UserService): Promise<void> {
+  site.answers.userinfo = (params): JsonValue =>
+    params.uiprop === "options"
+      ? { query: { userinfo: { id: 7, name: "TestBot", options: { skin: "vector", rclimit: 50, minordefault: true } } } }
+      : { query: { userinfo: { id: 7, name: "TestBot", groups: ["*"], rights: ["edit"] } } };
+  const read = assertRecord(await users.preferences(), "string");
+  assert.deepEqual(read, { skin: "vector", rclimit: "50", minordefault: "1" });
+
+  site.answers.options = {
+    warnings: [{ code: "validationfailed", module: "options", text: 'Validation error for "gender": not a valid option.' }],
+    options: "success",
+  };
+  const changes: Record<string, string | null> = { gender: "x", nickname: "[[User:A|A]]", rclimit: null };
+  const refused = assertRecord(await users.setPreferences(changes), "string");
+  assert.deepEqual(refused, { gender: 'Validation error for "gender": not a valid option.' });
+  assert.equal(lastSent(site, "action", "options").change, "\u001fgender=x\u001fnickname=[[User:A|A]]\u001frclimit");
+  await assert.rejects(users.setPreferences({ "a=b": "c" }), Error);
+
+  assert.equal(await users.resetPreferences(), undefined);
+  assertNone(lastSent(site, "action", "options").resetkinds);
+  const kinds: PreferenceKind[] = ["registered", "registered-multiselect", "registered-checkmatrix", "userjs", "special", "unused"];
+  await users.resetPreferences(kinds);
+  assert.equal(lastSent(site, "action", "options").resetkinds, "registered|registered-multiselect|registered-checkmatrix|userjs|special|unused");
+  await users.resetPreferences(null);
+  delete site.answers.userinfo;
+}
+
+async function sendsEmail(site: FakeSite, users: UserService): Promise<void> {
+  site.answers.emailuser = { emailuser: { result: "Success" } };
+  const copied: EmailOptions = { ccMe: true };
+  const sent = await users.email("Mailbox", "Hello", "Body", copied);
+  assert.ok(sent instanceof EmailResult);
+  const kind: EmailStatus = sent.kind;
+  assert.equal(kind, "sent");
+  assertNone(sent.code);
+  assertNone(sent.detail);
+  const asked = lastSent(site, "action", "emailuser");
+  assert.equal(asked.target, "Mailbox");
+  assert.equal(asked.subject, "Hello");
+  assert.equal(asked.text, "Body");
+  assert.equal(asked.ccme, "1");
+  await users.email("Mailbox", "Hello", "Body", null);
+  assertNone(lastSent(site, "action", "emailuser").ccme);
+
+  const reasons: Record<string, UndeliverableReason> = {
+    emailnotarget: "no-such-user",
+    noemailtext: "no-address",
+    nowikiemailtext: "not-accepted",
+  };
+  for (const [code, reason] of Object.entries(reasons)) {
+    site.answers.emailuser = { errors: [{ code, text: "Not this one.", module: "emailuser" }] };
+    const refused = await users.email("Someone", "Hello", "Body");
+    assert.equal(refused.kind, reason);
+    assert.equal(refused.code, code);
+    assert.equal(refused.detail, "Not this one.");
+  }
+
+  site.answers.emailuser = { errors: [{ code: "usermaildisabled", text: "User email disabled", module: "emailuser" }] };
+  await assert.rejects(users.email("Mailbox", "Hello", "Body"), (error) => {
+    assert.equal(describeError(error)?.code, "usermaildisabled");
+    return true;
+  });
+}
+
 const anonymousSite = new FakeSite();
 await withWiki(anonymousSite, async (wiki) => {
   assert.ok(wiki.users instanceof UserService);
@@ -317,6 +390,8 @@ await withWiki(site, async (wiki) => {
   await readEdits(site, wiki.users);
   await blockAndUnblock(site, wiki.users);
   await manageAccounts(site, wiki.users);
+  await keepsPreferences(site, wiki.users);
+  await sendsEmail(site, wiki.users);
 });
 
 console.log("users: account tables, the session's account, contributions, blocks, listings and rights read as typed");

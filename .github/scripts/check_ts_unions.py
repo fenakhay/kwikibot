@@ -48,6 +48,9 @@ ENUMS: dict[str, tuple[str, str]] = {
     "PageviewAccess": ("kwikibot-client", "PageviewAccess"),
     "PageviewAgent": ("kwikibot-client", "PageviewAgent"),
     "PageviewGranularity": ("kwikibot-client", "PageviewGranularity"),
+    "PreferenceKind": ("kwikibot-client", "PreferenceKind"),
+    "UndeliverableReason": ("kwikibot-client", "UndeliverableReason"),
+    "GlobalUserProperty": ("kwikibot-client", "GlobalUserProperty"),
 }
 
 ROOTS = (
@@ -74,6 +77,7 @@ WHENS: dict[str, tuple[str, str, str]] = {
 ACCEPTED: dict[str, tuple[frozenset[str], bool, str]] = {
     "EditStatus": (frozenset({"saved", "unchanged"}), False, "the two answers of `answerOf`, and `EditRefusal`"),
     "ProblemKind": (frozenset({"refused", "failed"}), False, "the two cases of `problemOf` in the binding layer's Outcomes.kt"),
+    "EmailStatus": (frozenset({"sent"}), False, "what `EmailResult.kind` answers when it sent, and `UndeliverableReason`"),
     "NewEntityKind": (
         frozenset({"item", "property", "lexeme", "form", "sense", "mediainfo"}),
         False,

@@ -1,6 +1,8 @@
 package com.fenakhay.kwikibot.bindings.client
 
 import com.fenakhay.kwikibot.client.Wiki
+import com.fenakhay.kwikibot.client.service.EmailOutcome
+import com.fenakhay.kwikibot.client.service.PreferenceKind
 import com.fenakhay.kwikibot.model.edit.Expiry
 import com.fenakhay.kwikibot.model.user.BlockRecord
 import com.fenakhay.kwikibot.model.user.Contribution
@@ -84,3 +86,16 @@ public suspend fun Wiki.changeRightsWithDefaults(
 ) {
     users.changeRights(user, add?.toSet().orEmpty(), remove?.toSet().orEmpty(), reason.orEmpty(), expiry)
 }
+
+/** Puts the account's preferences of [kinds], or of every kind unless given, back to the wiki's defaults. */
+public suspend fun Wiki.resetPreferencesWithDefaults(kinds: Collection<PreferenceKind>? = null) {
+    users.resetPreferences(kinds?.toSet().orEmpty())
+}
+
+/** Emails [target] through the wiki, without a copy to this account unless told. */
+public suspend fun Wiki.emailWithDefaults(
+    target: String,
+    subject: String,
+    text: String,
+    ccMe: Boolean? = null,
+): EmailOutcome = users.email(target, subject, text, ccMe ?: false)

@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.bindings.client
 import com.fenakhay.kwikibot.bindings.Calls
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.model.AbuseFilter
+import com.fenakhay.kwikibot.client.model.GlobalUserInfo
 import com.fenakhay.kwikibot.client.model.Notification
 import com.fenakhay.kwikibot.client.model.TriagePage
 import com.fenakhay.kwikibot.client.model.TriageStats
@@ -11,15 +12,18 @@ import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.CategoryMemberType
 import com.fenakhay.kwikibot.client.service.CategorySort
 import com.fenakhay.kwikibot.client.service.EditBuilder
+import com.fenakhay.kwikibot.client.service.EmailOutcome
 import com.fenakhay.kwikibot.client.service.ExpandedText
 import com.fenakhay.kwikibot.client.service.ExtensionService
 import com.fenakhay.kwikibot.client.service.FileService
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty
 import com.fenakhay.kwikibot.client.service.HistoryOrder
 import com.fenakhay.kwikibot.client.service.ListService
 import com.fenakhay.kwikibot.client.service.LogService
 import com.fenakhay.kwikibot.client.service.MetaService
 import com.fenakhay.kwikibot.client.service.NewPagesOrder
 import com.fenakhay.kwikibot.client.service.PageService
+import com.fenakhay.kwikibot.client.service.PreferenceKind
 import com.fenakhay.kwikibot.client.service.RedirectFilter
 import com.fenakhay.kwikibot.client.service.RevisionPart
 import com.fenakhay.kwikibot.client.service.RevisionService
@@ -435,6 +439,20 @@ class RecordingWiki(
         ) {
             calls.record("changeRights", user, add, remove, reason, expiry)
         }
+
+        override suspend fun resetPreferences(kinds: Set<PreferenceKind>) {
+            calls.record("resetPreferences", kinds)
+        }
+
+        override suspend fun email(
+            target: String,
+            subject: String,
+            text: String,
+            ccMe: Boolean,
+        ): EmailOutcome {
+            calls.record("email", target, subject, text, ccMe)
+            return EmailOutcome.Sent
+        }
     }
 
     private inner class Files(base: FileService) : FileService by base {
@@ -544,6 +562,11 @@ class RecordingWiki(
         ): TriageStats {
             calls.record("newPageStats", namespace, creators, hideOwnPages)
             throw Answered
+        }
+
+        override suspend fun globalUser(name: String?, properties: Set<GlobalUserProperty>): GlobalUserInfo? {
+            calls.record("globalUser", name, properties)
+            return null
         }
     }
 

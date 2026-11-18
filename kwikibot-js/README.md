@@ -210,6 +210,20 @@ const result = await wiki.files.uploadFromUrl("https://photos.example.org/volcan
 if (result.kind === "warned" && !result.isDuplicateOnly) await wiki.files.publishStashed(result.fileKey, "Volcano.jpg");
 ```
 
+An account's preferences read and change as plain objects, `null` putting one back to its default, and
+`setPreferences` resolves to the ones the wiki refused. `email` sends a real email to a person, so wikis
+rate-limit it; one that cannot be delivered resolves to why rather than rejecting. `serverTime` is the wiki's
+clock, and `globalUser` reads a CentralAuth account, `null` when there is none:
+
+```js
+const refused = await wiki.users.setPreferences({ "userjs-mybot-last-run": "2026-11-04" });
+const sent = await wiki.users.email("Example", "Your bot request", "It has been approved.");
+if (sent.kind !== "sent") console.log(sent.kind, sent.detail);
+const drift = (await wiki.meta.serverTime()).getTime() - Date.now();
+const global = await wiki.extensions.globalUser("Example", { properties: ["groups", "merged"] });
+console.log(global?.home, global?.merged.length);
+```
+
 Page views come from Wikimedia's pageviews API, for Wikimedia's wikis from July 2015. A page or a period with
 no data is an empty array, and `ofPages` counts a wiki's own pages, a few at a time, one request each:
 

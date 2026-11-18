@@ -6,11 +6,13 @@ import com.fenakhay.kwikibot.bindings.common.Setting
 import com.fenakhay.kwikibot.bindings.common.resolve
 import com.fenakhay.kwikibot.client.Wiki
 import com.fenakhay.kwikibot.client.model.AbuseFilter
+import com.fenakhay.kwikibot.client.model.GlobalUserInfo
 import com.fenakhay.kwikibot.client.model.Notification
 import com.fenakhay.kwikibot.client.model.TriagePage
 import com.fenakhay.kwikibot.client.model.TriageStats
 import com.fenakhay.kwikibot.client.service.AbuseFilterOrder
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty
 import com.fenakhay.kwikibot.client.service.NewPagesOrder
 import com.fenakhay.kwikibot.model.RevisionId
 import com.fenakhay.kwikibot.model.page.PageRef
@@ -119,3 +121,9 @@ public suspend fun Wiki.newPageStatsWithDefaults(
     hideOwnPages: Boolean? = null,
 ): TriageStats =
     extensions.newPageStats(namespaceOf(namespace), creators?.toSet().orEmpty(), hideOwnPages ?: false)
+
+/** The global account [name], or this session's own unless given, with the usual properties unless told. */
+public suspend fun Wiki.globalUserWithDefaults(
+    name: String? = null,
+    properties: Collection<GlobalUserProperty>? = null,
+): GlobalUserInfo? = extensions.globalUser(name, properties?.toSet() ?: GlobalUserProperty.DEFAULT)

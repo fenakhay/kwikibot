@@ -7175,6 +7175,17 @@ export declare interface AbuseFiltersOptions {
     readonly limit?: Nullable<number>;
 }
 /**
+ * The options of `globalUser`.
+ */
+export declare interface GlobalUserOptions {
+    /**
+     * What to read beyond the id, home wiki and registration, from `"groups"`, `"rights"`, `"edit-count"`,
+     * `"merged"` and `"unattached"`. The groups and the edit count unless given: `"merged"` and
+     * `"unattached"` list every local account, hundreds for an account that has been around for years.
+     */
+    readonly properties?: Nullable<Array<GlobalUserProperty>>;
+}
+/**
  * The options of `newPages`.
  */
 export declare interface NewPagesOptions {
@@ -7304,6 +7315,12 @@ export declare class ExtensionService {
      */
     newPageStats(options?: Nullable<NewPageStatsOptions>): Promise<TriageStats>;
     /**
+     * The global account [name] names, or this session's own unless given, from CentralAuth, or `null` when
+     * there is no such account. Rejects when CentralAuth is not installed, and for a name no account can
+     * have, which is what a session that is not logged in asking for its own is.
+     */
+    globalUser(name?: Nullable<string>, options?: Nullable<GlobalUserOptions>): Promise<Nullable<GlobalUserInfo>>;
+    /**
      * The name of GeoData, as `has` takes it.
      */
     get geoData(): string;
@@ -7347,6 +7364,10 @@ export declare class ExtensionService {
      * The name of PageTriage, as `has` takes it.
      */
     get pageTriage(): string;
+    /**
+     * The name of CentralAuth, as `has` takes it.
+     */
+    get centralAuth(): string;
     /**
      * The most accounts `newPages` and `newPageStats` can filter by at once.
      */
@@ -7736,6 +7757,112 @@ export declare namespace TriageStats {
     /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
     namespace $metadata$ {
         const constructor: abstract new () => TriageStats;
+    }
+}
+/**
+ * One account across a family of wikis, from CentralAuth. What was not asked for is empty, or `null`.
+ */
+export declare class GlobalUserInfo {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The account name.
+     */
+    get name(): string;
+    /**
+     * The global account's own id.
+     */
+    get id(): number;
+    /**
+     * The database name of the wiki the account was made on, or `null` when CentralAuth does not know.
+     */
+    get home(): Nullable<string>;
+    /**
+     * When the global account was made, or `null`.
+     */
+    get registration(): Nullable<Date>;
+    /**
+     * Whether it is locked, so it can log in nowhere.
+     */
+    get isLocked(): boolean;
+    /**
+     * Whether it is hidden, which only a session that may see hidden accounts is told.
+     */
+    get isHidden(): boolean;
+    /**
+     * The global groups, when `"groups"` was asked for.
+     */
+    get groups(): Array<string>;
+    /**
+     * What the global groups allow, when `"rights"` was asked for.
+     */
+    get rights(): Array<string>;
+    /**
+     * The edits made on every wiki together, when `"edit-count"` was asked for.
+     */
+    get editCount(): Nullable<number>;
+    /**
+     * The local accounts attached to it, when `"merged"` was asked for.
+     */
+    get merged(): Array<LocalAccount>;
+    /**
+     * The local accounts of the same name not attached to it, when `"unattached"` was asked for.
+     */
+    get unattached(): Array<LocalAccount>;
+}
+export declare namespace GlobalUserInfo {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => GlobalUserInfo;
+    }
+}
+/**
+ * An account on one wiki, as a `GlobalUserInfo` lists them.
+ */
+export declare class LocalAccount {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The wiki, by database name.
+     */
+    get wiki(): string;
+    /**
+     * How many edits it has made there.
+     */
+    get editCount(): number;
+    /**
+     * When it was made there, or `null`.
+     */
+    get registration(): Nullable<Date>;
+    /**
+     * The groups it is in there.
+     */
+    get groups(): Array<string>;
+    /**
+     * The block on it there, or `null`.
+     */
+    get block(): Nullable<BlockInfo>;
+    /**
+     * The wiki's address, for an attached account.
+     */
+    get url(): Nullable<string>;
+    /**
+     * Its id on that wiki, for an attached account.
+     */
+    get id(): Nullable<number>;
+    /**
+     * When it was attached to the global account, for an attached account.
+     */
+    get attached(): Nullable<Date>;
+    /**
+     * How it came to be attached, such as `"login"` or `"password"`, for an attached account.
+     */
+    get attachMethod(): Nullable<string>;
+}
+export declare namespace LocalAccount {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => LocalAccount;
     }
 }
 /**
@@ -8948,6 +9075,11 @@ export declare class MetaService {
      * @param reason - why, which is recorded in the tag log.
      */
     manageTag(tag: string, operation: TagOperation, reason?: string): Promise<void>;
+    /**
+     * The wiki's own clock, now, to the second: asked for every time, never kept, so a comparison with the
+     * wiki's own timestamps does not depend on this machine's clock.
+     */
+    serverTime(): Promise<Date>;
 }
 export declare namespace MetaService {
     /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
@@ -10089,6 +10221,15 @@ export declare interface ChangeRightsOptions {
     readonly expiry?: Nullable<string>;
 }
 /**
+ * The options of `email`.
+ */
+export declare interface EmailOptions {
+    /**
+     * Whether to send this account a copy as well, `false` unless given.
+     */
+    readonly ccMe?: Nullable<boolean>;
+}
+/**
  * The people editing a wiki, reached as `wiki.users`.
  */
 export declare class UserService {
@@ -10130,11 +10271,63 @@ export declare class UserService {
      * Rejects when nothing is added or taken away, or when one group is both.
      */
     changeRights(user: string, options?: Nullable<ChangeRightsOptions>): Promise<void>;
+    /**
+     * This account's preferences, by name, every value as text: a box as `"1"` or `"0"`. Read anew each time,
+     * so a read after `setPreferences` sees what it saved.
+     */
+    preferences(): Promise<Record<string, string>>;
+    /**
+     * Changes this account's preferences, each by name, `null` putting one back to the wiki's default. Needs
+     * the `editmyoptions` right. A value may hold `|`. Resolves to the ones the wiki refused, by name, with
+     * what it said about each, and saves the rest; empty when it took them all. Rejects a name that is empty
+     * or holds `=`.
+     */
+    setPreferences(changes: Record<string, Nullable<string>>): Promise<Record<string, string>>;
+    /**
+     * Puts this account's preferences back to the wiki's defaults: those of [kinds], from `"registered"`,
+     * `"registered-multiselect"`, `"registered-checkmatrix"`, `"userjs"`, `"special"` and `"unused"`, or
+     * every kind unless given.
+     */
+    resetPreferences(kinds?: Nullable<Array<PreferenceKind>>): Promise<void>;
+    /**
+     * Emails [target] through the wiki, from this account, with [subject] and the plain text [text].
+     * 
+     * This sends a real email to a real person, and it cannot be taken back. Wikis rate-limit it, MediaWiki's
+     * default being twenty a day, and it is paced as a write. Resolves to `"sent"`, or to why the account
+     * cannot be emailed: `"no-such-user"`, `"no-address"` or `"not-accepted"`. Rejects when this account may
+     * not send email, has no confirmed address, or has reached the limit.
+     */
+    email(target: string, subject: string, text: string, options?: Nullable<EmailOptions>): Promise<EmailResult>;
 }
 export declare namespace UserService {
     /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
     namespace $metadata$ {
         const constructor: abstract new () => UserService;
+    }
+}
+/**
+ * How the wiki answered `email`.
+ */
+export declare class EmailResult {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * `"sent"`, or why nothing was: `"no-such-user"`, `"no-address"` or `"not-accepted"`.
+     */
+    get kind(): EmailStatus;
+    /**
+     * When nothing was sent, the wiki's code for why.
+     */
+    get code(): Nullable<string>;
+    /**
+     * When nothing was sent, its text for a person.
+     */
+    get detail(): Nullable<string>;
+}
+export declare namespace EmailResult {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => EmailResult;
     }
 }
 /**
@@ -11413,6 +11606,10 @@ export type LogDetailsKind = "none" | "move" | "block" | "upload" | "protect" | 
 export type TagOperation = "create" | "delete" | "activate" | "deactivate";
 export type TextDirection = "left-to-right" | "right-to-left";
 export type WatchMode = "no-change" | "preferences" | "watch" | "unwatch";
+export type PreferenceKind = "registered" | "registered-multiselect" | "registered-checkmatrix" | "userjs" | "special" | "unused";
+export type UndeliverableReason = "no-such-user" | "no-address" | "not-accepted";
+export type EmailStatus = "sent" | UndeliverableReason;
+export type GlobalUserProperty = "groups" | "rights" | "edit-count" | "merged" | "unattached";
 export type ParseProperty = "text" | "links" | "templates" | "categories" | "images" | "external-links" | "limit-report" | "toc-data" | "sections";
 export type ParserName = "legacy" | "parsoid";
 export type RevisionPart = "content" | "comment" | "user";

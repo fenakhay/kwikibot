@@ -1,5 +1,6 @@
 import com.fenakhay.kwikibot.bindings.client.abuseFiltersWithDefaults
 import com.fenakhay.kwikibot.bindings.client.extractsWithDefaults
+import com.fenakhay.kwikibot.bindings.client.globalUserWithDefaults
 import com.fenakhay.kwikibot.bindings.client.nearbyWithDefaults
 import com.fenakhay.kwikibot.bindings.client.newPageStatsWithDefaults
 import com.fenakhay.kwikibot.bindings.client.newPagesWithDefaults
@@ -15,7 +16,9 @@ import com.fenakhay.kwikibot.client.model.AbuseFilter as ClientAbuseFilter
 import com.fenakhay.kwikibot.client.model.AbuseFilterFlags as ClientAbuseFilterFlags
 import com.fenakhay.kwikibot.client.model.Coordinate as ClientCoordinate
 import com.fenakhay.kwikibot.client.model.FlaggedInfo as ClientFlaggedInfo
+import com.fenakhay.kwikibot.client.model.GlobalUserInfo as ClientGlobalUserInfo
 import com.fenakhay.kwikibot.client.model.LintError as ClientLintError
+import com.fenakhay.kwikibot.client.model.LocalAccount as ClientLocalAccount
 import com.fenakhay.kwikibot.client.model.Notification as ClientNotification
 import com.fenakhay.kwikibot.client.model.TriageBacklog as ClientTriageBacklog
 import com.fenakhay.kwikibot.client.model.TriagePage as ClientTriagePage
@@ -23,6 +26,7 @@ import com.fenakhay.kwikibot.client.model.TriageStats as ClientTriageStats
 import com.fenakhay.kwikibot.client.service.AbuseFilterOrder as ClientAbuseFilterOrder
 import com.fenakhay.kwikibot.client.service.AbuseFilterProperty as ClientAbuseFilterProperty
 import com.fenakhay.kwikibot.client.service.ExtensionService as ClientExtensionService
+import com.fenakhay.kwikibot.client.service.GlobalUserProperty as ClientGlobalUserProperty
 import com.fenakhay.kwikibot.client.service.NewPagesOrder as ClientNewPagesOrder
 import com.fenakhay.kwikibot.model.page.PageRef
 import kotlin.js.Date
@@ -51,6 +55,17 @@ public external interface AbuseFiltersOptions {
 
     /** How many to give before stopping. */
     public val limit: Int?
+}
+
+/** The options of `globalUser`. */
+@JsExport
+public external interface GlobalUserOptions {
+    /**
+     * What to read beyond the id, home wiki and registration, from `"groups"`, `"rights"`, `"edit-count"`,
+     * `"merged"` and `"unattached"`. The groups and the edit count unless given: `"merged"` and
+     * `"unattached"` list every local account, hundreds for an account that has been around for years.
+     */
+    public val properties: Array<GlobalUserProperty>?
 }
 
 /** The options of `newPages`. */
@@ -146,6 +161,10 @@ internal constructor(private val wiki: ClientWiki, private val scope: CoroutineS
     /** The name of PageTriage, as `has` takes it. */
     public val pageTriage: String
         get() = ClientExtensionService.PAGE_TRIAGE
+
+    /** The name of CentralAuth, as `has` takes it. */
+    public val centralAuth: String
+        get() = ClientExtensionService.CENTRAL_AUTH
 
     /** The most accounts `newPages` and `newPageStats` can filter by at once. */
     public val maxCreators: Int
@@ -279,6 +298,25 @@ internal constructor(private val wiki: ClientWiki, private val scope: CoroutineS
                 options?.hideOwnPages,
             )
         )
+    }
+
+    /**
+     * The global account [name] names, or this session's own unless given, from CentralAuth, or `null` when
+     * there is no such account. Rejects when CentralAuth is not installed, and for a name no account can
+     * have, which is what a session that is not logged in asking for its own is.
+     */
+    public fun globalUser(
+        name: String? = null,
+        options: GlobalUserOptions? = null,
+    ): Promise<GlobalUserInfo?> = scope.promise {
+        wiki
+            .globalUserWithDefaults(
+                name,
+                options?.properties?.map {
+                    enumArgument<ClientGlobalUserProperty>("properties", it.unsafeCast<String>())
+                },
+            )
+            ?.let(::GlobalUserInfo)
     }
 
     private fun refs(titles: Array<String>): List<PageRef> = titles.map { wiki.ref(it) }
@@ -580,4 +618,94 @@ public class TriageStats internal constructor(private val stats: ClientTriageSta
     /** Articles, reviewed or not, created by the accounts the stats were asked about. */
     public val matching: Double
         get() = stats.matching.toDouble()
+}
+
+/** One account across a family of wikis, from CentralAuth. What was not asked for is empty, or `null`. */
+@JsExport
+public class GlobalUserInfo internal constructor(private val user: ClientGlobalUserInfo) {
+
+    /** The account name. */
+    public val name: String
+        get() = user.name
+
+    /** The global account's own id. */
+    public val id: Double
+        get() = user.id.toDouble()
+
+    /** The database name of the wiki the account was made on, or `null` when CentralAuth does not know. */
+    public val home: String?
+        get() = user.home?.dbName
+
+    /** When the global account was made, or `null`. */
+    public val registration: Date?
+        get() = user.registration?.let(::dateOf)
+
+    /** Whether it is locked, so it can log in nowhere. */
+    public val isLocked: Boolean
+        get() = user.isLocked
+
+    /** Whether it is hidden, which only a session that may see hidden accounts is told. */
+    public val isHidden: Boolean
+        get() = user.isHidden
+
+    /** The global groups, when `"groups"` was asked for. */
+    public val groups: Array<String>
+        get() = user.groups.toTypedArray()
+
+    /** What the global groups allow, when `"rights"` was asked for. */
+    public val rights: Array<String>
+        get() = user.rights.toTypedArray()
+
+    /** The edits made on every wiki together, when `"edit-count"` was asked for. */
+    public val editCount: Double?
+        get() = user.editCount?.toDouble()
+
+    /** The local accounts attached to it, when `"merged"` was asked for. */
+    public val merged: Array<LocalAccount>
+        get() = user.merged.map(::LocalAccount).toTypedArray()
+
+    /** The local accounts of the same name not attached to it, when `"unattached"` was asked for. */
+    public val unattached: Array<LocalAccount>
+        get() = user.unattached.map(::LocalAccount).toTypedArray()
+}
+
+/** An account on one wiki, as a `GlobalUserInfo` lists them. */
+@JsExport
+public class LocalAccount internal constructor(private val account: ClientLocalAccount) {
+
+    /** The wiki, by database name. */
+    public val wiki: String
+        get() = account.wiki.dbName
+
+    /** How many edits it has made there. */
+    public val editCount: Double
+        get() = account.editCount.toDouble()
+
+    /** When it was made there, or `null`. */
+    public val registration: Date?
+        get() = account.registration?.let(::dateOf)
+
+    /** The groups it is in there. */
+    public val groups: Array<String>
+        get() = account.groups.toTypedArray()
+
+    /** The block on it there, or `null`. */
+    public val block: BlockInfo?
+        get() = account.block?.let(::BlockInfo)
+
+    /** The wiki's address, for an attached account. */
+    public val url: String?
+        get() = account.url
+
+    /** Its id on that wiki, for an attached account. */
+    public val id: Double?
+        get() = account.id?.toDouble()
+
+    /** When it was attached to the global account, for an attached account. */
+    public val attached: Date?
+        get() = account.attached?.let(::dateOf)
+
+    /** How it came to be attached, such as `"login"` or `"password"`, for an attached account. */
+    public val attachMethod: String?
+        get() = account.attachMethod
 }

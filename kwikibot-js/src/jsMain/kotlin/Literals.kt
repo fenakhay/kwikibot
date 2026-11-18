@@ -148,6 +148,18 @@ public external interface TextDirection
 /** `"no-change"`, `"preferences"`, `"watch"` or `"unwatch"`. */
 public external interface WatchMode
 
+/** A kind of preference, as `resetPreferences` resets them. */
+public external interface PreferenceKind
+
+/** `"no-such-user"`, `"no-address"` or `"not-accepted"`. */
+public external interface UndeliverableReason
+
+/** How the wiki answered `email`: `"sent"` or an [UndeliverableReason]. */
+public external interface EmailStatus
+
+/** What can be read about a global account. */
+public external interface GlobalUserProperty
+
 /** What a parse can report. */
 public external interface ParseProperty
 

@@ -137,6 +137,9 @@ EditOptions	client
 EditRefusal	client
 EditResult	root,client
 EditStatus	client
+EmailOptions	client
+EmailResult	client
+EmailStatus	client
 ExpandedText	client
 ExpandTextsOptions	client
 ExtensionService	client
@@ -148,6 +151,9 @@ FileService	client
 FileVersions	client
 FlaggedInfo	client
 GlobalUsage	client
+GlobalUserInfo	client
+GlobalUserOptions	client
+GlobalUserProperty	client
 HistoryOptions	client
 HttpOptions	client
 Identity	client
@@ -166,6 +172,7 @@ LintError	client
 ListenerOptions	client
 ListOptions	client
 ListService	client
+LocalAccount	client
 LogDetails	client
 LogDetailsKind	client
 LogEvent	client
@@ -202,6 +209,7 @@ ParsedPage	client
 ParseProperty	client
 ParseRequest	client
 ParserName	client
+PreferenceKind	client
 Protection	client
 PROTECTION_AUTOCONFIRMED	client
 PROTECTION_SYSOP	client
@@ -243,6 +251,7 @@ TriagePage	client
 TriageStats	client
 TriageStatus	client
 UndeleteOptions	client
+UndeliverableReason	client
 UndoOptions	client
 UploadKind	client
 UploadOptions	client

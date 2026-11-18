@@ -36,7 +36,6 @@ import com.fenakhay.kwikibot.protocol.decode.long
 import com.fenakhay.kwikibot.protocol.decode.obj
 import com.fenakhay.kwikibot.protocol.decode.objects
 import com.fenakhay.kwikibot.protocol.decode.string
-import com.fenakhay.kwikibot.protocol.decode.strings
 import com.fenakhay.kwikibot.protocol.decode.time
 import com.fenakhay.kwikibot.protocol.throwOnError
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -361,31 +360,10 @@ internal class ApiFileService(
                 )
 
             PERMISSION_DENIED ->
-                if (lacksRight(UPLOAD_BY_URL)) WikiError.Auth.MissingRight(UPLOAD_BY_URL) else null
+                if (transport.lacksRight(UPLOAD_BY_URL)) WikiError.Auth.MissingRight(UPLOAD_BY_URL) else null
 
             else -> null
         }
-
-    /** Whether the session is known not to hold [right]. Not knowing is not lacking it. */
-    private suspend fun lacksRight(right: String): Boolean {
-        val rights = runCatching {
-            transport
-                .call(
-                    ApiRequest.of("query", "meta" to "userinfo", "uiprop" to Registry.CURRENT_RIGHTS.joined)
-                        .copy(cacheable = false)
-                )
-                .throwOnError()
-                .obj("query")
-                ?.obj("userinfo")
-                ?.array("rights")
-                ?.strings()
-        }
-            .getOrElse {
-                if (it is CancellationException) throw it
-                null
-            }
-        return rights != null && right !in rights
-    }
 
     /** The host of [url], without its port, which is what `$wgCopyUploadsDomains` lists. */
     private fun hostOf(url: String): String =

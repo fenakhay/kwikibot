@@ -4,6 +4,7 @@ import com.fenakhay.kwikibot.client.internal.ApiMetaService
 import com.fenakhay.kwikibot.model.LangCode
 import com.fenakhay.kwikibot.model.LanguageInfo
 import com.fenakhay.kwikibot.model.TextDirection
+import com.fenakhay.kwikibot.model.WikiError
 import com.fenakhay.kwikibot.net.auth.TokenStore
 import com.fenakhay.kwikibot.net.transport.ApiEndpoint
 import com.fenakhay.kwikibot.net.transport.ApiRequest
@@ -14,6 +15,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.time.Instant
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -91,6 +93,46 @@ class MetaAnswersTest {
         val sent = transport.requests.single { it.action == "tag" }.params
         sent["remove"] shouldBe "mobile edit"
         sent["add"].shouldBeNull()
+    }
+
+    @Test
+    fun `the wiki's clock is asked for alone and anew every time`() = runTest {
+        var second = 0
+        val transport = MockTransport {
+            MockTransport.json("""{"batchcomplete":true,"curtimestamp":"2026-11-04T10:02:4${second++}Z"}""")
+        }
+        val service = ApiMetaService(transport, TokenStore(transport))
+
+        service.serverTime() shouldBe Instant.parse("2026-11-04T10:02:40Z")
+        service.serverTime() shouldBe Instant.parse("2026-11-04T10:02:41Z")
+
+        transport.requests.map { it.params } shouldBe
+            List(2) { mapOf("action" to "query", "curtimestamp" to "1") }
+        transport.requests.map { it.cacheable } shouldBe listOf(false, false)
+        transport.requests.map { it.isWrite } shouldBe listOf(false, false)
+    }
+
+    @Test
+    fun `an answer with no time is an error and so is one the wiki refused`() = runTest {
+        shouldThrow<WikiError.Api> { meta("""{"batchcomplete":true}""").serverTime() }.code shouldBe
+            "nocurtimestamp"
+        shouldThrow<WikiError.Api> { meta("""{"curtimestamp":"soon"}""").serverTime() }.code shouldBe
+            "nocurtimestamp"
+        shouldThrow<WikiError.ReadOnly> {
+            meta("""{"errors":[{"code":"readonly","text":"Maintenance."}]}""").serverTime()
+        }
+    }
+
+    @Test
+    fun `a meta service of anyone else's cannot read the wiki's clock unless it says how`() = runTest {
+        val api = meta("{}")
+        val service =
+            object : MetaService by api {
+                override suspend fun serverTime(): Instant = super<MetaService>.serverTime()
+            }
+
+        shouldThrow<UnsupportedOperationException> { service.serverTime() }.message shouldBe
+            "this MetaService cannot read the wiki's clock"
     }
 
     /** A wiki that answers nothing while [hold] is set, counting what it is asked. */

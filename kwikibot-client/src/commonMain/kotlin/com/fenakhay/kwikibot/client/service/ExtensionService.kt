@@ -4,6 +4,7 @@ import com.fenakhay.kwikibot.client.internal.wire.MediaWikiParameter
 import com.fenakhay.kwikibot.client.model.AbuseFilter
 import com.fenakhay.kwikibot.client.model.Coordinate
 import com.fenakhay.kwikibot.client.model.FlaggedInfo
+import com.fenakhay.kwikibot.client.model.GlobalUserInfo
 import com.fenakhay.kwikibot.client.model.LintError
 import com.fenakhay.kwikibot.client.model.Notification
 import com.fenakhay.kwikibot.client.model.TriagePage
@@ -187,6 +188,29 @@ public interface ExtensionService {
     ): TriageStats
 
     /**
+     * A global account, from CentralAuth: the one [name] names, or this session's own.
+     *
+     * The id, home wiki and registration come with every answer. What else is read is [properties], and the
+     * default, [GlobalUserProperty.DEFAULT], is the global groups and the edit count, one lookup each.
+     * [GlobalUserProperty.MERGED] and [GlobalUserProperty.UNATTACHED] list the account's local accounts,
+     * which for one that has been around for years is hundreds of wikis, each read from its own database.
+     *
+     * @param name the account, or `null` for the one this session is logged in as.
+     * @param properties what to read beyond the id, home wiki and registration.
+     * @return the account, or `null` when no global account has that name, or the wiki hides it from this
+     *   session.
+     * @throws WikiError.Configuration.MissingExtension if CentralAuth is not installed.
+     * @throws WikiError.Api with the code `invaliduser` for a name no account can have, which is also what a
+     *   session that is not logged in gets asking for its own.
+     * @throws UnsupportedOperationException from an implementation that cannot read global accounts.
+     */
+    public suspend fun globalUser(
+        name: String? = null,
+        properties: Set<GlobalUserProperty> = GlobalUserProperty.DEFAULT,
+    ): GlobalUserInfo? =
+        throw UnsupportedOperationException("this ExtensionService cannot read global accounts")
+
+    /**
      * The extensions this service reads, named as `siprop=extensions` names them.
      *
      * Spelling matters: a wiki reports its own name for an extension, and a mismatch reads as the extension
@@ -225,6 +249,9 @@ public interface ExtensionService {
 
         /** The new pages feed, where new articles wait for review. */
         public const val PAGE_TRIAGE: String = "PageTriage"
+
+        /** One account across a family of wikis. */
+        public const val CENTRAL_AUTH: String = "CentralAuth"
 
         /** The most accounts [newPages] and [newPageStats] can filter by at once. */
         public const val MAX_CREATORS: Int = 10
@@ -306,6 +333,31 @@ public enum class AbuseFilterProperty(internal val apiValue: String) {
     public companion object {
         /** What the wiki reads when not told, which is enough to list the filters and what they do. */
         public val DEFAULT: Set<AbuseFilterProperty> = setOf(ID, DESCRIPTION, ACTIONS, FLAGS)
+    }
+}
+
+/** What to read about a global account, named as `meta=globaluserinfo` names it. */
+@MediaWikiParameter("query+globaluserinfo", "guiprop")
+public enum class GlobalUserProperty(internal val apiValue: String) {
+    /** The global groups, such as `steward` or `global-rollbacker`. */
+    GROUPS("groups"),
+
+    /** What the global groups allow. */
+    RIGHTS("rights"),
+
+    /** The edits made on every wiki together. */
+    EDIT_COUNT("editcount"),
+
+    /** Every local account attached to the global one, with its edit count, groups and block. */
+    MERGED("merged"),
+
+    /** The local accounts of the same name that are not attached to it. */
+    UNATTACHED("unattached");
+
+    /** The groupings worth asking for as a set. */
+    public companion object {
+        /** The global groups and the edit count, which a large account answers as quickly as a small one. */
+        public val DEFAULT: Set<GlobalUserProperty> = setOf(GROUPS, EDIT_COUNT)
     }
 }
 

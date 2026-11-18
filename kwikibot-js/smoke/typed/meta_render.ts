@@ -282,6 +282,18 @@ async function asksAboutTheWiki(meta: MetaService, site: FakeSite): Promise<void
   assert.equal("licode" in last(site, "meta", "languageinfo"), false);
 }
 
+async function readsTheClock(meta: MetaService, site: FakeSite): Promise<void> {
+  let second = 0;
+  site.answers[""] = () => ({ batchcomplete: true, curtimestamp: `2026-11-04T10:02:4${second++}Z` });
+  const first: Date = await meta.serverTime();
+  const again = await meta.serverTime();
+  delete site.answers[""];
+  assert.ok(first instanceof Date);
+  assert.equal(first.toISOString(), "2026-11-04T10:02:40.000Z");
+  assert.equal(again.toISOString(), "2026-11-04T10:02:41.000Z");
+  assert.equal(site.requests.filter((params) => params.curtimestamp === "1").length, 2);
+}
+
 async function tagsThings(meta: MetaService, site: FakeSite): Promise<void> {
   const everything: ApplyTagsOptions = {
     add: ["a", "b"],
@@ -673,6 +685,7 @@ await withWiki(
     await readsTheSite(wiki);
     await knowsWhoItIs(wiki);
     await asksAboutTheWiki(wiki.meta, site);
+    await readsTheClock(wiki.meta, site);
     await tagsThings(wiki.meta, site);
     await learnsTheApi(wiki.paramInfo, site);
     await holdsTokens(wiki, site);

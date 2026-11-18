@@ -5,6 +5,7 @@ import com.fenakhay.kwikibot.bindings.common.enumArgument
 import com.fenakhay.kwikibot.client.Wiki as ClientWiki
 import com.fenakhay.kwikibot.client.service.TagOperation as ClientTagOperation
 import com.fenakhay.kwikibot.model.LanguageInfo as ClientLanguageInfo
+import kotlin.js.Date
 import kotlin.js.Promise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
@@ -107,6 +108,12 @@ internal constructor(private val wiki: ClientWiki, private val scope: CoroutineS
                 reason,
             )
         }
+
+    /**
+     * The wiki's own clock, now, to the second: asked for every time, never kept, so a comparison with the
+     * wiki's own timestamps does not depend on this machine's clock.
+     */
+    public fun serverTime(): Promise<Date> = scope.promise { dateOf(wiki.meta.serverTime()) }
 }
 
 /** What a wiki knows about a language. */
