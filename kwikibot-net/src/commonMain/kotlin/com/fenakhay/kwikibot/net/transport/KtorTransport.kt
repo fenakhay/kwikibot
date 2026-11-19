@@ -61,6 +61,10 @@ public class KtorTransport(
     private val listener: TransportListener = TransportListener.NONE,
 ) : MediaWikiTransport {
 
+    init {
+        client.allowCredentials(endpoint)
+    }
+
     private val cache: ResponseCache = cache.scopedTo(endpoint.apiUrl)
 
     private val json = Json { ignoreUnknownKeys = true }

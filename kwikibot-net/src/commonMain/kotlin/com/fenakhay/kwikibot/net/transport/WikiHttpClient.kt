@@ -8,9 +8,6 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.cookies.HttpCookies
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
 import io.ktor.util.AttributeKey
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -23,8 +20,13 @@ import kotlinx.coroutines.sync.withPermit
  * Two settings here are not optional in practice. Cookies must be stored, or a bot-password session is lost
  * after the login response; an OAuth 2.0 token keeps them too, since Wikimedia needs the session cookies
  * alongside the token to apply the account's rate limit. And an OAuth 2.0 bearer header has to be attached to
- * every request, since no login establishes the account, as does an OAuth 1.0a signature, made afresh for
- * each request as it is sent.
+ * every request to the wiki, since no login establishes the account, as does an OAuth 1.0a signature, made
+ * afresh for each request as it is sent.
+ *
+ * The login goes only to the wikis a [KtorTransport] on the client reaches, each adding its endpoint's host
+ * and port when it is built. A request the client sends anywhere else, such as to PetScan, a stream, or a
+ * redirect off the wiki, carries no token and no signature, so a client shared with another service does not
+ * hand it the account.
  *
  * A client made here lets at most [HttpSettings.maxConcurrentRequests] requests be in flight at once, three
  * unless told otherwise, which is what Wikimedia asks; [withRequestPermit] is where a request waits for room.
@@ -68,6 +70,7 @@ public object WikiHttpClient {
         engine: HttpClientEngine? = null,
     ): HttpClient {
         val timeout = settings.timeout
+        val hosts = CredentialHosts()
         val configure: HttpClientConfig<*>.() -> Unit = {
             install(HttpCookies)
 
@@ -78,12 +81,10 @@ public object WikiHttpClient {
             }
 
             if (credentials is Credentials.OAuth2) {
-                defaultRequest {
-                    header(HttpHeaders.Authorization, "Bearer ${credentials.accessToken}")
-                }
+                install(scopedAuthorization("KwikibotOAuth2", hosts) { "Bearer ${credentials.accessToken}" })
             }
 
-            if (credentials is Credentials.OAuth1) install(oauth1Signing(OAuth1Signer(credentials)))
+            if (credentials is Credentials.OAuth1) install(oauth1Signing(OAuth1Signer(credentials), hosts))
 
             // Redirects are followed by default; MediaWiki uses them for canonical hosts.
             expectSuccess = false
@@ -91,6 +92,7 @@ public object WikiHttpClient {
 
         val client = if (engine != null) HttpClient(engine, configure) else defaultClient(settings, configure)
         client.attributes.put(REQUEST_PERMITS, Semaphore(settings.maxConcurrentRequests))
+        client.attributes.put(CREDENTIAL_HOSTS, hosts)
         return client
     }
 }

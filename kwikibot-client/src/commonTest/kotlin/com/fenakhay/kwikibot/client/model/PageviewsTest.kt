@@ -43,6 +43,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
@@ -55,6 +57,11 @@ class PageviewsTest {
     private val third = Instant.parse("2024-01-03T23:59:59Z")
 
     private val asked = mutableListOf<HttpRequestData>()
+
+    /**
+     * Held while a request is recorded, since the engine answers requests side by side on several threads.
+     */
+    private val recording = Mutex()
 
     private val einstein =
         """{"items":[
@@ -530,7 +537,7 @@ class PageviewsTest {
 
     private fun engine(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) =
         MockEngine { request ->
-            asked += request
+            recording.withLock { asked += request }
             handler(request)
         }
 

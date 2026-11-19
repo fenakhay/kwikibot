@@ -103,6 +103,7 @@ class OAuth1TransportTest {
             }
 
             WikiHttpClient.create(credentials, engine).use { client ->
+                client.allowCredentials(ApiEndpoint("en.wiktionary.org"))
                 client.get("https://en.wiktionary.org/w/api.php?action=query&titles=Caf%C3%A9%20au%20lait")
                 client.get("https://en.wiktionary.org/w/api.php?action=query&titles=Caf%C3%A9%20au%20lait")
             }
@@ -183,6 +184,7 @@ class OAuth1TransportTest {
         }
 
         WikiHttpClient.create(credentials, engine).use { client ->
+            client.allowCredentials(ApiEndpoint("en.wiktionary.org"))
             client.post("https://en.wiktionary.org/w/api.php") {
                 setBody(
                     MultiPartFormDataContent(
@@ -226,6 +228,7 @@ class OAuth1TransportTest {
             }
 
             WikiHttpClient.create(credentials, engine).use { client ->
+                client.allowCredentials(ApiEndpoint("en.wiktionary.org"))
                 client.get("https://en.wiktionary.org/w/api.php?action=query")
             }
 

@@ -26,6 +26,9 @@ class WikiHttpClientJvmTest {
 
         try {
             WikiHttpClient.create(Credentials.OAuth2("ya29.token")).use { client ->
+                client.allowCredentials(
+                    ApiEndpoint("127.0.0.1:${server.address.port}", scriptPath = "", secure = false)
+                )
                 runBlocking { client.get("http://127.0.0.1:${server.address.port}/").bodyAsText() } shouldBe
                     "{}"
             }
