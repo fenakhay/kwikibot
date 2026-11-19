@@ -733,6 +733,48 @@ pages is five thousand requests: `wiki.pageviews` asks four at a time, within th
 on requests in flight, three by default, and waits out a `429` or a `5xx` as its `RetryPolicy` says,
 `Retry-After` included. For many pages, a client of its own with a lower limit paces it further.
 
+### Revision scores
+
+```kotlin
+WikiHttpClient.create().use { http ->
+    val liftWing = LiftWing(http, config.userAgent)
+
+    EventStreams(http, config.userAgent).recentChanges()
+        .filter { it.matches("enwiki", setOf(0)) && it.type == "edit" && !it.isBot }
+        .mapNotNull { event -> event.revisionId?.let { event.title to RevisionId(it) } }
+        .collect { (title, revision) ->
+            val damaging = liftWing.damaging("enwiki", revision).scoreOrNull() ?: return@collect
+            if (damaging.trueProbability > 0.9) println("$title may be damaging: $revision")
+        }
+}
+```
+
+`LiftWing` asks Wikimedia's machine-learning service, which replaced ORES, about revisions:
+`damaging` and `goodfaith` for the 33 wikis with those models, `revertRisk` for any Wikipedia,
+language-agnostic unless `RevertRiskModel.MULTILINGUAL` is asked for, and `articleQuality` and
+`draftQuality` where a wiki has them. `predict(model, body)` answers any other model's JSON as it is.
+Every score is advisory, a classifier's guess from what editors did before, so a bot that acts on one
+should use a cautious threshold and leave the last word to a person. A revision LiftWing cannot score,
+deleted, hidden, missing, or for revert risk the first of its page, is a `LiftWingResult.Unscorable`
+saying why, and a model or wiki LiftWing does not have throws `WikiError.Api` with the code
+`nosuchmodel`. A wiki's own revisions are scored a few at a time, under the prefix and language its
+site information gives, and any wiki that is not Wikimedia's is refused before anything is sent:
+
+```kotlin
+val wikipedia = client.wiki(ApiEndpoint("en.wikipedia.org"))
+wikipedia.revertRisk(liftWing, listOf(RevisionId(1383620073))).forEach { (revision, result) ->
+    when (result) {
+        is LiftWingResult.Scored -> println("$revision: ${result.score.probability}")
+        is LiftWingResult.Unscorable -> println("$revision: ${result.reason}")
+    }
+}
+```
+
+Without a token, LiftWing allows 50,000 requests an hour and 15 a second, counted by address or user
+agent. An OAuth 2.0 access token doubles the hourly limit and raises the other to 100 a second: pass it
+as `LiftWing(http, userAgent, authorization = { token })`, on a client of its own. A `429` or a `5xx` is
+waited out as the `RetryPolicy` says, `Retry-After` included.
+
 ## Testing a bot
 
 ```kotlin

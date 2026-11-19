@@ -247,6 +247,22 @@ views.close();
 wikipedia.close();
 ```
 
+Revision scores come from LiftWing, Wikimedia's machine-learning service, which replaced ORES. They are
+advisory, a model's guess for a person to check. A revision it cannot score resolves with `unscorable` saying
+why, `"missing"`, `"hidden"` or, for revert risk, `"first-revision"`, and a model or wiki it does not have
+rejects. An `accessToken` raises the limit from 50,000 requests an hour to 100,000:
+
+```js
+import { liftWing } from "kwikibot/services";
+
+const scores = liftWing(contact);
+const damaging = await scores.damaging("enwiki", 1383620073);
+if ((damaging.score?.trueProbability ?? 0) > 0.9) console.log("worth a look");
+const risk = await scores.revertRisk("en", 1383620073, "multilingual");
+console.log(risk.score?.probability ?? risk.unscorable?.reason);
+scores.close();
+```
+
 The package covers the parser (`parse`), titles and signature times, reading and editing pages, files,
 category members, search, transclusions and history, Wikibase entities, SPARQL (`sparql`), page views, XML
 dumps, bot runs and fleets. Revision ids are numbers and lists are arrays.

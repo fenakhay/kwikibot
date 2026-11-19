@@ -323,6 +323,11 @@ JsonValue	root
 MessageValue	root
 Negatable	root
 Thrown	root
+EditQualityScore	services
+LiftWing	services
+liftWing	services
+LiftWingOptions	services
+LiftWingResult	services
 PagePageviews	services
 PageviewAccess	services
 PageviewAgent	services
@@ -332,8 +337,14 @@ Pageviews	services
 pageviews	services
 PageviewsOptions	services
 PageviewsQuery	services
+QualityScore	services
+RevertRiskModel	services
+RevertRiskScore	services
 TopPage	services
 TopPagesOptions	services
+Unscorable	services
+UnscorableReason	services
+WIKIMEDIA_LIFT_WING	services
 WIKIMEDIA_PAGEVIEWS	services
 COMMONS_QUERY_SERVICE	sparql
 LINGUA_LIBRE_QUERY_SERVICE	sparql

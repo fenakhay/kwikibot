@@ -3,6 +3,7 @@ package com.fenakhay.kwikibot.bindings.services
 import com.fenakhay.kwikibot.client.model.PageviewAccess
 import com.fenakhay.kwikibot.client.model.PageviewAgent
 import com.fenakhay.kwikibot.client.model.PageviewGranularity
+import com.fenakhay.kwikibot.client.model.RevertRiskModel
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
@@ -17,5 +18,11 @@ class ServiceDefaultsTest {
         granularityOf(PageviewGranularity.MONTHLY) shouldBe PageviewGranularity.MONTHLY
         accessOf(PageviewAccess.entries.last()) shouldBe PageviewAccess.entries.last()
         agentOf(PageviewAgent.entries.last()) shouldBe PageviewAgent.entries.last()
+    }
+
+    @Test
+    fun `the risk of a revert is scored by the language-agnostic model unless told`() {
+        revertRiskModelOf(null) shouldBe RevertRiskModel.LANGUAGE_AGNOSTIC
+        revertRiskModelOf(RevertRiskModel.entries.last()) shouldBe RevertRiskModel.entries.last()
     }
 }

@@ -4167,6 +4167,258 @@ export declare namespace RecordingContext {
     }
 }
 /**
+ * LiftWing's models, through Wikimedia's API gateway.
+ */
+export declare const WIKIMEDIA_LIFT_WING: string;
+/**
+ * Makes a client for LiftWing, Wikimedia's machine-learning service, asking as the tool whose operator
+ * [contact] reaches. Close it when done.
+ */
+export declare function liftWing(contact: string, options?: Nullable<LiftWingOptions>): LiftWing;
+/**
+ * What a LiftWing client is made with.
+ */
+export declare interface LiftWingOptions {
+    /**
+     * Where the models are served, Wikimedia's gateway unless given.
+     */
+    readonly baseUrl?: Nullable<string>;
+    /**
+     * How often to ask again, and how long to wait, while LiftWing is busy or failing.
+     */
+    readonly retry?: Nullable<RetryOptions>;
+    /**
+     * Who to say is asking; the library's name with the contact unless given.
+     */
+    readonly userAgent?: Nullable<UserAgent>;
+    /**
+     * An OAuth 2.0 access token, sent as `Authorization: Bearer` with every request, which raises the rate
+     * limit from 50,000 requests an hour to 100,000. None unless given.
+     */
+    readonly accessToken?: Nullable<string>;
+}
+/**
+ * Scores of revisions from LiftWing, which replaced ORES. Every score is advisory: a model trained on what
+ * editors did before, and wrong often enough that a person should look before a bot acts on one. A revision
+ * LiftWing cannot score resolves to why, in `unscorable`; a model or a wiki it does not have rejects, naming
+ * it. A busy gateway is waited out as the retry options say.
+ */
+export declare class LiftWing {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * Whether [revision] on [wiki], a database name such as `"enwiki"`, is damaging.
+     */
+    damaging(wiki: string, revision: number): Promise<LiftWingResult<EditQualityScore>>;
+    /**
+     * Whether [revision] on [wiki], a database name such as `"enwiki"`, was made in good faith.
+     */
+    goodfaith(wiki: string, revision: number): Promise<LiftWingResult<EditQualityScore>>;
+    /**
+     * How likely [revision] on the Wikipedia in [language], such as `"en"`, is to be reverted, by
+     * `"language-agnostic"` revert risk unless [model] says `"multilingual"`.
+     */
+    revertRisk(language: string, revision: number, model?: Nullable<RevertRiskModel>): Promise<LiftWingResult<RevertRiskScore>>;
+    /**
+     * The quality of the article at [revision] on [wiki], a database name such as `"enwiki"`.
+     */
+    articleQuality(wiki: string, revision: number): Promise<LiftWingResult<QualityScore>>;
+    /**
+     * Whether the new page at [revision] on [wiki] is fit to keep, or spam, vandalism or an attack.
+     */
+    draftQuality(wiki: string, revision: number): Promise<LiftWingResult<QualityScore>>;
+    /**
+     * What [model], such as `"enwiki-articletopic"`, answers for [body], as it answers it.
+     */
+    predict(model: string, body: Record<string, JsonValue>): Promise<Record<string, JsonValue>>;
+    /**
+     * Whether each of [revisions] on [wiki], one of Wikimedia's, is damaging, a few at a time, in the order
+     * given and each once. Rejects, sending nothing, for a wiki that is not Wikimedia's.
+     */
+    damagingOf(wiki: Wiki, revisions: Array<number>): Promise<Array<LiftWingResult<EditQualityScore>>>;
+    /**
+     * Whether each of [revisions] on [wiki], one of Wikimedia's, was made in good faith, a few at a time, in
+     * the order given and each once.
+     */
+    goodfaithOf(wiki: Wiki, revisions: Array<number>): Promise<Array<LiftWingResult<EditQualityScore>>>;
+    /**
+     * How likely each of [revisions] on [wiki], a Wikipedia, is to be reverted, a few at a time, in the order
+     * given and each once. Rejects, sending nothing, for a wiki that is not a Wikipedia.
+     */
+    revertRiskOf(wiki: Wiki, revisions: Array<number>, model?: Nullable<RevertRiskModel>): Promise<Array<LiftWingResult<RevertRiskScore>>>;
+    /**
+     * The quality of the article at each of [revisions] on [wiki], a few at a time, in the order given.
+     */
+    articleQualityOf(wiki: Wiki, revisions: Array<number>): Promise<Array<LiftWingResult<QualityScore>>>;
+    /**
+     * Whether the new page at each of [revisions] on [wiki] is fit to keep, a few at a time, in order.
+     */
+    draftQualityOf(wiki: Wiki, revisions: Array<number>): Promise<Array<LiftWingResult<QualityScore>>>;
+    /**
+     * The prefix of [wiki]'s models, its database name, such as `"enwiki"`. Throws for one not Wikimedia's.
+     */
+    prefixOf(wiki: Wiki): string;
+    /**
+     * The language revert risk takes for [wiki], such as `"simple"`. Throws for one that is not a Wikipedia.
+     */
+    languageOf(wiki: Wiki): string;
+    /**
+     * Ends what is still being asked and releases the connections.
+     */
+    close(): void;
+}
+export declare namespace LiftWing {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => LiftWing;
+    }
+}
+/**
+ * What LiftWing answered for one revision: its score, or why it has none.
+ */
+export declare class LiftWingResult<out T> {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The revision asked about.
+     */
+    get revision(): number;
+    /**
+     * The score, or `null` when the revision could not be scored.
+     */
+    get score(): Nullable<T>;
+    /**
+     * Why the revision could not be scored, or `null` when it was.
+     */
+    get unscorable(): Nullable<Unscorable>;
+}
+export declare namespace LiftWingResult {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new <T>() => LiftWingResult<T>;
+    }
+}
+/**
+ * Why LiftWing could not score a revision.
+ */
+export declare class Unscorable {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The model asked, such as `"enwiki-damaging"`.
+     */
+    get model(): string;
+    /**
+     * `"missing"`, `"hidden"`, `"first-revision"` or `"other"`.
+     */
+    get reason(): UnscorableReason;
+    /**
+     * LiftWing's own explanation.
+     */
+    get detail(): string;
+}
+export declare namespace Unscorable {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => Unscorable;
+    }
+}
+/**
+ * Whether an edit is damaging, or was made in good faith, as a revscoring model judges it.
+ */
+export declare class EditQualityScore {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The model, such as `"enwiki-damaging"`.
+     */
+    get model(): string;
+    /**
+     * What the model predicts at its own threshold.
+     */
+    get prediction(): boolean;
+    /**
+     * How likely the model thinks the answer is yes, from 0 to 1.
+     */
+    get trueProbability(): number;
+    /**
+     * How likely it thinks the answer is no.
+     */
+    get falseProbability(): number;
+    /**
+     * The model's version, such as `"0.5.1"`.
+     */
+    get modelVersion(): string;
+}
+export declare namespace EditQualityScore {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => EditQualityScore;
+    }
+}
+/**
+ * How likely an edit to a Wikipedia article is to be reverted.
+ */
+export declare class RevertRiskScore {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * `"language-agnostic"` or `"multilingual"`.
+     */
+    get model(): RevertRiskModel;
+    /**
+     * The database name of the wiki it is on, such as `"enwiki"`.
+     */
+    get wiki(): string;
+    /**
+     * Whether the model predicts a revert.
+     */
+    get prediction(): boolean;
+    /**
+     * How likely it thinks a revert is, from 0 to 1.
+     */
+    get probability(): number;
+    /**
+     * The model's version, such as `"3"`.
+     */
+    get modelVersion(): string;
+}
+export declare namespace RevertRiskScore {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => RevertRiskScore;
+    }
+}
+/**
+ * The quality of an article, or of a new page as a draft, at a revision.
+ */
+export declare class QualityScore {
+    private readonly __nominal;
+    private constructor();
+    /**
+     * The model, such as `"enwiki-articlequality"`.
+     */
+    get model(): string;
+    /**
+     * The class the model thinks most likely, such as `"FA"`.
+     */
+    get prediction(): string;
+    /**
+     * How likely it thinks each class is, from 0 to 1.
+     */
+    get probabilities(): Record<string, number>;
+    /**
+     * The model's version, such as `"0.9.2"`.
+     */
+    get modelVersion(): string;
+}
+export declare namespace QualityScore {
+    /** @deprecated $metadata$ is used for internal purposes, please don't use it in your code, because it can be removed at any moment */
+    namespace $metadata$ {
+        const constructor: abstract new () => QualityScore;
+    }
+}
+/**
  * The name this library goes by in a user agent.
  */
 export declare const LIBRARY_NAME: string;
@@ -11596,6 +11848,8 @@ export type UploadKind = "uploaded" | "warned" | "refused";
 export type PageviewAccess = "all-access" | "desktop" | "mobile-app" | "mobile-web";
 export type PageviewAgent = "all-agents" | "user" | "spider" | "automated";
 export type PageviewGranularity = "hourly" | "daily" | "monthly";
+export type RevertRiskModel = "language-agnostic" | "multilingual";
+export type UnscorableReason = "missing" | "hidden" | "first-revision" | "other";
 export type CategoryMemberType = "page" | "subcategory" | "file";
 export type CategorySort = "sortkey" | "timestamp";
 export type RedirectFilter = "all" | "only-redirects" | "no-redirects";

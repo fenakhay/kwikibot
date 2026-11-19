@@ -118,6 +118,12 @@ public external interface PageviewAgent
 /** `"hourly"`, `"daily"` or `"monthly"`. */
 public external interface PageviewGranularity
 
+/** `"language-agnostic"` or `"multilingual"`. */
+public external interface RevertRiskModel
+
+/** `"missing"`, `"hidden"`, `"first-revision"` or `"other"`. */
+public external interface UnscorableReason
+
 /** `"page"`, `"subcategory"` or `"file"`. */
 public external interface CategoryMemberType
 

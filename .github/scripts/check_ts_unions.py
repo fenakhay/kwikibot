@@ -48,6 +48,8 @@ ENUMS: dict[str, tuple[str, str]] = {
     "PageviewAccess": ("kwikibot-client", "PageviewAccess"),
     "PageviewAgent": ("kwikibot-client", "PageviewAgent"),
     "PageviewGranularity": ("kwikibot-client", "PageviewGranularity"),
+    "RevertRiskModel": ("kwikibot-client", "RevertRiskModel"),
+    "UnscorableReason": ("kwikibot-client", "UnscorableReason"),
     "PreferenceKind": ("kwikibot-client", "PreferenceKind"),
     "UndeliverableReason": ("kwikibot-client", "UndeliverableReason"),
     "GlobalUserProperty": ("kwikibot-client", "GlobalUserProperty"),

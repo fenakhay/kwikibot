@@ -1,6 +1,7 @@
 package com.fenakhay.kwikibot.bindings.sparql
 
 import com.fenakhay.kwikibot.bindings.events.eventStreamsWithDefaults
+import com.fenakhay.kwikibot.bindings.services.liftWingWithDefaults
 import com.fenakhay.kwikibot.bindings.services.pageviewsWithDefaults
 import com.fenakhay.kwikibot.client.model.SparqlAuth
 import com.fenakhay.kwikibot.client.model.SparqlClient
@@ -91,6 +92,15 @@ class SparqlTest {
         eventStreamsWithDefaults(http, "bot@example.org", agent, RetryPolicy.NONE, "https://example.org/")
         pageviewsWithDefaults(http, "bot@example.org")
         pageviewsWithDefaults(http, "bot@example.org", agent, RetryPolicy.NONE, "https://example.org/")
+        liftWingWithDefaults(http, "bot@example.org")
+        liftWingWithDefaults(
+            http,
+            "bot@example.org",
+            agent,
+            RetryPolicy.NONE,
+            "https://example.org/",
+            "token",
+        )
         asked shouldBe emptyList()
     }
 }

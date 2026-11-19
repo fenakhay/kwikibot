@@ -17,6 +17,7 @@ const PROGRAMS = [
   "connection_login",
   "streams",
   "pageviews",
+  "lift_wing",
   "testing",
   "literals",
   "entry_points",

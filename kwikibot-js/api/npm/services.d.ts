@@ -1,2 +1,2 @@
-export { PagePageviews, PageviewCount, Pageviews, pageviews, TopPage, WIKIMEDIA_PAGEVIEWS } from "./core";
-export type { PageviewAccess, PageviewAgent, PageviewGranularity, PageviewsOptions, PageviewsQuery, TopPagesOptions } from "./core";
+export { EditQualityScore, LiftWing, liftWing, LiftWingResult, PagePageviews, PageviewCount, Pageviews, pageviews, QualityScore, RevertRiskScore, TopPage, Unscorable, WIKIMEDIA_LIFT_WING, WIKIMEDIA_PAGEVIEWS } from "./core";
+export type { LiftWingOptions, PageviewAccess, PageviewAgent, PageviewGranularity, PageviewsOptions, PageviewsQuery, RevertRiskModel, TopPagesOptions, UnscorableReason } from "./core";

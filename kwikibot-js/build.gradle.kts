@@ -122,6 +122,8 @@ tasks
             export type PageviewAccess = "all-access" | "desktop" | "mobile-app" | "mobile-web";
             export type PageviewAgent = "all-agents" | "user" | "spider" | "automated";
             export type PageviewGranularity = "hourly" | "daily" | "monthly";
+            export type RevertRiskModel = "language-agnostic" | "multilingual";
+            export type UnscorableReason = "missing" | "hidden" | "first-revision" | "other";
             export type CategoryMemberType = "page" | "subcategory" | "file";
             export type CategorySort = "sortkey" | "timestamp";
             export type RedirectFilter = "all" | "only-redirects" | "no-redirects";

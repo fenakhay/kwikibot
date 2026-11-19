@@ -288,6 +288,27 @@ public final class com/fenakhay/kwikibot/client/model/DumpPage {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/fenakhay/kwikibot/client/model/EditQualityScore {
+	public synthetic fun <init> (JLjava/lang/String;ZDDLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy-0Mhjqdk (JLjava/lang/String;ZDDLjava/lang/String;)Lcom/fenakhay/kwikibot/client/model/EditQualityScore;
+	public static synthetic fun copy-0Mhjqdk$default (Lcom/fenakhay/kwikibot/client/model/EditQualityScore;JLjava/lang/String;ZDDLjava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/EditQualityScore;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFalseProbability ()D
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getModelVersion ()Ljava/lang/String;
+	public final fun getPrediction ()Z
+	public final fun getRevision-C1T4Xbs ()J
+	public final fun getTrueProbability ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/fenakhay/kwikibot/client/model/EventStreams {
 	public static final field Companion Lcom/fenakhay/kwikibot/client/model/EventStreams$Companion;
 	public static final field WIKIMEDIA Ljava/lang/String;
@@ -354,6 +375,69 @@ public final class com/fenakhay/kwikibot/client/model/GlobalUserInfo {
 	public fun hashCode ()I
 	public final fun isHidden ()Z
 	public final fun isLocked ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/client/model/LiftWing {
+	public static final field Companion Lcom/fenakhay/kwikibot/client/model/LiftWing$Companion;
+	public static final field WIKIMEDIA Ljava/lang/String;
+	public fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/ktor/client/HttpClient;Lcom/fenakhay/kwikibot/net/UserAgent;Lcom/fenakhay/kwikibot/net/RetryPolicy;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun articleQuality-wVBif3M (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun damaging-wVBif3M (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun draftQuality-wVBif3M (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun goodfaith-wVBif3M (Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun predict (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun revertRisk-qgobctA (Ljava/lang/String;JLcom/fenakhay/kwikibot/client/model/RevertRiskModel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun revertRisk-qgobctA$default (Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/lang/String;JLcom/fenakhay/kwikibot/client/model/RevertRiskModel;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/client/model/LiftWing$Companion {
+}
+
+public final class com/fenakhay/kwikibot/client/model/LiftWingKt {
+	public static final fun articleQuality (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun damaging (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun draftQuality (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun getLiftWingLanguage (Lcom/fenakhay/kwikibot/client/Wiki;)Ljava/lang/String;
+	public static final fun getLiftWingPrefix (Lcom/fenakhay/kwikibot/client/Wiki;)Ljava/lang/String;
+	public static final fun goodfaith (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun revertRisk (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun revertRisk$default (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/LiftWing;Ljava/util/Collection;Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class com/fenakhay/kwikibot/client/model/LiftWingResult {
+	public abstract fun scoreOrNull ()Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/client/model/LiftWingResult$Scored : com/fenakhay/kwikibot/client/model/LiftWingResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Scored;
+	public static synthetic fun copy$default (Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Scored;Ljava/lang/Object;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Scored;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getScore ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun scoreOrNull ()Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/client/model/LiftWingResult$Unscorable : com/fenakhay/kwikibot/client/model/LiftWingResult {
+	public synthetic fun <init> (JLjava/lang/String;Lcom/fenakhay/kwikibot/client/model/UnscorableReason;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy-6vRm_XE (JLjava/lang/String;Lcom/fenakhay/kwikibot/client/model/UnscorableReason;Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Unscorable;
+	public static synthetic fun copy-6vRm_XE$default (Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Unscorable;JLjava/lang/String;Lcom/fenakhay/kwikibot/client/model/UnscorableReason;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/LiftWingResult$Unscorable;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getReason ()Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public final fun getRevision-C1T4Xbs ()J
+	public fun hashCode ()I
+	public synthetic fun scoreOrNull ()Ljava/lang/Object;
+	public fun scoreOrNull ()Ljava/lang/Void;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -524,6 +608,54 @@ public final class com/fenakhay/kwikibot/client/model/PageviewsKt {
 	public static final fun getPageviewsProject (Lcom/fenakhay/kwikibot/client/Wiki;)Ljava/lang/String;
 	public static final fun pageviews (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/Pageviews;Ljava/util/Collection;Lkotlin/time/Instant;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/client/model/PageviewGranularity;Lcom/fenakhay/kwikibot/client/model/PageviewAccess;Lcom/fenakhay/kwikibot/client/model/PageviewAgent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun pageviews$default (Lcom/fenakhay/kwikibot/client/Wiki;Lcom/fenakhay/kwikibot/client/model/Pageviews;Ljava/util/Collection;Lkotlin/time/Instant;Lkotlin/time/Instant;Lcom/fenakhay/kwikibot/client/model/PageviewGranularity;Lcom/fenakhay/kwikibot/client/model/PageviewAccess;Lcom/fenakhay/kwikibot/client/model/PageviewAgent;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/fenakhay/kwikibot/client/model/QualityScore {
+	public synthetic fun <init> (JLjava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy-GIvsbv0 (JLjava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/QualityScore;
+	public static synthetic fun copy-GIvsbv0$default (Lcom/fenakhay/kwikibot/client/model/QualityScore;JLjava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/QualityScore;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getModelVersion ()Ljava/lang/String;
+	public final fun getPrediction ()Ljava/lang/String;
+	public final fun getProbabilities ()Ljava/util/Map;
+	public final fun getRevision-C1T4Xbs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/fenakhay/kwikibot/client/model/RevertRiskModel : java/lang/Enum {
+	public static final field LANGUAGE_AGNOSTIC Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+	public static final field MULTILINGUAL Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+	public static fun values ()[Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+}
+
+public final class com/fenakhay/kwikibot/client/model/RevertRiskScore {
+	public synthetic fun <init> (JLcom/fenakhay/kwikibot/client/model/RevertRiskModel;Ljava/lang/String;ZDLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-C1T4Xbs ()J
+	public final fun component2 ()Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()D
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy-0Mhjqdk (JLcom/fenakhay/kwikibot/client/model/RevertRiskModel;Ljava/lang/String;ZDLjava/lang/String;)Lcom/fenakhay/kwikibot/client/model/RevertRiskScore;
+	public static synthetic fun copy-0Mhjqdk$default (Lcom/fenakhay/kwikibot/client/model/RevertRiskScore;JLcom/fenakhay/kwikibot/client/model/RevertRiskModel;Ljava/lang/String;ZDLjava/lang/String;ILjava/lang/Object;)Lcom/fenakhay/kwikibot/client/model/RevertRiskScore;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModel ()Lcom/fenakhay/kwikibot/client/model/RevertRiskModel;
+	public final fun getModelVersion ()Ljava/lang/String;
+	public final fun getPrediction ()Z
+	public final fun getProbability ()D
+	public final fun getRevision-C1T4Xbs ()J
+	public final fun getWiki ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/fenakhay/kwikibot/client/model/SiteMatrix {
@@ -698,6 +830,16 @@ public final class com/fenakhay/kwikibot/client/model/TriageStatus : java/lang/E
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/TriageStatus;
 	public static fun values ()[Lcom/fenakhay/kwikibot/client/model/TriageStatus;
+}
+
+public final class com/fenakhay/kwikibot/client/model/UnscorableReason : java/lang/Enum {
+	public static final field FIRST_REVISION Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public static final field HIDDEN Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public static final field MISSING Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public static final field OTHER Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
+	public static fun values ()[Lcom/fenakhay/kwikibot/client/model/UnscorableReason;
 }
 
 public final class com/fenakhay/kwikibot/client/model/WikiEvent {

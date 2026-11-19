@@ -1,10 +1,12 @@
 package com.fenakhay.kwikibot.bindings.services
 
 import com.fenakhay.kwikibot.bindings.connect.userAgent
+import com.fenakhay.kwikibot.client.model.LiftWing
 import com.fenakhay.kwikibot.client.model.PageviewAccess
 import com.fenakhay.kwikibot.client.model.PageviewAgent
 import com.fenakhay.kwikibot.client.model.PageviewGranularity
 import com.fenakhay.kwikibot.client.model.Pageviews
+import com.fenakhay.kwikibot.client.model.RevertRiskModel
 import com.fenakhay.kwikibot.net.RetryPolicy
 import com.fenakhay.kwikibot.net.UserAgent
 import io.ktor.client.HttpClient
@@ -19,6 +21,10 @@ public fun accessOf(access: PageviewAccess?): PageviewAccess = access ?: Pagevie
 /** Whose views are counted: [agent], or people's unless given. */
 public fun agentOf(agent: PageviewAgent?): PageviewAgent = agent ?: PageviewAgent.USER
 
+/** Which LiftWing model scores the risk of a revert: [model], or the language-agnostic one unless given. */
+public fun revertRiskModelOf(model: RevertRiskModel?): RevertRiskModel =
+    model ?: RevertRiskModel.LANGUAGE_AGNOSTIC
+
 /**
  * Wikimedia's pageviews service over [http]: as this library for [contact], retried as the library retries,
  * at Wikimedia's own address, unless told.
@@ -31,3 +37,24 @@ public fun pageviewsWithDefaults(
     baseUrl: String? = null,
 ): Pageviews =
     Pageviews(http, userAgent(contact, userAgent), retry ?: RetryPolicy(), baseUrl ?: Pageviews.WIKIMEDIA)
+
+/**
+ * Wikimedia's LiftWing over [http]: as this library for [contact], retried as the library retries, at
+ * Wikimedia's own address and with no access token, unless told.
+ */
+@Suppress("LongParameterList")
+public fun liftWingWithDefaults(
+    http: HttpClient,
+    contact: String,
+    userAgent: UserAgent? = null,
+    retry: RetryPolicy? = null,
+    baseUrl: String? = null,
+    accessToken: String? = null,
+): LiftWing =
+    LiftWing(
+        http,
+        userAgent(contact, userAgent),
+        retry ?: RetryPolicy(),
+        baseUrl ?: LiftWing.WIKIMEDIA,
+        accessToken?.let { token -> { token } },
+    )

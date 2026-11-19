@@ -60,6 +60,17 @@ final enum class com.fenakhay.kwikibot.client.model/PageviewGranularity : kotlin
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/PageviewGranularity> // com.fenakhay.kwikibot.client.model/PageviewGranularity.values|values#static(){}[0]
 }
 
+final enum class com.fenakhay.kwikibot.client.model/RevertRiskModel : kotlin/Enum<com.fenakhay.kwikibot.client.model/RevertRiskModel> { // com.fenakhay.kwikibot.client.model/RevertRiskModel|null[0]
+    enum entry LANGUAGE_AGNOSTIC // com.fenakhay.kwikibot.client.model/RevertRiskModel.LANGUAGE_AGNOSTIC|null[0]
+    enum entry MULTILINGUAL // com.fenakhay.kwikibot.client.model/RevertRiskModel.MULTILINGUAL|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/RevertRiskModel.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/RevertRiskModel> // com.fenakhay.kwikibot.client.model/RevertRiskModel.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/RevertRiskModel // com.fenakhay.kwikibot.client.model/RevertRiskModel.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/RevertRiskModel> // com.fenakhay.kwikibot.client.model/RevertRiskModel.values|values#static(){}[0]
+}
+
 final enum class com.fenakhay.kwikibot.client.model/TriageStatus : kotlin/Enum<com.fenakhay.kwikibot.client.model/TriageStatus> { // com.fenakhay.kwikibot.client.model/TriageStatus|null[0]
     enum entry AUTOPATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.AUTOPATROLLED|null[0]
     enum entry PATROLLED // com.fenakhay.kwikibot.client.model/TriageStatus.PATROLLED|null[0]
@@ -71,6 +82,19 @@ final enum class com.fenakhay.kwikibot.client.model/TriageStatus : kotlin/Enum<c
 
     final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/TriageStatus // com.fenakhay.kwikibot.client.model/TriageStatus.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/TriageStatus> // com.fenakhay.kwikibot.client.model/TriageStatus.values|values#static(){}[0]
+}
+
+final enum class com.fenakhay.kwikibot.client.model/UnscorableReason : kotlin/Enum<com.fenakhay.kwikibot.client.model/UnscorableReason> { // com.fenakhay.kwikibot.client.model/UnscorableReason|null[0]
+    enum entry FIRST_REVISION // com.fenakhay.kwikibot.client.model/UnscorableReason.FIRST_REVISION|null[0]
+    enum entry HIDDEN // com.fenakhay.kwikibot.client.model/UnscorableReason.HIDDEN|null[0]
+    enum entry MISSING // com.fenakhay.kwikibot.client.model/UnscorableReason.MISSING|null[0]
+    enum entry OTHER // com.fenakhay.kwikibot.client.model/UnscorableReason.OTHER|null[0]
+
+    final val entries // com.fenakhay.kwikibot.client.model/UnscorableReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.fenakhay.kwikibot.client.model/UnscorableReason> // com.fenakhay.kwikibot.client.model/UnscorableReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.fenakhay.kwikibot.client.model/UnscorableReason // com.fenakhay.kwikibot.client.model/UnscorableReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.fenakhay.kwikibot.client.model/UnscorableReason> // com.fenakhay.kwikibot.client.model/UnscorableReason.values|values#static(){}[0]
 }
 
 final enum class com.fenakhay.kwikibot.client.service/AbuseFilterOrder : kotlin/Enum<com.fenakhay.kwikibot.client.service/AbuseFilterOrder> { // com.fenakhay.kwikibot.client.service/AbuseFilterOrder|null[0]
@@ -585,6 +609,47 @@ abstract interface com.fenakhay.kwikibot.client/Wiki { // com.fenakhay.kwikibot.
     open suspend fun titleRules(): com.fenakhay.kwikibot.wikitext/TitleRules // com.fenakhay.kwikibot.client/Wiki.titleRules|titleRules(){}[0]
 }
 
+sealed interface <#A: out kotlin/Any?> com.fenakhay.kwikibot.client.model/LiftWingResult { // com.fenakhay.kwikibot.client.model/LiftWingResult|null[0]
+    abstract fun scoreOrNull(): #A? // com.fenakhay.kwikibot.client.model/LiftWingResult.scoreOrNull|scoreOrNull(){}[0]
+
+    final class <#A1: out kotlin/Any?> Scored : com.fenakhay.kwikibot.client.model/LiftWingResult<#A1> { // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored|null[0]
+        constructor <init>(#A1) // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.<init>|<init>(1:0){}[0]
+
+        final val score // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.score|{}score[0]
+            final fun <get-score>(): #A1 // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.score.<get-score>|<get-score>(){}[0]
+
+        final fun component1(): #A1 // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.component1|component1(){}[0]
+        final fun copy(#A1 = ...): com.fenakhay.kwikibot.client.model/LiftWingResult.Scored<#A1> // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.copy|copy(1:0){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.hashCode|hashCode(){}[0]
+        final fun scoreOrNull(): #A1 // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.scoreOrNull|scoreOrNull(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Scored.toString|toString(){}[0]
+    }
+
+    final class Unscorable : com.fenakhay.kwikibot.client.model/LiftWingResult<kotlin/Nothing> { // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable|null[0]
+        constructor <init>(com.fenakhay.kwikibot.model/RevisionId, kotlin/String, com.fenakhay.kwikibot.client.model/UnscorableReason, kotlin/String) // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.<init>|<init>(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;com.fenakhay.kwikibot.client.model.UnscorableReason;kotlin.String){}[0]
+
+        final val detail // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.detail|{}detail[0]
+            final fun <get-detail>(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.detail.<get-detail>|<get-detail>(){}[0]
+        final val model // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.model|{}model[0]
+            final fun <get-model>(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.model.<get-model>|<get-model>(){}[0]
+        final val reason // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.reason|{}reason[0]
+            final fun <get-reason>(): com.fenakhay.kwikibot.client.model/UnscorableReason // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.reason.<get-reason>|<get-reason>(){}[0]
+        final val revision // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.revision|{}revision[0]
+            final fun <get-revision>(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.revision.<get-revision>|<get-revision>(){}[0]
+
+        final fun component1(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.component2|component2(){}[0]
+        final fun component3(): com.fenakhay.kwikibot.client.model/UnscorableReason // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.component4|component4(){}[0]
+        final fun copy(com.fenakhay.kwikibot.model/RevisionId = ..., kotlin/String = ..., com.fenakhay.kwikibot.client.model/UnscorableReason = ..., kotlin/String = ...): com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.copy|copy(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;com.fenakhay.kwikibot.client.model.UnscorableReason;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.hashCode|hashCode(){}[0]
+        final fun scoreOrNull(): kotlin/Nothing? // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.scoreOrNull|scoreOrNull(){}[0]
+        final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWingResult.Unscorable.toString|toString(){}[0]
+    }
+}
+
 sealed interface com.fenakhay.kwikibot.client.model/SparqlAuth { // com.fenakhay.kwikibot.client.model/SparqlAuth|null[0]
     final class Cookie : com.fenakhay.kwikibot.client.model/SparqlAuth { // com.fenakhay.kwikibot.client.model/SparqlAuth.Cookie|null[0]
         constructor <init>(kotlin/String, kotlin/String) // com.fenakhay.kwikibot.client.model/SparqlAuth.Cookie.<init>|<init>(kotlin.String;kotlin.String){}[0]
@@ -868,6 +933,34 @@ final class com.fenakhay.kwikibot.client.model/DumpPage { // com.fenakhay.kwikib
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/DumpPage.toString|toString(){}[0]
 }
 
+final class com.fenakhay.kwikibot.client.model/EditQualityScore { // com.fenakhay.kwikibot.client.model/EditQualityScore|null[0]
+    constructor <init>(com.fenakhay.kwikibot.model/RevisionId, kotlin/String, kotlin/Boolean, kotlin/Double, kotlin/Double, kotlin/String) // com.fenakhay.kwikibot.client.model/EditQualityScore.<init>|<init>(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;kotlin.Boolean;kotlin.Double;kotlin.Double;kotlin.String){}[0]
+
+    final val falseProbability // com.fenakhay.kwikibot.client.model/EditQualityScore.falseProbability|{}falseProbability[0]
+        final fun <get-falseProbability>(): kotlin/Double // com.fenakhay.kwikibot.client.model/EditQualityScore.falseProbability.<get-falseProbability>|<get-falseProbability>(){}[0]
+    final val model // com.fenakhay.kwikibot.client.model/EditQualityScore.model|{}model[0]
+        final fun <get-model>(): kotlin/String // com.fenakhay.kwikibot.client.model/EditQualityScore.model.<get-model>|<get-model>(){}[0]
+    final val modelVersion // com.fenakhay.kwikibot.client.model/EditQualityScore.modelVersion|{}modelVersion[0]
+        final fun <get-modelVersion>(): kotlin/String // com.fenakhay.kwikibot.client.model/EditQualityScore.modelVersion.<get-modelVersion>|<get-modelVersion>(){}[0]
+    final val prediction // com.fenakhay.kwikibot.client.model/EditQualityScore.prediction|{}prediction[0]
+        final fun <get-prediction>(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/EditQualityScore.prediction.<get-prediction>|<get-prediction>(){}[0]
+    final val revision // com.fenakhay.kwikibot.client.model/EditQualityScore.revision|{}revision[0]
+        final fun <get-revision>(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/EditQualityScore.revision.<get-revision>|<get-revision>(){}[0]
+    final val trueProbability // com.fenakhay.kwikibot.client.model/EditQualityScore.trueProbability|{}trueProbability[0]
+        final fun <get-trueProbability>(): kotlin/Double // com.fenakhay.kwikibot.client.model/EditQualityScore.trueProbability.<get-trueProbability>|<get-trueProbability>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/EditQualityScore.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.client.model/EditQualityScore.component2|component2(){}[0]
+    final fun component3(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/EditQualityScore.component3|component3(){}[0]
+    final fun component4(): kotlin/Double // com.fenakhay.kwikibot.client.model/EditQualityScore.component4|component4(){}[0]
+    final fun component5(): kotlin/Double // com.fenakhay.kwikibot.client.model/EditQualityScore.component5|component5(){}[0]
+    final fun component6(): kotlin/String // com.fenakhay.kwikibot.client.model/EditQualityScore.component6|component6(){}[0]
+    final fun copy(com.fenakhay.kwikibot.model/RevisionId = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/Double = ..., kotlin/String = ...): com.fenakhay.kwikibot.client.model/EditQualityScore // com.fenakhay.kwikibot.client.model/EditQualityScore.copy|copy(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;kotlin.Boolean;kotlin.Double;kotlin.Double;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/EditQualityScore.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/EditQualityScore.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/EditQualityScore.toString|toString(){}[0]
+}
+
 final class com.fenakhay.kwikibot.client.model/EventStreams { // com.fenakhay.kwikibot.client.model/EventStreams|null[0]
     constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, com.fenakhay.kwikibot.net/RetryPolicy, kotlin/String = ...) // com.fenakhay.kwikibot.client.model/EventStreams.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;com.fenakhay.kwikibot.net.RetryPolicy;kotlin.String){}[0]
     constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, kotlin/String = ...) // com.fenakhay.kwikibot.client.model/EventStreams.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;kotlin.String){}[0]
@@ -947,6 +1040,22 @@ final class com.fenakhay.kwikibot.client.model/GlobalUserInfo { // com.fenakhay.
     final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/GlobalUserInfo.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/GlobalUserInfo.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/GlobalUserInfo.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/LiftWing { // com.fenakhay.kwikibot.client.model/LiftWing|null[0]
+    constructor <init>(io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent, com.fenakhay.kwikibot.net/RetryPolicy = ..., kotlin/String = ..., kotlin.coroutines/SuspendFunction0<kotlin/String?>? = ...) // com.fenakhay.kwikibot.client.model/LiftWing.<init>|<init>(io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent;com.fenakhay.kwikibot.net.RetryPolicy;kotlin.String;kotlin.coroutines.SuspendFunction0<kotlin.String?>?){}[0]
+
+    final suspend fun articleQuality(kotlin/String, com.fenakhay.kwikibot.model/RevisionId): com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/QualityScore> // com.fenakhay.kwikibot.client.model/LiftWing.articleQuality|articleQuality(kotlin.String;com.fenakhay.kwikibot.model.RevisionId){}[0]
+    final suspend fun damaging(kotlin/String, com.fenakhay.kwikibot.model/RevisionId): com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/EditQualityScore> // com.fenakhay.kwikibot.client.model/LiftWing.damaging|damaging(kotlin.String;com.fenakhay.kwikibot.model.RevisionId){}[0]
+    final suspend fun draftQuality(kotlin/String, com.fenakhay.kwikibot.model/RevisionId): com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/QualityScore> // com.fenakhay.kwikibot.client.model/LiftWing.draftQuality|draftQuality(kotlin.String;com.fenakhay.kwikibot.model.RevisionId){}[0]
+    final suspend fun goodfaith(kotlin/String, com.fenakhay.kwikibot.model/RevisionId): com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/EditQualityScore> // com.fenakhay.kwikibot.client.model/LiftWing.goodfaith|goodfaith(kotlin.String;com.fenakhay.kwikibot.model.RevisionId){}[0]
+    final suspend fun predict(kotlin/String, kotlinx.serialization.json/JsonObject): kotlinx.serialization.json/JsonObject // com.fenakhay.kwikibot.client.model/LiftWing.predict|predict(kotlin.String;kotlinx.serialization.json.JsonObject){}[0]
+    final suspend fun revertRisk(kotlin/String, com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/RevertRiskModel = ...): com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/RevertRiskScore> // com.fenakhay.kwikibot.client.model/LiftWing.revertRisk|revertRisk(kotlin.String;com.fenakhay.kwikibot.model.RevisionId;com.fenakhay.kwikibot.client.model.RevertRiskModel){}[0]
+
+    final object Companion { // com.fenakhay.kwikibot.client.model/LiftWing.Companion|null[0]
+        final const val WIKIMEDIA // com.fenakhay.kwikibot.client.model/LiftWing.Companion.WIKIMEDIA|{}WIKIMEDIA[0]
+            final fun <get-WIKIMEDIA>(): kotlin/String // com.fenakhay.kwikibot.client.model/LiftWing.Companion.WIKIMEDIA.<get-WIKIMEDIA>|<get-WIKIMEDIA>(){}[0]
+    }
 }
 
 final class com.fenakhay.kwikibot.client.model/LintError { // com.fenakhay.kwikibot.client.model/LintError|null[0]
@@ -1116,6 +1225,59 @@ final class com.fenakhay.kwikibot.client.model/Pageviews { // com.fenakhay.kwiki
 
         final fun projectOf(kotlin/String): kotlin/String // com.fenakhay.kwikibot.client.model/Pageviews.Companion.projectOf|projectOf(kotlin.String){}[0]
     }
+}
+
+final class com.fenakhay.kwikibot.client.model/QualityScore { // com.fenakhay.kwikibot.client.model/QualityScore|null[0]
+    constructor <init>(com.fenakhay.kwikibot.model/RevisionId, kotlin/String, kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Double>, kotlin/String) // com.fenakhay.kwikibot.client.model/QualityScore.<init>|<init>(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Double>;kotlin.String){}[0]
+
+    final val model // com.fenakhay.kwikibot.client.model/QualityScore.model|{}model[0]
+        final fun <get-model>(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.model.<get-model>|<get-model>(){}[0]
+    final val modelVersion // com.fenakhay.kwikibot.client.model/QualityScore.modelVersion|{}modelVersion[0]
+        final fun <get-modelVersion>(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.modelVersion.<get-modelVersion>|<get-modelVersion>(){}[0]
+    final val prediction // com.fenakhay.kwikibot.client.model/QualityScore.prediction|{}prediction[0]
+        final fun <get-prediction>(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.prediction.<get-prediction>|<get-prediction>(){}[0]
+    final val probabilities // com.fenakhay.kwikibot.client.model/QualityScore.probabilities|{}probabilities[0]
+        final fun <get-probabilities>(): kotlin.collections/Map<kotlin/String, kotlin/Double> // com.fenakhay.kwikibot.client.model/QualityScore.probabilities.<get-probabilities>|<get-probabilities>(){}[0]
+    final val revision // com.fenakhay.kwikibot.client.model/QualityScore.revision|{}revision[0]
+        final fun <get-revision>(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/QualityScore.revision.<get-revision>|<get-revision>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/QualityScore.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.component2|component2(){}[0]
+    final fun component3(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.component3|component3(){}[0]
+    final fun component4(): kotlin.collections/Map<kotlin/String, kotlin/Double> // com.fenakhay.kwikibot.client.model/QualityScore.component4|component4(){}[0]
+    final fun component5(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.component5|component5(){}[0]
+    final fun copy(com.fenakhay.kwikibot.model/RevisionId = ..., kotlin/String = ..., kotlin/String = ..., kotlin.collections/Map<kotlin/String, kotlin/Double> = ..., kotlin/String = ...): com.fenakhay.kwikibot.client.model/QualityScore // com.fenakhay.kwikibot.client.model/QualityScore.copy|copy(com.fenakhay.kwikibot.model.RevisionId;kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Double>;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/QualityScore.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/QualityScore.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/QualityScore.toString|toString(){}[0]
+}
+
+final class com.fenakhay.kwikibot.client.model/RevertRiskScore { // com.fenakhay.kwikibot.client.model/RevertRiskScore|null[0]
+    constructor <init>(com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/RevertRiskModel, kotlin/String, kotlin/Boolean, kotlin/Double, kotlin/String) // com.fenakhay.kwikibot.client.model/RevertRiskScore.<init>|<init>(com.fenakhay.kwikibot.model.RevisionId;com.fenakhay.kwikibot.client.model.RevertRiskModel;kotlin.String;kotlin.Boolean;kotlin.Double;kotlin.String){}[0]
+
+    final val model // com.fenakhay.kwikibot.client.model/RevertRiskScore.model|{}model[0]
+        final fun <get-model>(): com.fenakhay.kwikibot.client.model/RevertRiskModel // com.fenakhay.kwikibot.client.model/RevertRiskScore.model.<get-model>|<get-model>(){}[0]
+    final val modelVersion // com.fenakhay.kwikibot.client.model/RevertRiskScore.modelVersion|{}modelVersion[0]
+        final fun <get-modelVersion>(): kotlin/String // com.fenakhay.kwikibot.client.model/RevertRiskScore.modelVersion.<get-modelVersion>|<get-modelVersion>(){}[0]
+    final val prediction // com.fenakhay.kwikibot.client.model/RevertRiskScore.prediction|{}prediction[0]
+        final fun <get-prediction>(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/RevertRiskScore.prediction.<get-prediction>|<get-prediction>(){}[0]
+    final val probability // com.fenakhay.kwikibot.client.model/RevertRiskScore.probability|{}probability[0]
+        final fun <get-probability>(): kotlin/Double // com.fenakhay.kwikibot.client.model/RevertRiskScore.probability.<get-probability>|<get-probability>(){}[0]
+    final val revision // com.fenakhay.kwikibot.client.model/RevertRiskScore.revision|{}revision[0]
+        final fun <get-revision>(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/RevertRiskScore.revision.<get-revision>|<get-revision>(){}[0]
+    final val wiki // com.fenakhay.kwikibot.client.model/RevertRiskScore.wiki|{}wiki[0]
+        final fun <get-wiki>(): kotlin/String // com.fenakhay.kwikibot.client.model/RevertRiskScore.wiki.<get-wiki>|<get-wiki>(){}[0]
+
+    final fun component1(): com.fenakhay.kwikibot.model/RevisionId // com.fenakhay.kwikibot.client.model/RevertRiskScore.component1|component1(){}[0]
+    final fun component2(): com.fenakhay.kwikibot.client.model/RevertRiskModel // com.fenakhay.kwikibot.client.model/RevertRiskScore.component2|component2(){}[0]
+    final fun component3(): kotlin/String // com.fenakhay.kwikibot.client.model/RevertRiskScore.component3|component3(){}[0]
+    final fun component4(): kotlin/Boolean // com.fenakhay.kwikibot.client.model/RevertRiskScore.component4|component4(){}[0]
+    final fun component5(): kotlin/Double // com.fenakhay.kwikibot.client.model/RevertRiskScore.component5|component5(){}[0]
+    final fun component6(): kotlin/String // com.fenakhay.kwikibot.client.model/RevertRiskScore.component6|component6(){}[0]
+    final fun copy(com.fenakhay.kwikibot.model/RevisionId = ..., com.fenakhay.kwikibot.client.model/RevertRiskModel = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/String = ...): com.fenakhay.kwikibot.client.model/RevertRiskScore // com.fenakhay.kwikibot.client.model/RevertRiskScore.copy|copy(com.fenakhay.kwikibot.model.RevisionId;com.fenakhay.kwikibot.client.model.RevertRiskModel;kotlin.String;kotlin.Boolean;kotlin.Double;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.fenakhay.kwikibot.client.model/RevertRiskScore.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.fenakhay.kwikibot.client.model/RevertRiskScore.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.fenakhay.kwikibot.client.model/RevertRiskScore.toString|toString(){}[0]
 }
 
 final class com.fenakhay.kwikibot.client.model/SiteMatrix { // com.fenakhay.kwikibot.client.model/SiteMatrix|null[0]
@@ -1552,6 +1714,10 @@ final object com.fenakhay.kwikibot.client/ApiDetector { // com.fenakhay.kwikibot
     final suspend fun discover(kotlin/String, io.ktor.client/HttpClient, com.fenakhay.kwikibot.net/UserAgent): com.fenakhay.kwikibot.net.transport/ApiEndpoint? // com.fenakhay.kwikibot.client/ApiDetector.discover|discover(kotlin.String;io.ktor.client.HttpClient;com.fenakhay.kwikibot.net.UserAgent){}[0]
 }
 
+final val com.fenakhay.kwikibot.client.model/liftWingLanguage // com.fenakhay.kwikibot.client.model/liftWingLanguage|@com.fenakhay.kwikibot.client.Wiki{}liftWingLanguage[0]
+    final fun (com.fenakhay.kwikibot.client/Wiki).<get-liftWingLanguage>(): kotlin/String // com.fenakhay.kwikibot.client.model/liftWingLanguage.<get-liftWingLanguage>|<get-liftWingLanguage>@com.fenakhay.kwikibot.client.Wiki(){}[0]
+final val com.fenakhay.kwikibot.client.model/liftWingPrefix // com.fenakhay.kwikibot.client.model/liftWingPrefix|@com.fenakhay.kwikibot.client.Wiki{}liftWingPrefix[0]
+    final fun (com.fenakhay.kwikibot.client/Wiki).<get-liftWingPrefix>(): kotlin/String // com.fenakhay.kwikibot.client.model/liftWingPrefix.<get-liftWingPrefix>|<get-liftWingPrefix>@com.fenakhay.kwikibot.client.Wiki(){}[0]
 final val com.fenakhay.kwikibot.client.model/pageviewsProject // com.fenakhay.kwikibot.client.model/pageviewsProject|@com.fenakhay.kwikibot.client.Wiki{}pageviewsProject[0]
     final fun (com.fenakhay.kwikibot.client/Wiki).<get-pageviewsProject>(): kotlin/String // com.fenakhay.kwikibot.client.model/pageviewsProject.<get-pageviewsProject>|<get-pageviewsProject>@com.fenakhay.kwikibot.client.Wiki(){}[0]
 
@@ -1563,7 +1729,12 @@ final fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/requi
 final fun (com.fenakhay.kwikibot.protocol/SiteInfo).com.fenakhay.kwikibot.client/hasVersion(com.fenakhay.kwikibot.client/MediaWikiVersion): kotlin/Boolean // com.fenakhay.kwikibot.client/hasVersion|hasVersion@com.fenakhay.kwikibot.protocol.SiteInfo(com.fenakhay.kwikibot.client.MediaWikiVersion){}[0]
 final fun com.fenakhay.kwikibot.client.model/availableWorkers(): kotlin/Int // com.fenakhay.kwikibot.client.model/availableWorkers|availableWorkers(){}[0]
 final fun com.fenakhay.kwikibot.client.model/spool(kotlin/String): com.fenakhay.kwikibot.client.model/Spool // com.fenakhay.kwikibot.client.model/spool|spool(kotlin.String){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/articleQuality(com.fenakhay.kwikibot.client.model/LiftWing, kotlin.collections/Collection<com.fenakhay.kwikibot.model/RevisionId>): kotlin.collections/Map<com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/QualityScore>> // com.fenakhay.kwikibot.client.model/articleQuality|articleQuality@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.LiftWing;kotlin.collections.Collection<com.fenakhay.kwikibot.model.RevisionId>){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/damaging(com.fenakhay.kwikibot.client.model/LiftWing, kotlin.collections/Collection<com.fenakhay.kwikibot.model/RevisionId>): kotlin.collections/Map<com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/EditQualityScore>> // com.fenakhay.kwikibot.client.model/damaging|damaging@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.LiftWing;kotlin.collections.Collection<com.fenakhay.kwikibot.model.RevisionId>){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/draftQuality(com.fenakhay.kwikibot.client.model/LiftWing, kotlin.collections/Collection<com.fenakhay.kwikibot.model/RevisionId>): kotlin.collections/Map<com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/QualityScore>> // com.fenakhay.kwikibot.client.model/draftQuality|draftQuality@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.LiftWing;kotlin.collections.Collection<com.fenakhay.kwikibot.model.RevisionId>){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/goodfaith(com.fenakhay.kwikibot.client.model/LiftWing, kotlin.collections/Collection<com.fenakhay.kwikibot.model/RevisionId>): kotlin.collections/Map<com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/EditQualityScore>> // com.fenakhay.kwikibot.client.model/goodfaith|goodfaith@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.LiftWing;kotlin.collections.Collection<com.fenakhay.kwikibot.model.RevisionId>){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/pageviews(com.fenakhay.kwikibot.client.model/Pageviews, kotlin.collections/Collection<com.fenakhay.kwikibot.model.page/PageRef>, kotlin.time/Instant, kotlin.time/Instant, com.fenakhay.kwikibot.client.model/PageviewGranularity = ..., com.fenakhay.kwikibot.client.model/PageviewAccess = ..., com.fenakhay.kwikibot.client.model/PageviewAgent = ...): kotlin.collections/Map<com.fenakhay.kwikibot.model.page/PageRef, kotlin.collections/List<com.fenakhay.kwikibot.client.model/PageviewCount>> // com.fenakhay.kwikibot.client.model/pageviews|pageviews@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.Pageviews;kotlin.collections.Collection<com.fenakhay.kwikibot.model.page.PageRef>;kotlin.time.Instant;kotlin.time.Instant;com.fenakhay.kwikibot.client.model.PageviewGranularity;com.fenakhay.kwikibot.client.model.PageviewAccess;com.fenakhay.kwikibot.client.model.PageviewAgent){}[0]
+final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client.model/revertRisk(com.fenakhay.kwikibot.client.model/LiftWing, kotlin.collections/Collection<com.fenakhay.kwikibot.model/RevisionId>, com.fenakhay.kwikibot.client.model/RevertRiskModel = ...): kotlin.collections/Map<com.fenakhay.kwikibot.model/RevisionId, com.fenakhay.kwikibot.client.model/LiftWingResult<com.fenakhay.kwikibot.client.model/RevertRiskScore>> // com.fenakhay.kwikibot.client.model/revertRisk|revertRisk@com.fenakhay.kwikibot.client.Wiki(com.fenakhay.kwikibot.client.model.LiftWing;kotlin.collections.Collection<com.fenakhay.kwikibot.model.RevisionId>;com.fenakhay.kwikibot.client.model.RevertRiskModel){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/dayTitleFormat(): com.fenakhay.kwikibot.model.page/DatePages.DayFormat? // com.fenakhay.kwikibot.client/dayTitleFormat|dayTitleFormat@com.fenakhay.kwikibot.client.Wiki(){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/hasRight(kotlin/String): kotlin/Boolean // com.fenakhay.kwikibot.client/hasRight|hasRight@com.fenakhay.kwikibot.client.Wiki(kotlin.String){}[0]
 final suspend fun (com.fenakhay.kwikibot.client/Wiki).com.fenakhay.kwikibot.client/monthNames(): kotlin.collections/Map<kotlin/String, kotlin/Int> // com.fenakhay.kwikibot.client/monthNames|monthNames@com.fenakhay.kwikibot.client.Wiki(){}[0]
